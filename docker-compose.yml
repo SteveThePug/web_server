@@ -1,10 +1,4 @@
 services:
-  helloworld:
-    container_name: helloworld
-    image: crccheck/hello-world
-    expose:
-      - 8000
-
   nginx:
     container_name: nginx
     restart: unless-stopped
@@ -16,6 +10,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      - ./html:/usr/share/nginx/html
 
   certbot:
     image: certbot/certbot
