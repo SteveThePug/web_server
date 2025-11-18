@@ -47,9 +47,11 @@ func main() {
 	}
 
 	r := gin.Default()
+	h := handlers.Handler{DB: db}
 
-	r.GET("/books", handlers.GetPosts)
-	r.POST("/books", handlers.CreatePost)
+	r.GET("/posts", h.GetPosts)
+	r.POST("/posts", h.CreatePost)
+	r.PUT("/posts/:id", h.UpdatePost)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
