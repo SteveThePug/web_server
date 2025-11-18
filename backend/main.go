@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
 	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/gin-gonic/gin"
+
+	"adam-french.co.uk/backend/handlers"
 	"adam-french.co.uk/backend/models"
 )
 
@@ -22,29 +22,38 @@ func connectToPostgreSQL() (*gorm.DB, error) {
 	return db, nil
 }
 
+func migrateDatabase(db *gorm.DB) error {
+	err := db.AutoMigrate(&models.User{})
+	if err != nil {
+		return err
+	}
+	err = db.AutoMigrate(&models.Post{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
 	db, err := connectToPostgreSQL()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
-	// Perform database migration
-	err = db.AutoMigrate(&models.User{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.AutoMigrate(&models.Post{})
+	err = migrateDatabase(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello from Go!")
+	r := gin.Default()
+
+	r.GET("/books", handlers.GetPosts)
+	r.POST("/books", handlers.CreatePost)
+
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	fmt.Println("Server running on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		panic(err)
-	}
+	r.Run()
 }

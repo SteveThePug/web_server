@@ -7,5 +7,4 @@ type Post struct {
 	Title      string `gorm:"not null"`
 	Content    string `gorm:"type:text; not null"`
 	AuthorID   uint   // foreign key to User
-	Author     User   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // optional relation
 }
