@@ -36,6 +36,6 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: simplebackend
+      POSTGRES_DB: db
     ports:
       - 5432:5432

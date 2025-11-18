@@ -13,7 +13,7 @@ import (
 )
 
 func connectToPostgreSQL() (*gorm.DB, error) {
-	dsn := "user=postgres password=password dbname=simplebackend host=localhost port=5432 sslmode=disable"
+	dsn := "user=postgres password=password dbname=db host=localhost port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
