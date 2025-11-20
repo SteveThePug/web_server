@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -13,7 +15,17 @@ import (
 )
 
 func connectToPostgreSQL() (*gorm.DB, error) {
-	dsn := "user=postgres password=password dbname=db host=localhost port=5432 sslmode=disable"
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbname := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("DB_PORT")
+
+	dsn := fmt.Sprintf(
+		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
+		user, password, dbname, host, port,
+	)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -47,15 +59,19 @@ func main() {
 	}
 
 	r := gin.Default()
-	h := handlers.Handler{DB: db}
+	store := handlers.Store{DB: db}
 
-	r.GET("/posts", h.GetPosts)
-	r.POST("/posts", h.CreatePost)
-	r.PUT("/posts/:id", h.UpdatePost)
+	r.GET("/posts", store.GetPosts)
+	r.POST("/posts", store.CreatePost)
+	r.PUT("/posts/:id", store.UpdatePost)
+
+	r.GET("/spotify", store.ListeningTo)
+	r.POST("/spotify", store.SendSong)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	r.Run()
+	port := os.Getenv("PORT")
+	r.Run(fmt.Sprintf(":%s", port))
 }
