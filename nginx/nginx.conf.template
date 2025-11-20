@@ -49,7 +49,7 @@ http {
         }
 
         location /posts/ {
-            proxy_pass http://$BACKEND_HOST:8080/posts;
+            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/posts;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

@@ -10,6 +10,7 @@ services:
     container_name: nginx
     environment:
       BACKEND_HOST: "${BACKEND_HOST}" # from .env
+      BACKEND_PORT: "${BACKEND_PORT}" # from .env
       DOMAIN: "${DOMAIN}" # from .env
     restart: unless-stopped
     depends_on:
