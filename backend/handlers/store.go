@@ -4,6 +4,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type Handler struct {
+type Store struct {
 	DB *gorm.DB
 }
