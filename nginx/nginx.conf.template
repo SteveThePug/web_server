@@ -28,6 +28,7 @@ http {
 	server {
 		listen 443 ssl;
 		http2 on;
+        server_name adam-french.co.uk www.adam-french.co.uk;
 
         root /etc/nginx/html;
         index index.html;
@@ -35,9 +36,6 @@ http {
 		ssl_certificate /etc/letsencrypt/live/adam-french.co.uk/fullchain.pem;
 		ssl_certificate_key /etc/letsencrypt/live/adam-french.co.uk/privkey.pem;
 
-        server_name adam-french.co.uk;
-
-        # Serve your HTML site
         location / {
             try_files $uri $uri/ =404;
         }
