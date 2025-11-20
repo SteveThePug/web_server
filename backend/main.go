@@ -19,7 +19,7 @@ func connectToPostgreSQL() (*gorm.DB, error) {
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := os.Getenv("POSTGRES_DB")
 	host := os.Getenv("POSTGRES_HOST")
-	port := os.Getenv("DB_PORT")
+	port := os.Getenv("POSTGRES_PORT")
 
 	dsn := fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
@@ -72,6 +72,6 @@ func main() {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	port := os.Getenv("PORT")
+	port := os.Getenv("BACKEND_PORT")
 	r.Run(fmt.Sprintf(":%s", port))
 }
