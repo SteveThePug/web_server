@@ -1,0 +1,25 @@
+html {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: "Times New Roman", Times, serif;
+    display: flex;
+
+    background-image: linear-gradient(to bottom, aqua, blue);
+
+    /*background-image: url("../img/background.png");
+    background-size: cover;*/
+}
+
+p {
+    color: black;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: black;
+}
