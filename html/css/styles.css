@@ -1,13 +1,11 @@
-html {
-    height: 100%;
-    margin: 0;
-}
-
 body {
-    font-family: "Times New Roman", Times, serif;
-    display: flexbox;
+    height: 100%;
+    width: 100%;
+    margin: 1vw;
 
     background-image: linear-gradient(to bottom, aqua, blue);
+    font-family: "Times New Roman", Times, serif;
+    display: flexbox;
 
     /*background-image: url("../img/background.png");
     background-size: cover;*/
@@ -22,4 +20,14 @@ h2,
 h3,
 h4 {
     color: black;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background-color: beige;
 }

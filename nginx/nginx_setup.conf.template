@@ -1,0 +1,23 @@
+events {
+    worker_connections 1024;  # required, can be minimal
+}
+
+http {
+    server_tokens off;
+    charset utf-8;
+
+    server {
+        listen 80;
+        server_name $DOMAIN www.$DOMAIN;
+
+        # Only allow Certbot ACME challenge access
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        # All other requests should return 404
+        location / {
+            return 404;
+        }
+    }
+}

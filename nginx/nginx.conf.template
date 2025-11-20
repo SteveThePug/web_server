@@ -11,7 +11,7 @@ http {
 
     server {
         listen 80;
-        server_name adam-french.co.uk www.adam-french.co.uk;
+        server_name $DOMAIN www.$DOMAIN;
 
         # Allow Certbot to access the ACME challenge
         location /.well-known/acme-challenge/ {
@@ -28,13 +28,13 @@ http {
 	server {
 		listen 443 ssl;
 		http2 on;
-        server_name adam-french.co.uk www.adam-french.co.uk;
+        server_name $DOMAIN www.$DOMAIN;
 
         root /etc/nginx/html;
         index index.html;
 
-		ssl_certificate /etc/letsencrypt/live/adam-french.co.uk/fullchain.pem;
-		ssl_certificate_key /etc/letsencrypt/live/adam-french.co.uk/privkey.pem;
+		ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+		ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
         location / {
             try_files $uri $uri/ =404;
