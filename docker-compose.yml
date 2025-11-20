@@ -10,7 +10,10 @@ services:
     container_name: nginx
     environment:
       BACKEND_HOST: "${BACKEND_HOST}" # from .env
+      DOMAIN: "${DOMAIN}" # from .env
     restart: unless-stopped
+    depends_on:
+      - backend
     networks:
       - app-network
     ports:
@@ -27,7 +30,7 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --email adam.a.french@outlook.com -d adam-french.co.uk --agree-tos
+    command: certonly --webroot -w /var/www/certbot --email ${EMAIL} -d ${DOMAIN} --agree-tos
     networks:
       - app-network
 
