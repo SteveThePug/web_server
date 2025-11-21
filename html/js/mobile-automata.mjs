@@ -286,7 +286,7 @@ export function renderToCanvas(canvas, width, height, sn = 0, dn = 0) {
   const n = 2 * r + 1;
   const rules = toMaRule(sn, dn, n, 2);
   let states = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => Math.round(Math.random())),
+    Array.from({ length: width }, () => Math.round(Math.random() + 0.3)),
   );
   let head = Math.floor(width / 2) % width;
   let row_num = 0;
