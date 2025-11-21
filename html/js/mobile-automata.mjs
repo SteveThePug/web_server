@@ -270,3 +270,42 @@ export function cyclicMa(rules, initialState, t) {
 
   return states;
 }
+
+export function renderToCanvas(canvas, width, height) {
+  const r = 1;
+  const rules = toMaRule(100, 100, 2 * r + 1, 2);
+  let states = Array.from({ length: height }, () => Array(width).fill(0));
+  let head = Math.floor(width / 2) % width;
+  let row_num = 0;
+
+  const ctx = canvas.getContext("2d");
+  const img = ctx.createImageData(width, height);
+  const data = img.data;
+
+  function step() {
+    // calculate new state
+    let [newState, newHead] = cyclicMaStep(rules, [states[row_num], head], r);
+    states[row_num] = newState;
+
+    // write row to ImageData
+    for (let x = 0; x < width; x++) {
+      const idx = (row_num * width + x) * 4;
+      const val = newState[x] ? 255 : 0;
+      data[idx] = val;
+      data[idx + 1] = val;
+      data[idx + 2] = val;
+      data[idx + 3] = 255;
+    }
+
+    // update canvas (only this row)
+    ctx.putImageData(img, 0, row_num, 0, 0, width, 1);
+
+    // advance row and head
+    row_num = (row_num + 1) % height;
+    head = newHead;
+
+    requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}

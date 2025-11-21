@@ -5,6 +5,10 @@
             defer
             src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
         ></script>
+        <script type="module">
+          import {renderToCanvas} from './js/mobile-automata.mjs'
+          renderToCanvas(document.getElementById('automataCanvas'), window.innerWidth, window.innerHeight);
+        </script>
 
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,6 +17,21 @@
         <link rel="stylesheet" href="css/styles.css" />
     </head>
     <body>
+        <canvas
+          id="automataCanvas"
+          style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: block;
+            z-index: -1;
+          "
+        ></canvas>
+
         <div class="container">
             <h1> Welcome </h1>
 
@@ -32,7 +51,8 @@
             <h2>Shrines</h1>
             <a href="shrines/evangelion.html">Evangelion</a>
             <a href="shrines/skipskipbenben.html">Skip skip ben ben</a>
-            <a href="shrines/gto.html">GTO</a>
+            <a href="shrines/demoman.html">demoman</a>
+            <!--<a href="shrines/gto.html">GTO</a>-->
 
         </div>
     </body>
