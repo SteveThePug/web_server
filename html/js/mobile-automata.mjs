@@ -310,7 +310,7 @@ export function renderToCanvas(canvas, width, height, sn = 0, dn = 0) {
     }
   }
 
-  ctx.putImageData(img);
+  ctx.putImageData(img, 0, 0);
 
   function step() {
     // calculate new state
