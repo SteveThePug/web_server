@@ -295,8 +295,8 @@ export function renderToCanvas(canvas, width, height, sn = 0, dn = 0) {
   const img = ctx.createImageData(width, height);
   const data = img.data;
 
-  const colorOn = [0, 0, 139]; // dark blue (active cell)
-  const colorOff = [0, 0, 70]; // darker blue (inactive cell)
+  const colorOn = [20, 20, 100]; // dark blue (active cell)
+  const colorOff = [20, 20, 90]; // darker blue (inactive cell)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
