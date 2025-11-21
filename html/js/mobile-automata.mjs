@@ -295,16 +295,30 @@ export function renderToCanvas(canvas, width, height, sn = 0, dn = 0) {
   const img = ctx.createImageData(width, height);
   const data = img.data;
 
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const color = states[y][x] ? colorOn : colorOff;
+
+      data[idx] = color[0]; // R
+      data[idx + 1] = color[1]; // G
+      data[idx + 2] = color[2]; // B
+      data[idx + 3] = 255; // A
+    }
+  }
+
   const colorOn = [0, 0, 139]; // dark blue (active cell)
   const colorOff = [0, 0, 70]; // darker blue (inactive cell)
+
+  ctx.putImageData(img);
 
   function step() {
     // calculate new state
     let [newState, newHead] = cyclicMaStep(rules, [states[row_num], head], r);
     states[row_num] = newState;
 
-    // write row to ImageData
-    for (let x = 0; x < width; x++) {
+    // write changed cells to ImageData
+    for (let x = head - r; x <= head + r; x++) {
       const idx = (row_num * width + x) * 4;
       const val = newState[x] ? colorOn : colorOff;
       data[idx] = val[0]; // R
