@@ -1,3 +1,9 @@
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
 body {
     background-image: linear-gradient(to bottom, aqua, blue);
     font-family: "Times New Roman", Times, serif;
