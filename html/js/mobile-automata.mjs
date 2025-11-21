@@ -271,7 +271,12 @@ export function cyclicMa(rules, initialState, t) {
   return states;
 }
 
-export function renderToCanvas(canvas, width, height, sn = 13252213, dn = 180) {
+export function renderToCanvas(canvas, width, height, sn = 0, dn = 180) {
+  if (sn == 0) {
+    const min = 1500000;
+    const max = 2000000;
+    sn = Math.floor(Math.random() * (max - min + 1)) + min;
+  }
   const r = 1;
   const n = 2 * r + 1;
   const rules = toMaRule(sn, dn, n, 2);
