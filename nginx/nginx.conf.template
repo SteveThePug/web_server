@@ -20,15 +20,21 @@ http {
 
         # Redirect everything else to HTTPS
         location / {
-            return 301 https://$host$request_uri;
+            return 301 https://www.$DOMAIN$request_uri;
         }
     }
 
+    server {
+        listen 443 ssl;
+        server_name $DOMAIN;
+
+        return 301 https://www.$DOMAIN$request_uri;
+    }
 
 	server {
 		listen 443 ssl;
 		http2 on;
-        server_name $DOMAIN www.$DOMAIN;
+        server_name www.$DOMAIN;
 
         root /etc/nginx/html;
         index index.html;
