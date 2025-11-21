@@ -271,9 +271,9 @@ export function cyclicMa(rules, initialState, t) {
   return states;
 }
 
-export function renderToCanvas(canvas, width, height) {
+export function renderToCanvas(canvas, width, height, sn = 80, dn = 20) {
   const r = 1;
-  const rules = toMaRule(100, 100, 2 * r + 1, 2);
+  const rules = toMaRule(sn, dn, 2 * r + 1, 2);
   let states = Array.from({ length: height }, () => Array(width).fill(0));
   let head = Math.floor(width / 2) % width;
   let row_num = 0;
