@@ -1,7 +1,6 @@
 body {
     background-image: linear-gradient(to bottom, aqua, blue);
     font-family: "Times New Roman", Times, serif;
-    display: flexbox;
 
     /*background-image: url("../img/background.png");
     background-size: cover;*/
