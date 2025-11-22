@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"log"
 	"os"
 
 	"github.com/zmb3/spotify/v2"
@@ -12,7 +11,6 @@ import (
 
 func InitSpotify() (*spotify.Client, error) {
 	ctx := context.Background()
-	log.Fatal("Tets")
 
 	// redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI")
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
