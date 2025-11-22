@@ -12,6 +12,7 @@ import (
 
 func InitSpotify() (*spotify.Client, error) {
 	ctx := context.Background()
+	log.Fatal("Tets")
 
 	// redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI")
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
@@ -25,7 +26,7 @@ func InitSpotify() (*spotify.Client, error) {
 
 	token, err := config.Token(context.Background())
 	if err != nil {
-		log.Fatalf("couldn't get token: %v", err)
+		return nil, err
 	}
 
 	httpClient := spotifyauth.New().Client(ctx, token)
