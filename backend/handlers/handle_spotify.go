@@ -1,21 +1,45 @@
 package handlers
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 )
 
 func (store *Store) ListeningTo(c *gin.Context) {
+	ctx := context.Background()
 
-	// Communicate with spotify API
-	// Return if I'm listening to a song
-	return
-}
+	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 
-func (store *Store) SendSong(c *gin.Context) {
+	// If Spotify says "nothing is currently playing"
+	if playing == nil || !playing.Playing || playing.Item == nil {
+		c.JSON(200, gin.H{
+			"playing": false,
+			"message": "User is not currently listening to anything",
+		})
+		return
+	}
 
-	// Communicate with spotify API
-	// Play song on spotify
-	// Disallow new song for duration of song
+	// Extract fields safely
+	item := playing.Item
+	artistName := ""
+	if len(item.Artists) > 0 {
+		artistName = item.Artists[0].Name
+	}
 
-	return
+	imgURL := ""
+	if len(item.Album.Images) > 0 {
+		imgURL = item.Album.Images[0].URL
+	}
+
+	c.JSON(200, gin.H{
+		"playing":     true,
+		"song_name":   item.Name,
+		"artist_name": artistName,
+		"album_image": imgURL,
+	})
 }
