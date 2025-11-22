@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"context"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (store *Store) ListeningTo(c *gin.Context) {
 	ctx := context.Background()
+
+	log.Default().Println("Tets")
 
 	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
