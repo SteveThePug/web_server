@@ -7,26 +7,28 @@
         ></script>
 
         <script>
-        function spotifyPlayer() {
-          return {
-            album_image: '',
-            artist_name: '',
-            song_name: '',
-            playing: false,
-            async fetchNowPlaying() {
-              try {
-                const res = await fetch('https://www.adam-french.co.uk/api/spotify');
-                const data = await res.json();
-                this.album_image = data.album_image;
-                this.artist_name = data.artist_name;
-                this.song_name = data.song_name;
-                this.playing = data.playing;
-              } catch (err) {
-                console.error('Failed to fetch Spotify data', err);
-              }
+            function spotifyPlayer() {
+                return {
+                    album_image: "",
+                    artist_name: "",
+                    song_name: "",
+                    playing: false,
+                    async fetchNowPlaying() {
+                        try {
+                            const res = await fetch(
+                                "https://www.adam-french.co.uk/api/spotify",
+                            );
+                            const data = await res.json();
+                            this.album_image = data.album_image;
+                            this.artist_name = data.artist_name;
+                            this.song_name = data.song_name;
+                            this.playing = data.playing;
+                        } catch (err) {
+                            console.error("Failed to fetch Spotify data", err);
+                        }
+                    },
+                };
             }
-          }
-        }
         </script>
 
         <!--<script type="module">
@@ -43,36 +45,43 @@
     </head>
     <body>
         <canvas
-          id="automataCanvas"
-          style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            display: block;
-            z-index: -1;
-          "
+            id="automataCanvas"
+            style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                display: block;
+                z-index: -1;
+            "
         ></canvas>
 
         <div class="container">
-            <h1> Welcome </h1>
+            <h1>Welcome</h1>
 
-            <h2> whoami?</h2>
+            <h2>whoami?</h2>
             <p>Hi im Adam</p>
 
-            <h2> cv </h2>
+            <h2>cv</h2>
             <a href="./cv/index.html">CV</a>
 
-            <div x-data="spotifyPlayer()" x-init="fetchNowPlaying()" class="spotify-card">
-               <img :src="album_image" alt="Album Art">
-               <div class="spotify-info">
-                 <span x-text="song_name || 'No song playing'"></span>
-                 <span x-text="artist_name"></span>
-                 <span x-text="playing ? 'Playing' : 'Paused'" :class="{'playing': playing}"></span>
-               </div>
+            <div
+                x-data="spotifyPlayer()"
+                x-init="fetchNowPlaying()"
+                class="spotify-card"
+            >
+                <img :src="album_image" class="album-img" alt="Album Art" />
+                <div class="spotify-info">
+                    <div x-text="song_name || 'No song playing'"></div>
+                    <div x-text="artist_name"></div>
+                    <div
+                        x-text="playing ? 'Playing' : 'Paused'"
+                        :class="{'playing': playing}"
+                    ></div>
+                </div>
             </div>
 
             <!--<h2> </h2>
@@ -82,12 +91,11 @@
             </p>
             -->
 
-            <h2>Shrines</h1>
+            <!--<h2>Shrines</h1>
             <a href="shrines/evangelion.html">Evangelion</a>
             <a href="shrines/skipskipbenben.html">Skip skip ben ben</a>
-            <a href="shrines/demoman.html">demoman</a>
+            <a href="shrines/demoman.html">demoman</a>-->
             <!--<a href="shrines/gto.html">GTO</a>-->
-
         </div>
     </body>
 </html>

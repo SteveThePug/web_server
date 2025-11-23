@@ -35,9 +35,9 @@ func main() {
 	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 	spotifyConfig := services.SpotifyConfig{AuthState: authState, RedirectURL: redirectURL, ClientID: clientID, ClientSecret: clientSecret}
 
-	auth := services.InitSpotifyAuth(spotifyConfig)
+	auth, client := services.InitSpotifyAuth(spotifyConfig)
 
-	store := handlers.Store{DB: db, SpotifyAuth: auth, SpotifyClient: nil, SpotifyToken: nil}
+	store := handlers.Store{DB: db, SpotifyAuth: auth, SpotifyClient: client}
 
 	r.GET("/posts", store.GetPosts)
 	r.POST("/posts", store.CreatePost)

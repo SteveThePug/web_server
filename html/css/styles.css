@@ -32,3 +32,8 @@ h4 {
     width: 100%;
     background-color: beige;
 }
+
+.album-img {
+    width: 10vw;
+    height: 10vw;
+}
