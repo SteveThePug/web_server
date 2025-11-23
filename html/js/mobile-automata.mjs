@@ -271,7 +271,13 @@ export function cyclicMa(rules, initialState, t) {
   return states;
 }
 
-export function renderToCanvas(canvas, width, height, sn = 0, dn = 0) {
+// export function renderToCanvas(canvas, width, height) {
+//   let states = Array.from({ length: height }, () =>
+//     Array.from({ length: width }, () => Math.round(Math.random() + 0.4)),
+//   );
+// }
+
+export function renderMaToCanvas(canvas, width, height, sn = 0, dn = 0) {
   if (sn == 0) {
     const min = 1500000;
     const max = 2000000;
