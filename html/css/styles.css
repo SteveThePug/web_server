@@ -13,15 +13,15 @@ body {
 }
 
 main {
-    width: 210mm; /* A4 width */
-    height: 297mm; /* A4 height */
-    max-width: 100%; /* make it responsive on small screens */
-    margin: 20px auto; /* center horizontally with some margin */
+    width: 148mm; /* A5 width */
+    height: 210mm; /* A5 height */
+    max-width: 100%; /* responsive on smaller screens */
+    margin: 20px auto; /* center horizontally with some spacing */
     padding: 20px;
     background: white; /* paper color */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* subtle paper shadow */
-    overflow-y: auto; /* vertical scroll if content exceeds height */
-    border: 1px solid #ccc; /* optional border like a sheet of paper */
+    overflow-y: auto; /* scroll vertically if content overflows */
+    border: 1px solid #ccc; /* optional border for realism */
     box-sizing: border-box; /* include padding in size */
     font-family: "Times New Roman", serif; /* optional paper-like font */
 }
