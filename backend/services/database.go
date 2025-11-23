@@ -2,23 +2,24 @@ package services
 
 import (
 	"fmt"
-	"os"
 
 	"adam-french.co.uk/backend/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func connectToPostgreSQL() (*gorm.DB, error) {
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	dbname := os.Getenv("POSTGRES_DB")
-	host := os.Getenv("POSTGRES_HOST")
-	port := os.Getenv("POSTGRES_PORT")
+type SQLConfig struct {
+	User     string
+	Password string
+	DBName   string
+	Host     string
+	Port     string
+}
 
+func connectToPostgreSQL(config SQLConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
-		user, password, dbname, host, port,
+		config.User, config.Password, config.DBName, config.Host, config.Port,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -42,8 +43,8 @@ func migrateDatabase(db *gorm.DB) error {
 	return nil
 }
 
-func InitDatabase() (*gorm.DB, error) {
-	db, err := connectToPostgreSQL()
+func InitDatabase(config SQLConfig) (*gorm.DB, error) {
+	db, err := connectToPostgreSQL(config)
 	if err != nil {
 		return nil, err
 	}
