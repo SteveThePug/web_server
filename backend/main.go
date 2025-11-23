@@ -37,14 +37,14 @@ func main() {
 
 	auth := services.InitSpotifyAuth(spotifyConfig)
 
-	store := handlers.Store{DB: db, SpotifyAuth: auth, SpotifyClient: nil}
+	store := handlers.Store{DB: db, SpotifyAuth: auth, SpotifyClient: nil, SpotifyToken: nil}
 
 	r.GET("/posts", store.GetPosts)
 	r.POST("/posts", store.CreatePost)
 	r.PUT("/posts/:id", store.UpdatePost)
 
 	r.GET("/callback", store.CompleteAuth)
-	// r.GET("/spotify", store.ListeningTo)
+	r.GET("/spotify", store.ListeningTo)
 	// r.POST("/spotify", store.SendSong)
 
 	r.GET("/", func(c *gin.Context) {
