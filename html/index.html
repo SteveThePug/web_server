@@ -5,6 +5,30 @@
             defer
             src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
         ></script>
+
+        <script>
+        function spotifyPlayer() {
+          return {
+            album_image: '',
+            artist_name: '',
+            song_name: '',
+            playing: false,
+            async fetchNowPlaying() {
+              try {
+                const res = await fetch('https://www.adam-french.co.uk/api/spotify');
+                const data = await res.json();
+                this.album_image = data.album_image;
+                this.artist_name = data.artist_name;
+                this.song_name = data.song_name;
+                this.playing = data.playing;
+              } catch (err) {
+                console.error('Failed to fetch Spotify data', err);
+              }
+            }
+          }
+        }
+        </script>
+
         <!--<script type="module">
           import {renderToCanvas} from './js/mobile-automata.mjs'
           const canvas = document.getElementById('automataCanvas');
@@ -41,6 +65,15 @@
 
             <h2> cv </h2>
             <a href="./cv/index.html">CV</a>
+
+            <div x-data="spotifyPlayer()" x-init="fetchNowPlaying()" class="spotify-card">
+               <img :src="album_image" alt="Album Art">
+               <div class="spotify-info">
+                 <span x-text="song_name || 'No song playing'"></span>
+                 <span x-text="artist_name"></span>
+                 <span x-text="playing ? 'Playing' : 'Paused'" :class="{'playing': playing}"></span>
+               </div>
+            </div>
 
             <!--<h2> </h2>
             <p>
