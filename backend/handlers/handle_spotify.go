@@ -17,6 +17,12 @@ func (store *Store) CompleteAuth(c *gin.Context) {
 	}
 
 	store.SpotifyToken = token
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Authentication successful",
+		"token":   token.AccessToken,
+		"type":    token.TokenType,
+		"expiry":  token.Expiry,
+	})
 }
 
 // func (store *Store) ListeningTo(c *gin.Context) {
