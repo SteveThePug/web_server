@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/zmb3/spotify/v2"
 )
@@ -17,7 +18,7 @@ func (store *Store) CompleteAuth(c *gin.Context) {
 		return
 	}
 
-	store.SpotifyToken = token
+	services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token)
 
 	client := spotify.New(store.SpotifyAuth.Client(c.Request.Context(), token))
 
