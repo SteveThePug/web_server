@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"adam-french.co.uk/backend/services"
@@ -10,9 +11,10 @@ import (
 
 func (store *Store) CompleteAuth(c *gin.Context) {
 	state := c.Query("state")
+	ctx := context.Background()
 	// code := c.Query("code")
 
-	token, err := store.SpotifyAuth.Token(c.Request.Context(), state, c.Request)
+	token, err := store.SpotifyAuth.Token(ctx, state, c.Request)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Couldn't get token: %v", err)
 		return
@@ -20,7 +22,7 @@ func (store *Store) CompleteAuth(c *gin.Context) {
 
 	services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token)
 
-	client := spotify.New(store.SpotifyAuth.Client(c.Request.Context(), token))
+	client := spotify.New(store.SpotifyAuth.Client(ctx, token))
 
 	store.SpotifyClient = client
 
@@ -70,6 +72,7 @@ func (store *Store) ListeningTo(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"playing":     true,
 		"song_name":   item.Name,
+		"song_url":    item.URI,
 		"artist_name": artistName,
 		"album_image": imgURL,
 	})
