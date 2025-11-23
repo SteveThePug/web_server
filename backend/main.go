@@ -33,11 +33,13 @@ func main() {
 
 	authState := os.Getenv("SPOTIFY_AUTH_STATE")
 	redirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
-	// clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	// clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(redirectURL),
+		spotifyauth.WithClientID(clientID),
+		spotifyauth.WithClientSecret(clientSecret),
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeUserReadPlaybackState,
 			spotifyauth.ScopeUserReadCurrentlyPlaying,
