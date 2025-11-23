@@ -34,6 +34,11 @@ func (store *Store) CompleteAuth(c *gin.Context) {
 func (store *Store) ListeningTo(c *gin.Context) {
 	ctx := c.Request.Context()
 
+	if store.SpotifyClient == nil {
+		c.JSON(500, gin.H{"error": "Spotify not authenticated"})
+		return
+	}
+
 	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
