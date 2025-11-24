@@ -1,6 +1,10 @@
-FROM moul/icecast
+FROM debian:latest as builder
 
-# Copy template + entrypoint into image
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install --yes icecast2
+
 COPY icecast.xml.template /etc/icecast2/icecast.xml.template
 COPY entrypoint.sh /entrypoint.sh
 
