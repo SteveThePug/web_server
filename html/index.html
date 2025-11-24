@@ -81,7 +81,7 @@
             <h2>Listening to:</h2>
             <div
                 x-data="spotifyPlayer()"
-                x-init="fetchNowPlaying()"
+                x-init="fetchNowPlaying(); setInterval(fetchNowPlaying, 60000)"
                 class="spotify-card"
             >
                 <img :src="album_image" class="album-img" alt="" />
