@@ -65,6 +65,7 @@ services:
       - app-network
 
   icecast2:
+    platform: linux/amd64
     build:
       context: ./icecast
       dockerfile: Dockerfile

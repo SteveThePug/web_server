@@ -1,4 +1,4 @@
-FROM ghcr.io/jee-r/icecast:latest
+FROM --platform=linux/amd64 pltnk/icecast2
 
 # Copy template + entrypoint into image
 COPY icecast.xml.template /etc/icecast2/icecast.xml.template
