@@ -20,7 +20,7 @@
                                 "https://www.adam-french.co.uk/api/spotify",
                             );
                             const data = await res.json();
-                            if (this.playing == false) {
+                            if (data.playing == false) {
                                 this.album_image = "/img/Untitled.png";
                                 return;
                             }
