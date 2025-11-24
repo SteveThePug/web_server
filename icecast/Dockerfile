@@ -1,4 +1,4 @@
-FROM --platform=amd64/v8 pltnk/icecast2
+FROM moul/icecast
 
 
 RUN apk add --no-cache gettext
