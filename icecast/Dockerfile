@@ -1,4 +1,5 @@
-FROM --platform=linux/amd64 pltnk/icecast2
+FROM pltnk/icecast2
+
 
 RUN apk add --no-cache gettext
 
