@@ -9,7 +9,7 @@ RUN apt-get update \
     && apt-get install --yes icecast2 gettext
 
 RUN useradd radio
-RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2 /usr/local/icecast/logs/access.log
+RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2 /usr/local/icecast/
 USER radio
 
 ENTRYPOINT [ "/entrypoint.sh" ]
