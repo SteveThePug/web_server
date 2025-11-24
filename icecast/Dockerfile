@@ -4,7 +4,7 @@ WORKDIR /app
 
 
 RUN apt-get update \
-    && apt-get install --yes icecast2 gettext mime-support
+    && apt-get install --yes icecast2 gettext media-types
 
 RUN useradd radio
 RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2
