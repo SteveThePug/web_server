@@ -68,3 +68,12 @@ services:
       POSTGRES_DB: "${POSTGRES_DB}"
     networks:
       - app-network
+
+  icecast2:
+    image: pltnk/icecast2
+    container_name: icecast2
+    restart: always
+    volumes:
+      - ./icecast/icecast.xml:/etc/icecast2/icecast.xml
+    env_file:
+      - ./.env
