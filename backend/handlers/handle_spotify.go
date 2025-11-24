@@ -72,7 +72,7 @@ func (store *Store) ListeningTo(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"playing":     true,
 		"song_name":   item.Name,
-		"song_url":    item.URI,
+		"song_url":    item.PreviewURL,
 		"artist_name": artistName,
 		"album_image": imgURL,
 	})

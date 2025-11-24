@@ -12,6 +12,7 @@
                     album_image: "/img/Untitled.png",
                     artist_name: "",
                     song_name: "",
+                    song_url: "",
                     playing: false,
                     async fetchNowPlaying() {
                         try {
@@ -22,6 +23,7 @@
                             this.album_image = data.album_image;
                             this.artist_name = data.artist_name;
                             this.song_name = data.song_name;
+                            this.song_url = data.song_url;
                             this.playing = data.playing;
                         } catch (err) {
                             console.error("Failed to fetch Spotify data", err);
@@ -77,7 +79,7 @@
                 x-init="fetchNowPlaying()"
                 class="spotify-card"
             >
-                <img :src="album_image" class="album-img" alt="Album Art" />
+                <img :src="album_image" class="album-img" alt="" />
                 <div class="spotify-info">
                     <div x-text="song_name || 'No song playing'"></div>
                     <div x-text="artist_name"></div>
