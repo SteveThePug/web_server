@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+      - icecast2
     networks:
       - app-network
     ports:
@@ -66,7 +67,7 @@ services:
 
   icecast2:
     build:
-      context: ./icecast
+      context: ./icecast2
       dockerfile: Dockerfile
     container_name: "${ICECAST_HOST}"
     restart: always
