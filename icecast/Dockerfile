@@ -7,7 +7,7 @@ RUN apt-get update \
     && apt-get install --yes icecast2 gettext
 
 RUN useradd radio
-RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2
+RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2 mime-support
 USER radio
 
 COPY icecast.xml.template /etc/icecast2/icecast.xml.template
