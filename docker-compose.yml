@@ -71,5 +71,9 @@ services:
       dockerfile: Dockerfile
     container_name: "${ICECAST_HOST}"
     restart: always
+    networks:
+      - app-network
     env_file:
       - ./.env
+    ports:
+      - "${ICECAST_PORT}:${ICECAST_PORT}"
