@@ -8,10 +8,7 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     container_name: nginx
-    environment:
-      BACKEND_HOST: "${BACKEND_HOST}" # from .env
-      BACKEND_PORT: "${BACKEND_PORT}" # from .env
-      DOMAIN: "${DOMAIN}" # from .env
+    env_file: ./.env
     restart: unless-stopped
     depends_on:
       - backend
@@ -62,18 +59,16 @@ services:
     image: postgres:16
     container_name: "${POSTGRES_HOST}"
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      POSTGRES_DB: "${POSTGRES_DB}"
+    env_file:
+      - ./.env
     networks:
       - app-network
 
   icecast2:
-    image: pltnk/icecast2
-    container_name: icecast2
+    build:
+      context: ./icecast
+      dockerfile: Dockerfile
+    container_name: "${ICECAST_HOST}"
     restart: always
-    volumes:
-      - ./icecast/icecast.xml:/etc/icecast2/icecast.xml
     env_file:
       - ./.env
