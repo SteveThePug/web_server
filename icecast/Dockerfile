@@ -4,10 +4,10 @@ WORKDIR /app
 
 
 RUN apt-get update \
-    && apt-get install --yes icecast2 gettext
+    && apt-get install --yes icecast2 gettext mime-support
 
 RUN useradd radio
-RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2 mime-support
+RUN chown -R radio:radio /etc/icecast2 /var/log/icecast2
 USER radio
 
 COPY icecast.xml.template /etc/icecast2/icecast.xml.template
