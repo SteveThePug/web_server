@@ -19,7 +19,7 @@ type SpotifyConfig struct {
 	ClientSecret string
 }
 
-const SPOTIFY_TOKEN_JSON_PATH = "spotify_token.json"
+const SPOTIFY_TOKEN_JSON_PATH = "/backend/token/spotify_token.json"
 
 func SaveSpotifyToken(path string, tok *oauth2.Token) error {
 	data := struct {

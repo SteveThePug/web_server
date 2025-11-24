@@ -55,6 +55,8 @@ services:
       - app-network
     env_file:
       - ./.env
+    volumes:
+      - ./backend/token/:/backend/token
 
   db:
     image: postgres:16
