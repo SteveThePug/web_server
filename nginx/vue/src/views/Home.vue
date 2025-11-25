@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+import CurrentlyListening from "@/components/CurrentlyListening.vue";
+</script>
 
 <template>
     <main>
@@ -29,7 +31,3 @@
         <!--<a href="pages/shrines/gto.html">GTO</a>-->
     </main>
 </template>
-
-<script>
-import CurrentlyListening from "@/components/CurrentlyListening.vue";
-</script>
