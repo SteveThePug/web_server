@@ -1,351 +1,358 @@
 <template>
-    <div>
-        <RouterLink class="no-print" to="/">Home</RouterLink>
+    <main>
+        <div>
+            <RouterLink class="no-print" to="/">Home</RouterLink>
 
-        <div
-            class="no-print"
-            style="width: 100%; text-align: center; margin: 20px 0"
-        >
-            <h1>Page 1</h1>
-        </div>
-
-        <div class="a4page">
-            <div class="contact">
-                <h1>Adam French</h1>
-                <!-- <a href="covers.html"><img width=25 height=50 src="img/rune.png"></a> -->
-                <div class="contact-details">
-                    <p>+447563266931</p>
-                    <p>adam.a.french@outlook.com</p>
-                </div>
+            <div
+                class="no-print"
+                style="width: 100%; text-align: center; margin: 20px 0"
+            >
+                <h1>Page 1</h1>
             </div>
 
-            <h2>Profile</h2>
-            <p>
-                Passionate about developing robust, efficient software with a
-                strong focus on maintainability, scalability, and long-term
-                performance. I take pride in my ability to perform under
-                pressure, adapt quickly, and contribute effectively in
-                collaborative, fast-paced environments.
-            </p>
-            <p>
-                My ideal role involves designing and building scalable systems
-                that balance creativity with problem-solving. I aim to cultivate
-                meaningful professional connections and contribute to projects
-                that deliver a clear altruistic impact.
-            </p>
+            <div class="a4page">
+                <div class="contact">
+                    <h1>Adam French</h1>
+                    <!-- <a href="covers.html"><img width=25 height=50 src="img/rune.png"></a> -->
+                    <div class="contact-details">
+                        <p>+447563266931</p>
+                        <p>adam.a.french@outlook.com</p>
+                    </div>
+                </div>
 
-            <h2>Education</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Location</th>
-                        <th>Date</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>The University of Leeds</td>
-                        <td>
-                            <!-- <div style="display: flex; flex-direction: column; align-items: center;"> -->
-                            <!--     <span>2021</span> -->
-                            <!--     <span>to</span> -->
-                            <!--     <span>2025</span> -->
-                            <!-- </div> -->
-                            2021-2025
-                        </td>
-                        <td class="row-leftalign">
-                            <strong
-                                >BSc Computer Science with Mathematics
-                                (International)</strong
-                            ><br />
-                            <strong
-                                >Average:
-                                81.1%&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;(First
-                                Class Honours) </strong
-                            ><br />
-                            <strong>Relevant Courses: </strong>
-                            Procedural Programming, Object Oriented Programming,
-                            Algorithms and Data Structures I & II, Databases,
-                            Computer Processors, Compiler Design and
-                            Construction, Formal Languages and Finite Automata,
-                            Probability and Statistics I, Machine Learning,
-                            Graph Algorithms & Complexity Theory
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>The University of Waterloo</td>
-                        <td>
-                            <!-- <div style="display: flex; flex-direction: column; align-items: center;"> -->
-                            <!--     <span>2023</span> -->
-                            <!--     <span>to</span> -->
-                            <!--     <span>2024</span> -->
-                            <!-- </div> -->
-                            2023-2024
-                        </td>
-                        <td class="row-leftalign">
-                            <strong>Average: 74.5%</strong>
-                            <br />
-                            <strong>Relevant Courses:</strong>
-                            Applied Cryptography, Introduction to Computer
-                            Graphics, Introduction to Rings and Fields with
-                            Applications<br /><br />
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                <h2>Profile</h2>
+                <p>
+                    Passionate about developing robust, efficient software with
+                    a strong focus on maintainability, scalability, and
+                    long-term performance. I take pride in my ability to perform
+                    under pressure, adapt quickly, and contribute effectively in
+                    collaborative, fast-paced environments.
+                </p>
+                <p>
+                    My ideal role involves designing and building scalable
+                    systems that balance creativity with problem-solving. I aim
+                    to cultivate meaningful professional connections and
+                    contribute to projects that deliver a clear altruistic
+                    impact.
+                </p>
 
-            <h2>Experience</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Role</th>
-                        <th>Location</th>
-                        <th>Date</th>
-                        <th>Duties</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Student</td>
-                        <td>Wolfram Summer School</td>
-                        <td>2024</td>
-                        <td class="row-leftalign">
-                            Designed and completed a time-constrained research
-                            project exploring Mobile Automata and conditions for
-                            computational reversibility. Communicated findings
-                            through visualizations and presentations.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Bartender</td>
-                        <td>Belgrave Music Hall</td>
-                        <td>2022-2025</td>
-                        <td class="row-leftalign">
-                            Delivered heartfelt customer service in various
-                            fast-paced, high-pressure hospitality environments.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Cashier Assistant</td>
-                        <td>To The Rise Bakery</td>
-                        <td>Summer 2022</td>
-                        <td class="row-leftalign">
-                            Prepared coffee, served customers, presented goods,
-                            cleaned bakery equipment, and made toasties.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Waiter</td>
-                        <td>BFI Bar and Kitchen</td>
-                        <td>Summer 2020</td>
-                        <td class="row-leftalign">
-                            Managed bookings, allocated tables, handled
-                            complaints, ran food and drinks, and maintained BOH
-                            cleanliness.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                <h2>Education</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>The University of Leeds</td>
+                            <td>
+                                <!-- <div style="display: flex; flex-direction: column; align-items: center;"> -->
+                                <!--     <span>2021</span> -->
+                                <!--     <span>to</span> -->
+                                <!--     <span>2025</span> -->
+                                <!-- </div> -->
+                                2021-2025
+                            </td>
+                            <td class="row-leftalign">
+                                <strong
+                                    >BSc Computer Science with Mathematics
+                                    (International)</strong
+                                ><br />
+                                <strong
+                                    >Average:
+                                    81.1%&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;(First
+                                    Class Honours) </strong
+                                ><br />
+                                <strong>Relevant Courses: </strong>
+                                Procedural Programming, Object Oriented
+                                Programming, Algorithms and Data Structures I &
+                                II, Databases, Computer Processors, Compiler
+                                Design and Construction, Formal Languages and
+                                Finite Automata, Probability and Statistics I,
+                                Machine Learning, Graph Algorithms & Complexity
+                                Theory
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>The University of Waterloo</td>
+                            <td>
+                                <!-- <div style="display: flex; flex-direction: column; align-items: center;"> -->
+                                <!--     <span>2023</span> -->
+                                <!--     <span>to</span> -->
+                                <!--     <span>2024</span> -->
+                                <!-- </div> -->
+                                2023-2024
+                            </td>
+                            <td class="row-leftalign">
+                                <strong>Average: 74.5%</strong>
+                                <br />
+                                <strong>Relevant Courses:</strong>
+                                Applied Cryptography, Introduction to Computer
+                                Graphics, Introduction to Rings and Fields with
+                                Applications<br /><br />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Experience</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Duties</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Student</td>
+                            <td>Wolfram Summer School</td>
+                            <td>2024</td>
+                            <td class="row-leftalign">
+                                Designed and completed a time-constrained
+                                research project exploring Mobile Automata and
+                                conditions for computational reversibility.
+                                Communicated findings through visualizations and
+                                presentations.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bartender</td>
+                            <td>Belgrave Music Hall</td>
+                            <td>2022-2025</td>
+                            <td class="row-leftalign">
+                                Delivered heartfelt customer service in various
+                                fast-paced, high-pressure hospitality
+                                environments.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Cashier Assistant</td>
+                            <td>To The Rise Bakery</td>
+                            <td>Summer 2022</td>
+                            <td class="row-leftalign">
+                                Prepared coffee, served customers, presented
+                                goods, cleaned bakery equipment, and made
+                                toasties.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Waiter</td>
+                            <td>BFI Bar and Kitchen</td>
+                            <td>Summer 2020</td>
+                            <td class="row-leftalign">
+                                Managed bookings, allocated tables, handled
+                                complaints, ran food and drinks, and maintained
+                                BOH cleanliness.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div
+                class="no-print"
+                style="width: 100%; text-align: center; margin: 20px 0"
+            >
+                <h1>Page 2</h1>
+            </div>
+
+            <div class="a4page">
+                <h2>Personal Projects</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Skills</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mobile Automata</td>
+                            <td>Mathematica, JS, Logic, Analysis</td>
+                            <td>2024</td>
+                            <td class="row-leftalign">
+                                Designed experiments and analysis tools to
+                                identify pattern similarities among automata.
+                                Investigated computational properties by
+                                defining specific phenomena and observing
+                                emergent behaviors through custom simulations.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Computer Graphics</td>
+                            <td>Rust, Linear Algebra, Multi-threading</td>
+                            <td>2023</td>
+                            <td class="row-leftalign">
+                                Developed a multi-threaded, recursive ray tracer
+                                as part of a University of Waterloo project.
+                                Explored advanced ray-surface intersection
+                                techniques, including experimental rendering of
+                                higher-dimensional geometries.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Arduino Programming & Circuits</td>
+                            <td>C++, Soldering, Embedded Systems</td>
+                            <td>2022 - 2025</td>
+                            <td class="row-leftalign">
+                                Created room decorations using salvaged
+                                components from discarded electronics.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Memory Palace Website</td>
+                            <td>TS, Rust, React, Redux, SQLite</td>
+                            <td>2025</td>
+                            <td class="row-leftalign">
+                                Full-stack web application implementing the
+                                “memory palace” memorization technique. Built
+                                with a React/Redux frontend, Rust-based Actix
+                                backend, and SQLite database.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Personal Websites</td>
+                            <td>HTML, JS, Design, UI/UX</td>
+                            <td>Ongoing</td>
+                            <td class="row-leftalign">
+                                Continuously evolving my personal site and
+                                designing other creative websites. Experimented
+                                with Svelte, Vue, and React/Redux using
+                                libraries such as P5 and Three.js.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3D Printing</td>
+                            <td>FreeCAD</td>
+                            <td>Ongoing</td>
+                            <td class="row-leftalign">
+                                Designing and manufacturing household objects
+                                and repairs, including replacement window
+                                handles, desk organizers, and 3D scans.
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <tbody></tbody>
+                </table>
+
+                <h2>Commitments</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Activity</th>
+                            <th>Date</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Learning Mandarin</td>
+                            <td>Ongoing</td>
+                            <td class="row-leftalign">
+                                Aiming to complete HSK 3 proficiency exam by
+                                December 2026
+                            </td>
+                        </tr>
+                        <!-- <tr> -->
+                        <!--     <td>Cybersecurity Training</td> -->
+                        <!--     <td>Ongoing</td> -->
+                        <!--     <td class="row-leftalign"> -->
+                        <!--     Using <em>pwn.college, tryhackme.com</em> to learn pentesting techniques.</td> -->
+                        <!-- </tr> -->
+                        <tr>
+                            <td>Sports Activities</td>
+                            <td>Ongoing</td>
+                            <td class="row-leftalign">
+                                Run weekly, active gym attendee, regularly go
+                                hiking.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Construction and Landscaping</td>
+                            <td>Ongoing</td>
+                            <td class="row-leftalign">
+                                Involved in building a house in Bulgaria.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>University of Waterloo Film Club</td>
+                            <td>2023-2024</td>
+                            <td class="row-leftalign">
+                                Worked on student films <em>“Moon King”</em> and
+                                <em>“HAM”</em>, available online.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Socratica</td>
+                            <td>2023-2024</td>
+                            <td class="row-leftalign">
+                                Worked with like-minded individuals exploring
+                                innovative tech.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>University of Leeds Hockey Club</td>
+                            <td>2022-2023</td>
+                            <td class="row-leftalign">
+                                Played for the University of Leeds Hockey Club.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Royal Air Force Air Cadets</td>
+                            <td>2017-2020</td>
+                            <td class="row-leftalign">
+                                Achieved the role of Sergeant and “Best Cadet"
+                                award.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- <div class="interests"> -->
+                <!--     <table> -->
+                <!--         <tr><th>Personal qualities</th></tr> -->
+                <!--         <tr><td>Intuitive</td></tr> -->
+                <!--         <tr><td>Communicative</td></tr> -->
+                <!--         <tr><td>Adaptable</td></tr> -->
+                <!--         <tr><td>Versatile</td></tr> -->
+                <!--         <tr><td>Diligent</td></tr> -->
+                <!--     </table> -->
+                <!--     <table> -->
+                <!--         <tr><th>Interests</th></tr> -->
+                <!--         <tr><td>Neuroscience</td></tr> -->
+                <!--         <tr><td>Bouldering</td></tr> -->
+                <!--         <tr><td>Science Fiction</td></tr> -->
+                <!--         <tr><td>Mathematics</td></tr> -->
+                <!--         <tr><td>Hiking</td></tr> -->
+                <!--     </table> -->
+                <!--     <table> -->
+                <!--         <tr><th>Languages</th></tr> -->
+                <!--         <tr><td>Rust</td></tr> -->
+                <!--         <tr><td>HTML/JS</td></tr> -->
+                <!--         <tr><td>C/C++</td></tr> -->
+                <!--         <tr><td>React/Vue</td></tr> -->
+                <!--         <tr><td>Python</td></tr> -->
+                <!--     </table> -->
+                <!-- </div> -->
+            </div>
+
+            <div
+                class="no-print"
+                style="width: 100%; text-align: center; margin: 20px 0"
+            >
+                <h1>END</h1>
+            </div>
         </div>
-
-        <div
-            class="no-print"
-            style="width: 100%; text-align: center; margin: 20px 0"
-        >
-            <h1>Page 2</h1>
-        </div>
-
-        <div class="a4page">
-            <h2>Personal Projects</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Project</th>
-                        <th>Skills</th>
-                        <th>Date</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Mobile Automata</td>
-                        <td>Mathematica, JS, Logic, Analysis</td>
-                        <td>2024</td>
-                        <td class="row-leftalign">
-                            Designed experiments and analysis tools to identify
-                            pattern similarities among automata. Investigated
-                            computational properties by defining specific
-                            phenomena and observing emergent behaviors through
-                            custom simulations.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Computer Graphics</td>
-                        <td>Rust, Linear Algebra, Multi-threading</td>
-                        <td>2023</td>
-                        <td class="row-leftalign">
-                            Developed a multi-threaded, recursive ray tracer as
-                            part of a University of Waterloo project. Explored
-                            advanced ray-surface intersection techniques,
-                            including experimental rendering of
-                            higher-dimensional geometries.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Arduino Programming & Circuits</td>
-                        <td>C++, Soldering, Embedded Systems</td>
-                        <td>2022 - 2025</td>
-                        <td class="row-leftalign">
-                            Created room decorations using salvaged components
-                            from discarded electronics.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Memory Palace Website</td>
-                        <td>TS, Rust, React, Redux, SQLite</td>
-                        <td>2025</td>
-                        <td class="row-leftalign">
-                            Full-stack web application implementing the “memory
-                            palace” memorization technique. Built with a
-                            React/Redux frontend, Rust-based Actix backend, and
-                            SQLite database.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Personal Websites</td>
-                        <td>HTML, JS, Design, UI/UX</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Continuously evolving my personal site and designing
-                            other creative websites. Experimented with Svelte,
-                            Vue, and React/Redux using libraries such as P5 and
-                            Three.js.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>3D Printing</td>
-                        <td>FreeCAD</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Designing and manufacturing household objects and
-                            repairs, including replacement window handles, desk
-                            organizers, and 3D scans.
-                        </td>
-                    </tr>
-                </tbody>
-
-                <tbody></tbody>
-            </table>
-
-            <h2>Commitments</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Activity</th>
-                        <th>Date</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Learning Mandarin</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Aiming to complete HSK 3 proficiency exam by
-                            December 2026
-                        </td>
-                    </tr>
-                    <!-- <tr> -->
-                    <!--     <td>Cybersecurity Training</td> -->
-                    <!--     <td>Ongoing</td> -->
-                    <!--     <td class="row-leftalign"> -->
-                    <!--     Using <em>pwn.college, tryhackme.com</em> to learn pentesting techniques.</td> -->
-                    <!-- </tr> -->
-                    <tr>
-                        <td>Sports Activities</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Run weekly, active gym attendee, regularly go
-                            hiking.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Construction and Landscaping</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Involved in building a house in Bulgaria.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>University of Waterloo Film Club</td>
-                        <td>2023-2024</td>
-                        <td class="row-leftalign">
-                            Worked on student films <em>“Moon King”</em> and
-                            <em>“HAM”</em>, available online.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Socratica</td>
-                        <td>2023-2024</td>
-                        <td class="row-leftalign">
-                            Worked with like-minded individuals exploring
-                            innovative tech.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>University of Leeds Hockey Club</td>
-                        <td>2022-2023</td>
-                        <td class="row-leftalign">
-                            Played for the University of Leeds Hockey Club.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Royal Air Force Air Cadets</td>
-                        <td>2017-2020</td>
-                        <td class="row-leftalign">
-                            Achieved the role of Sergeant and “Best Cadet"
-                            award.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- <div class="interests"> -->
-            <!--     <table> -->
-            <!--         <tr><th>Personal qualities</th></tr> -->
-            <!--         <tr><td>Intuitive</td></tr> -->
-            <!--         <tr><td>Communicative</td></tr> -->
-            <!--         <tr><td>Adaptable</td></tr> -->
-            <!--         <tr><td>Versatile</td></tr> -->
-            <!--         <tr><td>Diligent</td></tr> -->
-            <!--     </table> -->
-            <!--     <table> -->
-            <!--         <tr><th>Interests</th></tr> -->
-            <!--         <tr><td>Neuroscience</td></tr> -->
-            <!--         <tr><td>Bouldering</td></tr> -->
-            <!--         <tr><td>Science Fiction</td></tr> -->
-            <!--         <tr><td>Mathematics</td></tr> -->
-            <!--         <tr><td>Hiking</td></tr> -->
-            <!--     </table> -->
-            <!--     <table> -->
-            <!--         <tr><th>Languages</th></tr> -->
-            <!--         <tr><td>Rust</td></tr> -->
-            <!--         <tr><td>HTML/JS</td></tr> -->
-            <!--         <tr><td>C/C++</td></tr> -->
-            <!--         <tr><td>React/Vue</td></tr> -->
-            <!--         <tr><td>Python</td></tr> -->
-            <!--     </table> -->
-            <!-- </div> -->
-        </div>
-
-        <div
-            class="no-print"
-            style="width: 100%; text-align: center; margin: 20px 0"
-        >
-            <h1>END</h1>
-        </div>
-    </div>
+    </main>
 </template>
 
 <style scoped>
