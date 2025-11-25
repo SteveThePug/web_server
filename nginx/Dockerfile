@@ -1,11 +1,5 @@
 FROM nginx:latest
 
-# Copy template config
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
-COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
-
-COPY entrypoint.sh /entrypoint.sh
-
 # Install dependencies needed to add NodeSource repo
 RUN apt-get update && apt-get install -y \
     curl \
@@ -18,6 +12,10 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest
+
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
+COPY entrypoint.sh /entrypoint.sh
 
 WORKDIR /app
 COPY vue/ ./
