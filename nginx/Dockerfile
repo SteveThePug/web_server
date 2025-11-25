@@ -6,13 +6,17 @@ COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
 
 COPY entrypoint.sh /entrypoint.sh
 
-# Install dependencies
+# Install dependencies needed to add NodeSource repo
 RUN apt-get update && apt-get install -y \
-    gettext-base \
     curl \
     build-essential \
     git \
-    nodejs\
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js LTS + npm
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y nodejs \
     && npm install -g npm@latest
 
 WORKDIR /app
