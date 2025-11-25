@@ -72,7 +72,6 @@ func (store *Store) ListeningTo(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{
 		"playing":     true,
 		"song_name":   item.Name,
-		"song_url":    item.PreviewURL,
 		"artist_name": artistName,
 		"album_image": imgURL,
 	})
