@@ -1,3 +1,90 @@
+/* Fonts */
+/*@font-face {
+    font-family: "AldoTheApache";
+    src: url("/fonts/AldotheApache.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "RobotFont";
+    src: url("/fonts/Robot_Font.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "m12";
+    src: url("/fonts/m12.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}*/
+
+@font-face {
+    font-family: "big_noodle_titling";
+    src: url("/fonts/big_noodle_titling.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "CreatoDisplay";
+    src: url("/fonts/CreatoDisplay-Bold.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Variables */
+* {
+    /* Blue - Beige */
+    /* --primary: #153448;
+  --secondary: #3C5B6F;
+  --tertiary: #948979;
+  --quaternary: #f5bb78;
+  --background: #DFD0B8; */
+
+    /* Blue - Turqouise */
+    /* --primary: #161D6F;
+  --secondary: #0B2F9F;
+  --tertiary: #98DED9;
+  --quaternary: #C7FFD8;
+  --background: #C2EFD1; */
+
+    /* Red - Blue */
+    /* --primary: #ff204e; */
+    /* --secondary: #a0153e; */
+    /* --tertiary: #5d0341; */
+    /* --quaternary: #3a0e41; */
+    /* --background: #00224d; */
+
+    /* Blue - Brown */
+    /* --primary: #35374B; */
+    /* --secondary: #344955; */
+    /* --tertiary: #50727b; */
+    /* --quaternary: #78a083; */
+    /* --background: #c7b077; */
+
+    /* Black - White */
+    --primary: black;
+    --secondary: black;
+    --tertiary: black;
+    --quaternary: #cccccc;
+    --background: white;
+
+    /* Blue - White */
+    /* --primary: #201e43; */
+    /* --secondary: #134b70; */
+    /* --tertiary: #508c9b; */
+    /* --quaternary: #cceeee; */
+    /* --background: #eeeeee; */
+
+    --font-heading: big_noodle_titling;
+    --font-text: CreatoDisplay;
+    --font-size-text: 90%;
+    --font-size-heading: 2.5em;
+    --font-size-tableheading: 1.2em;
+}
+
 /* A5 Page */
 .a5page {
     /* overflow: scroll; */
@@ -15,6 +102,7 @@
 
 /* A4 Page */
 .a4page {
+    line-height: 1.6;
     font-family: var(--font-text);
     width: 210mm;
     /* Standard A4 width */
@@ -37,7 +125,6 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    line-height: 1.6;
     margin: 0;
     padding: 0;
 }
@@ -84,7 +171,7 @@ td {
 
 th {
     border: 2px solid var(--tertiary);
-    padding: 1px 0px 1px 7px;
+    /*padding: 1px 0px 1px 7px;*/
     font-family: var(--font-heading);
     font-size: var(--font-size-tableheading);
     background-color: var(--quaternary);
