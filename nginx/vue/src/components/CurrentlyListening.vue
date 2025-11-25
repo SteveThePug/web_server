@@ -1,8 +1,9 @@
 <template>
     <div class="spotify-now-playing">
-        <img :src="albumImage" alt="Album cover" v-if="albumImage" />
-        <p v-if="songName"><strong>Song:</strong> {{ songName }}</p>
-        <p v-if="artistName"><strong>Artist:</strong> {{ artistName }}</p>
+        <img :src="playing ? albumImage : '/img/Untitled.png'" />
+        <p><strong v-if="playing">Song:</strong> {{ songName }}</p>
+        <p><strong v-if="playing">Artist:</strong> {{ artistName }}</p>
+        <a v-if="playing" :href="songUrl">preview</a>
         <p v-if="playing">Status: Playing</p>
         <p v-else>Status: Not playing</p>
     </div>
@@ -17,6 +18,7 @@ export default {
         const albumImage = ref("");
         const artistName = ref("");
         const songName = ref("");
+        const songUrl = ref("");
         const playing = ref(false);
 
         const fetchSpotify = async () => {
@@ -26,6 +28,7 @@ export default {
                 const data = await res.json();
                 albumImage.value = data.album_image;
                 artistName.value = data.artist_name;
+                songUrl.value = data.song_url;
                 songName.value = data.song_name;
                 playing.value = data.playing;
             } catch (err) {
@@ -35,8 +38,7 @@ export default {
 
         onMounted(() => {
             fetchSpotify();
-            // Optional: refresh every 30 seconds
-            // setInterval(fetchSpotify, 30000);
+            setInterval(fetchSpotify, 120000);
         });
 
         return {
@@ -51,17 +53,19 @@ export default {
 
 <style scoped>
 .spotify-now-playing {
-    display: flex;
+    width: fit-content;
+    height: fit-content;
     flex-direction: column;
     align-items: center;
     text-align: center;
+    box-shadow: 3px;
 }
 
 .spotify-now-playing img {
     width: 200px;
     height: 200px;
     object-fit: cover;
-    border-radius: 8px;
+    box-shadow: 3px;
     margin-bottom: 10px;
 }
 </style>
