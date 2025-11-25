@@ -1,12 +1,34 @@
+# TODO
+- ML for 4chan
+- Cache requests
+- Login to add / remove posts (auth)
+- Design webpage
+- Calendar to show radio times
+- Nice smooth function background
+- Shrines
+- Redis (not really)
+
 # .env
-POSTGRES_USER - postgres user name
-POSTGRES_PASSWORD - postgres password
-POSTGRES_DB - database name
-POSTGRES_PORT - backend port number on docker network
-POSTGRES_HOST - backend docker container name
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
+POSTGRES_PORT=
+POSTGRES_HOST=
 
-BACKEND_PORT - backend port number on docker network
-BACKEND_HOST - backend docker container name
+BACKEND_PORT=
+BACKEND_HOST=
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+SPOTIFY_REDIRECT_URI=
+SPOTIFY_AUTH_STATE=
 
-DOMAIN - domain for certbot
-EMAIL - email for certbot
+ICECAST_SOURCE_PASSWORD=
+ICECAST_RELAY_PASSWORD=
+ICECAST_ADMIN_USER=
+ICECAST_ADMIN_PASSWORD=
+ICECAST_HOST=
+ICECAST_PORT=
+ICECAST_MOUNT=
+
+DOMAIN=
+EMAIL=
