@@ -9,24 +9,24 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-func (store *Store) CompleteAuth(c *gin.Context) {
-	state := c.Query("state")
-	ctx := context.Background()
+func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
+	state := ctx.Query("state")
+	c := context.Background()
 	// code := c.Query("code")
 
-	token, err := store.SpotifyAuth.Token(ctx, state, c.Request)
+	token, err := store.SpotifyAuth.Token(c, state, ctx.Request)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Couldn't get token: %v", err)
+		ctx.String(http.StatusInternalServerError, "Couldn't get token: %v", err)
 		return
 	}
 
 	services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token)
 
-	client := spotify.New(store.SpotifyAuth.Client(ctx, token))
+	client := spotify.New(store.SpotifyAuth.Client(c, token))
 
 	store.SpotifyClient = client
 
-	c.JSON(http.StatusOK, gin.H{
+	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Authentication successful",
 		"token":   token.AccessToken,
 		"type":    token.TokenType,
@@ -34,23 +34,23 @@ func (store *Store) CompleteAuth(c *gin.Context) {
 	})
 }
 
-func (store *Store) ListeningTo(c *gin.Context) {
-	ctx := c.Request.Context()
+func (store *Store) ListeningTo(ctx *gin.Context) {
+	c := ctx.Request.Context()
 
 	if store.SpotifyClient == nil {
-		c.JSON(500, gin.H{"error": "Spotify not authenticated"})
+		ctx.JSON(500, gin.H{"error": "Spotify not authenticated"})
 		return
 	}
 
-	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
+	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(c)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		ctx.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	// If Spotify says "nothing is currently playing"
 	if playing == nil || !playing.Playing || playing.Item == nil {
-		c.JSON(200, gin.H{
+		ctx.JSON(200, gin.H{
 			"playing": false,
 			"message": "User is not currently listening to anything",
 		})
@@ -69,7 +69,7 @@ func (store *Store) ListeningTo(c *gin.Context) {
 		imgURL = item.Album.Images[0].URL
 	}
 
-	c.JSON(200, gin.H{
+	ctx.JSON(200, gin.H{
 		"playing":     true,
 		"song_name":   item.Name,
 		"song_url":    item.PreviewURL,
