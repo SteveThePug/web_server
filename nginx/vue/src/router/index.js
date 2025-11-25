@@ -17,6 +17,16 @@ const router = createRouter({
       // which is lazy-loaded when the route is visited.
       component: () => import("../views/CV.vue"),
     },
+    {
+      path: "/bookmarks",
+      name: "bookmarks",
+      component: () => import("../views/Bookmarks.vue"),
+    },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "404",
+      component: () => import("../views/404.vue"),
+    },
   ],
 });
 

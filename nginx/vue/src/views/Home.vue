@@ -10,10 +10,10 @@ import CurrentlyListening from "@/components/CurrentlyListening.vue";
         <p>Hi im Adam</p>
 
         <h2>cv</h2>
-        <RouterLink to="/cv">CV</RouterLink>
+        <RouterLink to="/cv">cv</RouterLink>
 
         <h2>bookmarks</h2>
-        <a href="/pages/bookmarks.html">bookmarks</a>
+        <RouterLink to="/bookmarks">bookmarks</RouterLink>
 
         <CurrentlyListening />
 
