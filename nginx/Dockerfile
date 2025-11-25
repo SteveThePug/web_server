@@ -25,7 +25,7 @@ RUN npm install
 RUN npm run build
 
 RUN mkdir -p /etc/nginx/html \
-    \rm -rf /etc/nginx/html/* \
+    && rm -rf /etc/nginx/html/* \
     && cp -r ./dist/* /etc/nginx/html/
 
 ENTRYPOINT ["/entrypoint.sh"]
