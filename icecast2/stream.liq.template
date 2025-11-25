@@ -1,13 +1,24 @@
-# Microphone input
-mic = input.pulseaudio()
+[general]
+duration        = 0          # 0 = run forever
+bufferSecs      = 5          # buffer size in seconds
+reconnect       = yes        # reconnect on failure
+reconnectDelay  = 5
 
-# Icecast output
-output.icecast(
-    %mp3,
-    host = "$ICECAST_HOST",
-    port = "$ICECAST_PORT",
-    password = "$ICECAST_SOURCE_PASSWORD",
-    mount = "$ICECAST_MOUNT",
-    name = "Live DJ stream",
-    mic
-)
+[input]
+device          = pulse      # PulseAudio input
+sampleRate      = 44100      # in Hz
+bitsPerSample   = 16
+channel         = 2
+
+[icecast2-0]
+bitrateMode     = cbr
+bitrate         = 128        # kbps
+format          = mp3
+server          = ${ICECAST_HOST}
+port            = ${ICECAST_PORT}
+password        = ${ICECAST_SOURCE_PASSWORD}
+mountPoint      = ${ICECAST_MOUNT}
+name            = "Live DJ stream"
+description     = "Live microphone stream"
+genre           = "Various"
+public          = yes
