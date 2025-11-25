@@ -3,7 +3,6 @@
         <img :src="playing ? albumImage : '/img/Untitled.png'" />
         <p><strong v-if="playing">Song:</strong> {{ songName }}</p>
         <p><strong v-if="playing">Artist:</strong> {{ artistName }}</p>
-        <a v-if="playing" :href="songUrl">preview</a>
         <p v-if="playing">Status: Playing</p>
         <p v-else>Status: Not playing</p>
     </div>
