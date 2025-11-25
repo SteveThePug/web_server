@@ -24,7 +24,8 @@ COPY vue/ ./
 RUN npm install
 RUN npm run build
 
-RUN rm -rf /etc/nginx/html/* \
+RUN mkdir -p /etc/nginx/html \
+    \rm -rf /etc/nginx/html/* \
     && cp -r ./dist/* /etc/nginx/html/
 
 ENTRYPOINT ["/entrypoint.sh"]
