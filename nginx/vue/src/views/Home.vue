@@ -31,13 +31,3 @@ import CurrentlyListening from "@/components/CurrentlyListening.vue";
         <!--<a href="pages/shrines/gto.html">GTO</a>-->
     </main>
 </template>
-
-<style scoped>
-@import "@/assets/css/styles.css";
-@media print {
-    @page {
-        size: A4 portrait;
-        margin: 0;
-    }
-}
-</style>
