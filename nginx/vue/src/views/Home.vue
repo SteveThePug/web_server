@@ -13,23 +13,7 @@
         <h2>bookmarks</h2>
         <a href="/pages/bookmarks.html">bookmarks</a>
 
-        <h2>Listening to:</h2>
-        <div
-            x-data="spotifyPlayer()"
-            x-init="fetchNowPlaying(); setInterval(fetchNowPlaying, 60000)"
-            class="spotify-card"
-        >
-            <img :src="album_image" class="album-img" alt="" />
-            <div class="spotify-info">
-                <div x-text="song_name || 'No song playing'"></div>
-                <div x-text="artist_name"></div>
-                <div
-                    x-text="playing ? 'Playing' : ''"
-                    :class="{ playing: playing }"
-                ></div>
-                <a :href="song_url"></a>
-            </div>
-        </div>
+        <CurrentlyListening />
 
         <!--<h2> </h2>
         <p>
@@ -45,3 +29,7 @@
         <!--<a href="pages/shrines/gto.html">GTO</a>-->
     </main>
 </template>
+
+<script>
+import CurrentlyListening from "@/components/CurrentlyListening.vue";
+</script>
