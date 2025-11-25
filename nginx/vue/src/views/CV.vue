@@ -348,7 +348,7 @@
     </div>
 </template>
 
-<style scoped>
+<style>
 @import "@/assets/css/cv_styles.css";
 @media print {
     @page {
