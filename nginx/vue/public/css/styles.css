@@ -5,6 +5,16 @@
     }
 }
 
+/* Variables */
+/* Blue - Beige */
+:root {
+    --primary: #153448;
+    --secondary: #3c5b6f;
+    --tertiary: #948979;
+    --quaternary: #f5bb78;
+    --background: #dfd0b8;
+}
+
 body {
     /*background-image: linear-gradient(to bottom, aqua, blue);*/
     font-family: "Times New Roman", Times, serif;
@@ -14,6 +24,7 @@ body {
 
     /*background-image: url("../img/background.png");
     background-size: cover;*/
+    background-color: var(--background);
 }
 
 main {
@@ -31,24 +42,14 @@ main {
 }
 
 p {
-    color: black;
+    color: var(--secondary);
 }
 
 h1,
 h2,
 h3,
 h4 {
-    color: black;
-}
-
-.container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    background-color: beige;
+    color: var(--primary);
 }
 
 .album-img {
