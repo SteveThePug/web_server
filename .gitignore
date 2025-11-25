@@ -27,7 +27,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-pages/
 
 *.tsbuildinfo
 

@@ -348,8 +348,8 @@
     </div>
 </template>
 
-<style>
-@import "/css/cv_styles.css";
+<style scoped>
+@import "@assets/css/cv_styles.css";
 @media print {
     @page {
         size: A4 portrait;
