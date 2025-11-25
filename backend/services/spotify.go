@@ -70,7 +70,7 @@ func LoadSpotifyToken(path string) (*oauth2.Token, error) {
 	return tok, nil
 }
 
-func InitSpotifyAuth(config SpotifyConfig) (*spotifyauth.Authenticator, *spotify.Client) {
+func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotify.Client) {
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(config.RedirectURL),
 		spotifyauth.WithClientID(config.ClientID),

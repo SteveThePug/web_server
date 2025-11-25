@@ -16,7 +16,7 @@ type SQLConfig struct {
 	Port     string
 }
 
-func connectToPostgreSQL(config SQLConfig) (*gorm.DB, error) {
+func connectToPostgreSQL(config *SQLConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
 		config.User, config.Password, config.DBName, config.Host, config.Port,
@@ -43,7 +43,7 @@ func migrateDatabase(db *gorm.DB) error {
 	return nil
 }
 
-func InitDatabase(config SQLConfig) (*gorm.DB, error) {
+func InitDatabase(config *SQLConfig) (*gorm.DB, error) {
 	db, err := connectToPostgreSQL(config)
 	if err != nil {
 		return nil, err

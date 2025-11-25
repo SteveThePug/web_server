@@ -12,38 +12,44 @@ import (
 )
 
 func main() {
-	db_user := os.Getenv("POSTGRES_USER")
-	db_password := os.Getenv("POSTGRES_PASSWORD")
-	dbname := os.Getenv("POSTGRES_DB")
-	db_host := os.Getenv("POSTGRES_HOST")
-	db_port := os.Getenv("POSTGRES_PORT")
-	db_config := services.SQLConfig{User: db_user, Password: db_password, DBName: dbname, Host: db_host, Port: db_port}
-	db, err := services.InitDatabase(db_config)
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+	dbHost := os.Getenv("POSTGRES_HOST")
+	dbPort := os.Getenv("POSTGRES_PORT")
+	dbConfig := services.SQLConfig{User: dbUser, Password: dbPassword, DBName: dbName, Host: dbHost, Port: dbPort}
+	db, err := services.InitDatabase(&dbConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	spotifyAuthState := os.Getenv("SPOTIFY_AUTH_STATE")
+	spotifyRedirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
+	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	spotifyConfig := services.SpotifyConfig{AuthState: spotifyAuthState, RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
+	spotifyAuth, client := services.InitSpotifyAuth(&spotifyConfig)
+
+	authSecret := os.Getenv("BACKEND_SECRET")
+	authConfig := services.AuthConfig{Secret: []byte(authSecret)}
+	auth := services.InitAuth(&authConfig)
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth}
 
 	r := gin.Default()
-
-	authState := os.Getenv("SPOTIFY_AUTH_STATE")
-	redirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
-	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	spotifyConfig := services.SpotifyConfig{AuthState: authState, RedirectURL: redirectURL, ClientID: clientID, ClientSecret: clientSecret}
-
-	auth, client := services.InitSpotifyAuth(spotifyConfig)
-
-	store := handlers.Store{DB: db, SpotifyAuth: auth, SpotifyClient: client}
 
 	r.GET("/posts", store.GetPosts)
 	r.POST("/posts", store.CreatePost)
 	r.PUT("/posts/:id", store.UpdatePost)
 
-	r.GET("/callback", store.CompleteAuth)
+	r.GET("/user/:id", store.GetUser)
+	r.GET("/user", store.GetUsers)
+	r.POST("/user", store.CreateUser)
+	r.PUT("/user", store.UpdateUser)
+
+	r.POST("/refresh", store.RefreshToken)
+
+	r.GET("/callback", store.CompleteSpotifyAuth)
 	r.GET("/spotify", store.ListeningTo)
 	// r.POST("/spotify", store.SendSong)
 
