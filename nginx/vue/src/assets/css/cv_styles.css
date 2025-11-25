@@ -1,35 +1,35 @@
 /* Fonts */
 @font-face {
     font-family: "AldoTheApache";
-    src: url("/fonts/AldotheApache.ttf") format("truetype");
+    src: url("@/assets/fonts/AldotheApache.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "RobotFont";
-    src: url("/fonts/Robot_Font.otf") format("opentype");
+    src: url("@/assets/fonts/Robot_Font.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "m12";
-    src: url("/fonts/m12.ttf") format("truetype");
+    src: url("@/assets/fonts/m12.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "big_noodle_titling";
-    src: url("/fonts/big_noodle_titling.ttf") format("truetype");
+    src: url("@/assets/fonts/big_noodle_titling.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: "CreatoDisplay";
-    src: url("/fonts/CreatoDisplay-Bold.otf") format("opentype");
+    src: url("@/assets/fonts/CreatoDisplay-Bold.otf") format("opentype");
     font-weight: normal;
     font-style: normal;
 }
