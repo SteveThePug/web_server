@@ -13,47 +13,47 @@ type CreatePostInput struct {
 	Author  string `json:"author" binding:"required"`
 }
 
-func (h *Store) GetPosts(c *gin.Context) {
+func (store *Store) GetPosts(ctx *gin.Context) {
 	var posts []models.Post
-	if err := h.DB.Find(&posts).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := store.DB.Find(&posts).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": models.Post{}})
+	ctx.JSON(http.StatusOK, gin.H{"data": models.Post{}})
 }
 
-func (h *Store) CreatePost(c *gin.Context) {
+func (store *Store) CreatePost(ctx *gin.Context) {
 	var input CreatePostInput
-	if err := c.ShouldBindBodyWithJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Create post
 	post := models.Post{Title: input.Title, Content: input.Content, Author: input.Author}
-	h.DB.Create(&post)
+	store.DB.Create(&post)
 
-	c.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusOK, gin.H{"data": post})
 }
 
-func (h *Store) UpdatePost(c *gin.Context) {
-	id := c.Param("id")
+func (store *Store) UpdatePost(ctx *gin.Context) {
+	id := ctx.Param("id")
 	var post models.Post
-	if err := h.DB.First(&post, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	if err := store.DB.First(&post, id).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	var input CreatePostInput
-	if err := c.ShouldBindBodyWithJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	post.Title = input.Title
 	post.Content = input.Content
 	post.Author = input.Author
-	h.DB.Save(&post)
+	store.DB.Save(&post)
 
-	c.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusOK, gin.H{"data": post})
 }
