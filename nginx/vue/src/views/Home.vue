@@ -1,9 +1,10 @@
 <script setup>
-import CurrentlyListening from "@/components/CurrentlyListening.vue";
+import Spotify from "@/components/Spotify.vue";
+import Radio from "@/components/Radio.vue";
 </script>
 
 <template>
-    <main>
+    <main class="a4page">
         <h1>Welcome</h1>
 
         <h2>whoami?</h2>
@@ -15,7 +16,9 @@ import CurrentlyListening from "@/components/CurrentlyListening.vue";
         <h2>bookmarks</h2>
         <RouterLink to="/bookmarks">bookmarks</RouterLink>
 
-        <CurrentlyListening />
+        <Spotify />
+
+        <Radio />
 
         <!--<h2> </h2>
         <p>
