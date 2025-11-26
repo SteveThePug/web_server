@@ -8,17 +8,30 @@
 /* Variables */
 /* Blue - Beige */
 :root {
-    --primary: #153448;
-    --secondary: #3c5b6f;
-    --tertiary: #948979;
-    --quaternary: #f5bb78;
-    --background: #c4bbb8;
-    --background_paper: #dfd0b8;
+    /*--primary: #bfb04c;
+    --secondary: #bdad46;
+    --tertiary: #4b5743;
+    --quaternary: #3e4637;
+    --background_paper: #453d3e;
+    --background: #353d2e;*/
+
+    --primary: #f74510;
+    --secondary: #c6b652;
+    --tertiary: #5a6952;
+    --quaternary: #424542;
+    --background_paper: #293029;
+    --background: #5a6952;
+
+    /*--tertiary: #948979;*/
+    /*--quaternary: #f5bb78;*/
+    /*--background: #c4bbb8;*/
+    /*--background_paper: #dfd0b8;*/
 }
 
 body {
     /*background-image: linear-gradient(to bottom, aqua, blue);*/
-    font-family: "Times New Roman", Times, serif;
+    font-family:
+        "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
 
     /*width: 100vw;*/
     /*height: 100vh;*/
@@ -26,6 +39,12 @@ body {
     /*background-image: url("../img/background.png");
     background-size: cover;*/
     background-color: var(--background);
+}
+
+div {
+    background-color: var(--background_paper);
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
+    border: solid 2px var(--primary);
 }
 
 p {
@@ -42,6 +61,10 @@ h4 {
 .album-img {
     width: 50mm;
     height: 50mm;
+}
+
+.floating {
+    position: absolute;
 }
 
 /* A5 Page */
