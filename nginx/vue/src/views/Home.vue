@@ -8,24 +8,17 @@ import Radio from "@/components/Radio.vue";
     <Radio class="floating" style="left: 90vw; top: 10vh" />
 
     <main class="a4page">
-        <div>
-            <h1>Welcome</h1>
-        </div>
+        <h1>Welcome</h1>
+        <img src="/img/epic.jpeg" />
 
-        <div>
-            <h2>whoami?</h2>
-            <p>Hi im Adam</p>
-        </div>
+        <h2>whoami?</h2>
+        <p>Hi im Adam</p>
 
-        <div>
-            <h2>cv</h2>
-            <RouterLink to="/cv">cv</RouterLink>
-        </div>
+        <h2>cv</h2>
+        <RouterLink to="/cv">cv</RouterLink>
 
-        <div>
-            <h2>bookmarks</h2>
-            <RouterLink to="/bookmarks">bookmarks</RouterLink>
-        </div>
+        <h2>bookmarks</h2>
+        <RouterLink to="/bookmarks">bookmarks</RouterLink>
 
         <div>
             <h2>Shrines</h2>
@@ -36,3 +29,6 @@ import Radio from "@/components/Radio.vue";
         </div>
     </main>
 </template>
+
+<styles scoped>
+</styles>
