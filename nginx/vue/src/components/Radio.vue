@@ -24,9 +24,7 @@ const checkStream = async () => {
             streamLive.value = true;
             streamUrl.value = "/radio/" + streamMount.value;
 
-            if (audio.value) {
-                audio.value.load(); // reload audio if it was offline before
-            }
+            if (audio.value) audio.value.load(); // reload audio if it was offline before
         }
     } catch (err) {
         streamLive.value = false;
@@ -40,3 +38,5 @@ onMounted(() => {
     setInterval(checkStream, 10000);
 });
 </script>
+
+<style scoped></style>
