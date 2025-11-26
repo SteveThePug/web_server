@@ -91,7 +91,7 @@ h4 {
     width: 210mm;
     padding: 5mm;
     box-sizing: border-box;
-    background-color: var(--background_paper);
+    background-color: var(--background_paper1);
     box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
     border: solid 2px var(--primary);
 }
@@ -106,7 +106,7 @@ h4 {
     /* Standard A4 height */
     padding: 10mm;
     box-sizing: border-box;
-    background-color: var(--background_paper);
+    background-color: var(--background_paper1);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     border: 1px solid var(--primary);
     overflow: auto;
