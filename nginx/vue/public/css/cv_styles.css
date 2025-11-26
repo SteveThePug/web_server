@@ -129,6 +129,10 @@ body {
     padding: 0;
 }
 
+/*div {
+    all: unset;
+}*/
+
 h1,
 h2,
 h3,
@@ -236,6 +240,7 @@ textarea {
 
 /* Contact At Top of Page */
 .contact {
+    all: unset;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -243,6 +248,7 @@ textarea {
 }
 
 .contact-details {
+    all: unset;
     display: flex;
     flex-direction: column;
     text-align: right;
