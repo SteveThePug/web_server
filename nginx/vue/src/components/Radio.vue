@@ -2,8 +2,8 @@
     <div>
         <audio v-if="streamLive" controls :src="streamUrl" ref="audio"></audio>
         <p v-else>Stream is currently offline.</p>
+        <button @click="checkStream()">Check Stream</button>
     </div>
-    <button @click="checkStream()" />
 </template>
 
 <script setup>
