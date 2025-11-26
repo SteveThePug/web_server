@@ -18,7 +18,7 @@ const checkStream = async () => {
         const res = await fetch("/radio/status-json.xsl"); // Icecast JSON status
         const data = await res.json();
         // Replace 'mounts' and '/stream' with your Icecast mountpoint
-        streamMount.value = data.icestats.source[0].listenurl.split("/").pop();
+        streamMount.value = data.icestats.source.listenurl.split("/").pop();
 
         if (streamMount.value) {
             streamLive.value = true;
