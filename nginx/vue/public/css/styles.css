@@ -20,6 +20,8 @@
     --tertiary: #5a6952;
     --quaternary: #424542;
     --background_paper: #293029;
+    --background_paper: #293019;
+    --background_paper: #293009;
     --background: #5a6952;
 
     /*--tertiary: #948979;*/
@@ -42,7 +44,19 @@ body {
 }
 
 div {
-    background-color: var(--background_paper);
+    background-color: var(--background_paper1);
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
+    border: solid 2px var(--primary);
+}
+
+div > div {
+    background-color: var(--background_paper2);
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
+    border: solid 2px var(--primary);
+}
+
+div > div > div {
+    background-color: var(--background_paper3);
     box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
     border: solid 2px var(--primary);
 }
