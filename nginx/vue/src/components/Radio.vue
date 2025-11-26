@@ -8,7 +8,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-const streamUrl = "/radio/stream";
+const streamMount = ref("");
+const streamUrl = ref("");
 const streamLive = ref(false);
 const audio = ref(null);
 
@@ -17,11 +18,15 @@ const checkStream = async () => {
         const res = await fetch("/radio/status-json.xsl"); // Icecast JSON status
         const data = await res.json();
         // Replace 'mounts' and '/stream' with your Icecast mountpoint
-        streamLive.value = !!data.icestats.source.find((src) =>
-            src.listenurl.includes(streamUrl),
-        );
-        if (streamLive.value && audio.value) {
-            audio.value.load(); // reload audio if it was offline before
+        streamMount.value = data.icestats.source[0].listenurl.split("/").pop();
+
+        if (streamMount.value) {
+            streamLive.value = true;
+            streamUrl.value = "/radio/" + streamMount.value;
+
+            if (audio.value) {
+                audio.value.load(); // reload audio if it was offline before
+            }
         }
     } catch (err) {
         streamLive.value = false;
