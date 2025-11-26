@@ -3,6 +3,7 @@
         <audio v-if="streamLive" controls :src="streamUrl" ref="audio"></audio>
         <p v-else>Stream is currently offline.</p>
     </div>
+    <button @click="checkStream()" />
 </template>
 
 <script setup>
@@ -13,7 +14,7 @@ const streamUrl = ref("");
 const streamLive = ref(false);
 const audio = ref(null);
 
-const checkStream = async () => {
+async function checkStream() {
     try {
         const res = await fetch("/radio/status-json.xsl"); // Icecast JSON status
         const data = await res.json();
@@ -29,14 +30,7 @@ const checkStream = async () => {
     } catch (err) {
         streamLive.value = false;
     }
-};
-
-// Check on mount
-onMounted(() => {
-    checkStream();
-    // Poll every 10 seconds
-    setInterval(checkStream, 10000);
-});
+}
 </script>
 
 <style scoped></style>
