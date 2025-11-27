@@ -175,7 +175,7 @@ td {
 
 th {
     border: 2px solid var(--tertiary);
-    /*padding: 1px 0px 1px 7px;*/
+    padding: 1px 0px 1px 7px;
     font-family: var(--font-heading);
     font-size: var(--font-size-tableheading);
     background-color: var(--quaternary);
