@@ -1,10 +1,13 @@
 <template>
-    <div class="spotify-now-playing">
-        <img :src="playing ? albumImage : '/img/Untitled.png'" />
-        <p><strong v-if="playing">Song:</strong> {{ songName }}</p>
-        <p><strong v-if="playing">Artist:</strong> {{ artistName }}</p>
-        <p v-if="playing">Status: Playing</p>
-        <p v-else>Status: Not playing</p>
+    <div v-if="playing" class="spotify-now-playing">
+        <img :src="albumImage" />
+        <p><strong>Song:</strong> {{ songName }}</p>
+        <p><strong>Artist:</strong> {{ artistName }}</p>
+        <p>Is what im currently listening to rnrnrn ^_^</p>
+    </div>
+    <div v-else class="spotify-not-playing">
+        <img src="/img/Untitled.png" />
+        <p>I ain't listenin to nofin</p>
     </div>
 </template>
 
@@ -20,20 +23,25 @@ export default {
         const songUrl = ref("");
         const playing = ref(false);
 
-        const fetchSpotify = async () => {
+        async function fetchSpotify() {
             try {
                 const res = await fetch("/api/spotify");
                 if (!res.ok) throw new Error("Failed to fetch Spotify data");
                 const data = await res.json();
-                albumImage.value = data.album_image;
-                artistName.value = data.artist_name;
-                songUrl.value = data.song_url;
-                songName.value = data.song_name;
-                playing.value = data.playing;
+                if (playing.value == false) {
+                    return;
+                } else {
+                    albumImage.value = data.album_image;
+                    artistName.value = data.artist_name;
+                    songUrl.value = data.song_url;
+                    songName.value = data.song_name;
+                    playing.value = data.playing;
+                    return;
+                }
             } catch (err) {
                 console.error(err);
             }
-        };
+        }
 
         onMounted(() => {
             fetchSpotify();
@@ -60,11 +68,10 @@ export default {
     box-shadow: 3px;
 }
 
-.spotify-now-playing img {
-    width: 200px;
-    height: 200px;
-    object-fit: cover;
-    box-shadow: 3px;
-    margin-bottom: 10px;
+.spotify-not-playing {
+    border: 2px solid black;
+    align-items: center;
+    text-align: center;
+    background: white;
 }
 </style>

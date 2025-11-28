@@ -1,7 +1,11 @@
 <template>
-    <div>
-        <audio v-if="streamLive" controls :src="streamUrl" ref="audio"></audio>
-        <p v-else>Stream is currently offline.</p>
+    <div v-if="streamLive" class="stream-live">
+        <img src="/img/tmpen31z3pe.PNG" />
+        <audio controls :src="streamUrl" ref="audio"></audio>
+    </div>
+    <div v-else class="stream-not-live">
+        <img src="/img/tmpen31z3pe.PNG" />
+        <p>Stream is currently offline.</p>
         <button @click="checkStream()">Check Stream</button>
     </div>
 </template>
@@ -18,9 +22,8 @@ async function checkStream() {
     try {
         const res = await fetch("/radio/status-json.xsl"); // Icecast JSON status
         const data = await res.json();
-        // Replace 'mounts' and '/stream' with your Icecast mountpoint
-        streamMount.value = data.icestats.source.listenurl.split("/").pop();
 
+        streamMount.value = data.icestats.source.listenurl.split("/").pop();
         if (streamMount.value) {
             streamLive.value = true;
             streamUrl.value = "/radio/" + streamMount.value;
@@ -31,6 +34,22 @@ async function checkStream() {
         streamLive.value = false;
     }
 }
+
+onMounted(() => {
+    checkStream();
+    setInterval(checkStream, 30000);
+});
 </script>
 
-<style scoped></style>
+<style scoped>
+.stream-live {
+    background: white;
+    border: 2px solid black;
+    text-align: center;
+}
+.stream-not-live {
+    background: white;
+    border: 2px solid black;
+    text-align: center;
+}
+</style>
