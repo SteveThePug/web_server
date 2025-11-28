@@ -1,22 +1,31 @@
-/* Printing */
+/* PRINTING */
 @media print {
     .no-print {
         display: none !important;
     }
 }
+/* END OF PRINTING */
 
-/* Variables */
-/* Blue - Beige */
+/* FONTS */
+@font-face {
+    font-family: "big_noodle_titling";
+    src: url("/fonts/big_noodle_titling.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "CreatoDisplay";
+    src: url("/fonts/CreatoDisplay-Bold.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+/* END OF FONTS */
+
+/* VARIABLES */
 :root {
-    /*--primary: #bfb04c;
-    --secondary: #bdad46;
-    --tertiary: #4b5743;
-    --quaternary: #3e4637;
-    --background_paper: #453d3e;
-    --background: #353d2e;*/
-
-    --primary: #f74510;
-    --secondary: #c6b652;
+    --primary: black;
+    --secondary: black;
     --tertiary: #5a6952;
     --quaternary: #424542;
     --background_paper1: #293029;
@@ -24,41 +33,15 @@
     --background_paper3: #293009;
     --background: #5a6952;
 
-    /*--tertiary: #948979;*/
-    /*--quaternary: #f5bb78;*/
-    /*--background: #c4bbb8;*/
-    /*--background_paper: #dfd0b8;*/
+    --font-heading: big_noodle_titling;
+    --font-text: CreatoDisplay;
 }
+/* END OF VARIABLES */
 
+/* ELEMENTS */
 body {
-    /*background-image: linear-gradient(to bottom, aqua, blue);*/
-    font-family:
-        "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
-
-    /*width: 100vw;*/
-    /*height: 100vh;*/
-
-    /*background-image: url("../img/background.png");
-    background-size: cover;*/
-    background-color: var(--background);
-}
-
-div {
-    background-color: var(--background_paper1);
-    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
-    border: solid 2px var(--primary);
-}
-
-div > div {
-    background-color: var(--background_paper2);
-    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
-    border: solid 2px var(--primary);
-}
-
-div > div > div {
-    background-color: var(--background_paper3);
-    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
-    border: solid 2px var(--primary);
+    margin: 0 auto;
+    font-family: var(--font-text);
 }
 
 p {
@@ -70,6 +53,29 @@ h2,
 h3,
 h4 {
     color: var(--primary);
+    font-family: var(--font-heading);
+}
+
+img {
+    width: 100%;
+    object-fit: contain;
+}
+
+/* END OF ELEMENTS */
+
+/* CLASSES */
+.bordered-1 {
+    width: 300px;
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
+    /*padding: 15px;*/
+    border: 30px solid;
+    border-image: url("/img/borders/border-minimal.png") 30 round;
+    /*border-image: url("/img/borders/border2.png") 30;*/
+}
+
+.flex-row {
+    display: flexbox;
+    flex-direction: row;
 }
 
 .album-img {
@@ -114,3 +120,5 @@ h4 {
     margin: 0 auto;
     /* Centers the page horizontally */
 }
+
+/* END OF CLASSES */
