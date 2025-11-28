@@ -1,7 +1,5 @@
 <template>
     <main>
-        <RouterLink class="no-print" to="/">Home</RouterLink>
-
         <div
             class="no-print"
             style="width: 100%; text-align: center; margin: 20px 0"
@@ -350,4 +348,8 @@
 
 <style scoped>
 @import url("/css/cv_styles.css");
+
+main {
+    overflow-y: scroll;
+}
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <nav class="no-print">
+    <nav class="no-print flex-row">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/cv">CV</RouterLink>
     </nav>
@@ -7,10 +7,6 @@
 
 <style>
 nav {
-    position: fixed;
-    width: 100%;
-    left: 0;
-    top: 0;
-    background: var(--background);
+    height: 10vh;
 }
 </style>

@@ -4,31 +4,49 @@ import Radio from "@/components/Radio.vue";
 </script>
 
 <template>
-    <Spotify class="floating" style="left: 10vw; top: 10vh" />
-    <Radio class="floating" style="left: 90vw; top: 10vh" />
+    <main>
+        <div class="bordered-1">
+            <h1>Welcome</h1>
+            <img src="/img/epic.jpeg" />
 
-    <main class="a4page">
-        <h1>Welcome</h1>
-        <img src="/img/epic.jpeg" />
+            <h2>whoami?</h2>
+            <p>Hi im Adam</p>
+        </div>
 
-        <h2>whoami?</h2>
-        <p>Hi im Adam</p>
+        <div class="bordered-1">
+            <h2>cv</h2>
+            <RouterLink to="/cv">cv</RouterLink>
+        </div>
 
-        <h2>cv</h2>
-        <RouterLink to="/cv">cv</RouterLink>
+        <div class="bordered-1">
+            <h2>bookmarks</h2>
+            <RouterLink to="/bookmarks">bookmarks</RouterLink>
+        </div>
 
-        <h2>bookmarks</h2>
-        <RouterLink to="/bookmarks">bookmarks</RouterLink>
-
-        <div>
+        <div class="bordered-1">
             <h2>Shrines</h2>
             <RouterLink to="/shrines/gto">gto</RouterLink>
-            <RouterLink to="/shrine/demoman">demoman</RouterLink>
+            <RouterLink to="/shrines/demoman">demoman</RouterLink>
             <RouterLink to="/shrines/skipskipbenben">skipskipbenben</RouterLink>
             <RouterLink to="/shrines/evangelion">evangelion</RouterLink>
+        </div>
+
+        <div class="bordered-1">
+            <Spotify class="border" />
+        </div>
+        <div class="bordered-1">
+            <Radio />
         </div>
     </main>
 </template>
 
-<styles scoped>
-</styles>
+<style scoped>
+main {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+</style>
