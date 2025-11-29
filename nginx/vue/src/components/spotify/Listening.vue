@@ -24,7 +24,6 @@ export default {
                 const res = await fetch("/api/spotify/listening");
                 if (!res.ok) throw new Error("Failed to fetch Spotify data");
                 song.value = await res.json();
-                console.log(data);
             } catch (err) {
                 console.error(err);
             }

@@ -1,12 +1,12 @@
 <template>
     <div
         v-for="(song, idx) in played"
-        :key="song.item.id || idx"
+        :key="song.track.id || idx"
         class="spotify-now-playing"
     >
-        <img :src="song.item.album.images[0].url" />
-        <p><strong>Song:</strong> {{ song.item.name }}</p>
-        <p><strong>Artist:</strong> {{ song.item.artists[0].name }}</p>
+        <img :src="song.track.album.images[0].url" />
+        <p><strong>Song:</strong> {{ song.track.name }}</p>
+        <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         <p>Is what im currently listening to rnrnrn ^_^</p>
     </div>
 </template>
