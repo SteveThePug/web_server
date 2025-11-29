@@ -39,6 +39,6 @@ async function checkStream() {
 
 onMounted(() => {
     checkStream();
-    setInterval(checkStream, 30000);
+    setInterval(checkStream, 120000);
 });
 </script>

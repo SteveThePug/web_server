@@ -90,7 +90,7 @@ video {
 
 .border-cv {
     border: 30px solid;
-    border-image: url("/img/borders/bordercv.gif") 30 round;
+    border-image: url("/img/borders/bordercv.png") 30 round;
 }
 
 .shadow1 {
