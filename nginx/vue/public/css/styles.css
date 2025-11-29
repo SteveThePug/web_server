@@ -86,7 +86,7 @@ video {
 }
 
 .flex-row {
-    display: flexbox;
+    display: flex;
     flex-direction: row;
 }
 
