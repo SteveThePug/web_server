@@ -70,18 +70,34 @@ video {
 /* END OF ELEMENTS */
 
 /* CLASSES */
-.bordered-1 {
+.tile1 {
     width: 300px;
-    /*box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);*/
-    /*padding: 15px;*/
-    border: 30px solid;
-    border-image: url("/img/borders/border3.gif") 30 round;
-    /*border-image: url("/img/borders/border2.png") 30;*/
 }
 
-.bordered-2 {
-    background: white;
+.tile3 {
+    width: 900px;
+}
+
+.border1 {
+    border: 30px solid;
+    border-image: url("/img/borders/border3.gif") 30 round;
+}
+
+.border2 {
     border: 2px solid black;
+    text-align: center;
+}
+
+.shadow1 {
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
+}
+
+.bg-white {
+    background: white;
+}
+
+.center-content {
+    align-items: center;
     text-align: center;
 }
 
