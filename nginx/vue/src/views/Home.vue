@@ -5,9 +5,9 @@ import Radio from "@/components/Radio.vue";
 </script>
 
 <template>
-    <main>
+    <main class="flex-row">
         <div class="border1 tile1">
-            <div class="border2">
+            <div class="border2 bg-white shadow1">
                 <img src="/img/epic.jpeg" />
                 <h1>Welcome</h1>
                 <p>Hi im Adam</p>
@@ -15,7 +15,7 @@ import Radio from "@/components/Radio.vue";
         </div>
 
         <div class="border1 tile1">
-            <div class="border2">
+            <div class="border2 bg-white shadow1">
                 <!-- <video>
                     <source src="/img/memes/1761540684738196.webm" />
                 </video> -->
@@ -50,26 +50,15 @@ import Radio from "@/components/Radio.vue";
         </div> -->
 
         <div class="border1 tile1">
-            <SpotifyListening class="border2 bg-white" />
+            <SpotifyListening class="border2 bg-white shadow1" />
         </div>
 
         <div class="border1 tile1">
-            <Radio />
+            <Radio class="border2 bg-white shadow1" />
         </div>
 
         <div class="border1 tile3">
-            <SpotifyRecent class="border" />
+            <SpotifyRecent />
         </div>
     </main>
 </template>
-
-<style scoped>
-main {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    /*align-items: center;*/
-    justify-content: center;
-    gap: 1rem;
-}
-</style>

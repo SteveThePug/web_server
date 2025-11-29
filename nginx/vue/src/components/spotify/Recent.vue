@@ -1,12 +1,14 @@
 <template>
-    <div
-        v-for="(song, idx) in played"
-        :key="song.track.id || idx"
-        class="tile1"
-    >
-        <img :src="song.track.album.images[0].url" />
-        <p><strong>Song:</strong> {{ song.track.name }}</p>
-        <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
+    <div class="flex-row">
+        <div
+            v-for="(song, idx) in played"
+            :key="song.track.id || idx"
+            class="tile1 bg-white border2 shadow1"
+        >
+            <img :src="song.track.album.images[0].url" />
+            <p><strong>Song:</strong> {{ song.track.name }}</p>
+            <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
+        </div>
     </div>
 </template>
 

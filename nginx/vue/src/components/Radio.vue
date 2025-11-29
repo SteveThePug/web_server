@@ -1,9 +1,9 @@
 <template>
-    <div v-if="streamLive" class="stream-live">
+    <div v-if="streamLive">
         <img src="/img/tmpen31z3pe.PNG" />
         <audio controls :src="streamUrl" ref="audio"></audio>
     </div>
-    <div v-else class="stream-not-live">
+    <div v-else>
         <img src="/img/tmpen31z3pe.PNG" />
         <p>Stream is currently offline.</p>
         <button @click="checkStream()">Check Stream</button>
@@ -40,16 +40,3 @@ onMounted(() => {
     setInterval(checkStream, 30000);
 });
 </script>
-
-<style scoped>
-.stream-live {
-    background: white;
-    border: 2px solid black;
-    text-align: center;
-}
-.stream-not-live {
-    background: white;
-    border: 2px solid black;
-    text-align: center;
-}
-</style>
