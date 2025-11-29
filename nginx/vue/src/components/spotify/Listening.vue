@@ -36,10 +36,7 @@ export default {
         });
 
         return {
-            albumImage,
-            artistName,
-            songName,
-            playing,
+            song,
         };
     },
 };
