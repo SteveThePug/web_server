@@ -1,5 +1,6 @@
 <script setup>
-import Spotify from "@/components/Spotify.vue";
+import SpotifyListening from "@/components/spotify/Listening.vue";
+import SpotifyRecent from "@/components/spotify/Recent.vue";
 import Radio from "@/components/Radio.vue";
 </script>
 
@@ -49,8 +50,13 @@ import Radio from "@/components/Radio.vue";
         </div> -->
 
         <div class="bordered-1">
-            <Spotify class="border" />
+            <SpotifyListening class="border" />
         </div>
+
+        <div class="bordered-1">
+            <SpotifyRecent class="border" />
+        </div>
+
         <div class="bordered-1">
             <Radio />
         </div>

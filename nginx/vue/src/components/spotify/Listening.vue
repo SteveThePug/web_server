@@ -1,8 +1,8 @@
 <template>
-    <div v-if="playing" class="spotify-now-playing">
-        <img :src="albumImage" />
-        <p><strong>Song:</strong> {{ songName }}</p>
-        <p><strong>Artist:</strong> {{ artistName }}</p>
+    <div v-if="song.is_playing" class="spotify-now-playing">
+        <img :src="song.item.album.images[0].url" />
+        <p><strong>Song:</strong> {{ song.item.name }}</p>
+        <p><strong>Artist:</strong> {{ song.item.artists[0].name }}</p>
         <p>Is what im currently listening to rnrnrn ^_^</p>
     </div>
     <div v-else class="spotify-not-playing">
@@ -15,29 +15,16 @@
 import { ref, onMounted } from "vue";
 
 export default {
-    name: "SpotifyNowPlaying",
+    name: "spotify-listening",
     setup() {
-        const albumImage = ref("");
-        const artistName = ref("");
-        const songName = ref("");
-        const songUrl = ref("");
-        const playing = ref(false);
+        const song = ref({});
 
         async function fetchSpotify() {
             try {
-                const res = await fetch("/api/spotify");
+                const res = await fetch("/api/spotify/listening");
                 if (!res.ok) throw new Error("Failed to fetch Spotify data");
-                const data = await res.json();
-                if (playing.value == false) {
-                    return;
-                } else {
-                    albumImage.value = data.album_image;
-                    artistName.value = data.artist_name;
-                    songUrl.value = data.song_url;
-                    songName.value = data.song_name;
-                    playing.value = data.playing;
-                    return;
-                }
+                song.value = await res.json();
+                console.log(data);
             } catch (err) {
                 console.error(err);
             }
