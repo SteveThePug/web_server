@@ -6,7 +6,7 @@ import Radio from "@/components/Radio.vue";
 
 <template>
     <main class="flex-row">
-        <div class="border1 tile1">
+        <div class="border4 tile1">
             <div class="border2 bg-white shadow1">
                 <img src="/img/epic.jpeg" />
                 <div class="margin1">
