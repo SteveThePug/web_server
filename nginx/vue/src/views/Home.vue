@@ -6,16 +6,16 @@ import Radio from "@/components/Radio.vue";
 
 <template>
     <main>
-        <div class="bordered-1">
-            <div class="bordered-2">
+        <div class="border1 tile1">
+            <div class="border2">
                 <img src="/img/epic.jpeg" />
                 <h1>Welcome</h1>
                 <p>Hi im Adam</p>
             </div>
         </div>
 
-        <div class="bordered-1">
-            <div class="bordered-2">
+        <div class="border1 tile1">
+            <div class="border2">
                 <!-- <video>
                     <source src="/img/memes/1761540684738196.webm" />
                 </video> -->
@@ -49,16 +49,16 @@ import Radio from "@/components/Radio.vue";
             </div>
         </div> -->
 
-        <div class="bordered-1">
-            <SpotifyListening class="border" />
+        <div class="border1 tile1">
+            <SpotifyListening class="border2 bg-white" />
         </div>
 
-        <div class="bordered-1">
-            <SpotifyRecent class="border" />
-        </div>
-
-        <div class="bordered-1">
+        <div class="border1 tile1">
             <Radio />
+        </div>
+
+        <div class="border1 tile3">
+            <SpotifyRecent class="border" />
         </div>
     </main>
 </template>

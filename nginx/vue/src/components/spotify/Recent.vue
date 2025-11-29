@@ -2,12 +2,11 @@
     <div
         v-for="(song, idx) in played"
         :key="song.track.id || idx"
-        class="spotify-now-playing"
+        class="tile1"
     >
         <img :src="song.track.album.images[0].url" />
         <p><strong>Song:</strong> {{ song.track.name }}</p>
         <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
-        <p>Is what im currently listening to rnrnrn ^_^</p>
     </div>
 </template>
 
@@ -40,21 +39,3 @@ export default {
     },
 };
 </script>
-
-<style scoped>
-.spotify-now-playing {
-    width: fit-content;
-    height: fit-content;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    box-shadow: 3px;
-}
-
-.spotify-not-playing {
-    border: 2px solid black;
-    align-items: center;
-    text-align: center;
-    background: white;
-}
-</style>
