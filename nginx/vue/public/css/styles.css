@@ -89,7 +89,7 @@ video {
 }
 
 .border4 {
-    border: 30px solid;
+    border: 7px solid;
     border-image: url("/img/borders/border4.gif") 7 round;
 }
 
