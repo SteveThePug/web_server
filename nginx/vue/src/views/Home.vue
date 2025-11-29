@@ -16,7 +16,7 @@ import Radio from "@/components/Radio.vue";
             </div>
         </div>
 
-        <div class="bordercv tile1">
+        <div class="border-cv tile1">
             <div class="border2 bg-white shadow1">
                 <!-- <video>
                     <source src="/img/memes/1761540684738196.webm" />
