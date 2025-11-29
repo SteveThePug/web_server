@@ -7,7 +7,7 @@ import Radio from "@/components/Radio.vue";
 <template>
     <main class="flex-row">
         <div class="border4 tile1">
-            <div class="border2 bg-white shadow1">
+            <div class="border2 bg-white shadow1 fill">
                 <img src="/img/epic.jpeg" />
                 <div class="margin1">
                     <h1>Welcome</h1>
@@ -17,7 +17,7 @@ import Radio from "@/components/Radio.vue";
         </div>
 
         <div class="border-cv tile1">
-            <div class="border2 bg-white shadow1">
+            <div class="border2 bg-white shadow1 fill">
                 <!-- <video>
                     <source src="/img/memes/1761540684738196.webm" />
                 </video> -->
@@ -52,7 +52,7 @@ import Radio from "@/components/Radio.vue";
         </div> -->
 
         <div class="border1 tile1">
-            <Radio class="border2 bg-white shadow1" />
+            <Radio class="border2 fill bg-white shadow1" />
         </div>
 
         <div class="border1 tile3">
@@ -60,7 +60,7 @@ import Radio from "@/components/Radio.vue";
         </div>
 
         <div class="border1 tile1">
-            <SpotifyListening class="border2 bg-white shadow1" />
+            <SpotifyListening class="border2 bg-white shadow1 fill" />
         </div>
     </main>
 </template>
