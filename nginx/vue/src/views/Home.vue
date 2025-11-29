@@ -52,7 +52,7 @@ import Radio from "@/components/Radio.vue";
         </div> -->
 
         <div class="border1 tile1">
-            <Radio class="fill bg-white shadow1" />
+            <Radio class="fill bg-white border2 shadow1" />
         </div>
 
         <div class="border1 tile3">

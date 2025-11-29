@@ -1,5 +1,5 @@
 <template>
-    <h2 class="center-content">What've been listening to recently</h2>
+    <h2 class="center-content">Listening to RECENTLY</h2>
     <div class="flex-row">
         <div
             v-for="(song, idx) in played"
