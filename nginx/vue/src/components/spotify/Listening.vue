@@ -7,7 +7,7 @@
     </div>
     <div v-else class="center-content">
         <img src="/img/Untitled.png" />
-        <p>I ain't listenin to nofin</p>
+        <p>I ain't listenin to nofin rn</p>
     </div>
 </template>
 

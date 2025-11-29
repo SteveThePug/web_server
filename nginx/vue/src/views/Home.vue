@@ -9,8 +9,10 @@ import Radio from "@/components/Radio.vue";
         <div class="border1 tile1">
             <div class="border2 bg-white shadow1">
                 <img src="/img/epic.jpeg" />
-                <h1>Welcome</h1>
-                <p>Hi im Adam</p>
+                <div class="margin1">
+                    <h1>Welcome</h1>
+                    <p>Hi im Adam, this is my website, pls don't greif</p>
+                </div>
             </div>
         </div>
 
@@ -50,15 +52,15 @@ import Radio from "@/components/Radio.vue";
         </div> -->
 
         <div class="border1 tile1">
-            <SpotifyListening class="border2 bg-white shadow1" />
-        </div>
-
-        <div class="border1 tile1">
             <Radio class="border2 bg-white shadow1" />
         </div>
 
         <div class="border1 tile3">
             <SpotifyRecent />
+        </div>
+
+        <div class="border1 tile1">
+            <SpotifyListening class="border2 bg-white shadow1" />
         </div>
     </main>
 </template>

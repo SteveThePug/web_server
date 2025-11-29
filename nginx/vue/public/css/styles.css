@@ -117,6 +117,10 @@ video {
     gap: 1rem;
 }
 
+.margin1 {
+    margin: 10px;
+}
+
 .album-img {
     width: 50mm;
     height: 50mm;

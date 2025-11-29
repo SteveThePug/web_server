@@ -5,8 +5,10 @@
     </div>
     <div v-else>
         <img src="/img/tmpen31z3pe.PNG" />
-        <p>Stream is currently offline.</p>
-        <button @click="checkStream()">Check Stream</button>
+        <div class="margin1">
+            <p>Stream is offline. Tune in Fridays @ 6:00pm, Monday @ 8:00am</p>
+            <button @click="checkStream()">Check Stream</button>
+        </div>
     </div>
 </template>
 
