@@ -1,6 +1,6 @@
 <template>
     <h2 class="center-content">Listening to RN! ^_^</h2>
-    <div v-if="song.is_playing" class="center-content">
+    <div v-if="song.is_playing" class="center-content bg-white border2 shadow1">
         <img :src="song.item.album.images[0].url" />
         <p><strong>Song:</strong> {{ song.item.name }}</p>
         <p><strong>Artist:</strong> {{ song.item.artists[0].name }}</p>
