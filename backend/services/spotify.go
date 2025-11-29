@@ -78,6 +78,7 @@ func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotif
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeUserReadPlaybackState,
 			spotifyauth.ScopeUserReadCurrentlyPlaying,
+			spotifyauth.ScopeUserReadRecentlyPlayed,
 		),
 	)
 

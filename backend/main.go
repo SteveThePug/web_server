@@ -50,7 +50,8 @@ func main() {
 	r.POST("/refresh", store.RefreshToken)
 
 	r.GET("/callback", store.CompleteSpotifyAuth)
-	r.GET("/spotify", store.ListeningTo)
+	r.GET("/spotify/listening", store.ListeningTo)
+	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
 
 	r.GET("/", func(c *gin.Context) {
