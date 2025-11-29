@@ -1,9 +1,11 @@
 <template>
+    <h2>What've been listening to recently</h2>
     <div class="flex-row">
         <div
             v-for="(song, idx) in played"
             :key="song.track.id || idx"
-            class="tile1 bg-white border2 shadow1"
+            class="bg-white border2 shadow1"
+            style="width: 280px"
         >
             <img :src="song.track.album.images[0].url" />
             <p><strong>Song:</strong> {{ song.track.name }}</p>
