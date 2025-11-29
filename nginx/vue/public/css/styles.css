@@ -88,6 +88,11 @@ video {
     text-align: center;
 }
 
+.border-cv {
+    border: 30px solid;
+    border-image: url("/img/borders/bordercv.png") 30 round;
+}
+
 .shadow1 {
     box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
 }
