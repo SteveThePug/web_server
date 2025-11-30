@@ -62,5 +62,13 @@ import Radio from "@/components/Radio.vue";
         <div class="border1 tile1">
             <SpotifyListening class="border2 bg-white shadow1 fill" />
         </div>
+
+        <div class="border1 tile1">
+            <Posts />
+        </div>
+
+        <div class="border1 tile1">
+            <Login />
+        </div>
     </main>
 </template>
