@@ -9,7 +9,6 @@ import (
 )
 
 func (store *Store) AuthMiddlewear(ctx *gin.Context) {
-
 	access_token, err := ctx.Cookie("access_token")
 	if err != nil {
 		ctx.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
@@ -25,6 +24,26 @@ func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 	// store claims in Gin context
 	ctx.Set("userClaims", claims)
 	ctx.Next()
+}
+
+func (store *Store) CheckToken(ctx *gin.Context) {
+	access_token, err := ctx.Cookie("access_token")
+	if err != nil {
+		ctx.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	claims, err := store.Auth.VerifyJWT(access_token)
+	if err != nil {
+		ctx.JSON(401, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{
+		"id":       (*claims)["id"],
+		"username": (*claims)["username"],
+		"admin":    (*claims)["admin"],
+	}})
 }
 
 func (store *Store) RefreshToken(ctx *gin.Context) {
@@ -76,7 +95,6 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 	)
 
 	ctx.JSON(http.StatusAccepted, gin.H{"data": user})
-
 }
 
 func (store *Store) Login(ctx *gin.Context) {
