@@ -5,6 +5,7 @@ import (
 
 	"adam-french.co.uk/backend/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,35 +31,41 @@ func (store *Store) CreateUser(ctx *gin.Context) {
 	store.DB.Create(&user)
 
 	// Generate JWT token
+	tokens, err := store.Auth.GenerateJWT(&user)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.SetCookie(
+		"access_token",
+		tokens.AccessToken,
+		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
+	ctx.SetCookie(
+		"refresh_token",
+		tokens.RefreshToken,
+		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
 
 	ctx.JSON(http.StatusOK, gin.H{"data": user})
 }
 
-func (store *Store) LoginUser(ctx *gin.Context) {
-	var input UserCredentials
-	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user := models.User{Username: input.Username}
-	if err := store.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
+func (store *Store) GetUser(ctx *gin.Context) {
+	userID := ctx.Param("id")
+	var user models.User
+	if err := store.DB.First(&user, userID).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(input.Password)); err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Generate JWT token
-
-	ctx.JSON(http.StatusAccepted, gin.H{"data": user})
-}
-
-func (store *Store) GetUser(ctx *gin.Context) {
-
+	ctx.JSON(http.StatusOK, gin.H{"data": user})
 }
 
 func (store *Store) GetUsers(ctx *gin.Context) {
@@ -67,9 +74,63 @@ func (store *Store) GetUsers(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": models.Post{}})
+	ctx.JSON(http.StatusOK, gin.H{"data": users})
 }
 
-func (store *Store) UpdateUser(c *gin.Context) {
+func (store *Store) UpdateUser(ctx *gin.Context) {
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	userID, ok := (*claims)["id"].(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+
+	var user models.User
+	if err := store.DB.First(&user, userID).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusInternalServerError, gin.H{"error": "will be implemented"})
+}
+
+func (store *Store) DeleteUser(ctx *gin.Context) {
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	userID, ok := (*claims)["id"].(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+
+	var user models.User
+	if err := store.DB.First(&user, userID).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	store.DB.Delete(&user)
+	ctx.JSON(http.StatusOK, gin.H{"data": user})
 
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"time"
 
 	"adam-french.co.uk/backend/models"
@@ -8,11 +9,15 @@ import (
 )
 
 type Auth struct {
-	config *AuthConfig
+	Config *AuthConfig
 }
 
 type AuthConfig struct {
-	Secret []byte
+	Secret               []byte
+	Domain               string
+	AccessTokenLifetime  time.Duration
+	RefreshTokenLifetime time.Duration
+	Endpoint             string
 }
 
 type Tokens struct {
@@ -21,7 +26,7 @@ type Tokens struct {
 }
 
 func InitAuth(config *AuthConfig) *Auth {
-	auth := Auth{config: config}
+	auth := Auth{Config: config}
 
 	return &auth
 }
@@ -31,20 +36,20 @@ func (auth *Auth) GenerateJWT(user *models.User) (*Tokens, error) {
 		"username": user.Username,
 		"id":       user.ID,
 		"admin":    user.Admin,
-		"exp":      time.Now().AddDate(0, 0, 1).Unix(),
+		"exp":      time.Now().Add(auth.Config.AccessTokenLifetime).Unix(),
 	})
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  user.ID,
-		"exp": time.Now().AddDate(1, 0, 0).Unix(),
+		"exp": time.Now().Add(auth.Config.RefreshTokenLifetime).Unix(),
 	})
 
-	accessTokenString, err := accessToken.SignedString(auth.config.Secret)
+	accessTokenString, err := accessToken.SignedString(auth.Config.Secret)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshTokenString, err := refreshToken.SignedString(auth.config.Secret)
+	refreshTokenString, err := refreshToken.SignedString(auth.Config.Secret)
 	if err != nil {
 		return nil, err
 	}
@@ -52,17 +57,20 @@ func (auth *Auth) GenerateJWT(user *models.User) (*Tokens, error) {
 	return &Tokens{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
 }
 
-func (auth *Auth) VerifyJWT(tokens Tokens) (*jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokens.AccessToken, func(token *jwt.Token) (any, error) {
-		return auth.config.Secret, nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+func (auth *Auth) keyFunc(_ *jwt.Token) (any, error) {
+	return auth.Config.Secret, nil
+}
+
+func (auth *Auth) VerifyJWT(tokenStr string) (*jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenStr, auth.keyFunc, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return &claims, nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("Invalid token claims type")
 	}
 
-	return nil, err
+	return &claims, nil
 }

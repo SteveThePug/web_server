@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -31,25 +32,34 @@ func main() {
 	spotifyAuth, client := services.InitSpotifyAuth(&spotifyConfig)
 
 	authSecret := os.Getenv("BACKEND_SECRET")
-	authConfig := services.AuthConfig{Secret: []byte(authSecret)}
+	domainName := os.Getenv("DOMAIN")
+	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
+	accessTokenLifetime := 24 * time.Hour
+	refreshTokenLifetime := 365 * 24 * time.Hour
+	authConfig := services.AuthConfig{Secret: []byte(authSecret), Domain: domainName, RefreshTokenLifetime: refreshTokenLifetime, AccessTokenLifetime: accessTokenLifetime, Endpoint: backendEndpoint}
 	auth := services.InitAuth(&authConfig)
 
 	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth}
 
 	r := gin.Default()
+	protected := r.Group("/", store.AuthMiddlewear)
 
 	r.GET("/posts", store.GetPosts)
-	r.POST("/posts", store.CreatePost)
-	r.PUT("/posts/:id", store.UpdatePost)
+	protected.POST("/posts", store.CreatePost)
+	r.GET("/posts/:id", store.GetPost)
+	protected.PUT("/posts/:id", store.UpdatePost)
+	protected.DELETE("/posts/:id", store.DeletePost)
 
 	r.GET("/user/:id", store.GetUser)
+	protected.PUT("/user/:id", store.UpdateUser)
+	protected.DELETE("/user/:id", store.DeleteUser)
 	r.GET("/user", store.GetUsers)
 	r.POST("/user", store.CreateUser)
-	r.PUT("/user", store.UpdateUser)
 
-	r.POST("/refresh", store.RefreshToken)
+	r.POST("/auth/login", store.Login)
+	r.POST("/auth/refresh", store.RefreshToken)
 
-	r.GET("/callback", store.CompleteSpotifyAuth)
+	r.GET("/spotify/callback", store.CompleteSpotifyAuth)
 	r.GET("/spotify/listening", store.ListeningTo)
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)

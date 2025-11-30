@@ -5,12 +5,12 @@ import (
 
 	"adam-french.co.uk/backend/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type CreatePostInput struct {
 	Title   string `json:"title" binding:"required"`
 	Content string `json:"content" binding:"required"`
-	Author  string `json:"author" binding:"required"`
 }
 
 func (store *Store) GetPosts(ctx *gin.Context) {
@@ -19,7 +19,18 @@ func (store *Store) GetPosts(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": models.Post{}})
+	ctx.JSON(http.StatusOK, gin.H{"data": posts})
+}
+
+func (store *Store) GetPost(ctx *gin.Context) {
+	postID := ctx.Param("id")
+	var post models.Post
+	if err := store.DB.First(&post, postID).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": post})
 }
 
 func (store *Store) CreatePost(ctx *gin.Context) {
@@ -29,19 +40,59 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 		return
 	}
 
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	userID, ok := (*claims)["id"].(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+
 	// Create post
-	post := models.Post{Title: input.Title, Content: input.Content, Author: input.Author}
+	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
 	store.DB.Create(&post)
 
-	ctx.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusCreated, gin.H{"data": post})
 }
 
 func (store *Store) UpdatePost(ctx *gin.Context) {
-	id := ctx.Param("id")
+	postID := ctx.Param("id")
 	var post models.Post
-	if err := store.DB.First(&post, id).Error; err != nil {
+	if err := store.DB.First(&post, postID).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
+	}
+
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	userID, ok := (*claims)["id"].(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+
+	if !(userID == post.AuthorID) {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
 	}
 
 	var input CreatePostInput
@@ -52,8 +103,41 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 
 	post.Title = input.Title
 	post.Content = input.Content
-	post.Author = input.Author
 	store.DB.Save(&post)
 
+	ctx.JSON(http.StatusOK, gin.H{"data": post})
+}
+
+func (store *Store) DeletePost(ctx *gin.Context) {
+	postID := ctx.Param("id")
+	var post models.Post
+	if err := store.DB.First(&post, postID).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	userID, ok := (*claims)["id"].(uint)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+
+	if !(userID == post.AuthorID) {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
+	}
+
+	store.DB.Delete(&post)
 	ctx.JSON(http.StatusOK, gin.H{"data": post})
 }
