@@ -13,6 +13,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
+import axios from "axios";
 
 export default {
     name: "spotify-listening",
@@ -21,9 +22,8 @@ export default {
 
         async function fetchSpotify() {
             try {
-                const res = await fetch("/api/spotify/listening");
-                if (!res.ok) throw new Error("Failed to fetch Spotify data");
-                song.value = await res.json();
+                const res = await axios.get("/api/spotify/listening");
+                song.value = res.data;
             } catch (err) {
                 console.error(err);
             }

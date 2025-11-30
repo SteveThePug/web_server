@@ -1,5 +1,5 @@
 <template>
-    <div v-if="loggedIn">
+    <div v-if="!loggedIn">
         <h1>login</h1>
     </div>
 </template>
@@ -10,9 +10,11 @@ export default {
     name: "api-login",
     setup() {
         const loggedIn = ref(false);
+
         onMounted(() => {
             loggedIn.value = true;
         });
+
         return { loggedIn };
     },
 };

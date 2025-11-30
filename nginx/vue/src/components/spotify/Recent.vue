@@ -31,6 +31,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
+import axios from "axios";
 
 export default {
     name: "spotify-recent",
@@ -40,9 +41,8 @@ export default {
 
         async function fetchRecent() {
             try {
-                const res = await fetch("/api/spotify/recent");
-                if (!res.ok) throw new Error("Failed to fetch Spotify data");
-                played.value = await res.json();
+                const res = await axios.get("/api/spotify/recent");
+                played.value = res.data;
                 fetched.value = true;
             } catch (err) {
                 console.error(err);

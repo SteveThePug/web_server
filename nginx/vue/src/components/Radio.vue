@@ -14,6 +14,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import axios from "axios";
 
 const streamMount = ref("");
 const streamUrl = ref("");
@@ -22,15 +23,15 @@ const audio = ref(null);
 
 async function checkStream() {
     try {
-        const res = await fetch("/radio/status-json.xsl"); // Icecast JSON status
-        const data = await res.json();
+        const res = await axios.get("/radio/status-json.xsl");
+        const data = res.data;
 
         streamMount.value = data.icestats.source.listenurl.split("/").pop();
         if (streamMount.value) {
             streamLive.value = true;
             streamUrl.value = "/radio/" + streamMount.value;
 
-            if (audio.value) audio.value.load(); // reload audio if it was offline before
+            if (audio.value) audio.value.load();
         }
     } catch (err) {
         streamLive.value = false;
