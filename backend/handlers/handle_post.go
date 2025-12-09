@@ -19,7 +19,7 @@ func (store *Store) GetPosts(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": posts})
+	ctx.JSON(http.StatusOK, posts)
 }
 
 func (store *Store) GetPost(ctx *gin.Context) {
@@ -30,7 +30,7 @@ func (store *Store) GetPost(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusOK, post)
 }
 
 func (store *Store) CreatePost(ctx *gin.Context) {
@@ -62,7 +62,7 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
 	store.DB.Create(&post)
 
-	ctx.JSON(http.StatusCreated, gin.H{"data": post})
+	ctx.JSON(http.StatusCreated, post)
 }
 
 func (store *Store) UpdatePost(ctx *gin.Context) {
@@ -97,7 +97,7 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 
 	var input CreatePostInput
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -105,14 +105,14 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 	post.Content = input.Content
 	store.DB.Save(&post)
 
-	ctx.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusOK, post)
 }
 
 func (store *Store) DeletePost(ctx *gin.Context) {
 	postID := ctx.Param("id")
 	var post models.Post
 	if err := store.DB.First(&post, postID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -139,5 +139,5 @@ func (store *Store) DeletePost(ctx *gin.Context) {
 	}
 
 	store.DB.Delete(&post)
-	ctx.JSON(http.StatusOK, gin.H{"data": post})
+	ctx.JSON(http.StatusOK, post)
 }

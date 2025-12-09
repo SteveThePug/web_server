@@ -17,13 +17,13 @@ type UserCredentials struct {
 func (store *Store) CreateUser(ctx *gin.Context) {
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -33,7 +33,7 @@ func (store *Store) CreateUser(ctx *gin.Context) {
 	// Generate JWT token
 	tokens, err := store.Auth.GenerateJWT(&user)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -54,27 +54,27 @@ func (store *Store) CreateUser(ctx *gin.Context) {
 		true, true,
 	)
 
-	ctx.JSON(http.StatusOK, gin.H{"data": user})
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (store *Store) GetUser(ctx *gin.Context) {
 	userID := ctx.Param("id")
 	var user models.User
 	if err := store.DB.First(&user, userID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": user})
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (store *Store) GetUsers(ctx *gin.Context) {
 	var users []models.User
 	if err := store.DB.Find(&users).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": users})
+	ctx.JSON(http.StatusOK, users)
 }
 
 func (store *Store) UpdateUser(ctx *gin.Context) {
@@ -98,7 +98,7 @@ func (store *Store) UpdateUser(ctx *gin.Context) {
 
 	var user models.User
 	if err := store.DB.First(&user, userID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -126,11 +126,10 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 
 	var user models.User
 	if err := store.DB.First(&user, userID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
 	store.DB.Delete(&user)
-	ctx.JSON(http.StatusOK, gin.H{"data": user})
-
+	ctx.JSON(http.StatusOK,  user)
 }
