@@ -41,11 +41,12 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(401, gin.H{"error": "claims does not contain id"})
 		return
 	}
+	userID := uint(userIDF)
 
 	user := models.User{Model: gorm.Model{ID: userID}}
 	tx := store.DB.First(&user)
@@ -71,11 +72,12 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 
 	fmt.Printf("claims: %v\n", claims)
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid token claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	user := models.User{}
 	tx := store.DB.First(&user, userID)

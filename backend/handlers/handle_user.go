@@ -90,11 +90,12 @@ func (store *Store) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	var user models.User
 	if err := store.DB.First(&user, userID).Error; err != nil {
@@ -118,11 +119,12 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	var user models.User
 	if err := store.DB.First(&user, userID).Error; err != nil {
@@ -131,5 +133,5 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 	}
 
 	store.DB.Delete(&user)
-	ctx.JSON(http.StatusOK,  user)
+	ctx.JSON(http.StatusOK, user)
 }
