@@ -1,74 +1,80 @@
 <script setup>
-import SpotifyListening from "@/components/spotify/Listening.vue";
-import SpotifyRecent from "@/components/spotify/Recent.vue";
-import Radio from "@/components/Radio.vue";
+import Intro from "@/components/home/Intro.vue";
+import Stamps from "@/components/home/Stamps.vue";
+import Listening from "@/components/home/Listening.vue";
+import Links from "@/components/home/Links.vue";
+import Feed from "@/components/home/Feed.vue";
+import Collage from "@/components/home/Collage.vue";
+import Favorites from "@/components/home/Favorites.vue";
+import Gym from "@/components/home/Gym.vue";
+import Watching from "@/components/home/Watching.vue";
 </script>
 
 <template>
-    <main class="flex-row">
-        <div class="border4 tile1 shadow1">
-            <div class="bg-white fill">
-                <img src="/img/epic.jpeg" />
-                <div class="margin1">
-                    <h1>Welcome</h1>
-                    <p>Hi im Adam, this is my website, pls don't greif</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="border-cv tile1">
-            <div class="border2 bg-white shadow1 fill">
-                <!-- <video>
-                    <source src="/img/memes/1761540684738196.webm" />
-                </video> -->
-                <img src="/img/img.png" />
-                <RouterLink to="/cv"><h2>cv</h2></RouterLink>
-            </div>
-        </div>
-
-        <!-- <div class="bordered-1">
-            <div class="bordered-2">
-                <video>
-                    <source src="/img/demoman/m2-res_720p.mp4" />
-                </video>
-                <h2>bookmarks</h2>
-                <RouterLink to="/bookmarks">bookmarks</RouterLink>
-            </div>
-        </div> -->
-
-        <!-- <div class="bordered-1">
-            <div class="bordered-2">
-                <video>
-                    <source src="/img/demoman/1761570214170465.webm" />
-                </video>
-                <h2>Shrines</h2>
-                <RouterLink to="/shrines/gto">gto</RouterLink>
-                <RouterLink to="/shrines/demoman">demoman</RouterLink>
-                <RouterLink to="/shrines/skipskipbenben"
-                    >skipskipbenben</RouterLink
-                >
-                <RouterLink to="/shrines/evangelion">evangelion</RouterLink>
-            </div>
-        </div> -->
-
-        <div class="border1 tile1">
-            <Radio class="fill bg-white border2 shadow1" />
-        </div>
-
-        <div class="border1 tile3">
-            <SpotifyRecent />
-        </div>
-
-        <div class="border1 tile1">
-            <SpotifyListening class="border2 bg-white shadow1 fill" />
-        </div>
-
-        <div class="border1 tile1">
-            <Posts />
-        </div>
-
-        <div class="border1 tile1">
-            <Login />
+    <main class="center-content flex-col">
+        <div class="a4page-portrait bdr-1 grid">
+            <Intro class="intro bdr-2" />
+            <Listening class="listening bdr-2" />
+            <Stamps class="stamps bdr-2" />
+            <Feed class="feed bdr-2" />
+            <Links class="links bdr-2" />
+            <Collage class="collage bdr-2" />
+            <Favorites class="favorites bdr-2" />
+            <Gym class="gym bdr-2" />
+            <Watching class="watching bdr-2" />
         </div>
     </main>
 </template>
+
+<style scoped>
+.grid {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+}
+
+.intro {
+    grid-column: 1 / span 6;
+    grid-row: 1 / span 4;
+}
+
+.listening {
+    grid-column: 7 / span 4;
+    grid-row: 1 / span 3;
+}
+
+.stamps {
+    grid-column: 7 / span 4;
+    grid-row: 4 / span 1;
+}
+
+.feed {
+    grid-column: 1 / span 3;
+    grid-row: 5 / span 4;
+}
+
+.links {
+    grid-column: 4 / span 2;
+    grid-row: 5 / span 4;
+}
+
+.collage {
+    grid-column: 6 / span 5;
+    grid-row: 5 / span 4;
+}
+
+.favorites {
+    grid-column: span 4;
+    grid-row: span 2;
+}
+.gym {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+
+.watching {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+</style>
