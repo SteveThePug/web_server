@@ -16,7 +16,7 @@ type CreatePostInput struct {
 func (store *Store) GetPosts(ctx *gin.Context) {
 	var posts []models.Post
 	if err := store.DB.Find(&posts).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 	ctx.JSON(http.StatusOK, posts)
@@ -26,7 +26,7 @@ func (store *Store) GetPost(ctx *gin.Context) {
 	postID := ctx.Param("id")
 	var post models.Post
 	if err := store.DB.First(&post, postID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -36,7 +36,7 @@ func (store *Store) GetPost(ctx *gin.Context) {
 func (store *Store) CreatePost(ctx *gin.Context) {
 	var input CreatePostInput
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -69,7 +69,7 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 	postID := ctx.Param("id")
 	var post models.Post
 	if err := store.DB.First(&post, postID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}
 
