@@ -60,7 +60,11 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 
 	// Create post
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
-	store.DB.Create(&post)
+	tx := store.DB.Create(&post)
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, post)
 }
@@ -103,7 +107,11 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 
 	post.Title = input.Title
 	post.Content = input.Content
-	store.DB.Save(&post)
+	tx := store.DB.Save(&post)
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+		return
+	}
 
 	ctx.JSON(http.StatusOK, post)
 }
