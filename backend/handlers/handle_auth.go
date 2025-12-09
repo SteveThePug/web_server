@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"adam-french.co.uk/backend/models"
@@ -59,14 +60,16 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 func (store *Store) RefreshToken(ctx *gin.Context) {
 	refreshToken, err := ctx.Cookie("refresh_token")
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized,  err.Error())
+		ctx.JSON(http.StatusUnauthorized, err.Error())
 		return
 	}
 
 	claims, err := store.Auth.VerifyJWT(refreshToken)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized,  err.Error())
+		ctx.JSON(http.StatusUnauthorized, err.Error())
 	}
+
+	fmt.Printf("claims: %v\n", claims)
 
 	userID, ok := (*claims)["id"].(uint)
 	if !ok {
@@ -110,7 +113,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 func (store *Store) Login(ctx *gin.Context) {
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest,  err.Error())
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -121,13 +124,13 @@ func (store *Store) Login(ctx *gin.Context) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(input.Password)); err != nil {
-		ctx.JSON(http.StatusUnauthorized,  err.Error())
+		ctx.JSON(http.StatusUnauthorized, err.Error())
 		return
 	}
 
 	tokens, err := store.Auth.GenerateJWT(&user)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError,  err.Error())
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
