@@ -28,7 +28,10 @@ func (store *Store) CreateUser(ctx *gin.Context) {
 	}
 
 	user := models.User{Username: input.Username, Password: hashedPassword}
-	store.DB.Create(&user)
+	tx := store.DB.Create(&user)
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+	}
 
 	// Generate JWT token
 	tokens, err := store.Auth.GenerateJWT(&user)
