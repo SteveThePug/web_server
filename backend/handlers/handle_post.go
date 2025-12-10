@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"adam-french.co.uk/backend/models"
 	"github.com/gin-gonic/gin"
@@ -23,9 +24,16 @@ func (store *Store) GetPosts(ctx *gin.Context) {
 }
 
 func (store *Store) GetPost(ctx *gin.Context) {
-	postID := ctx.Param("id")
-	var post models.Post
-	if err := store.DB.First(&post, postID).Error; err != nil {
+	postIDStr := ctx.Param("id")
+
+	postID, err := strconv.ParseUint(postIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	post := models.Post{ID: uint(postID)}
+	if err := store.DB.First(&post).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, err.Error())
 		return
 	}

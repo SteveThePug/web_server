@@ -7,7 +7,6 @@ import (
 	"adam-french.co.uk/backend/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 func (store *Store) AuthMiddlewear(ctx *gin.Context) {
@@ -48,7 +47,7 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 	}
 	userID := uint(userIDF)
 
-	user := models.User{Model: gorm.Model{ID: userID}}
+	user := models.User{ID: userID}
 	tx := store.DB.First(&user)
 	if tx.Error != nil {
 		ctx.JSON(http.StatusNotFound, tx.Error.Error())
@@ -80,8 +79,8 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 	}
 	userID := uint(userIDF)
 
-	user := models.User{}
-	tx := store.DB.First(&user, userID)
+	user := models.User{ID: userID}
+	tx := store.DB.First(&user)
 	if tx.Error != nil {
 		ctx.JSON(http.StatusNotFound, tx.Error.Error())
 		removeCookies(ctx)

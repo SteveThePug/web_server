@@ -1,10 +1,16 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"database/sql"
+	"time"
+)
 
 type User struct {
-	gorm.Model        // includes ID, CreatedAt, UpdatedAt, DeletedAt
-	Username   string `gorm:"uniqueIndex" json:"username"`
-	Password   []byte `json:"-"`
-	Admin      bool   `json:"admin"`
+	ID        uint         `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time    `json:"createdAt"`
+	UpdatedAt time.Time    `json:"updatedAt"`
+	DeletedAt sql.NullTime `gorm:"index" json:"deletedAt"`
+	Username  string       `gorm:"uniqueIndex" json:"username"`
+	Password  []byte       `json:"-"`
+	Admin     bool         `json:"admin"`
 }

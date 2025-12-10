@@ -1,11 +1,17 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"database/sql"
+	"time"
+)
 
 type Post struct {
-	gorm.Model        // includes ID, CreatedAt, UpdatedAt, DeletedAt
-	Title      string `gorm:"not null" json:"title"`
-	AuthorID   uint   `json:"-"`
-	Author     *User  `gorm:"foreignKey:AuthorID" json:"author"`
-	Content    string `json:"content"`
+	ID        uint         `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time    `json:"createdAt"`
+	UpdatedAt time.Time    `json:"updatedAt"`
+	DeletedAt sql.NullTime `gorm:"index" json:"deletedAt"`
+	Title     string       `gorm:"not null" json:"title"`
+	AuthorID  uint         `json:"-"`
+	Author    *User        `gorm:"foreignKey:AuthorID" json:"author"`
+	Content   string       `json:"content"`
 }
