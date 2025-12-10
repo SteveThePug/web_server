@@ -3,19 +3,19 @@
         <RouterLink to="/cv">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
-        <RouterLink to="/login">
+        <RouterLink to="/admin">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
-        <RouterLink to="/login">
+        <RouterLink to="/admin">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
-        <RouterLink to="/login">
+        <RouterLink to="/admin">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
-        <RouterLink to="/login">
+        <RouterLink to="/admin">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
-        <RouterLink to="/login">
+        <RouterLink to="/admin">
             <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
         </RouterLink>
     </div>

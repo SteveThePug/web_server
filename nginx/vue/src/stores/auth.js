@@ -4,6 +4,7 @@ import axios from "axios";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
+  checkToken();
 
   function logOut() {
     user.value = {};
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore("auth", () => {
         username,
         password,
       });
+      user.value = res.data;
     } catch (err) {
       console.error(err);
     }
@@ -34,7 +36,9 @@ export const useAuthStore = defineStore("auth", () => {
       const res = await axios.get("/api/auth/check");
       user.value = res.data;
     } catch (err) {
-      console.log(err);
+      user.value = {};
     }
   }
+
+  return { user, checkToken, logIn, refreshToken, logOut };
 });

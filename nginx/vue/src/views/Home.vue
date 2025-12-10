@@ -13,15 +13,15 @@ import Watching from "@/components/home/Watching.vue";
 <template>
     <main class="center-content flex-col">
         <div class="a4page-portrait bdr-1 grid">
-            <Intro class="intro bdr-2" />
-            <Listening class="listening bdr-2" />
-            <Stamps class="stamps bdr-2" />
-            <Feed class="feed bdr-2" />
-            <Links class="links bdr-2" />
-            <Collage class="collage bdr-2" />
-            <Favorites class="favorites bdr-2" />
-            <Gym class="gym bdr-2" />
-            <Watching class="watching bdr-2" />
+            <Intro class="intro bdr-primary bg-primary" />
+            <Listening class="listening bdr-primary bg-primary" />
+            <Stamps class="stamps bdr-primary bg-primary" />
+            <Feed class="feed bdr-primary bg-primary" />
+            <Links class="links bdr-primary bg-primary" />
+            <Collage class="collage bdr-primary bg-primary" />
+            <Favorites class="favorites bdr-primary bg-primary" />
+            <Gym class="gym bdr-primary bg-primary" />
+            <Watching class="watching bdr-primary bg-primary" />
         </div>
     </main>
 </template>

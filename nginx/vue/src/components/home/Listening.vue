@@ -10,9 +10,7 @@ let idx = 0;
 
 async function fetchRecent() {
     try {
-        const res = await axios.get(
-            "https://adam-french.co.uk/api/spotify/recent",
-        );
+        const res = await axios.get("/api/spotify/recent");
         songs = res.data;
         fetched.value = true;
         song.value = songs[0];

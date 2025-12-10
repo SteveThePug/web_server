@@ -135,6 +135,28 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
-	store.DB.Delete(&user)
+	tx := store.DB.Delete(&user)
+	if tx.Error != nil {
+		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+		return
+	}
+
+	ctx.SetCookie(
+		"access_token",
+		"",
+		-1,
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
+	ctx.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
+
 	ctx.JSON(http.StatusOK, user)
 }
