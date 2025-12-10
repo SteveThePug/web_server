@@ -18,8 +18,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <div>
-        <img src="/img/epic.jpeg" />
+    <div v-for="post in posts">
+        <h2>{{ post.title }}</h2>
+        <p>By: {{ post.author.username }}</p>
+        <div>{{ post.content }}</div>
+        <small
+            >Created at: {{ new Date(post.CreatedAt).toLocaleString() }}</small
+        >
     </div>
 </template>
 
