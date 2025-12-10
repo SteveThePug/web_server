@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
+const loggedIn = auth.loggedIn;
 const username = ref("");
 const password = ref("");
 
@@ -12,7 +13,7 @@ function handleLogin() {
 </script>
 
 <template>
-    <div v-if="auth.loggedIn">
+    <div v-if="loggedIn">
         <h1>Logged in</h1>
         <p>{{ auth.user.ID }}</p>
         <p>{{ auth.user.username }}</p>
