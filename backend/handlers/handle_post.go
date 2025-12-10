@@ -59,6 +59,11 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 	}
 	userID := uint(userIDF)
 
+	if !(*claims)["admin"].(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "you are not admin :("})
+		return
+	}
+
 	// Create post
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
 	tx := store.DB.Create(&post)
