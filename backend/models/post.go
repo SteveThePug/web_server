@@ -6,6 +6,6 @@ type Post struct {
 	gorm.Model        // includes ID, CreatedAt, UpdatedAt, DeletedAt
 	Title      string `gorm:"not null" json:"title"`
 	AuthorID   uint   `json:"-"`
-	Author     User   `gorm:"foreignKey:AuthorID;references:ID" json:"author"`
+	Author     User   `gorm:"foreignKey:AuthorID,constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"author"`
 	Content    string `json:"content"`
 }
