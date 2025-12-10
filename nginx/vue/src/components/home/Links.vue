@@ -1,22 +1,10 @@
 <template>
     <div>
         <RouterLink to="/cv">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
+            <h1>CV</h1>
         </RouterLink>
         <RouterLink to="/admin">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
-        </RouterLink>
-        <RouterLink to="/admin">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
-        </RouterLink>
-        <RouterLink to="/admin">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
-        </RouterLink>
-        <RouterLink to="/admin">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
-        </RouterLink>
-        <RouterLink to="/admin">
-            <img src="/img/stamps/BC7BDBB9-36FF-4DBE-B825-3603BFE00BE0.gif" />
+            <h1>ADMIN</h1>
         </RouterLink>
     </div>
 </template>

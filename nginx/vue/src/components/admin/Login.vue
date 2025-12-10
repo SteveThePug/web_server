@@ -10,17 +10,23 @@ const loggedIn = computed(() => !!auth.user.username);
 function handleLogin() {
     auth.logIn(username.value, password.value);
 }
+
+function handleLogout() {
+    auth.logOut();
+}
 </script>
 
 <template>
     <div v-if="loggedIn">
+        <h1>Logged in</h1>
         <p>{{ auth.user.ID }}</p>
         <p>{{ auth.user.username }}</p>
+        <button @click="handleLogout">Log Out</button>
     </div>
     <div v-else>
-        <h1>login</h1>
-        <textarea v-model="username"></textarea>
-        <textarea type="password" v-model="password"></textarea>
+        <h1>Login</h1>
+        <input type="text" v-model="username" placeholder="Username" />
+        <input type="password" v-model="password" placeholder="Password" />
         <button @click="handleLogin">Log In</button>
     </div>
 </template>
