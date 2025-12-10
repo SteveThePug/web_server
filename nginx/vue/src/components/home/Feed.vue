@@ -52,7 +52,7 @@ onMounted(() => {
         <p>By: {{ post.author.username }}</p>
         <div>{{ post.content }}</div>
         <small
-            >Created at: {{ new Date(post.CreatedAt).toLocaleString() }}</small
+            >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
         <button v-if="!leftCap" @click="prevPost">Prev</button>
         <button v-if="!rightCap" @click="nextPost">Next</button>
