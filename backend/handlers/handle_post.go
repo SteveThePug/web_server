@@ -52,11 +52,12 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	// Create post
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
@@ -89,11 +90,12 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	if !(userID == post.AuthorID) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
@@ -136,11 +138,12 @@ func (store *Store) DeletePost(ctx *gin.Context) {
 		return
 	}
 
-	userID, ok := (*claims)["id"].(uint)
+	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
 		return
 	}
+	userID := uint(userIDF)
 
 	if !(userID == post.AuthorID) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
