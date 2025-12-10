@@ -5,7 +5,6 @@ import { useAuthStore } from "@/stores/auth";
 const auth = useAuthStore();
 const username = ref("");
 const password = ref("");
-const loggedIn = computed(() => !!auth.user.username);
 
 function handleLogin() {
     auth.logIn(username.value, password.value);
@@ -17,7 +16,7 @@ function handleLogout() {
 </script>
 
 <template>
-    <div v-if="loggedIn">
+    <div v-if="auth.loggedIn">
         <h1>Logged in</h1>
         <p>{{ auth.user.ID }}</p>
         <p>{{ auth.user.username }}</p>

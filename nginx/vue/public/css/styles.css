@@ -1,7 +1,12 @@
 /* PRINTING */
 @media print {
-    .no-print {
+    .no-print,
+    .no-print * {
         display: none !important;
+        margin: 0px;
+        padding: 0px;
+        width: 0x;
+        height: 0px;
     }
 }
 /* END OF PRINTING */
@@ -82,6 +87,7 @@ button {
 /* END OF ELEMENTS */
 
 /* CLASSES */
+
 .img-stamp {
     width: 99px;
     height: 55px;

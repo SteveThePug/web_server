@@ -11,7 +11,7 @@ import Watching from "@/components/home/Watching.vue";
 </script>
 
 <template>
-    <main class="center-content flex-col">
+    <main class="center-content flex-col bg-tile">
         <div class="a4page-portrait bdr-1 grid">
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />

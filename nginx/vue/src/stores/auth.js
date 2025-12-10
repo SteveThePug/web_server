@@ -6,6 +6,8 @@ export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
   checkToken();
 
+  const loggedIn = computed(() => !!auth.user.username);
+
   async function logOut() {
     try {
       const res = await axios.post("/api/auth/logout");
@@ -57,5 +59,13 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  return { user, checkToken, logIn, refreshToken, logOut, createUser };
+  return {
+    user,
+    checkToken,
+    logIn,
+    refreshToken,
+    logOut,
+    createUser,
+    loggedIn,
+  };
 });
