@@ -10,8 +10,8 @@ let len = 0;
 
 async function fetchPosts() {
     try {
-        const res = await axios.get("https://adam-french.co.uk/api/posts");
-        posts.value = res.data;
+        const res = await axios.get("/api/posts");
+        posts = res.data;
         fetched.value = true;
         post.value = posts[0];
         len = posts.length;
