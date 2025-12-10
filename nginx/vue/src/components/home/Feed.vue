@@ -4,6 +4,8 @@ import axios from "axios";
 
 const post = ref(null);
 const fetched = ref(false);
+const leftCap = ref(false);
+const rightCap = ref(false);
 let posts = [];
 let idx = 0;
 let len = 0;
@@ -14,6 +16,7 @@ async function fetchPosts() {
         posts = res.data;
         fetched.value = true;
         post.value = posts[0];
+        leftCap.value = true;
         len = posts.length;
     } catch (err) {
         console.error(err);
@@ -21,13 +24,21 @@ async function fetchPosts() {
 }
 
 function nextPost() {
-    post.value = posts[idx];
-    idx = (idx + 1) % len;
+    if (idx < len - 1) {
+        idx++;
+        rightCap.value = idx === len - 1;
+        leftCap.value = idx === 0;
+        post.value = posts[idx];
+    }
 }
 
 function prevPost() {
-    post.value = posts[idx];
-    idx = (idx - 1) % len;
+    if (idx > 0) {
+        idx--;
+        rightCap.value = idx === len - 1;
+        leftCap.value = idx === 0;
+        post.value = posts[idx];
+    }
 }
 
 onMounted(() => {
@@ -43,8 +54,8 @@ onMounted(() => {
         <small
             >Created at: {{ new Date(post.CreatedAt).toLocaleString() }}</small
         >
-        <button @click="nextPost">Next</button>
-        <button @click="prevPost">Prev</button>
+        <button v-if="!leftCap" @click="prevPost">Prev</button>
+        <button v-if="!rightCap" @click="nextPost">Next</button>
     </div>
 </template>
 
