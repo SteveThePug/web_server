@@ -4,7 +4,6 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
-const loggedIn = auth.loggedIn;
 const title = ref("");
 const content = ref("");
 
@@ -24,7 +23,7 @@ async function post() {
 </script>
 
 <template>
-    <div v-if="loggedIn">
+    <div v-if="auth.loggedIn">
         <h1>Create Post</h1>
         <input type="text" v-model="title" placeholder="Title" />
         <textarea v-model="content" placeholder="Content"></textarea>

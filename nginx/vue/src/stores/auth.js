@@ -6,7 +6,7 @@ export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
   checkToken();
 
-  const loggedIn = computed(() => !!auth.user.username);
+  const loggedIn = computed(() => !!user.username);
 
   async function logOut() {
     try {
