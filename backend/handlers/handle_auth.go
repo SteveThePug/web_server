@@ -155,3 +155,24 @@ func (store *Store) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusAccepted, user)
 }
+
+func (store *Store) Logout(ctx *gin.Context) {
+	ctx.SetCookie(
+		"access_token",
+		"",
+		-1,
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
+	ctx.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
+		true, true,
+	)
+
+	ctx.Status(http.StatusOK)
+}

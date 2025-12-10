@@ -59,6 +59,7 @@ func main() {
 	r.POST("/auth/login", store.Login)
 	r.POST("/auth/refresh", store.RefreshToken)
 	r.GET("/auth/check", store.CheckToken)
+	r.POST("/auth/logout", store.Logout)
 
 	r.GET("/spotify/callback", store.CompleteSpotifyAuth)
 	r.GET("/spotify/listening", store.ListeningTo)
