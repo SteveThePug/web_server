@@ -52,6 +52,7 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 	tx := store.DB.First(&user)
 	if tx.Error != nil {
 		ctx.JSON(http.StatusNotFound, tx.Error.Error())
+		removeCookies(ctx)
 		return
 	}
 
@@ -83,6 +84,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 	tx := store.DB.First(&user, userID)
 	if tx.Error != nil {
 		ctx.JSON(http.StatusNotFound, tx.Error.Error())
+		removeCookies(ctx)
 		return
 	}
 
@@ -157,22 +159,26 @@ func (store *Store) Login(ctx *gin.Context) {
 }
 
 func (store *Store) Logout(ctx *gin.Context) {
+	removeCookies(ctx)
+
+	ctx.Status(http.StatusOK)
+}
+
+func removeCookies(ctx *gin.Context) {
 	ctx.SetCookie(
 		"access_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
-		store.Auth.Config.Domain,
+		"",
+		"",
 		true, true,
 	)
 	ctx.SetCookie(
 		"refresh_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
-		store.Auth.Config.Domain,
+		"",
+		"",
 		true, true,
 	)
-
-	ctx.Status(http.StatusOK)
 }
