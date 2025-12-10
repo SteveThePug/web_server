@@ -36,7 +36,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div>
+    <div v-if="fetched">
         <h2>{{ post.title }}</h2>
         <p>By: {{ post.author.username }}</p>
         <div>{{ post.content }}</div>
