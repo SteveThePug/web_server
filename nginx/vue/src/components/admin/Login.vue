@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/auth";
 const auth = useAuthStore();
 const username = ref("");
 const password = ref("");
-const loggedIn = computed(() => Object.keys(auth.user.ID || {}).length > 0);
+const loggedIn = computed(() => !!auth.user.username);
 
 function handleLogin() {
     auth.logIn(username.value, password.value);
