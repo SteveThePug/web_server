@@ -15,7 +15,7 @@ type CreatePostInput struct {
 
 func (store *Store) GetPosts(ctx *gin.Context) {
 	var posts []models.Post
-	if err := store.DB.Preload("Author").Order("CreatedAt DESC").Find(&posts).Error; err != nil {
+	if err := store.DB.Preload("Author").Order("Created_At DESC").Find(&posts).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
