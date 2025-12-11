@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
+const userOwnsPost = ref(false);
 
 const post = ref(null);
 const fetched = ref(false);
@@ -14,10 +18,13 @@ async function fetchPosts() {
     try {
         const res = await axios.get("/api/posts");
         posts = res.data;
+        len = posts.length;
         fetched.value = true;
         post.value = posts[0];
+
+        userOwnsPost.value = post.value.author.username == auth.user.username;
+
         leftCap.value = true;
-        len = posts.length;
     } catch (err) {
         console.error(err);
     }
@@ -41,6 +48,18 @@ function prevPost() {
     }
 }
 
+async function deletePost() {
+    try {
+        const res = await axios.delete(
+            `/api/post/${encodeURIComponent(post.value.ID)}`,
+        );
+        console.log("Deleted:", res.data);
+        fetchPosts();
+    } catch (err) {
+        console.error("Delete failed:", err);
+    }
+}
+
 onMounted(() => {
     fetchPosts();
 });
@@ -56,6 +75,7 @@ onMounted(() => {
         >
         <button v-if="!leftCap" @click="prevPost">Prev</button>
         <button v-if="!rightCap" @click="nextPost">Next</button>
+        <button v-if="userOwnsPost" @click="deletePost">Delete</button>
     </div>
     <div v-else>
         <h2>Can't fetch from the db yo</h2>
