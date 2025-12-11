@@ -57,6 +57,9 @@ onMounted(() => {
         <button v-if="!leftCap" @click="prevPost">Prev</button>
         <button v-if="!rightCap" @click="nextPost">Next</button>
     </div>
+    <div v-else>
+        <h2>Can't fetch from the db yo</h2>
+    </div>
 </template>
 
 <style scoped>

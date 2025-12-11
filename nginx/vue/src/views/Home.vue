@@ -8,10 +8,13 @@ import Collage from "@/components/home/Collage.vue";
 import Favorites from "@/components/home/Favorites.vue";
 import Gym from "@/components/home/Gym.vue";
 import Watching from "@/components/home/Watching.vue";
+
+import Halftone from "@/components/backgrounds/Halftone.vue";
 </script>
 
 <template>
-    <main class="center-content flex-col bg-tile">
+    <main class="center-content flex-col">
+        <Halftone />
         <div class="a4page-portrait bdr-1 grid">
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />

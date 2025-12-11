@@ -37,14 +37,14 @@
     --portal_light_blue: #00a2ff;
 
     /* MAIN COLORS */
-    --primary: white;
-    --secondary: beige;
+    --primary: #000;
+    --secondary: #000;
     --tertiary: #5a6952;
     --quaternary: #424542;
 
     /* BACKGROUND COLORS */
-    --bg-body: #000000;
-    --bg_primary: #222;
+    --bg-body: #111;
+    --bg_primary: #244;
     --bg_secondary: #444;
     --bg_tertiary: #666;
     --bg_quaternary: #888;
@@ -61,7 +61,13 @@ body {
     width: 100vw;
     height: 100vh;
     font-family: var(--font-text);
-    background-color: var(--bg-body);
+}
+
+a {
+    text-decoration: none;
+    padding: 0px;
+    margin: 0px;
+    background-color: var(--bg_secondary);
 }
 
 h1,
@@ -152,19 +158,19 @@ button {
 }
 
 .bdr-primary {
-    border: 2px solid var(--primary);
+    border: 1px solid var(--primary);
 }
 
 .bdr-secondary {
-    border: 2px solid var(--secondary);
+    border: 1px solid var(--secondary);
 }
 
 .bdr-tertiary {
-    border: 2px solid var(--tertiary);
+    border: 1px solid var(--tertiary);
 }
 
 .bdr-quaternary {
-    border: 2px solid var(--quaternary);
+    border: 1px solid var(--quaternary);
 }
 
 /* SHADOWS */
@@ -230,16 +236,14 @@ button {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
+    margin: 0px;
 }
 
 .flex-col {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
+    margin: 0px;
 }
 
 .floating {

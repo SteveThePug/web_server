@@ -1,34 +1,11 @@
 <template>
-    <div class="fill flex-row">
-        <img src="/img/epic.jpeg" class="img" />
+    <div class="fill flex-col">
         <div class="div">
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
-            <p>Hello</p>
+            <h1>Welcome</h1>
+            <p>This is my website, currently under construction.</p>
+            <p>THANKS FOR VISITING ^_^</p>
+            <p>THANKS FOR VISITING ^_^</p>
+            <p>THANKS FOR VISITING ^_^</p>
         </div>
     </div>
 </template>
-
-<style scoped>
-img {
-    width: 100%;
-    height: 100%;
-}
-
-.img {
-    flex: 3;
-}
-
-.div {
-    flex: 7;
-}
-</style>

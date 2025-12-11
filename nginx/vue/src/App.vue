@@ -5,7 +5,7 @@ import Footer from "@/components/Footer.vue";
 </script>
 
 <template>
-    <Navbar style="height: 5vh" class="no-print" />
+    <Navbar class="no-print" />
 
     <RouterView />
 
