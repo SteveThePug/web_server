@@ -6,7 +6,7 @@
 div {
     width: 100vw;
     height: 100vh;
-    position: absolute;
+    position: sticky;
     left: 0px;
     top: 0px;
     z-index: -1;
