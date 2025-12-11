@@ -33,12 +33,17 @@ onMounted(() => {
 
 <template>
     <Transition name="fade" mode="out-in">
-        <div v-if="fetched" :key="song" v-on:click="nextSong" class="flex-row">
+        <div
+            v-if="fetched"
+            :key="song"
+            v-on:click="nextSong"
+            class="flex-row center-content"
+        >
             <img :src="song.track.album.images[0].url" />
             <p><strong>Song:</strong> {{ song.track.name }}</p>
             <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         </div>
-        <div v-else class="flex-row">
+        <div v-else class="flex-row center-content">
             <img src="/img/Untitled.png" />
             <p>I ain't listenin to nofin rn :/</p>
         </div>
