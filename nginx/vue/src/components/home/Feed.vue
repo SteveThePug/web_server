@@ -51,7 +51,7 @@ function prevPost() {
 async function deletePost() {
     try {
         const res = await axios.delete(
-            `/api/post/${encodeURIComponent(post.value.ID)}`,
+            `/api/posts/${encodeURIComponent(post.value.ID)}`,
         );
         console.log("Deleted:", res.data);
         fetchPosts();
