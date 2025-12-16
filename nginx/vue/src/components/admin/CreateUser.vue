@@ -12,12 +12,13 @@ function handleLogin() {
 </script>
 
 <template>
-    <div v-if="auth.loggedIn">
+    <div v-if="auth.loggedIn" class="flex-col">
         <h1>Logged in</h1>
-        <p>{{ auth.user.ID }}</p>
+        <p>{{ auth.user.id }}</p>
         <p>{{ auth.user.username }}</p>
+        <p>{{ auth.user.admin }}</p>
     </div>
-    <div v-else>
+    <div v-else class="flex-col">
         <h1>Create User</h1>
         <input type="text" v-model="username" placeholder="Username" />
         <input type="password" v-model="password" placeholder="Password" />

@@ -37,7 +37,7 @@
     --portal_light_blue: #00a2ff;
 
     /* MAIN COLORS */
-    --primary: #000;
+    --primary: #fff;
     --secondary: #000;
     --tertiary: #5a6952;
     --quaternary: #424542;
@@ -90,6 +90,23 @@ video {
 button {
     color: red;
 }
+
+table {
+    border: 1px solid var(--primary);
+}
+
+th {
+    border: 1px solid var(--primary);
+}
+
+tr {
+    border: 1px solid var(--primary);
+}
+
+td {
+    border: 1px solid var(--primary);
+}
+
 /* END OF ELEMENTS */
 
 /* CLASSES */
@@ -227,6 +244,10 @@ button {
 
 /* ALIGNMENT */
 
+.relative {
+    position: relative;
+}
+
 .center-content {
     align-items: center;
     text-align: center;
@@ -238,6 +259,10 @@ button {
     flex-direction: row;
     flex-wrap: wrap;
     margin: 0px;
+}
+
+.flex {
+    display: flex;
 }
 
 .flex-col {

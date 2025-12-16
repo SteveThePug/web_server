@@ -10,12 +10,21 @@ import Gym from "@/components/home/Gym.vue";
 import Watching from "@/components/home/Watching.vue";
 
 import Halftone from "@/components/backgrounds/Halftone.vue";
+import Overlay from "@/components/Overlay.vue";
 </script>
 
 <template>
+    <Halftone />
     <main class="center-content flex-col">
-        <Halftone />
-        <div class="a4page-portrait bdr-1 grid">
+        <div class="a4page-portrait bdr-1 grid relative">
+            <Overlay>
+                <img src="/img/memes/star.gif" class="ov1" />
+                <img src="/img/memes/welcome2.png" class="ov2" />
+                <img src="/img/memes/pidgeon.gif" class="ov3" />
+                <img src="/img/memes/no_slip.png" class="ov5" />
+                <img src="/img/memes/beer.png" class="ov6" />
+            </Overlay>
+
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />
             <Stamps class="stamps bdr-primary bg-primary" />
@@ -27,6 +36,7 @@ import Halftone from "@/components/backgrounds/Halftone.vue";
             <Watching class="watching bdr-primary bg-primary" />
         </div>
     </main>
+    <img src="/img/memes/fire-woman.gif" class="ov4" />
 </template>
 
 <style scoped>
@@ -79,5 +89,53 @@ import Halftone from "@/components/backgrounds/Halftone.vue";
 .watching {
     grid-column: span 3;
     grid-row: span 2;
+}
+
+.ov1 {
+    rotate: 10deg;
+    width: 100px;
+    position: absolute;
+    top: -90px;
+    left: 0px;
+}
+.ov2 {
+    width: 100px;
+    position: absolute;
+    top: -102px;
+    right: 0px;
+}
+.ov3 {
+    width: 200px;
+    position: absolute;
+    bottom: -150px;
+    left: -200px;
+}
+.ov4 {
+    width: 250px;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+.ov5 {
+    height: 100px;
+    position: absolute;
+    top: -100px;
+    right: 200px;
+}
+.ov6 {
+    height: 250px;
+    position: absolute;
+    top: 450px;
+    right: -200px;
+    animation: floatY 5s ease-in-out infinite alternate;
+}
+
+@keyframes floatY {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-500px);
+    }
 }
 </style>

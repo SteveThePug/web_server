@@ -16,7 +16,7 @@ let len = 0;
 
 async function fetchPosts() {
     try {
-        const res = await axios.get("/api/posts");
+        const res = await axios.get("https://www.adam-french.co.uk/api/posts");
         posts = res.data;
         len = posts.length;
         fetched.value = true;
@@ -68,8 +68,8 @@ onMounted(() => {
 <template>
     <div v-if="fetched" class="center-content">
         <h2>{{ post.title }}</h2>
-        <p>By: {{ post.author.username }}</p>
         <div>{{ post.content }}</div>
+        <p>by: {{ post.author.username }}</p>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >

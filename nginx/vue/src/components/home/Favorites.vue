@@ -1,26 +1,59 @@
 <template>
-    <div class="flex-row">
-        <table>
-            <tr>
-                <td>Color</td>
-                <td>Aqua</td>
-            </tr>
-            <tr>
-                <td>Pet</td>
-                <td>Cat</td>
-            </tr>
-        </table>
-        <table>
-            <tr>
-                <td>Color</td>
-                <td>Blue</td>
-            </tr>
-        </table>
+    <div>
+        <p class="margin1">My favs</p>
+        <div class="flex-row bdr-primary">
+            <table>
+                <tr>
+                    <th>Color</th>
+                    <td>Aqua</td>
+                </tr>
+                <tr>
+                    <th>Pet</th>
+                    <td>Cat</td>
+                </tr>
+                <tr>
+                    <th>Food</th>
+                    <td>Eggs</td>
+                </tr>
+                <tr>
+                    <th>Subject</th>
+                    <td>Math</td>
+                </tr>
+                <tr>
+                    <th>Drink</th>
+                    <td>Monster</td>
+                </tr>
+                <tr>
+                    <th>Sport</th>
+                    <td>Running</td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <th>Color</th>
+                    <td>Aqua</td>
+                </tr>
+                <tr>
+                    <th>Pet</th>
+                    <td>Cat</td>
+                </tr>
+                <tr>
+                    <th>Food</th>
+                    <td>Eggs</td>
+                </tr>
+                <tr>
+                    <th>Subject</th>
+                    <td>Math</td>
+                </tr>
+                <tr>
+                    <th>Drink</th>
+                    <td>Monster</td>
+                </tr>
+                <tr>
+                    <th>Sport</th>
+                    <td>Running</td>
+                </tr>
+            </table>
+        </div>
     </div>
 </template>
-
-<style scoped>
-img {
-    width: 100%;
-}
-</style>
