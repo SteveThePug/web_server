@@ -25,6 +25,7 @@ import Overlay from "@/components/Overlay.vue";
                 <img src="/img/memes/beer.png" class="ov6" />
             </Overlay>
 
+            <h1>hello</h1>
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />
             <Stamps class="stamps bdr-primary bg-primary" />
