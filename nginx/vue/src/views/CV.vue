@@ -476,7 +476,8 @@ h1 {
 
 h2 {
     margin: 0px;
-    border-bottom: 2px solid var(--primary);
+    margin-bottom: 3px;
+    border-bottom: 1px solid var(--primary);
 }
 
 p {
@@ -490,14 +491,15 @@ table {
     color: var(--secondary);
     width: 100%;
     border-collapse: collapse;
+    border: 1px solid black;
 }
 
 td {
     /* border: 2px solid var(--tertiary); */
     border-top: 1px solid var(--tertiary);
-    padding: 1px 0px 1px 10px;
+    padding: 1px 10px 1px 10px;
     font-size: var(--font-size-text);
-    text-align: center;
+    text-align: left;
 }
 
 th {
@@ -571,7 +573,7 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid var(--primary);
+    border-bottom: 1px solid var(--primary);
 }
 
 .contact-details {

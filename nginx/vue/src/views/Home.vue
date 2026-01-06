@@ -18,23 +18,22 @@ import Overlay from "@/components/Overlay.vue";
     <main class="center-content flex-col">
         <div class="a4page-portrait bdr-1 grid relative">
             <Overlay>
-                <img src="/img/memes/star.gif" class="ov1" />
-                <img src="/img/memes/welcome2.png" class="ov2" />
+                <!-- <img src="/img/memes/star.gif" class="ov1" /> -->
+                <!-- <img src="/img/memes/welcome2.png" class="ov2" /> -->
                 <img src="/img/memes/pidgeon.gif" class="ov3" />
                 <img src="/img/memes/no_slip.png" class="ov5" />
-                <img src="/img/memes/beer.png" class="ov6" />
+                <!-- <img src="/img/memes/beer.png" class="ov6" /> -->
             </Overlay>
 
-            <h1>hello</h1>
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />
             <Stamps class="stamps bdr-primary bg-primary" />
             <Feed class="feed bdr-primary bg-primary" />
             <Links class="links bdr-primary bg-primary" />
             <Collage class="collage bdr-primary bg-primary" />
+            <Watching class="watching bdr-primary bg-primary" />
             <Favorites class="favorites bdr-primary bg-primary" />
             <Gym class="gym bdr-primary bg-primary" />
-            <Watching class="watching bdr-primary bg-primary" />
         </div>
     </main>
     <img src="/img/memes/fire-woman.gif" class="ov4" />
@@ -78,7 +77,7 @@ import Overlay from "@/components/Overlay.vue";
     grid-row: 5 / span 4;
 }
 
-.favorites {
+.watching {
     grid-column: span 4;
     grid-row: span 2;
 }
@@ -87,7 +86,7 @@ import Overlay from "@/components/Overlay.vue";
     grid-row: span 2;
 }
 
-.watching {
+.favorites {
     grid-column: span 3;
     grid-row: span 2;
 }
@@ -108,7 +107,7 @@ import Overlay from "@/components/Overlay.vue";
 .ov3 {
     width: 200px;
     position: absolute;
-    bottom: -150px;
+    bottom: -50px;
     left: -200px;
 }
 .ov4 {
@@ -120,8 +119,8 @@ import Overlay from "@/components/Overlay.vue";
 .ov5 {
     height: 100px;
     position: absolute;
-    top: -100px;
-    right: 200px;
+    top: 100px;
+    right: -100px;
 }
 .ov6 {
     height: 250px;

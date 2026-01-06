@@ -14,11 +14,11 @@ div {
 
 .halftone {
     --dot_size: 1px;
-    --bg_size: 5px;
+    --bg_size: 3px;
     --bg_pos: calc(var(--bg_size) / 2);
     --blur: 0%;
-    --dot_color: #044;
-    --bg_color: #114;
+    --dot_color: #033;
+    --bg_color: #000;
 
     background-color: var(--bg_color);
     background-image: radial-gradient(
@@ -32,7 +32,7 @@ div {
     mask-image: linear-gradient(
         30deg,
         rgba(1, 1, 1, 1) 0%,
-        rgba(1, 1, 1, 0.85) 100%
+        rgba(1, 1, 1, 0.9) 100%
     );
 }
 </style>

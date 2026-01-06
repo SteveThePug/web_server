@@ -1,58 +1,38 @@
 <template>
-    <div>
-        <p class="margin1">My favs</p>
-        <div class="flex-row bdr-primary">
+    <div class="flex-col">
+        <h2>favs</h2>
+        <div class="fill flex-row center-content scroll">
             <table>
-                <tr>
-                    <th>Color</th>
-                    <td>Aqua</td>
-                </tr>
-                <tr>
-                    <th>Pet</th>
-                    <td>Cat</td>
-                </tr>
-                <tr>
-                    <th>Food</th>
-                    <td>Eggs</td>
-                </tr>
-                <tr>
-                    <th>Subject</th>
-                    <td>Math</td>
-                </tr>
-                <tr>
-                    <th>Drink</th>
-                    <td>Monster</td>
-                </tr>
-                <tr>
-                    <th>Sport</th>
-                    <td>Running</td>
-                </tr>
-            </table>
-            <table>
-                <tr>
-                    <th>Color</th>
-                    <td>Aqua</td>
-                </tr>
-                <tr>
-                    <th>Pet</th>
-                    <td>Cat</td>
-                </tr>
-                <tr>
-                    <th>Food</th>
-                    <td>Eggs</td>
-                </tr>
-                <tr>
-                    <th>Subject</th>
-                    <td>Math</td>
-                </tr>
-                <tr>
-                    <th>Drink</th>
-                    <td>Monster</td>
-                </tr>
-                <tr>
-                    <th>Sport</th>
-                    <td>Running</td>
-                </tr>
+                <tbody>
+                    <tr>
+                        <th>Color</th>
+                        <td>Aqua</td>
+                    </tr>
+                    <tr>
+                        <th>Pet</th>
+                        <td>Cat</td>
+                    </tr>
+                    <tr>
+                        <th>Subject</th>
+                        <td>Math</td>
+                    </tr>
+                    <tr>
+                        <th>Drink</th>
+                        <td>Monster</td>
+                    </tr>
+                    <tr>
+                        <th>Sport</th>
+                        <td>Running</td>
+                    </tr>
+                    <tr>
+                        <th>Color</th>
+                        <td>Aqua</td>
+                    </tr>
+                    <tr>
+                        <th>Ingredient</th>
+                        <td>Eggs</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
