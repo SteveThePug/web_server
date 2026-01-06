@@ -1,7 +1,7 @@
 <template>
     <div class="flex-col">
         <h2>favs</h2>
-        <div class="fill flex-row center-content scroll">
+        <div class="fill flex-col center-content scroll">
             <table>
                 <tbody>
                     <tr>

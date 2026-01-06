@@ -1,9 +1,13 @@
 <template>
     <div class="flex-col center-content">
-        <h2>Watching/Playing</h2>
+        <h2>Consumption</h2>
         <div class="scroll fill">
             <table>
                 <tbody>
+                    <tr>
+                        <th>Book</th>
+                        <td>Atomic Habits</td>
+                    </tr>
                     <tr>
                         <th>Movie</th>
                         <td>Funny Pages</td>

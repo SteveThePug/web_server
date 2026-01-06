@@ -66,7 +66,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div v-if="fetched" class="center-content">
+    <div v-if="fetched" class="flex-row center-content">
         <h2>{{ post.title }}</h2>
         <div>{{ post.content }}</div>
         <p>by: {{ post.author.username }}</p>
@@ -77,7 +77,7 @@ onMounted(() => {
         <button v-if="!rightCap" @click="nextPost">Next</button>
         <button v-if="userOwnsPost" @click="deletePost">Delete</button>
     </div>
-    <div v-else>
+    <div class="flex-col pad" v-else>
         <h2>Can't fetch from the db yo</h2>
     </div>
 </template>

@@ -17,13 +17,13 @@ import Overlay from "@/components/Overlay.vue";
     <Halftone />
     <main class="center-content flex-col">
         <div class="a4page-portrait bdr-1 grid relative">
-            <Overlay>
-                <!-- <img src="/img/memes/star.gif" class="ov1" /> -->
-                <!-- <img src="/img/memes/welcome2.png" class="ov2" /> -->
-                <img src="/img/memes/pidgeon.gif" class="ov3" />
-                <img src="/img/memes/no_slip.png" class="ov5" />
-                <!-- <img src="/img/memes/beer.png" class="ov6" /> -->
-            </Overlay>
+            <!-- <Overlay> -->
+            <!-- <img src="/img/memes/star.gif" class="ov1" /> -->
+            <!-- <img src="/img/memes/welcome2.png" class="ov2" /> -->
+            <!-- <img src="/img/memes/pidgeon.gif" class="ov3" /> -->
+            <!-- <img src="/img/memes/no_slip.png" class="ov5" /> -->
+            <!-- <img src="/img/memes/beer.png" class="ov6" /> -->
+            <!-- </Overlay> -->
 
             <Intro class="intro bdr-primary bg-primary" />
             <Listening class="listening bdr-primary bg-primary" />

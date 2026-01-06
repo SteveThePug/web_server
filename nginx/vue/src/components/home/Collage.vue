@@ -1,6 +1,6 @@
 <template>
     <div>
-        <img src="/img/epic.jpeg" />
+        <img src="/img/memes/pidgeon.gif" />
     </div>
 </template>
 

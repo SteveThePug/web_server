@@ -50,6 +50,8 @@
     --bg_quaternary: #888;
 
     --margin: 3px;
+    --padding: 3px;
+    --gap: 1px;
 
     /* FONTS USED */
     --font-heading: big_noodle_titling;
@@ -234,8 +236,16 @@ tr {
     box-sizing: border-box;
 }
 
-.margin1 {
-    margin: 10px;
+.margin {
+    margin: var(--margin);
+}
+
+.pad {
+    padding: var(--padding);
+}
+
+.gap {
+    gap: var(--gap);
 }
 
 /* ALIGNMENT */
@@ -248,6 +258,12 @@ tr {
     align-items: center;
     text-align: center;
     justify-content: center;
+}
+
+.left-content {
+    text-align: left;
+    align-items: left;
+    justify-content: left;
 }
 
 .flex-row {
@@ -271,6 +287,14 @@ tr {
     flex-direction: column;
     flex-wrap: wrap;
     padding: 2px;
+}
+
+.space-around {
+    justify-content: space-around;
+}
+
+.space-between {
+    justify-content: space-between;
 }
 
 .floating {

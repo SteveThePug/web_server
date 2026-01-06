@@ -37,13 +37,13 @@ onMounted(() => {
             v-if="fetched"
             :key="song"
             v-on:click="nextSong"
-            class="flex-row center-content"
+            class="flex-col center-content"
         >
             <img :src="song.track.album.images[0].url" />
             <p><strong>Song:</strong> {{ song.track.name }}</p>
             <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         </div>
-        <div v-else class="flex-row center-content">
+        <div v-else class="flex-col center-content">
             <img src="/img/Untitled.png" />
             <p>I ain't listenin to nofin rn :/</p>
         </div>
