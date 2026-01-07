@@ -39,13 +39,16 @@ onMounted(() => {
             v-on:click="nextSong"
             class="flex-col center-content"
         >
+            <h2>Listening To</h2>
             <img :src="song.track.album.images[0].url" />
             <p><strong>Song:</strong> {{ song.track.name }}</p>
             <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         </div>
         <div v-else class="flex-col center-content">
+            <h2>Listening To</h2>
             <img src="/img/Untitled.png" />
-            <p>I ain't listenin to nofin rn :/</p>
+            <p><strong>Song:</strong> >_<</p>
+            <p><strong>Artist:</strong> ^_^</p>
         </div>
     </Transition>
 </template>

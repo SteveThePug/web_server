@@ -66,19 +66,38 @@ onMounted(() => {
 </script>
 
 <template>
-    <div v-if="fetched" class="flex-col">
+    <div v-if="fetched" class="flex-col pad scroll-y left-content">
         <h2>{{ post.title }}</h2>
-        <div>{{ post.content }}</div>
+        <div class="fill wrap">{{ post.content }}</div>
         <p>by: {{ post.author.username }}</p>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
-        <button v-if="!leftCap" @click="prevPost">Prev</button>
-        <button v-if="!rightCap" @click="nextPost">Next</button>
+        <div class="flex-row fill-width">
+            <button class="fill" v-if="!leftCap" @click="prevPost">Prev</button>
+            <button class="fill" v-if="!rightCap" @click="nextPost">
+                Next
+            </button>
+        </div>
         <button v-if="userOwnsPost" @click="deletePost">Delete</button>
     </div>
-    <div class="flex-col pad" v-else>
+    <div class="flex-col pad scroll-y left-content" v-else>
         <h2>Can't fetch from the db yo</h2>
+        <div class="fill wrap">
+            This is meant to be pulling from a database, but for some reason
+            that isn't working and this is filler text that should hopefully
+            never see the light of day. If you are reading this, something has
+            gone horribly, horribly wrong. Please start crying and prepare for
+            the incoming wrath of hell. Furthermore, this is very, very long
+            because I am trying to test the scroll feature so thank you ^_^.
+        </div>
+        <p>by: stp</p>
+        <small>Created at: 0/0/0</small>
+        <div class="flex-row fill-width">
+            <button class="fill">Prev</button>
+            <button class="fill">Next</button>
+        </div>
+        <button>Delete</button>
     </div>
 </template>
 
