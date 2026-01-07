@@ -81,9 +81,9 @@ onMounted(() => {
         </div>
         <button v-if="userOwnsPost" @click="deletePost">Delete</button>
     </div>
-    <div class="flex-col pad scroll-y left-content" v-else>
+    <div class="flex-col pad left-content" v-else>
         <h2>Can't fetch from the db yo</h2>
-        <div class="fill wrap">
+        <div class="fill wrap scroll-y">
             This is meant to be pulling from a database, but for some reason
             that isn't working and this is filler text that should hopefully
             never see the light of day. If you are reading this, something has
