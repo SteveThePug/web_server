@@ -4,12 +4,13 @@
 
 <style scoped>
 div {
-    width: 100vw;
-    height: 100vh;
     position: fixed;
-    left: 0px;
-    top: 0px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: -1;
+    object-fit: cover; /* optional if it’s an img background */
 }
 
 .halftone {

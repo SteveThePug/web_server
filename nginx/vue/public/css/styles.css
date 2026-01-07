@@ -30,7 +30,7 @@
 /* VARIABLES */
 :root {
     /* RED, WHITE, BLACK are standard*/
-    --portal-grey: #dddddd;
+    --portal_grey: #dddddd;
     --portal_orange: #ff9a00;
     --portal_light_orange: #ff5d00;
     --portal_blue: #0065ff;
@@ -54,8 +54,8 @@
     --gap: 1px;
 
     /* FONTS USED */
-    --font-heading: big_noodle_titling;
-    --font-text: CreatoDisplay;
+    --font_heading: big_noodle_titling;
+    --font_text: CreatoDisplay;
 }
 /* END OF VARIABLES */
 
@@ -64,7 +64,7 @@ body {
     margin: 0 auto;
     width: 100vw;
     height: 100vh;
-    font-family: var(--font-text);
+    font-family: var(--font_text);
 }
 
 a {
@@ -79,7 +79,7 @@ h2,
 h3,
 h4 {
     color: var(--primary);
-    font-family: var(--font-heading);
+    font-family: var(--font_heading);
     margin: var(--margin);
 }
 
@@ -320,19 +320,17 @@ tr {
 
 /* A5 Page */
 .a5page-landscape {
-    font-family: var(--font-text);
+    font-family: var(--font_text);
     height: 148mm;
     width: 210mm;
     margin: 0px;
-    box-sizing: border-box;
 }
 
 .a5page-portrait {
-    font-family: var(--font-text);
+    font-family: var(--font_text);
     width: 148mm;
     height: 210mm;
     margin: 0px;
-    box-sizing: border-box;
 }
 
 /* A4 Page */
@@ -340,14 +338,41 @@ tr {
     width: 210mm;
     height: 297mm;
     margin: 0px;
-    box-sizing: border-box;
 }
 
 .a4page-landscape {
     height: 210mm;
     width: 297mm;
-    box-sizing: border-box;
     margin: 0 auto;
 }
 
 /* END OF CLASSES */
+
+/* PHONE */
+@media (max-width: 850px) {
+    .a4page-portrait {
+        width: 100%; /* fill mobile width */
+        height: auto; /* adjust height automatically */
+        margin: 0 auto; /* center horizontally */
+        box-sizing: border-box;
+    }
+    .a4page-landscape {
+        width: 100%; /* fill mobile width */
+        height: auto; /* adjust height automatically */
+        margin: 0 auto; /* center horizontally */
+        box-sizing: border-box;
+    }
+    .a3page-portrait {
+        width: 100%; /* fill mobile width */
+        height: auto; /* adjust height automatically */
+        margin: 0 auto; /* center horizontally */
+        box-sizing: border-box;
+    }
+    .a3page-landscape {
+        width: 100%; /* fill mobile width */
+        height: auto; /* adjust height automatically */
+        margin: 0 auto; /* center horizontally */
+        box-sizing: border-box;
+    }
+}
+/* END OF PHONE */

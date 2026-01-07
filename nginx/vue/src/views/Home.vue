@@ -42,9 +42,26 @@ import Overlay from "@/components/Overlay.vue";
 <style scoped>
 .grid {
     display: grid;
-    grid-gap: 10px;
+    grid-gap: 5px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
+}
+.ov4 {
+    position: fixed; /* instead of absolute */
+    bottom: 0;
+    right: 0;
+    width: 250px; /* keeps size fixed */
+}
+
+@media (max-width: 850px) {
+    .grid {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .ov4 {
+        width: 100px; /* keeps size fixed */
+    }
 }
 
 .intro {
@@ -109,12 +126,6 @@ import Overlay from "@/components/Overlay.vue";
     position: absolute;
     bottom: -50px;
     left: -200px;
-}
-.ov4 {
-    width: 250px;
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
 }
 .ov5 {
     height: 100px;
