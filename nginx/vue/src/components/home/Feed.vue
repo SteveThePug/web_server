@@ -66,7 +66,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div v-if="fetched" class="flex-row center-content">
+    <div v-if="fetched" class="flex-col">
         <h2>{{ post.title }}</h2>
         <div>{{ post.content }}</div>
         <p>by: {{ post.author.username }}</p>
