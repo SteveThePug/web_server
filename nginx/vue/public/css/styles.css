@@ -88,11 +88,6 @@ p {
     margin: var(--margin);
 }
 
-video {
-    width: 100%;
-    object-fit: contain;
-}
-
 button {
     color: red;
 }
@@ -113,43 +108,6 @@ tr {
 .img-stamp {
     width: 99px;
     height: 55px;
-}
-
-.tile1 {
-    width: 300px;
-    border: 30px solid;
-    border-image: url("/img/borders/border1inv.gif") 30 round;
-}
-
-.tile3 {
-    width: 936px;
-}
-
-.w100 {
-    width: 100%;
-}
-.w80 {
-    width: 80%;
-}
-.w50 {
-    width: 50%;
-}
-.w49 {
-    width: 49%;
-}
-
-.w300px {
-    width: 300px;
-}
-.w200px {
-    width: 200px;
-}
-
-.h300px {
-    height: 300px;
-}
-.h200px {
-    height: 200px;
 }
 
 /* BORDERS */
