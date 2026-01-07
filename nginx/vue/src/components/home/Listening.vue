@@ -27,7 +27,7 @@ function nextSong() {
 onMounted(() => {
     fetchRecent();
     setInterval(fetchRecent, 120000);
-    setInterval(nextSong, 40000);
+    setInterval(nextSong, 5000);
 });
 </script>
 
