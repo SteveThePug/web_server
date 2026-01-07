@@ -1,12 +1,16 @@
 <template>
-    <div class="flex-col">
+    <div class="flex-col center-content">
         <h2>favs</h2>
-        <div class="fill flex-col center-content scroll">
+        <div class="fill scroll">
             <table>
                 <tbody>
                     <tr>
+                        <th>Daioh</th>
+                        <td>Tomo</td>
+                    </tr>
+                    <tr>
                         <th>Color</th>
-                        <td>Aqua</td>
+                        <td>Teal</td>
                     </tr>
                     <tr>
                         <th>Pet</th>
@@ -25,8 +29,32 @@
                         <td>Running</td>
                     </tr>
                     <tr>
-                        <th>Color</th>
-                        <td>Aqua</td>
+                        <th>Anime</th>
+                        <td>Evangelion</td>
+                    </tr>
+                    <tr>
+                        <th>Fruit</th>
+                        <td>Satsumas</td>
+                    </tr>
+                    <tr>
+                        <th>Vegetable</th>
+                        <td>Cucumber</td>
+                    </tr>
+                    <tr>
+                        <th>Hobby</th>
+                        <td>Climbing</td>
+                    </tr>
+                    <tr>
+                        <th>Season</th>
+                        <td>Summer</td>
+                    </tr>
+                    <tr>
+                        <th>Language</th>
+                        <td>Rust</td>
+                    </tr>
+                    <tr>
+                        <th>OS</th>
+                        <td>Linux</td>
                     </tr>
                     <tr>
                         <th>Ingredient</th>
