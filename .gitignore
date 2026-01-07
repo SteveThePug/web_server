@@ -1,5 +1,6 @@
 certbot/
 backend/token/
+.env
 
 # Logs
 logs
