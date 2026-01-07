@@ -236,6 +236,14 @@ tr {
     box-sizing: border-box;
 }
 
+.fill-width {
+    width: 100%;
+}
+
+.wrap {
+    text-wrap: break-word;
+}
+
 .margin {
     margin: var(--margin);
 }
@@ -277,6 +285,16 @@ tr {
     overflow: scroll;
 }
 
+.scroll-y {
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-x {
+    overflow-y: hidden;
+    overflow-x: scroll;
+}
+
 .flex {
     display: flex;
     padding: 2px;
@@ -285,7 +303,6 @@ tr {
 .flex-col {
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
     padding: 2px;
 }
 
