@@ -1,26 +1,29 @@
+<script setup>
+import RouterTable from "@/components/quick/RouterTable.vue";
+import LinkTable from "@/components/quick/LinkTable.vue";
+
+const site_links = [
+    { name: "CV", link: "/cv" },
+    { name: "Bookmarks", link: "/bookmarks" },
+    { name: "Notes", link: "/notes" },
+    { name: "Admin", link: "/admin" },
+    { name: "Shrines", link: "/shrines" },
+];
+
+const social_links = [
+    { name: "Steam", link: "https://steamcommunity.com/id/SteveThePug" },
+    { name: "Github", link: "https://github.com/SteveThePug" },
+    { name: "Spotify", link: "https://open.spotify.com/user/stevethepug" },
+];
+</script>
+
 <template>
     <div class="flex-col space-between">
         <div class="flex-col gap">
-            <RouterLink class="bdr-2" to="/cv">
-                <h1>CV</h1>
-            </RouterLink>
-            <!-- <RouterLink class="bdr-2" to="/shrines/demoman">
-                <h1>Demo</h1>
-            </RouterLink> -->
-            <RouterLink class="bdr-2" to="/admin">
-                <h1>ADMIN</h1>
-            </RouterLink>
+            <RouterTable :linkArr="site_links" />
         </div>
         <div class="flex-col gap">
-            <a class="bdr-2" href="https://steamcommunity.com/id/SteveThePug"
-                ><h1>Steam</h1></a
-            >
-            <a href="https://github.com/SteveThePug" class="bdr-2"
-                ><h1>Github</h1></a
-            >
-            <a href="https://open.spotify.com/user/stevethepug" class="bdr-2">
-                <h1>Spotify</h1></a
-            >
+            <LinkTable :linkArr="social_links" />
         </div>
     </div>
 </template>
