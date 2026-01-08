@@ -2,13 +2,12 @@
 import { ref } from "vue";
 
 const images = [
-    "/img/memes/fire-woman.gif",
     "/img/memes/pidgeon.gif",
     "/img/memes/no_slip.png",
     "/img/memes/epic.jpeg",
 ];
 
-const currentIndex = ref(0);
+const currentIndex = ref(1);
 
 function nextImage() {
     currentIndex.value = Math.floor(Math.random() * 100) % images.length;
