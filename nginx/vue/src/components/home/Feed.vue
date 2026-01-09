@@ -1,4 +1,6 @@
 <script setup>
+import Markdown from "@/components/quick/Markdown.vue";
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
@@ -68,7 +70,7 @@ onMounted(() => {
 <template>
     <div v-if="fetched" class="flex-col pad scroll-y left-content">
         <h2>{{ post.title }}</h2>
-        <div class="fill wrap">{{ post.content }}</div>
+        <Markdown class="fill wrap" :source="post.content" />
         <p>by: {{ post.author.username }}</p>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
