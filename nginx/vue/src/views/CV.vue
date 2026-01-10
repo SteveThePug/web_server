@@ -464,6 +464,7 @@ h1,
 h2,
 h3,
 h4 {
+    border: none;
     color: var(--primary);
     font-family: var(--font-heading);
     text-transform: capitalize;

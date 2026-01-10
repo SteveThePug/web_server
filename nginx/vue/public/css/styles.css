@@ -45,9 +45,9 @@
     /* BACKGROUND COLORS */
     --bg-body: #111;
     --bg_primary: #fff;
-    --bg_secondary: #444;
-    --bg_tertiary: #666;
-    --bg_quaternary: #888;
+    --bg_secondary: #ffa;
+    --bg_tertiary: #aaa;
+    --bg_quaternary: #999;
 
     --margin: 3px;
     --padding: 3px;
@@ -68,16 +68,19 @@ body {
 }
 
 a {
+    text-align: center;
     text-decoration: none;
     padding: 0px;
     margin: 0px;
-    background-color: var(--bg_primary);
+    background-color: var(--bg_secondary);
 }
 
 h1,
 h2,
 h3,
 h4 {
+    background-color: var(--bg_primary);
+    border-bottom: 1px solid var(--bg_secondary);
     color: var(--primary);
     font-family: var(--font_heading);
     margin: var(--margin);
@@ -222,8 +225,10 @@ tr {
 
 .center-content {
     align-items: center;
+}
+
+.center-text {
     text-align: center;
-    justify-content: center;
 }
 
 .left-content {
@@ -237,6 +242,10 @@ tr {
     flex-direction: row;
     flex-wrap: wrap;
     margin: 0px;
+}
+
+.flex-center {
+    justify-content: center;
 }
 
 .scroll {
@@ -262,6 +271,10 @@ tr {
     display: flex;
     flex-direction: column;
     padding: 2px;
+}
+
+.inline {
+    display: inline;
 }
 
 .space-around {
@@ -320,13 +333,15 @@ tr {
         margin: 0 auto; /* center horizontally */
         box-sizing: border-box;
     }
-    .a3page-portrait {
+}
+@media (max-width: 600px) {
+    .a5page-portrait {
         width: 100%; /* fill mobile width */
         height: auto; /* adjust height automatically */
         margin: 0 auto; /* center horizontally */
         box-sizing: border-box;
     }
-    .a3page-landscape {
+    .a5page-landscape {
         width: 100%; /* fill mobile width */
         height: auto; /* adjust height automatically */
         margin: 0 auto; /* center horizontally */
@@ -334,3 +349,78 @@ tr {
     }
 }
 /* END OF PHONE */
+
+/* BACKGROUND */
+.overlay {
+    position: fixed; /* not absolute */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.wfull {
+    width: 100%;
+}
+
+.w-10vw {
+    width: 10vw;
+}
+
+.tl {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+.tr {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+.bl {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+}
+
+.br {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.halftone {
+    --dot_size: 1px;
+    --bg_size: 3px;
+    --bg_pos: calc(var(--bg_size) / 2);
+    --blur: 0%;
+    --dot_color: #033;
+    --bg_color: #000;
+
+    background-color: var(--bg_color);
+    background-image: radial-gradient(
+        circle at center,
+        var(--dot_color) var(--dot_size),
+        transparent var(--blur)
+    );
+    background-size: var(--bg_size) var(--bg_size);
+    background-position: 0 0;
+
+    mask-image: linear-gradient(
+        30deg,
+        rgba(1, 1, 1, 1) 0%,
+        rgba(1, 1, 1, 0.9) 100%
+    );
+}

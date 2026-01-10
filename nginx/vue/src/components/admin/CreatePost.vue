@@ -28,5 +28,6 @@ async function post() {
         <input type="text" v-model="title" placeholder="Title" />
         <textarea v-model="content" placeholder="Content"></textarea>
         <button @click="post">Upload</button>
+        <!-- make textarea take up most the space -->
     </div>
 </template>

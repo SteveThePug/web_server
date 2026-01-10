@@ -64,6 +64,7 @@ const art_links = [
 
 <template>
     <main class="center-content flex-col">
+        <div class="background halftone" />
         <div class="a4page-portrait bdr-1 flex-col relative scroll-y gap">
             <h1>Radio Links</h1>
             <LinkTable :linkArr="radio_links" />

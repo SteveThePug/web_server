@@ -18,6 +18,6 @@ const keys = ["name", "link"];
         :key="rowIndex"
         :to="row.link"
     >
-        <h2>{{ row.name }}</h2>
+        <p>{{ row.name }}</p>
     </RouterLink>
 </template>
