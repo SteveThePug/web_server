@@ -28,8 +28,7 @@ const parentPath = computed(() => {
 
 <style scoped>
 .left {
-    width: 5vw;
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
 }
