@@ -39,7 +39,11 @@ func main() {
 	authConfig := services.AuthConfig{Secret: []byte(authSecret), Domain: domainName, RefreshTokenLifetime: refreshTokenLifetime, AccessTokenLifetime: accessTokenLifetime, Endpoint: backendEndpoint}
 	auth := services.InitAuth(&authConfig)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth}
+	notesDir := os.Getenv("OBSIDIAN_DIR")
+	notesConfig := services.NotesConfig{Dir: notesDir}
+	notes := services.InitNotes(&notesConfig)
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth, Notes: notes}
 
 	r := gin.Default()
 	protected := r.Group("/", store.AuthMiddlewear)
@@ -65,6 +69,8 @@ func main() {
 	r.GET("/spotify/listening", store.ListeningTo)
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
+
+	r.GET("/notes/*path", store.GetNote)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})

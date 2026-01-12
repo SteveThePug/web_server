@@ -12,4 +12,5 @@ type Store struct {
 	SpotifyAuth   *spotifyauth.Authenticator
 	SpotifyClient *spotify.Client
 	Auth          *services.Auth
+	Notes         *services.Notes
 }
