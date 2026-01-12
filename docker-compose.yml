@@ -59,6 +59,7 @@ services:
       - ./.env
     volumes:
       - ./backend/token/:/backend/token
+      - ${OBSIDIAN_DIR}:/obsidian
 
   db:
     image: postgres:16
