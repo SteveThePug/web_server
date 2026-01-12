@@ -6,7 +6,7 @@ import axios from "axios";
 const note = ref(null);
 
 const fetchNote = async () => {
-    const response = await axios.post("/api/notes/Welcome");
+    const response = await axios.get("/api/notes/Welcome");
     note.value = response.data;
 };
 
