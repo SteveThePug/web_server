@@ -39,7 +39,7 @@ func main() {
 	authConfig := services.AuthConfig{Secret: []byte(authSecret), Domain: domainName, RefreshTokenLifetime: refreshTokenLifetime, AccessTokenLifetime: accessTokenLifetime, Endpoint: backendEndpoint}
 	auth := services.InitAuth(&authConfig)
 
-	notesDir := os.Getenv("OBSIDIAN_DIR")
+	notesDir := "/backend/notes"
 	notesConfig := services.NotesConfig{Dir: notesDir}
 	notes := services.InitNotes(&notesConfig)
 
