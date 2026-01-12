@@ -6,7 +6,7 @@ import axios from "axios";
 const note = ref(null);
 
 const fetchNote = async () => {
-    const response = await axios.get("/api/notes/Welcome");
+    const response = await axios.get("/api/notes/Index");
     note.value = response.data;
 };
 
@@ -19,7 +19,7 @@ onMounted(fetchNote);
 
         <div
             v-if="note"
-            class="a4page-portrait bdr-1 flex-col relative scroll-y gap"
+            class="a4page-portrait bdr-1 flex-col relative scroll-y gap bg-primary"
         >
             <h1>{{ note.title }}</h1>
             <small>{{ note.last_edited }}</small>
