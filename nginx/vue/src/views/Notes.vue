@@ -5,10 +5,17 @@ import axios from "axios";
 
 const note = ref(null);
 
-const fetchNote = async () => {
+function fixContents(contents) {
+    // Obsidian notes have links in the form [[link|name]]
+    // contents so that they are rendered correctly
+    return contents.replace(/\[\[(.*?)\|(.*)\]\]/g, '<a href="/$1">$2</a>');
+}
+
+async function fetchNote() {
     const response = await axios.get("/api/notes/Index");
+    response.data.contents = fixContents(response.data.contents);
     note.value = response.data;
-};
+}
 
 onMounted(fetchNote);
 </script>
