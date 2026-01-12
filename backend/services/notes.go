@@ -47,6 +47,7 @@ func (notes *Notes) GetNote(path string) (*Note, error) {
 		return nil, ErrPathTraversal
 	}
 
+	fullPath += ".md"
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, err

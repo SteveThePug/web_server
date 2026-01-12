@@ -1,9 +1,6 @@
 <script setup>
 import RouterTable from "@/components/quick/RouterTable.vue";
-const note_links = [
-    { name: "ILSP", link: "/notes/islp" },
-    { name: "Vue", link: "/notes/vue" },
-];
+const res = await axios.post("/api/notes/Welcome");
 </script>
 
 <template>
