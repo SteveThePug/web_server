@@ -1,5 +1,6 @@
 <script setup>
 import Timer from "@/components/quick/Timer.vue";
+import Time from "@/components/quick/Time.vue";
 
 import Intro from "@/components/home/Intro.vue";
 import Stamps from "@/components/home/Stamps.vue";
@@ -15,7 +16,10 @@ import Watching from "@/components/home/Watching.vue";
 <template>
     <div class="overlay">
         <img src="/img/memes/fire-woman.gif" class="br w-10vw" />
-        <Timer class="tr bdr-2 bg-primary" />
+        <div class="flex-col tr">
+            <Time class="bdr-2 bg-primary" />
+            <Timer class="bdr-2 bg-primary" />
+        </div>
     </div>
     <div class="background halftone" />
 
