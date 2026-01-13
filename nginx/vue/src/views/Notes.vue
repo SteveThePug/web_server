@@ -29,10 +29,32 @@ async function fetchFile() {
     const lastModified = response.headers["last-modified"];
     last_edited.value = lastModified ? new Date(lastModified) : null;
 
-    file.value = response.data;
+    if (filename.value.toLowerCase().endsWith(".md")) {
+        const text = await response.data.text();
+        file.value = fixLinks(text);
+    } else {
+        file.value = response.data;
+    }
 }
 
-onMounted(fetchNote);
+function fixLinks(filedata) {
+    return filedata.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+        if (
+            url.startsWith("http://") ||
+            url.startsWith("https://") ||
+            url.startsWith("#") ||
+            url.startsWith("./") ||
+            url.startsWith("../") ||
+            url.startsWith("//")
+        ) {
+            return match;
+        }
+
+        return `[${text}](./${url})`;
+    });
+}
+
+onMounted(fetchFile);
 </script>
 
 <template>
