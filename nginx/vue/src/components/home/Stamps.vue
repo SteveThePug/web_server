@@ -4,6 +4,9 @@
             <img src="/img/stamps/portal.gif" />
             <img src="/img/stamps/miku.gif" />
             <img src="/img/stamps/utau.gif" />
+            <a href="adam-french.co.uk">
+                <img src="/img/stamps/mine.jpeg" />
+            </a>
         </div>
         <div>
             <p>more soon (will diy some)</p>
