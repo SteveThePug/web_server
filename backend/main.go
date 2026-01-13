@@ -70,7 +70,7 @@ func main() {
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
 
-	r.GET("/notes/*path", store.GetNote)
+	r.GET("/notes/*path", store.GetNoteFile)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
