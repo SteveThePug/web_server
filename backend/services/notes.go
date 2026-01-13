@@ -22,7 +22,7 @@ func InitNotes(config *NotesConfig) *Notes {
 }
 
 func (notes *Notes) ParsePath(path string) (string, error) {
-	if path == "" {
+	if path == "" || path == "/" {
 		path = "Index.md"
 	}
 
