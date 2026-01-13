@@ -25,7 +25,7 @@ const router = createRouter({
       component: () => import("../views/Bookmarks.vue"),
     },
     {
-      path: "/notes/:pathMatch(.*)*",
+      path: "/notes/:path(.*)*",
       name: "notes",
       component: () => import("../views/Notes.vue"),
     },

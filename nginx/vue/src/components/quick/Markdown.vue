@@ -17,6 +17,6 @@ const props = defineProps({
     ></div>
 </template>
 
-<style>
+<style scoped>
 @import "katex/dist/katex.min.css";
 </style>
