@@ -61,7 +61,7 @@ onMounted(fetchFile);
     <main class="center-content flex-col">
         <div class="background halftone" />
         <div
-            v-if="note"
+            v-if="file"
             class="a4page-portrait bdr-primary flex-col relative scroll-y gap bg-primary"
         >
             <h1>{{ filename }}</h1>
