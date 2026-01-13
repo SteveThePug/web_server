@@ -2,19 +2,34 @@
 import Markdown from "@/components/quick/Markdown.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useRoute } from "vue-router";
 
-const note = ref(null);
+const file = ref(null);
+const filename = ref("");
+const last_edited = ref(null);
 
-function fixContents(contents) {
-    // Obsidian notes have links in the form [[link|name]]
-    // contents so that they are rendered correctly
-    return contents.replace(/\[\[(.*?)\|(.*)\]\]/g, '<a href="/$1">$2</a>');
+// if the address is https://www.adam-french.co.uk/notes/PATH
+// request from https://www.adam-french.co.uk/api/notes/PATH
+const route = useRoute();
+const path = route.params.path;
+const url = `/api/notes/${path}`;
+
+function getFilename(headers) {
+    const disposition = headers["content-disposition"];
+    if (!disposition) return null;
+
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    return match ? match[1] : null;
 }
 
-async function fetchNote() {
-    const response = await axios.get("/api/notes/Index");
-    response.data.contents = fixContents(response.data.contents);
-    note.value = response.data;
+async function fetchFile() {
+    const response = await axios.get(url, { responseType: "blob" });
+    filename.value = getFilename(response.headers);
+
+    const lastModified = response.headers["last-modified"];
+    last_edited.value = lastModified ? new Date(lastModified) : null;
+
+    file.value = response.data;
 }
 
 onMounted(fetchNote);
@@ -23,14 +38,13 @@ onMounted(fetchNote);
 <template>
     <main class="center-content flex-col">
         <div class="background halftone" />
-
         <div
             v-if="note"
-            class="a4page-portrait bdr-1 flex-col relative scroll-y gap bg-primary"
+            class="a4page-portrait bdr-primary flex-col relative scroll-y gap bg-primary"
         >
-            <h1>{{ note.title }}</h1>
-            <small>{{ note.last_edited }}</small>
-            <Markdown class="fill wrap" :source="note.contents" />
+            <h1>{{ filename }}</h1>
+            <small>{{ last_edited }}</small>
+            <Markdown class="fill wrap" :source="file" />
         </div>
 
         <div v-else>Loading…</div>

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"path/filepath"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,14 @@ func (store *Store) GetNoteFile(ctx *gin.Context) {
 		return
 	}
 
-	// Get the filename from path
-	filename := filepath.Base(path)
-	ctx.FileAttachment(path, filename)
+	info, err := os.Stat(path)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.Header("Last-Modified", info.ModTime().UTC().Format(http.TimeFormat))
+	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition, Last-Modified")
+
+	ctx.FileAttachment(path, info.Name())
 }
