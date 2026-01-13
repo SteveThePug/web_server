@@ -51,7 +51,7 @@ function fixLinks(filedata) {
             return match;
         }
 
-        return `[${text}](./${url})`;
+        return `[${text}](/notes/${url})`;
     });
 }
 
