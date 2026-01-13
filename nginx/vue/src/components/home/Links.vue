@@ -6,7 +6,7 @@ import Markdown from "@/components/quick/Markdown.vue";
 const site_links = [
     { name: "CV", link: "/cv" },
     { name: "Bookmarks", link: "/bookmarks" },
-    { name: "Notes", link: "/notes" },
+    { name: "Notes", link: "/notes/Index.md" },
     { name: "Admin", link: "/admin" },
     { name: "Shrines", link: "/shrines" },
 ];

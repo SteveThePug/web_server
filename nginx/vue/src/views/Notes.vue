@@ -11,7 +11,8 @@ const last_edited = ref(null);
 // if the address is https://www.adam-french.co.uk/notes/PATH
 // request from https://www.adam-french.co.uk/api/notes/PATH
 const route = useRoute();
-const path = route.params.path;
+const pathArray = route.params.path;
+const path = Array.isArray(pathArray) ? pathArray.join("/") : pathArray;
 const url = `/api/notes/${path}`;
 
 function getFilename(headers) {
