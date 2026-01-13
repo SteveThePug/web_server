@@ -5,7 +5,7 @@
             <img src="/img/stamps/miku.gif" />
             <img src="/img/stamps/utau.gif" />
             <a href="adam-french.co.uk">
-                <img src="/img/stamps/mine.jpeg" />
+                <img src="/img/stamps/mine.png" />
             </a>
         </div>
         <div>
