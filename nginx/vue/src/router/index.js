@@ -12,17 +12,11 @@ const router = createRouter({
     {
       path: "/cv",
       name: "cv",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import("../views/CV.vue"),
     },
     {
       path: "/admin",
       name: "admin",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import("../views/Admin.vue"),
     },
     {
@@ -31,7 +25,7 @@ const router = createRouter({
       component: () => import("../views/Bookmarks.vue"),
     },
     {
-      path: "/notes",
+      path: "/notes/:pathMatch(.*)*",
       name: "notes",
       component: () => import("../views/Notes.vue"),
     },

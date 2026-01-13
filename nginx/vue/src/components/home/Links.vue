@@ -1,6 +1,7 @@
 <script setup>
 import RouterTable from "@/components/quick/RouterTable.vue";
 import LinkTable from "@/components/quick/LinkTable.vue";
+import Markdown from "@/components/quick/Markdown.vue";
 
 const site_links = [
     { name: "CV", link: "/cv" },
@@ -21,6 +22,7 @@ const social_links = [
     <div class="flex-col space-between">
         <div class="flex-col gap">
             <RouterTable :linkArr="site_links" />
+            <Markdown :source="`[[Wiki Link]]`" />
         </div>
         <div class="flex-col gap">
             <LinkTable :linkArr="social_links" />

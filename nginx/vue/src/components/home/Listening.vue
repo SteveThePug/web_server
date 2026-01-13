@@ -4,6 +4,7 @@ import axios from "axios";
 
 const song = ref(null);
 const fetched = ref(false);
+const intervalId = ref(null);
 let songs = [];
 const len = 3;
 let idx = 0;
@@ -20,14 +21,16 @@ async function fetchRecent() {
 }
 
 function nextSong() {
+    clearInterval(intervalId.value);
     song.value = songs[idx];
     idx = (idx + 1) % len;
+    intervalId.value = setInterval(nextSong, 5000);
 }
 
 onMounted(() => {
     fetchRecent();
     setInterval(fetchRecent, 120000);
-    setInterval(nextSong, 5000);
+    intervalId.value = setInterval(nextSong, 5000);
 });
 </script>
 
