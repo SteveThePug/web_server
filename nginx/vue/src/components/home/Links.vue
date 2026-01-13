@@ -22,7 +22,6 @@ const social_links = [
     <div class="flex-col space-between">
         <div class="flex-col gap">
             <RouterTable :linkArr="site_links" />
-            <Markdown :source="`[[Wiki Link]]`" />
         </div>
         <div class="flex-col gap">
             <LinkTable :linkArr="social_links" />
