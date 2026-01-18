@@ -1,22 +1,22 @@
 <script setup>
-// Get the current date and time, make time reactive
-// Get the month name, weekday name and time should be hh:mm:ss
 import { ref } from "vue";
 
-const date = new Date();
-const day = date.getDate();
-const time = ref(
-    date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-);
-const weekday = date.toLocaleDateString("en-GB", { weekday: "long" });
-const month = date.toLocaleDateString("en-GB", { month: "long" });
+cost time = ref("")
+cost weekday = ref("")
+cost day = ref("")
+cost month = ref("")
 
-setInterval(() => {
-    time.value = date.toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}, 1000);
+function updateDateTime() {
+  const date = new Date();
+  day.value = date.getDate();
+  time.value = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+  weekday.value = date.toLocaleDateString("en-GB", { weekday: "long" });
+  month.value = date.toLocaleDateString("en-GB", { month: "long" });
+}
+
+updateDateTime();
+
+setInterval(updateDateTime, 60000);
 </script>
 
 <template>
