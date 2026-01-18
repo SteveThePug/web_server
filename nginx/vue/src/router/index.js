@@ -30,16 +30,6 @@ const router = createRouter({
       component: () => import("../views/Notes.vue"),
     },
     {
-      path: "/notes/islp",
-      name: "islp",
-      component: () => import("../views/notes/Islp.vue"),
-    },
-    {
-      path: "/notes/vue",
-      name: "vue",
-      component: () => import("../views/notes/Vue.vue"),
-    },
-    {
       path: "/shrines",
       name: "shrine links",
       component: () => import("../views/Shrines.vue"),
