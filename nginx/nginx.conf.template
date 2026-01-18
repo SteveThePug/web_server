@@ -57,7 +57,7 @@ http {
             root /var/www/certbot;
         }
 
-        location = $BACKEND_ENDPOINT {
+        location $BACKEND_ENDPOINT {
             return 301 $BACKEND_ENDPOINT/;
         }
 
