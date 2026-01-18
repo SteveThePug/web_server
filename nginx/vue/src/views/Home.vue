@@ -52,6 +52,9 @@ import Watching from "@/components/home/Watching.vue";
         display: flex;
         flex-direction: column;
     }
+    .tr {
+        display: none;
+    }
 }
 
 .intro {
