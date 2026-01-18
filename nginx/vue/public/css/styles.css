@@ -72,14 +72,12 @@ a {
     text-decoration: none;
     padding: 0px;
     margin: 0px;
-    background-color: var(--bg_secondary);
 }
 
 h1,
 h2,
 h3,
 h4 {
-    background-color: var(--bg_primary);
     border-bottom: 1px solid var(--primary);
     color: var(--primary);
     font-family: var(--font_heading);
