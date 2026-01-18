@@ -17,10 +17,10 @@ const parentPath = computed(() => {
 
 <template>
     <nav class="left flex-col">
-        <RouterLink class="bdr-2" to="/">
+        <RouterLink class="bdr-2 bg-primary" to="/">
             <a>HOME</a>
         </RouterLink>
-        <RouterLink class="bdr-2" v-if="parentPath" :to="parentPath">
+        <RouterLink class="bdr-2 bg-primary" v-if="parentPath" :to="parentPath">
             <a>UP</a>
         </RouterLink>
     </nav>

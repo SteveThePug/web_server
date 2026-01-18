@@ -4,9 +4,14 @@
             <!-- <img src="/img/stamps/portal.gif" />
             <img src="/img/stamps/miku.gif" />
             <img src="/img/stamps/utau.gif" /> -->
-            <a href="https://www.adam-french.co.uk">
-                <img src="/img/stamps/mine.gif" />
-            </a>
+            <div class="flex-row center-content">
+                <p>--> make webring w me --></p>
+                <a href="https://www.adam-french.co.uk">
+                    <img
+                        src="https://www.adam-french.co.uk/img/stamps/mine.gif"
+                    />
+                </a>
+            </div>
             <div class="flex-row center-content">
                 <p>--> hit up bro --></p>
                 <a href="https://jacobbarron.xyz">
