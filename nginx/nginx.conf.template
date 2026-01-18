@@ -57,6 +57,10 @@ http {
             root /var/www/certbot;
         }
 
+        location /img/stamps/mine.gif {
+            add_header Access-Control-Allow-Origin *;
+        }
+
         location $BACKEND_ENDPOINT {
             return 301 $BACKEND_ENDPOINT/;
         }
