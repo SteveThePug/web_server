@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -13,6 +14,16 @@ import (
 )
 
 func main() {
+	r := gin.Default()
+
+	logsDir := "/backend/logs"
+	logFile, err := os.OpenFile(logsDir+"/go.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	gin.DefaultWriter = io.MultiWriter(os.Stdout, logFile)
+	r.Use(gin.Logger(), gin.Recovery())
+
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
@@ -45,7 +56,6 @@ func main() {
 
 	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth, Notes: notes}
 
-	r := gin.Default()
 	protected := r.Group("/", store.AuthMiddlewear)
 
 	r.GET("/posts", store.GetPosts)
