@@ -24,6 +24,11 @@ func main() {
 	gin.DefaultWriter = io.MultiWriter(os.Stdout, logFile)
 	r.Use(gin.Logger(), gin.Recovery())
 
+	err = r.SetTrustedProxies([]string{"172.28.0.0/16"})
+	if err != nil {
+		panic(err)
+	}
+
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
