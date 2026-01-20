@@ -22,12 +22,12 @@ const idx = ref(0);
 async function fetchRecent() {
     try {
         const res = await axios.get("/api/spotify/recent");
-        if (Array.isArray(res.data)) {
-            songs.value = res.data;
-            idx.value = 0;
-        } else {
+        if (!Array.isArray(res.data)) {
             throw new Error("Invalid response from Spotify API");
         }
+
+        songs.value = res.data;
+        idx.value = 0;
     } catch (err) {
         console.error("Cannot connect to Spotify API", err);
     }

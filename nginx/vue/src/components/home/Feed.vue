@@ -26,16 +26,14 @@ let len = 0;
 async function fetchPosts() {
     try {
         const res = await axios.get("/api/posts");
-        if (Array.isArray(res.data)) {
-            posts = res.data;
-            len = posts.length;
-            post.value = posts[0];
-            userOwnsPost.value =
-                post.value.author.username == auth.user.username;
-            leftCap.value = true;
-        } else {
-            throw new Error("Invalid response from API");
+        if (!Array.isArray(res.data)) {
+            throw new Error("Invalid response from posts API");
         }
+        posts = res.data;
+        len = posts.length;
+        post.value = posts[0];
+        userOwnsPost.value = post.value.author.username == auth.user.username;
+        leftCap.value = true;
     } catch (err) {
         console.log("Cannot connect to API");
     }
