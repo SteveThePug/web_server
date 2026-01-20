@@ -42,9 +42,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Transition name="fade" mode="out-in">
+    <Transition v-if="song" name="fade" mode="out-in">
         <div
-            v-if="song"
             @click="nextSong"
             :key="song.track.id"
             class="flex-col center-content center-text"
@@ -54,13 +53,13 @@ onUnmounted(() => {
             <p><strong>Song:</strong> {{ song.track.name }}</p>
             <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         </div>
-        <div v-else class="flex-col center-content center-text">
-            <h2>Listening To</h2>
-            <img src="/img/Untitled.png" />
-            <p><strong>Song:</strong> >_<</p>
-            <p><strong>Artist:</strong> ^_^</p>
-        </div>
     </Transition>
+    <div v-else class="flex-col center-content center-text">
+        <h2>Listening To</h2>
+        <img src="/img/Untitled.png" />
+        <p><strong>Song:</strong> >_<</p>
+        <p><strong>Artist:</strong> ^_^</p>
+    </div>
 </template>
 
 <style scoped>
