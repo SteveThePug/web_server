@@ -11,7 +11,9 @@ const gym = [
     <div class="flex-col center-content">
         <h2>Gym</h2>
         <p>I'm not a gym geek but I have a consistent routine:</p>
-        <OptionalLinkTable class="scroll" :data="gym" />
+        <div class="scroll fill">
+            <OptionalLinkTable :data="gym" />
+        </div>
     </div>
 </template>
 

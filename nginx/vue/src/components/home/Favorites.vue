@@ -1,67 +1,70 @@
+<script setup>
+import OptionalLinkTable from "@/components/quick/OptionalLinkTable.vue";
+const favs = [
+    {
+        type: "Daioh",
+        name: "Tomo",
+    },
+    {
+        type: "Color",
+        name: "Teal",
+    },
+    {
+        type: "Pet",
+        name: "Cat",
+    },
+    {
+        type: "Subject",
+        name: "Math",
+    },
+    {
+        type: "Drink",
+        name: "Monster",
+    },
+    {
+        type: "Sport",
+        name: "Running",
+    },
+    {
+        type: "Anime",
+        name: "Evangelion",
+    },
+    {
+        type: "Ingredient",
+        name: "Eggs",
+    },
+    {
+        type: "OS",
+        name: "Linux",
+    },
+    {
+        type: "Fruit",
+        name: "Satsumas",
+    },
+    {
+        type: "Vegetable",
+        name: "Cucumber",
+    },
+    {
+        type: "Hobby",
+        name: "Climbing",
+    },
+    {
+        type: "Season",
+        name: "Summer",
+    },
+    {
+        type: "Language",
+        name: "Rust",
+    },
+];
+</script>
+
 <template>
     <div class="flex-col center-content">
         <h2>favs</h2>
-        <div class="fill scroll">
-            <table>
-                <tbody>
-                    <tr>
-                        <th>Daioh</th>
-                        <td>Tomo</td>
-                    </tr>
-                    <tr>
-                        <th>Color</th>
-                        <td>Teal</td>
-                    </tr>
-                    <tr>
-                        <th>Pet</th>
-                        <td>Cat</td>
-                    </tr>
-                    <tr>
-                        <th>Subject</th>
-                        <td>Math</td>
-                    </tr>
-                    <tr>
-                        <th>Drink</th>
-                        <td>Monster</td>
-                    </tr>
-                    <tr>
-                        <th>Sport</th>
-                        <td>Running</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Evangelion</td>
-                    </tr>
-                    <tr>
-                        <th>Fruit</th>
-                        <td>Satsumas</td>
-                    </tr>
-                    <tr>
-                        <th>Vegetable</th>
-                        <td>Cucumber</td>
-                    </tr>
-                    <tr>
-                        <th>Hobby</th>
-                        <td>Climbing</td>
-                    </tr>
-                    <tr>
-                        <th>Season</th>
-                        <td>Summer</td>
-                    </tr>
-                    <tr>
-                        <th>Language</th>
-                        <td>Rust</td>
-                    </tr>
-                    <tr>
-                        <th>OS</th>
-                        <td>Linux</td>
-                    </tr>
-                    <tr>
-                        <th>Ingredient</th>
-                        <td>Eggs</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="scroll fill">
+            <OptionalLinkTable class="scroll" :data="favs" />
         </div>
     </div>
 </template>
