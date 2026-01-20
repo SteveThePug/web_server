@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { Transition } from "vue";
 
 const images = [
     "/img/memes/pidgeon.gif",
@@ -9,28 +10,58 @@ const images = [
     "/img/bedroom/img1.png",
 ];
 
-const currentIndex = ref(1);
+const currentIndex = ref(0);
 
 function nextImage() {
-    currentIndex.value = Math.floor(Math.random() * 100) % images.length;
+    let newIndex;
+    do {
+        newIndex = Math.floor(Math.random() * images.length);
+    } while (newIndex === currentIndex.value); // prevent same image repeating
+    currentIndex.value = newIndex;
 }
 
-setInterval(nextImage, 10000);
+let intervalId;
+
+onMounted(() => {
+    intervalId = setInterval(nextImage, 10000);
+});
+
+onUnmounted(() => {
+    clearInterval(intervalId);
+});
 </script>
 
 <template>
     <div class="image-viewer" @click="nextImage">
-        <img
-            :src="images[currentIndex]"
-            v-on:click="nextImage"
-            alt="Image Viewer"
-        />
+        <Transition name="fade" mode="out-in">
+            <img
+                :src="images[currentIndex]"
+                alt="Image Viewer"
+                key="images[currentIndex]"
+            />
+        </Transition>
     </div>
 </template>
 
 <style scoped>
+.image-viewer {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>
