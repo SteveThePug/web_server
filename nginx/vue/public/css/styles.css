@@ -37,15 +37,15 @@
     --portal_light_blue: #00a2ff;
 
     /* MAIN COLORS */
-    --primary: #000;
-    --secondary: #000;
-    --tertiary: #5a6952;
+    --primary: #5ea;
+    --secondary: #5ea;
+    --tertiary: #fff;
     --quaternary: #424542;
 
     /* BACKGROUND COLORS */
-    --bg-body: #111;
-    --bg_primary: #fff;
-    --bg_secondary: #ffa;
+    --bg-body: #000;
+    --bg_primary: #000;
+    --bg_secondary: #111;
     --bg_tertiary: #aaa;
     --bg_quaternary: #999;
 
@@ -67,7 +67,12 @@ body {
     font-family: var(--font_text);
 }
 
+a > * {
+    color: var(--tertiary);
+}
+
 a {
+    color: var(--tertiary);
     text-align: center;
     text-decoration: none;
     padding: 0px;
@@ -90,12 +95,16 @@ p {
 }
 
 button {
-    color: red;
+    color: var(--secondary);
+    background-color: var(--bg_secondary);
+    margin: var(--margin);
 }
 
 table {
     border: 1px solid var(--primary);
     border-collapse: collapse;
+    color: var(--secondary);
+    margin: var(--margin);
 }
 
 tr {

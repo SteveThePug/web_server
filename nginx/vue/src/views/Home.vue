@@ -24,21 +24,26 @@ import Watching from "@/components/home/Watching.vue";
     <div class="background halftone" />
 
     <main class="center-content flex-col">
-        <div class="a4page-portrait bdr-1 grid relative">
-            <Intro class="intro bdr-primary bg-primary" />
-            <Listening class="listening bdr-primary bg-primary" />
-            <Stamps class="stamps bdr-primary bg-primary" />
-            <Feed class="feed bdr-primary bg-primary" />
-            <Links class="links bdr-primary bg-primary" />
-            <Collage class="collage bdr-primary bg-primary" />
-            <Watching class="watching bdr-primary bg-primary" />
-            <Favorites class="favorites bdr-primary bg-primary" />
-            <Gym class="gym bdr-primary bg-primary" />
+        <div class="page a4page-portrait bdr-1 grid relative">
+            <Intro class="intro" />
+            <Listening class="listening" />
+            <Stamps class="stamps" />
+            <Feed class="feed" />
+            <Links class="links" />
+            <Collage class="collage" />
+            <Watching class="watching" />
+            <Favorites class="favorites" />
+            <Gym class="gym" />
         </div>
     </main>
 </template>
 
 <style scoped>
+.page > * {
+    border: 2px dotted var(--primary);
+    background-color: var(--bg_primary);
+}
+
 .grid {
     display: grid;
     grid-gap: 5px;
