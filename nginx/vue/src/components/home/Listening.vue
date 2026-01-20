@@ -1,48 +1,57 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 
-const song = ref(null);
-const intervalId = ref(null);
-const refreshId = ref(null);
+let intervalId = null;
+let refreshId = null;
 
-let songs = [];
-let idx = 0;
+const song = computed(() => songs.value[idx.value]);
+const songs = ref([
+    {
+        id: 1,
+        track: {
+            id: 1,
+            name: "^_^",
+            album: { images: [{ url: "/img/Untitled.png" }] },
+            artists: [{ name: ">_<" }],
+        },
+    },
+]);
+const idx = ref(0);
 
 async function fetchRecent() {
     try {
         const res = await axios.get("/api/spotify/recent");
-        songs = res.data || [];
-
-        idx = 0;
-        song.value = songs[0] ?? null;
+        if (Array.isArray(res.data)) {
+            songs.value = res.data;
+            idx.value = 0;
+        } else {
+            throw new Error("Invalid response from Spotify API");
+        }
     } catch (err) {
         console.error("Cannot connect to Spotify API", err);
     }
 }
 
 function nextSong() {
-    if (!songs.length) return;
-
-    song.value = songs[idx];
-    idx = (idx + 1) % songs.length;
+    if (!songs.value.length) return;
+    idx.value = (idx.value + 1) % songs.value.length;
 }
 
 onMounted(async () => {
     await fetchRecent();
-
-    intervalId.value = setInterval(nextSong, 5000);
-    refreshId.value = setInterval(fetchRecent, 120000);
+    intervalId = setInterval(nextSong, 5000);
+    refreshId = setInterval(fetchRecent, 120000);
 });
 
 onUnmounted(() => {
-    clearInterval(intervalId.value);
-    clearInterval(refreshId.value);
+    clearInterval(intervalId);
+    clearInterval(refreshId);
 });
 </script>
 
 <template>
-    <Transition v-if="song" name="fade" mode="out-in">
+    <Transition name="fade" mode="out-in">
         <div
             @click="nextSong"
             :key="song.track.id"
@@ -54,12 +63,6 @@ onUnmounted(() => {
             <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
         </div>
     </Transition>
-    <div v-else class="flex-col center-content center-text">
-        <h2>Listening To</h2>
-        <img src="/img/Untitled.png" />
-        <p><strong>Song:</strong> >_<</p>
-        <p><strong>Artist:</strong> ^_^</p>
-    </div>
 </template>
 
 <style scoped>
