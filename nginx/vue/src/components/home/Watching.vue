@@ -5,6 +5,28 @@
             <table>
                 <tbody>
                     <tr>
+                        <th>Substack</th>
+                        <td>
+                            <a
+                                href="https://oceandrops.substack.com/p/japan-is-what-late-stage-capitalist?utm_source=%2Finbox&utm_medium=reader2"
+                                >By Ellie</a
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Substack</th>
+                        <td>
+                            <a
+                                href="https://finalgirldigital.substack.com/p/the-diet-coke-essay?utm_source=%2Finbox&utm_medium=reader2"
+                                >By Cricket Guest</a
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Book</th>
+                        <td>The Defining Decade</td>
+                    </tr>
+                    <tr>
                         <th>Book</th>
                         <td>Atomic Habits</td>
                     </tr>
