@@ -1,7 +1,7 @@
 <script setup>
 import OptionalLinkTable from "@/components/quick/OptionalLinkTable.vue";
 
-const arr = [
+const data = [
     {
         type: "Substack",
         name: "By Ellie",
@@ -59,7 +59,7 @@ const arr = [
     <div class="flex-col center-content">
         <h2>Consumption</h2>
         <div class="scroll fill">
-            <OptionalLinkTable :data="arr" />
+            <OptionalLinkTable :data="data" />
         </div>
     </div>
 </template>
