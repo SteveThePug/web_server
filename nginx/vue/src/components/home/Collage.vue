@@ -5,6 +5,8 @@ const images = [
     "/img/memes/pidgeon.gif",
     "/img/memes/no_slip.png",
     "/img/memes/epic.jpeg",
+    "/img/bedroom/img2.png",
+    "/img/bedroom/img1.png",
 ];
 
 const currentIndex = ref(1);
