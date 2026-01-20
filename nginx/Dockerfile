@@ -15,7 +15,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
 
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
-COPY robots.txt /etc/nginx/html/robots.txt
 COPY entrypoint.sh /entrypoint.sh
 
 WORKDIR /app
@@ -26,5 +25,7 @@ RUN npm run build
 RUN mkdir -p /etc/nginx/html \
     && rm -rf /etc/nginx/html/* \
     && cp -r ./dist/* /etc/nginx/html/
+
+COPY robots.txt /etc/nginx/html/robots.txt
 
 ENTRYPOINT ["/entrypoint.sh"]
