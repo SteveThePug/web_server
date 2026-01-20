@@ -46,6 +46,7 @@ onUnmounted(() => {
         <div
             v-if="song"
             @click="nextSong"
+            :key="song.track.id"
             class="flex-col center-content center-text"
         >
             <h2>Listening To</h2>
