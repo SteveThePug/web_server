@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 
-let intervalId = null;
+let nextId = null;
 let refreshId = null;
 
 const song = computed(() => songs.value[idx.value]);
@@ -31,22 +31,25 @@ async function fetchRecent() {
     } catch (err) {
         console.error("Cannot connect to Spotify API", err);
     }
+    refreshId = setTimeout(fetchRecent, 120000);
 }
 
 function nextSong() {
+    clearTimeout(nextId);
     if (!songs.value.length) return;
     idx.value = (idx.value + 1) % songs.value.length;
+    nextId = setTimeout(nextSong, 5000);
 }
 
 onMounted(async () => {
     await fetchRecent();
-    intervalId = setInterval(nextSong, 5000);
-    refreshId = setInterval(fetchRecent, 120000);
+    nextId = setTimeout(nextSong, 5000);
+    refreshId = setTimeout(fetchRecent, 120000);
 });
 
 onUnmounted(() => {
-    clearInterval(intervalId);
-    clearInterval(refreshId);
+    clearTimeout(nextId);
+    clearTimeout(refreshId);
 });
 </script>
 

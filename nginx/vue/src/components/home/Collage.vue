@@ -14,22 +14,24 @@ const currentIndex = ref(0);
 const currentComment = computed(() => images[currentIndex.value].comment);
 const currentUrl = computed(() => images[currentIndex.value].url);
 
+let nextId;
+
 function nextImage() {
+    clearTimeout(nextId);
     let newIndex;
     do {
         newIndex = Math.floor(Math.random() * images.length);
-    } while (newIndex === currentIndex.value); // prevent same image repeating
+    } while (newIndex === currentIndex.value);
     currentIndex.value = newIndex;
+    nextId = setTimeout(nextImage, 10000);
 }
 
-let intervalId;
-
 onMounted(() => {
-    intervalId = setInterval(nextImage, 10000);
+    nextId = setTimeout(nextImage, 10000);
 });
 
 onUnmounted(() => {
-    clearInterval(intervalId);
+    clearTimeout(nextId);
 });
 </script>
 
