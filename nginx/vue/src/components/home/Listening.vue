@@ -1,45 +1,51 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 
 const song = ref(null);
-const fetched = ref(false);
 const intervalId = ref(null);
+const refreshId = ref(null);
+
 let songs = [];
-const len = 3;
 let idx = 0;
 
 async function fetchRecent() {
     try {
         const res = await axios.get("/api/spotify/recent");
-        songs = res.data;
-        fetched.value = true;
-        song.value = songs[0];
+        songs = res.data || [];
+
+        idx = 0;
+        song.value = songs[0] ?? null;
     } catch (err) {
-        console.error(err);
+        console.error("Cannot connect to Spotify API", err);
     }
 }
 
 function nextSong() {
-    clearInterval(intervalId.value);
+    if (!songs.length) return;
+
     song.value = songs[idx];
-    idx = (idx + 1) % len;
-    intervalId.value = setInterval(nextSong, 5000);
+    idx = (idx + 1) % songs.length;
 }
 
-onMounted(() => {
-    fetchRecent();
-    setInterval(fetchRecent, 120000);
+onMounted(async () => {
+    await fetchRecent();
+
     intervalId.value = setInterval(nextSong, 5000);
+    refreshId.value = setInterval(fetchRecent, 120000);
+});
+
+onUnmounted(() => {
+    clearInterval(intervalId.value);
+    clearInterval(refreshId.value);
 });
 </script>
 
 <template>
     <Transition name="fade" mode="out-in">
         <div
-            v-if="fetched"
-            :key="song"
-            v-on:click="nextSong"
+            v-if="song"
+            @click="nextSong"
             class="flex-col center-content center-text"
         >
             <h2>Listening To</h2>

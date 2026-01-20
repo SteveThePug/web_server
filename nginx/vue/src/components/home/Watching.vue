@@ -1,81 +1,65 @@
+<script setup>
+import OptionalLinkTable from "@/components/quick/OptionalLinkTable.vue";
+
+const arr = [
+    {
+        type: "Substack",
+        name: "By Ellie",
+        link: "https://oceandrops.substack.com/p/japan-is-what-late-stage-capitalist?utm_source=%2Finbox&utm_medium=reader2",
+    },
+    {
+        type: "Substack",
+        name: "By Cricket Guest",
+        link: "https://finalgirldigital.substack.com/p/the-diet-coke-essay?utm_source=%2Finbox&utm_medium=reader2",
+    },
+    {
+        type: "Book",
+        name: "The Defining Decade",
+    },
+    {
+        type: "Movie",
+        name: "Funny Pages",
+    },
+    {
+        type: "Series",
+        name: "Curb Your Enthusiasm",
+    },
+    {
+        type: "Game",
+        name: "Hatsune Miku: Project Mirai DX",
+    },
+    {
+        type: "Movie",
+        name: "Redline",
+    },
+    {
+        type: "Game",
+        name: "Persona 5 Royal",
+    },
+    {
+        type: "Anime",
+        name: "GTO",
+    },
+    {
+        type: "Anime",
+        name: "Revolutionary Girl Utena",
+    },
+    {
+        type: "Anime",
+        name: "Chainsaw man",
+    },
+    {
+        type: "Anime",
+        name: "Azumanga Daioh",
+    },
+];
+</script>
+
 <template>
     <div class="flex-col center-content">
         <h2>Consumption</h2>
         <div class="scroll fill">
-            <table>
-                <tbody>
-                    <tr>
-                        <th>Substack</th>
-                        <td>
-                            <a
-                                href="https://oceandrops.substack.com/p/japan-is-what-late-stage-capitalist?utm_source=%2Finbox&utm_medium=reader2"
-                                >By Ellie</a
-                            >
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Substack</th>
-                        <td>
-                            <a
-                                href="https://finalgirldigital.substack.com/p/the-diet-coke-essay?utm_source=%2Finbox&utm_medium=reader2"
-                                >By Cricket Guest</a
-                            >
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Book</th>
-                        <td>The Defining Decade</td>
-                    </tr>
-                    <tr>
-                        <th>Book</th>
-                        <td>Atomic Habits</td>
-                    </tr>
-                    <tr>
-                        <th>Movie</th>
-                        <td>Funny Pages</td>
-                    </tr>
-                    <tr>
-                        <th>Series</th>
-                        <td>Curb Your Enthusiasm</td>
-                    </tr>
-                    <tr>
-                        <th>Game</th>
-                        <td>Hatsune Miku: Project Mirai DX</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Welcome to the NHK</td>
-                    </tr>
-                    <tr>
-                        <th>Movie</th>
-                        <td>Redline</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Neon Genesis Evangelion</td>
-                    </tr>
-                    <tr>
-                        <th>Game</th>
-                        <td>Persona 5</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>GTO</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Revolutionary Girl Utena</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Chainsaw Man</td>
-                    </tr>
-                    <tr>
-                        <th>Anime</th>
-                        <td>Azumanga Daioh</td>
-                    </tr>
-                </tbody>
-            </table>
+            <OptionalLinkTable :data="arr" />
         </div>
     </div>
 </template>

@@ -9,7 +9,6 @@ const auth = useAuthStore();
 const userOwnsPost = ref(false);
 
 const post = ref(null);
-const fetched = ref(false);
 const leftCap = ref(false);
 const rightCap = ref(false);
 let posts = [];
@@ -21,14 +20,13 @@ async function fetchPosts() {
         const res = await axios.get("https://www.adam-french.co.uk/api/posts");
         posts = res.data;
         len = posts.length;
-        fetched.value = true;
         post.value = posts[0];
 
         userOwnsPost.value = post.value.author.username == auth.user.username;
 
         leftCap.value = true;
     } catch (err) {
-        console.error(err);
+        console.log("Cannot connect to API");
     }
 }
 
@@ -68,7 +66,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div v-if="fetched" class="flex-col pad scroll-y left-content">
+    <div v-if="post" class="flex-col pad scroll-y left-content">
         <h2>{{ post.title }}</h2>
         <Markdown class="fill wrap" :source="post.content" />
         <p>by: {{ post.author.username }}</p>
