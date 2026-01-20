@@ -36,8 +36,8 @@ onUnmounted(() => {
         <Transition name="fade" mode="out-in">
             <img
                 :src="images[currentIndex]"
+                :key="currentIndex"
                 alt="Image Viewer"
-                key="images[currentIndex]"
             />
         </Transition>
     </div>
