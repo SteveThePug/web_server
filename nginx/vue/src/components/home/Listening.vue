@@ -1,55 +1,28 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import axios from "axios";
+import { useSongsStore } from "@/stores/songs";
+
+const songsStore = useSongsStore();
+const idx = ref(0);
+const song = computed(() => songsStore.songs[idx.value]);
 
 let nextId = null;
 let refreshId = null;
 
-const song = computed(() => songs.value[idx.value]);
-const songs = ref([
-    {
-        id: 1,
-        track: {
-            id: 1,
-            name: "^_^",
-            album: { images: [{ url: "/img/Untitled.png" }] },
-            artists: [{ name: ">_<" }],
-        },
-    },
-]);
-const idx = ref(0);
-
-async function fetchRecent() {
-    try {
-        const res = await axios.get("/api/spotify/recent");
-        if (!Array.isArray(res.data)) {
-            throw new Error("Invalid response from Spotify API");
-        }
-
-        songs.value = res.data;
-        idx.value = 0;
-    } catch (err) {
-        console.error("Cannot connect to Spotify API", err);
-    }
-    refreshId = setTimeout(fetchRecent, 120000);
-}
-
 function nextSong() {
     clearTimeout(nextId);
-    if (!songs.value.length) return;
-    idx.value = (idx.value + 1) % songs.value.length;
     nextId = setTimeout(nextSong, 5000);
+    idx.value = (idx.value + 1) % songsStore.songsCount;
 }
 
-onMounted(async () => {
-    await fetchRecent();
+onMounted(() => {
     nextId = setTimeout(nextSong, 5000);
-    refreshId = setTimeout(fetchRecent, 120000);
+    refreshId = setInterval(songsStore.fetchSongs, 120000);
 });
 
 onUnmounted(() => {
     clearTimeout(nextId);
-    clearTimeout(refreshId);
+    clearInterval(refreshId);
 });
 </script>
 

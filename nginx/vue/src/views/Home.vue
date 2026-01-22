@@ -20,7 +20,7 @@ import Watching from "@/components/home/Watching.vue";
         <div class="flex-col tr">
             <Time class="bdr-2 bg-primary" />
             <Timer class="bdr-2 bg-primary" />
-            <Chat class="bdr-2 bg-primary" />
+            <!-- <Chat class="bdr-2 bg-primary" /> -->
         </div>
     </div>
     <div class="background halftone" />

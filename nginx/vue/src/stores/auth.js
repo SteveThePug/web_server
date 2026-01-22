@@ -4,9 +4,9 @@ import axios from "axios";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
-  checkToken();
-
   const loggedIn = computed(() => !!user.value.username);
+
+  checkToken();
 
   async function logOut() {
     try {
@@ -61,11 +61,13 @@ export const useAuthStore = defineStore("auth", () => {
 
   return {
     user,
-    checkToken,
+
+    loggedIn,
+
     logIn,
+    checkToken,
     refreshToken,
     logOut,
     createUser,
-    loggedIn,
   };
 });

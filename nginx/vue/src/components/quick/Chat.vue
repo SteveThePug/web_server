@@ -1,30 +1,14 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
-// Connect to websocket
-const url = "/api/ws";
+import { useMessagesStore } from "@/stores/messages";
 
-const socket = ref(null);
-const messages = ref([]);
-const messageInput = ref(
-    "This will work soon but for now is bait, please don't worry... it will all come together soon :)",
-);
+const messagesStore = useMessagesStore();
+const messages = computed(() => messagesStore.messages);
 
 onMounted(() => {
-    socket.value = new WebSocket(url);
-
-    socket.value.addEventListener("message", (event) => {
-        const message = JSON.parse(event.data);
-        messages.value.push(message);
-    });
+    messagesStore.connect();
 });
-
-function sendMessage() {
-    socket.value.send(JSON.stringify({ content: messageInput.value }));
-    messageInput.value = "";
-}
-
 onUnmounted(() => {
-    socket.value?.close();
+    messagesStore.disconnect();
 });
 </script>
 

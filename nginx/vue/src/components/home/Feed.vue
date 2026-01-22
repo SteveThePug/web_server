@@ -1,76 +1,41 @@
 <script setup>
 import Markdown from "@/components/quick/Markdown.vue";
 
-import { ref, onMounted } from "vue";
-import axios from "axios";
+import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
+import { usePostsStore } from "@/stores/posts";
 
-const auth = useAuthStore();
-const userOwnsPost = ref(false);
+const authStore = useAuthStore();
+const postsStore = usePostsStore();
 
-const post = ref({
-    title: "Can't fetch from the db yo",
-    content:
-        "This is meant to be pulling from a database, but for some reason that isn't working and this is filler text that should hopefully never see the light of day. If you are reading this, something has gone horribly, horribly wrong. Please start crying and prepare for the incoming wrath of hell. Furthermore, this is very, very long because I am trying to test the scroll feature so thank you ^_^.",
-    author: {
-        username: "stp",
-    },
-    createdAt: Date.now(),
-});
-const leftCap = ref(false);
-const rightCap = ref(false);
-let posts = [];
-let idx = 0;
-let len = 0;
+const idx = ref(0);
 
-async function fetchPosts() {
-    try {
-        const res = await axios.get("/api/posts");
-        if (!Array.isArray(res.data)) {
-            throw new Error("Invalid response from posts API");
-        }
-        posts = res.data;
-        len = posts.length;
-        post.value = posts[0];
-        userOwnsPost.value = post.value.author.username == auth.user.username;
-        leftCap.value = true;
-    } catch (err) {
-        console.log("Cannot connect to API");
-    }
-}
+const leftCap = computed(() => idx.value === 0);
+const rightCap = computed(() => idx.value === postsStore.postsCount - 1);
+
+const post = computed(() => postsStore.posts[idx.value]);
+const userOwnsPost = computed(
+    () => post.value.author.username == authStore.user.username,
+);
 
 function nextPost() {
-    if (idx < len - 1) {
-        idx++;
-        rightCap.value = idx === len - 1;
-        leftCap.value = idx === 0;
-        post.value = posts[idx];
+    if (idx.value < postsStore.postsCount - 1) {
+        idx.value++;
     }
 }
 
 function prevPost() {
-    if (idx > 0) {
-        idx--;
-        rightCap.value = idx === len - 1;
-        leftCap.value = idx === 0;
-        post.value = posts[idx];
+    if (idx.value > 0) {
+        idx.value--;
     }
 }
 
-async function deletePost() {
-    try {
-        const res = await axios.delete(
-            `/api/posts/${encodeURIComponent(post.value.id)}`,
-        );
-        console.log("Deleted:", res.data);
-        fetchPosts();
-    } catch (err) {
-        console.error("Delete failed:", err);
-    }
+function deletePost() {
+    postsStore.deletePost(post.value);
 }
 
 onMounted(() => {
-    fetchPosts();
+    postsStore.fetchPosts();
 });
 </script>
 
