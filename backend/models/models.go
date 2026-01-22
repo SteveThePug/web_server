@@ -26,3 +26,12 @@ type Post struct {
 	Author    *User          `gorm:"foreignKey:AuthorID" json:"author"`
 	Content   string         `json:"content"`
 }
+
+type Message struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	Content   string         `json:"text"`
+	AuthorID  uint           `json:"-"`
+	Author    *User          `gorm:"foreignKey:AuthorID" json:"author"`
+	CreatedAt time.Time      `json:"createdAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+}

@@ -1,6 +1,7 @@
 <script setup>
 import Timer from "@/components/quick/Timer.vue";
 import Time from "@/components/quick/Time.vue";
+import Chat from "@/components/quick/Chat.vue";
 
 import Intro from "@/components/home/Intro.vue";
 import Stamps from "@/components/home/Stamps.vue";
@@ -19,6 +20,7 @@ import Watching from "@/components/home/Watching.vue";
         <div class="flex-col tr">
             <Time class="bdr-2 bg-primary" />
             <Timer class="bdr-2 bg-primary" />
+            <Chat class="bdr-2 bg-primary" />
         </div>
     </div>
     <div class="background halftone" />
