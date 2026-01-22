@@ -5,7 +5,9 @@ const url = "/api/ws";
 
 const socket = ref(null);
 const messages = ref([]);
-const messageInput = ref("");
+const messageInput = ref(
+    "This will work soon but for now is bait, please don't worry... it will all come together soon :)",
+);
 
 onMounted(() => {
     socket.value = new WebSocket(url);
