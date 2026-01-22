@@ -85,6 +85,8 @@ func main() {
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
 
+	r.GET("/ws", store.ConnectWebSocket)
+
 	r.GET("/notes/*path", store.GetNoteFile)
 
 	r.GET("/", func(c *gin.Context) {
