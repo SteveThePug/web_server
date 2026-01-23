@@ -180,6 +180,21 @@ const doc_links = [
         link: "https://docs.python.org/3/",
     },
 ];
+
+const article_links = [
+    {
+        name: "Go and GORM",
+        link: "https://medium.com/@chaewonkong/learn-go-understanding-and-implementing-foreign-keys-with-gorm-6d7608e1dbf6",
+    },
+    {
+        name: "JWT Auth in GO",
+        link: "https://medium.com/monstar-lab-bangladesh-engineering/jwt-auth-in-go-dde432440924",
+    },
+    {
+        name: "Websockets in GO",
+        link: "https://medium.com/@tanngontn/golang-gin-framework-with-normal-websocket-and-websocket-with-producer-is-rabbitmq-guide-93cad7d290f7",
+    },
+];
 </script>
 
 <template>
@@ -196,6 +211,10 @@ const doc_links = [
             <ToggleLinkTable title="Job Apps" :linkArr="job_links" />
             <ToggleLinkTable title="Social" :linkArr="social_links" />
             <ToggleLinkTable title="Other Docs" :linkArr="doc_links" />
+            <ToggleLinkTable
+                title="Helpful Articles"
+                :linkArr="article_links"
+            />
         </div>
     </main>
 </template>
