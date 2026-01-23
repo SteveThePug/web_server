@@ -13,7 +13,7 @@ const props = defineProps({
     },
 });
 
-const show_links = ref(true);
+const show_links = ref(false);
 </script>
 
 <template>

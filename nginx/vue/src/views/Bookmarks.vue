@@ -3,6 +3,21 @@ import { ref } from "vue";
 
 import ToggleLinkTable from "@/components/quick/ToggleLinkTable.vue";
 
+const reading_links = [
+    {
+        name: "Substack",
+        link: "https://substack.com/",
+    },
+    {
+        name: "Medium",
+        link: "https://medium.com/",
+    },
+    {
+        name: "4Chan",
+        link: "https://www.4chan.org/",
+    },
+];
+
 const job_links = [
     {
         name: "LinkedIn",
@@ -211,6 +226,7 @@ const article_links = [
             <ToggleLinkTable title="Job Apps" :linkArr="job_links" />
             <ToggleLinkTable title="Social" :linkArr="social_links" />
             <ToggleLinkTable title="Other Docs" :linkArr="doc_links" />
+            <ToggleLinkTable title="Fun Reading" :linkArr="reading_links" />
             <ToggleLinkTable
                 title="Helpful Articles"
                 :linkArr="article_links"
