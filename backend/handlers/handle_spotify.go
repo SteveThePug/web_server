@@ -10,8 +10,6 @@ import (
 )
 
 func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
-	print("COMPLETING AUTH")
-
 	state := ctx.Query("state")
 	c := context.Background()
 	// code := c.Query("code")
