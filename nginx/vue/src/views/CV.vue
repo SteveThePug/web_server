@@ -7,23 +7,94 @@
                 <div class="contact-details">
                     <p>+447563266931</p>
                     <p>adam.a.french@outlook.com</p>
+                    <p>www.adam-french.co.uk</p>
                 </div>
             </div>
 
             <h2>Profile</h2>
             <p>
-                Passionate about developing robust, efficient software with a
-                strong focus on maintainability, scalability, and long-term
-                performance. I take pride in my ability to perform under
-                pressure, adapt quickly, and contribute effectively in
-                collaborative, fast-paced environments.
+                Recently graduated from the University of Leeds with a BSc
+                Computer Science with Mathematics (International) degree.
+                Currently self-studying <i>Complex Analysis</i> and
+                <i>"An Introduction to Statistical Learning"</i>. Also building
+                personal projects aligned with the type of roles I am seeking.
             </p>
             <p>
-                My ideal role involves designing and building scalable systems
-                that balance creativity with problem-solving. I aim to cultivate
-                meaningful professional connections and contribute to projects
-                that deliver a clear altruistic impact.
+                I am most keen to work for a company with altruistic values and
+                a focus on durable solutions. Looking forward to learning from
+                experts and collaborating with motivated individuals.
             </p>
+
+            <h2>Personal Projects</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Skills</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Personal Websites</td>
+                        <td>Nginx, Vue, Postgres, Docker, Go, Python</td>
+                        <td>Ongoing</td>
+                        <td class="row-leftalign">
+                            My personal site, Currently
+                            <b>self hosted</b>
+                            using <b>listed skills</b>. In the past, I have used
+                            Svelte, React/Redux, SQLite, Rust and Deno.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Computer Graphics</td>
+                        <td>Rust, Linear Algebra, Multithreading</td>
+                        <td>2023</td>
+                        <td class="row-leftalign">
+                            A multithreaded, recursive ray tracer implemented in
+                            Rust.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Mobile Automata</td>
+                        <td>Mathematica, JS</td>
+                        <td>2024</td>
+                        <td class="row-leftalign">
+                            Investigated properties of cellular automata by
+                            observing emergent behaviors through custom
+                            simulations.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Arduino Programming & Circuits</td>
+                        <td>C++, Soldering, Embedded Systems</td>
+                        <td>2022 - 2025</td>
+                        <td class="row-leftalign">
+                            Created room decorations using salvaged components
+                            from discarded electronics.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Memory Palace Website</td>
+                        <td>TS, Rust, React, Redux, SQLite</td>
+                        <td>2025</td>
+                        <td class="row-leftalign">
+                            Full-stack web application aiming to make the
+                            “memory palace” memorization technique easy.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3D Printing</td>
+                        <td>FreeCAD</td>
+                        <td>Ongoing</td>
+                        <td class="row-leftalign">
+                            Designing quality of life objects using FreeCAD and
+                            printing with a BambuLab A1.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
 
             <h2>Education</h2>
             <table>
@@ -85,7 +156,11 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
 
+        <span class="no-print"></span>
+
+        <div class="a4page">
             <h2>Experience</h2>
             <table>
                 <thead>
@@ -109,121 +184,16 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Bartender</td>
-                        <td>Belgrave Music Hall</td>
-                        <td>2022-2025</td>
+                        <td>Bartender, Waiter, Cashier</td>
+                        <td>Hospitality Venues</td>
+                        <td>2018-2023</td>
                         <td class="row-leftalign">
                             Delivered heartfelt customer service in various
                             fast-paced, high-pressure hospitality environments.
                         </td>
                     </tr>
-                    <tr>
-                        <td>Cashier Assistant</td>
-                        <td>To The Rise Bakery</td>
-                        <td>Summer 2022</td>
-                        <td class="row-leftalign">
-                            Prepared coffee, served customers, presented goods,
-                            cleaned bakery equipment, and made toasties.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Waiter</td>
-                        <td>BFI Bar and Kitchen</td>
-                        <td>Summer 2020</td>
-                        <td class="row-leftalign">
-                            Managed bookings, allocated tables, handled
-                            complaints, ran food and drinks, and maintained BOH
-                            cleanliness.
-                        </td>
-                    </tr>
                 </tbody>
             </table>
-        </div>
-
-        <span class="no-print"></span>
-
-        <div class="a4page">
-            <h2>Personal Projects</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Project</th>
-                        <th>Skills</th>
-                        <th>Date</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Mobile Automata</td>
-                        <td>Mathematica, JS, Logic, Analysis</td>
-                        <td>2024</td>
-                        <td class="row-leftalign">
-                            Designed experiments and analysis tools to identify
-                            pattern similarities among automata. Investigated
-                            computational properties by defining specific
-                            phenomena and observing emergent behaviors through
-                            custom simulations.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Computer Graphics</td>
-                        <td>Rust, Linear Algebra, Multi-threading</td>
-                        <td>2023</td>
-                        <td class="row-leftalign">
-                            Developed a multi-threaded, recursive ray tracer as
-                            part of a University of Waterloo project. Explored
-                            advanced ray-surface intersection techniques,
-                            including experimental rendering of
-                            higher-dimensional geometries.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Arduino Programming & Circuits</td>
-                        <td>C++, Soldering, Embedded Systems</td>
-                        <td>2022 - 2025</td>
-                        <td class="row-leftalign">
-                            Created room decorations using salvaged components
-                            from discarded electronics.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Memory Palace Website</td>
-                        <td>TS, Rust, React, Redux, SQLite</td>
-                        <td>2025</td>
-                        <td class="row-leftalign">
-                            Full-stack web application implementing the “memory
-                            palace” memorization technique. Built with a
-                            React/Redux frontend, Rust-based Actix backend, and
-                            SQLite database.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Personal Websites</td>
-                        <td>HTML, JS, Design, UI/UX</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Continuously evolving my personal site and designing
-                            other creative websites. Experimented with Svelte,
-                            Vue, and React/Redux using libraries such as P5 and
-                            Three.js.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>3D Printing</td>
-                        <td>FreeCAD</td>
-                        <td>Ongoing</td>
-                        <td class="row-leftalign">
-                            Designing and manufacturing household objects and
-                            repairs, including replacement window handles, desk
-                            organizers, and 3D scans.
-                        </td>
-                    </tr>
-                </tbody>
-
-                <tbody></tbody>
-            </table>
-
             <h2>Commitments</h2>
             <table>
                 <thead>
@@ -257,6 +227,29 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>meetup.com</td>
+                        <td>Ongoing</td>
+                        <td class="row-leftalign">
+                            Attending various tech meetups and social events.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Boardgames</td>
+                        <td>Ongoing</td>
+                        <td class="row-leftalign">
+                            Meet up regularly to play the game
+                            <i>Root</i>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Leetcode</td>
+                        <td>Ongoing</td>
+                        <td class="row-leftalign">
+                            Do the leetcode daily challenge and hone in on
+                            different programming languages.
+                        </td>
+                    </tr>
+                    <tr>
                         <td>Construction and Landscaping</td>
                         <td>Ongoing</td>
                         <td class="row-leftalign">
@@ -275,8 +268,7 @@
                         <td>Socratica</td>
                         <td>2023-2024</td>
                         <td class="row-leftalign">
-                            Worked with like-minded individuals exploring
-                            innovative tech.
+                            Worked with individuals exploring innovative tech.
                         </td>
                     </tr>
                     <tr>
@@ -423,7 +415,7 @@
     font-family: var(--font-text);
     height: 148mm;
     width: 210mm;
-    padding: 5mm;
+    padding: 4mm;
     box-sizing: border-box;
     background-color: var(--background);
     box-shadow: 0 20px 20px rgba(0, 0, 0, 0.2);
@@ -438,7 +430,7 @@
     /* Standard A4 width */
     height: 297mm;
     /* Standard A4 height */
-    padding: 10mm;
+    padding: 8mm;
     box-sizing: border-box;
     background-color: var(--background);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -490,7 +482,6 @@ p {
 
 table {
     color: var(--secondary);
-    width: 100%;
     border-collapse: collapse;
     border: 1px solid black;
 }
@@ -585,7 +576,7 @@ textarea {
 }
 
 .contact-details p {
-    margin: 2px 0;
+    margin: 1px 0;
 }
 
 /* Interests and Skills at bottom of page */
