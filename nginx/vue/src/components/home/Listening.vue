@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
 
 const songsStore = useSongsStore();
-songsStore.fetchSongs();
 const idx = ref(0);
 const song = computed(() => songsStore.songs[idx.value]);
 
@@ -17,6 +16,7 @@ function nextSong() {
 }
 
 onMounted(() => {
+    songsStore.fetchSongs();
     nextId = setTimeout(nextSong, 5000);
     refreshId = setInterval(songsStore.fetchSongs, 120000);
 });
