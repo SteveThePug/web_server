@@ -108,6 +108,7 @@ func RefreshClient(auth *spotifyauth.Authenticator, token *oauth2.Token) (*spoti
 	if err != nil {
 		return nil, err
 	}
+	SaveSpotifyToken(SPOTIFY_TOKEN_JSON_PATH, token)
 
 	client := spotify.New(auth.Client(ctx, token))
 
