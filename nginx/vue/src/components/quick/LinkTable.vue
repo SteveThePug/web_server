@@ -18,6 +18,8 @@ const keys = ["name", "link"];
         :key="rowIndex"
         :href="row.link"
     >
-        {{ row.name }}
+        <p>
+            {{ row.name }}
+        </p>
     </a>
 </template>
