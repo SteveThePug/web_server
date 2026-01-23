@@ -17,11 +17,6 @@ export const useSongsStore = defineStore("songs", () => {
 
   const songsCount = computed(() => songs.value.length);
 
-  fetchSongs();
-
-  let refreshId = null;
-  refreshId = setTimeout(fetchSongs, 120000);
-
   async function fetchSongs() {
     try {
       const res = await axios.get("/api/spotify/recent");
@@ -29,8 +24,6 @@ export const useSongsStore = defineStore("songs", () => {
         throw new Error("Invalid response from Spotify API");
       }
       songs.value = res.data;
-      refreshId = setTimeout(fetchSongs, 120000);
-      console.log("lol");
     } catch (err) {
       console.error("Cannot connect to Spotify API", err);
     }
