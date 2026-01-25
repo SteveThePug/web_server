@@ -55,8 +55,6 @@ http {
 
         location = /robots.txt {
             allow all;
-            log_not_found off;
-            access_log off;
         }
 
         location ~ /.well-known/acme-challenge/ {
