@@ -12,6 +12,8 @@ http {
     log_format compact
         '$remote_addr "$request" $status rt=$request_time';
 
+    access_log /var/log/nginx/access.log compact;
+
     types {
         text/javascript mjs;
     }
