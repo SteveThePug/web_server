@@ -14,18 +14,19 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest
 
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
-COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
-COPY robots.txt /etc/nginx/html/robots.txt
-COPY entrypoint.sh /entrypoint.sh
 
 WORKDIR /app
 COPY vue/ ./
 RUN npm install
 RUN npm run build
 
+
 RUN mkdir -p /etc/nginx/html \
     && cp -r ./dist/* /etc/nginx/html/
 
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
+COPY robots.txt /etc/nginx/html/robots.txt
+COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
