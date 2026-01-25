@@ -1,4 +1,5 @@
-certbot/
+certbot/conf
+certbot/www
 backend/token/
 .env
 
