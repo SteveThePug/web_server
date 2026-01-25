@@ -9,11 +9,8 @@ http {
     server_tokens off;
     charset utf-8;
 
-    log_format geo
-        '$remote_addr '
-        '$geoip2_country_code '
-        '"$request" '
-        '$status';
+    log_format compact
+        '$remote_addr "$request" $status rt=$request_time';
 
     types {
         text/javascript mjs;
