@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	r := gin.Default()
 
 	logsDir := "/backend/logs"
 	logFile, err := os.OpenFile(logsDir+"/go.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -22,7 +21,8 @@ func main() {
 		panic(err)
 	}
 	gin.DefaultWriter = io.MultiWriter(os.Stdout, logFile)
-	r.Use(gin.Logger(), gin.Recovery())
+
+	r := gin.Default()
 
 	err = r.SetTrustedProxies([]string{"172.28.0.0/16"})
 	if err != nil {
