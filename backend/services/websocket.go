@@ -35,11 +35,10 @@ func HandleWebSocket(conn *websocket.Conn) {
 	}
 	mu.Unlock()
 
-	// Read loop
 	for {
 		var incoming models.Message
 		if err := conn.ReadJSON(&incoming); err != nil {
-			break // client disconnected
+			break
 		}
 
 		incoming.CreatedAt = time.Now()
