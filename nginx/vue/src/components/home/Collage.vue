@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Transition } from "vue";
+import Header from "@/components/text/Header.vue";
 
 const images = [
     { url: "/img/memes/pidgeon.gif", comment: "鸟" },
@@ -42,9 +43,9 @@ onUnmounted(() => {
             @click="nextImage"
             :key="currentIndex"
         >
-            <p v-if="currentComment">
+            <Header v-if="currentComment">
                 {{ currentComment }}
-            </p>
+            </Header>
             <img :src="currentUrl" alt="Image Viewer" />
         </div>
     </Transition>
