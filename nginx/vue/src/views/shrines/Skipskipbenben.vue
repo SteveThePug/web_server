@@ -1,5 +1,5 @@
 <script setup>
-import Wip from "@/components/quick/Wip.vue";
+import Wip from "@/components/util/Wip.vue";
 </script>
 
 <template>

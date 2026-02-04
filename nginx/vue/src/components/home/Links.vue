@@ -1,7 +1,7 @@
 <script setup>
-import RouterTable from "@/components/quick/RouterTable.vue";
-import LinkTable from "@/components/quick/LinkTable.vue";
-import Markdown from "@/components/quick/Markdown.vue";
+import RouterTable from "@/components/util/RouterTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
+import Markdown from "@/components/util/Markdown.vue";
 
 const site_links = [
     { name: "CV", link: "/cv" },

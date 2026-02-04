@@ -1,5 +1,5 @@
 <script setup>
-import Markdown from "@/components/quick/Markdown.vue";
+import Markdown from "@/components/util/Markdown.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useRoute } from "vue-router";

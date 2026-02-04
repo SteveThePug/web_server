@@ -1,8 +1,8 @@
 <script setup>
-import Timer from "@/components/quick/Timer.vue";
-import Time from "@/components/quick/Time.vue";
-import Chat from "@/components/quick/Chat.vue";
-import MusicPlayer from "@/components/quick/MusicPlayer.vue";
+import Timer from "@/components/util/Timer.vue";
+import Time from "@/components/util/Time.vue";
+import Chat from "@/components/util/Chat.vue";
+import MusicPlayer from "@/components/util/MusicPlayer.vue";
 
 import Intro from "@/components/home/Intro.vue";
 import Stamps from "@/components/home/Stamps.vue";

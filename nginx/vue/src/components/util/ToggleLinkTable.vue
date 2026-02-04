@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import LinkTable from "@/components/quick/LinkTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
 
 const props = defineProps({
     linkArr: {

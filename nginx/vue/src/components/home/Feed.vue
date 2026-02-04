@@ -1,5 +1,6 @@
 <script setup>
-import Markdown from "@/components/quick/Markdown.vue";
+import Markdown from "@/components/util/Markdown.vue";
+import Header from "@/components/text/Header.vue";
 
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
@@ -43,7 +44,7 @@ onMounted(() => {
     <div
         class="flex flex-col p-1 overflow-scroll text-left items-start justify-start"
     >
-        <h2>{{ post.title }}</h2>
+        <Header>{{ post.title }}</Header>
         <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
         <p>by: {{ post.author.username }}</p>
         <small

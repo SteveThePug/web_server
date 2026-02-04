@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 
-import ToggleLinkTable from "@/components/quick/ToggleLinkTable.vue";
+import ToggleLinkTable from "@/components/util/ToggleLinkTable.vue";
 
 const links = [
     [

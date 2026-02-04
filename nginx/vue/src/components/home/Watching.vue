@@ -1,5 +1,5 @@
 <script setup>
-import OptionalLinkTable from "@/components/quick/OptionalLinkTable.vue";
+import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
 
 const data = [
     {

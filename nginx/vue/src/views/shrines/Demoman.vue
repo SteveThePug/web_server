@@ -1,5 +1,5 @@
 <script setup>
-import VideoTable from "@/components/quick/VideoTable.vue";
+import VideoTable from "@/components/util/VideoTable.vue";
 
 const videoSources = [
     { name: "demoman", link: "/img/demoman/1760582395316219.webm" },

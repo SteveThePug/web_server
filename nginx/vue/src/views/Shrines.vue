@@ -1,5 +1,5 @@
 <script setup>
-import RouterTable from "@/components/quick/RouterTable.vue";
+import RouterTable from "@/components/util/RouterTable.vue";
 const shrine_links = [
     { name: "Demoman", link: "/shrines/demoman" },
     { name: "Evangelion", link: "/shrines/evangelion" },

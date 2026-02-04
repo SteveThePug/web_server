@@ -74,21 +74,19 @@
     --default-font-family: var(--font_default);
 }
 /* END OF VARIABLES */
-
 /* ELEMENTS */
 body {
     margin: 0 auto;
     width: 100vw;
     height: 100vh;
-    font-family: var(--font_text);
 }
 
 input {
-    color: var(--primary);
+    @apply text-secondary border-primary border;
 }
 
 small {
-    color: var(--tertiary);
+    @apply text-tertiary;
 }
 
 h1,
@@ -98,9 +96,15 @@ h4 {
     @apply m-1 font-heading text-primary;
 }
 
-h1,
+h3,
+h4 {
+    @apply text-base;
+}
 h2 {
-    @apply border-primary border-b;
+    @apply text-lg;
+}
+h1 {
+    @apply text-xl;
 }
 
 p {
@@ -108,11 +112,11 @@ p {
 }
 
 button {
-    @apply text-primary bg-link text-center;
+    @apply text-primary bg-link text-center border;
 }
 
 a {
-    @apply text-primary bg-link text-center font-heading;
+    @apply text-primary bg-link text-center font-heading text-xl tracking-wide;
 }
 
 table {
