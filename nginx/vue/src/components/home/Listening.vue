@@ -1,4 +1,5 @@
 <script setup>
+import Header from "@/components/text/Header.vue";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
 
@@ -32,12 +33,16 @@ onUnmounted(() => {
         <div
             @click="nextSong"
             :key="song.track.id"
-            class="flex flex-col items-center text-center"
+            class="flex flex-col items-center"
         >
-            <h2>Listening To</h2>
+            <Header>Listening To</Header>
             <img :src="song.track.album.images[0].url" />
-            <p><strong>Song:</strong> {{ song.track.name }}</p>
-            <p><strong>Artist:</strong> {{ song.track.artists[0].name }}</p>
+            <p class="text-center">
+                <strong>Song:</strong> {{ song.track.name }}
+            </p>
+            <p class="text-center">
+                <strong>Artist:</strong> {{ song.track.artists[0].name }}
+            </p>
         </div>
     </Transition>
 </template>
