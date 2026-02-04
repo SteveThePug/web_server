@@ -62,37 +62,53 @@ function playFinishedSound() {
 </script>
 
 <template>
-    <div class="flex flex-col gap-1 p-1">
-        <h4 class="items-center">Timer</h4>
-        <!-- Min input and Second input-->
-        <div v-if="finished && paused" class="flex flex-row">
-            <input v-model="minutesInput" type="number" min="0" max="59" />
-            <input v-model="secondsInput" type="number" min="0" max="59" />
+    <div
+        class="flex flex-col gap-1 items-center border-primary border p-1 bg-bg_primary"
+    >
+        <h2 class="items-center">Timer</h2>
+        <div v-if="finished && paused" class="flex flex-col">
+            <div class="flex flex-row p-2">
+                <input
+                    class="w-full"
+                    v-model="minutesInput"
+                    type="range"
+                    min="0"
+                    max="59"
+                />
+                <p>{{ minutesInput }}m</p>
+            </div>
+            <div class="flex flex-row p-2">
+                <input
+                    class="w-full"
+                    v-model="secondsInput"
+                    type="range"
+                    min="0"
+                    max="59"
+                />
+                <p>{{ secondsInput }}s</p>
+            </div>
+            <button @click="startTimer">Proceed</button>
         </div>
         <div v-if="finished && !paused" class="flex flex-col">
             <h1>Timer finished!</h1>
+            <button @click="resetTimer">Reset</button>
         </div>
-        <div v-if="!finished && paused">
+        <div v-if="!finished && paused" class="flex flex-col">
             <h1>Paused</h1>
+            <button @click="resetTimer">Reset</button>
         </div>
         <div v-if="!finished && !paused" class="flex flex-col">
-            <h1>
+            <p>
                 {{ minutes.toString().padStart(2, "0") }}:{{
                     seconds.toString().padStart(2, "0")
                 }}
-            </h1>
-            <h1>
+            </p>
+            <p>
                 {{ minutesInput.toString().padStart(2, "0") }}:{{
                     secondsInput.toString().padStart(2, "0")
                 }}
-            </h1>
-        </div>
-        <div class="flex flex-col">
-            <button v-if="paused" @click="startTimer">Proceed</button>
-            <button v-if="!finished && !paused" @click="pauseTimer">
-                Pause
-            </button>
-            <button v-if="finished ^ paused" @click="resetTimer">Reset</button>
+            </p>
+            <button @click="pauseTimer">Pause</button>
         </div>
     </div>
 </template>

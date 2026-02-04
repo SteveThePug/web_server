@@ -81,6 +81,10 @@ body {
     height: 100vh;
 }
 
+main {
+    @apply overflow-y-scroll;
+}
+
 input {
     @apply text-secondary border-primary border;
 }
@@ -241,7 +245,7 @@ td {
 }
 
 .background {
-    @apply fixed inset-0 -z-10 pointer-events-none;
+    @apply fixed inset-0 z-0;
 }
 
 .halftone {

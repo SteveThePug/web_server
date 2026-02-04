@@ -1,4 +1,5 @@
 <script setup>
+import Header from "@/components/text/Header.vue";
 import { ref } from "vue";
 
 const time = ref("");
@@ -23,8 +24,8 @@ setInterval(updateDateTime, 60000);
 </script>
 
 <template>
-    <div class="flex flex-col">
-        <h4>{{ time }}</h4>
-        <h4>{{ weekday }} {{ day }}, {{ month }}</h4>
+    <div class="items-center flex flex-col bg-bg_primary border-primary border">
+        <h1>{{ time }}</h1>
+        <h1>{{ weekday }} {{ day }}, {{ month }}</h1>
     </div>
 </template>

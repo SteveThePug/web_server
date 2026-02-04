@@ -1,5 +1,7 @@
 <script setup>
+import Header from "@/components/text/Header.vue";
 import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
+import AutoScroll from "@/components/util/AutoScroll.vue";
 const favs = [
     {
         type: "Daioh",
@@ -62,9 +64,9 @@ const favs = [
 
 <template>
     <div class="flex flex-col items-center">
-        <h2>favs</h2>
-        <div class="overflow-scroll w-full flex-1 border-box">
+        <Header>favs</Header>
+        <AutoScroll class="w-full flex-1">
             <OptionalLinkTable class="w-full" :data="favs" />
-        </div>
+        </AutoScroll>
     </div>
 </template>

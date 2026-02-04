@@ -1,5 +1,7 @@
 <script setup>
+import AutoScroll from "@/components/util/AutoScroll.vue";
 import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
+import Header from "@/components/text/Header.vue";
 
 const data = [
     {
@@ -57,9 +59,9 @@ const data = [
 
 <template>
     <div class="flex flex-col items-center">
-        <h2>Consumption</h2>
-        <div class="overflow-scroll flex-1 border-box">
+        <Header>Consumption</Header>
+        <AutoScroll>
             <OptionalLinkTable :data="data" />
-        </div>
+        </AutoScroll>
     </div>
 </template>

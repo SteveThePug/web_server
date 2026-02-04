@@ -20,7 +20,7 @@ const inHome = computed(() => {
 </script>
 
 <template>
-    <nav class="flex flex-row w-fit">
+    <nav class="flex flex-row w-fit h-fit background">
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
             <a>HOME</a>
         </RouterLink>

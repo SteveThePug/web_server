@@ -4,7 +4,7 @@
 
 <template>
     <audio/>
-    <div class="musicPlayerGrid w-50">
+    <div class="musicPlayerGrid">
         <div class="album_cover">
             <img src="/img/Untitled.png"></img>
         </div>
