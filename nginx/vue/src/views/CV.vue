@@ -488,6 +488,7 @@ table {
 
 td {
     /* border: 2px solid var(--tertiary); */
+    color: var(--secondary);
     border-top: 1px solid var(--tertiary);
     padding: 1px 10px 1px 10px;
     font-size: var(--font-size-text);
@@ -495,6 +496,7 @@ td {
 }
 
 th {
+    color: var(--secondary);
     border: 2px solid var(--tertiary);
     padding: 1px 0px 1px 7px;
     font-family: var(--font-heading);
