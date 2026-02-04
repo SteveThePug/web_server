@@ -13,12 +13,16 @@ const parentPath = computed(() => {
         return segments.length ? "/" + segments.join("/") : null;
     }
 });
+
+const inHome = computed(() => {
+    return route.path == "/";
+});
 </script>
 
 <template>
-    <nav class="flex flex-col">
-        <RouterLink class="bdr-2 bg-bg_primary" to="/">
-            <a class="text-3xl">HOME</a>
+    <nav class="flex flex-row w-fit">
+        <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
+            <a>HOME</a>
         </RouterLink>
         <RouterLink
             class="bdr-2 bg-bg_primary"

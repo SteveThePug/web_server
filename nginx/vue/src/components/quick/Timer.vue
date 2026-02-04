@@ -62,7 +62,7 @@ function playFinishedSound() {
 </script>
 
 <template>
-    <div class="flex flex-col">
+    <div class="flex flex-col gap-1 p-1">
         <h4 class="items-center">Timer</h4>
         <!-- Min input and Second input-->
         <div v-if="finished && paused" class="flex flex-row">

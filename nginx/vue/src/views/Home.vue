@@ -44,11 +44,13 @@ import Watching from "@/components/home/Watching.vue";
 
 <style scoped>
 .page > * {
-    border: 2px dotted var(--primary);
+    @apply border-2 border-dotted;
+    border-color: var(--primary);
     background-color: var(--bg_primary);
 }
 
 .sidebar > * {
+    @apply border-2;
     background-color: var(--bg_primary);
     border: 7px solid;
     border-image: url("/img/borders/border4.gif") 7 round;
@@ -62,12 +64,13 @@ import Watching from "@/components/home/Watching.vue";
 }
 
 @media (max-width: 850px) {
-    .grid {
+    .homeGrid {
         width: 100%;
         display: flex;
         flex-direction: column;
     }
-    .tr {
+    .tr,
+    .br {
         display: none;
     }
 }
