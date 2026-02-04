@@ -9,10 +9,11 @@ const gym = [
 </script>
 
 <template>
-    <div class="flex flex-col items-center">
+    <div class="flex flex-col place-content-between items-center">
         <Header>Gym</Header>
-        <p class="m-3">I'm not a gym geek but I always do:</p>
-        <div class="overflow-scroll w-full flex-1 border-box">
+        <p>I'm not a gym geek</p>
+        <p>4/7 days I do:</p>
+        <div class="overflow-scroll w-full border-box">
             <OptionalLinkTable class="w-full" :data="gym" />
         </div>
     </div>

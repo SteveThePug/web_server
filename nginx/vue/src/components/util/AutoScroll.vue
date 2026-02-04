@@ -1,5 +1,5 @@
 <template>
-    <div ref="container" class="overflow-y-auto">
+    <div ref="container" @mouseover="handleHover" class="overflow-y-auto">
         <slot />
     </div>
 </template>
@@ -14,38 +14,37 @@ const PAUSE = 2000; // ms at top/bottom
 const FRAME_TIME = 50; // ms at top/bottom
 
 let direction = 1; // 1 = down, -1 = up
-let paused = false;
-let rafId;
 let timeoutId;
+
+function handleHover() {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(tick, PAUSE);
+}
 
 function tick() {
     const el = container.value;
 
     el.scrollTop += SPEED * direction;
 
-    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
     const reachedTop = el.scrollTop <= 0;
 
     if (reachedBottom || reachedTop) {
         direction *= -1;
 
-        timeoutId = setTimeout(() => {
-            paused = false;
-            rafId = setTimeout(tick, FRAME_TIME);
-        }, PAUSE);
+        timeoutId = setTimeout(tick, PAUSE);
 
         return;
     }
 
-    rafId = setTimeout(tick, FRAME_TIME);
+    timeoutId = setTimeout(tick, FRAME_TIME);
 }
 
 onMounted(() => {
-    rafId = setTimeout(tick, FRAME_TIME);
+    timeoutId = setTimeout(tick, FRAME_TIME);
 });
 
 onBeforeUnmount(() => {
-    clearTimeout(rafId);
     clearTimeout(timeoutId);
 });
 </script>

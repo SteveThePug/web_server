@@ -205,28 +205,28 @@ td {
 @media (max-width: 850px) {
     .a4page-portrait {
         width: 100%; /* fill mobile width */
-        height: auto; /* adjust height automatically */
+        height: fit-content;
         margin: 0 auto; /* center horizontally */
         box-sizing: border-box;
     }
     .a4page-landscape {
         width: 100%; /* fill mobile width */
-        height: auto; /* adjust height automatically */
+        height: fit-content;
         margin: 0 auto; /* center horizontally */
         box-sizing: border-box;
     }
 }
 @media (max-width: 600px) {
     .a5page-portrait {
-        width: 100%; /* fill mobile width */
-        height: auto; /* adjust height automatically */
-        margin: 0 auto; /* center horizontally */
+        width: 100%;
+        height: fit-content;
+        margin: 0 auto;
         box-sizing: border-box;
     }
     .a5page-landscape {
-        width: 100%; /* fill mobile width */
-        height: auto; /* adjust height automatically */
-        margin: 0 auto; /* center horizontally */
+        width: 100%;
+        height: fit-content;
+        margin: 0 auto;
         box-sizing: border-box;
     }
 }

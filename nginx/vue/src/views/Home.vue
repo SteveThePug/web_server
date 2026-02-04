@@ -17,32 +17,40 @@ import Consumption from "@/components/home/Consumption.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full p-10">
-        <div class="page a4page-portrait bdr-1 homeGrid relative">
-            <Intro class="intro" />
-            <Listening class="listening" />
-            <Stamps class="stamps" />
-            <Feed class="feed" />
-            <Links class="links" />
-            <Collage class="collage" />
-            <Consumption class="consumption" />
-            <Favorites class="favorites" />
-            <Gym class="gym" />
-        </div>
-        <div
-            class="flex flex-col w-1/12 sidebar border-primary place-content-between h-full sticky m-10"
-        >
-            <div class="flex flex-col">
-                <Time />
-                <Timer />
-                <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
-                <!-- <MusicPlayer /> -->
+        <div class="a4height flex flex-row">
+            <div class="a4page-portrait bdr-1 homeGrid relative">
+                <Intro class="intro" />
+                <Listening class="listening" />
+                <Stamps class="stamps" />
+                <Feed class="feed" />
+                <Links class="links" />
+                <Collage class="collage" />
+                <Consumption class="consumption" />
+                <Favorites class="favorites" />
+                <Gym class="gym" />
             </div>
-            <img src="/img/memes/fire-woman.gif" class="w-80" />
+            <div
+                class="flex flex-col sidebar border-primary place-content-between h-full sticky m-10 w-60"
+            >
+                <div class="flex flex-col">
+                    <Time />
+                    <Timer />
+                    <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
+                    <!-- <MusicPlayer /> -->
+                </div>
+                <img
+                    src="/img/memes/fire-woman.gif"
+                    class="border-tertiary border"
+                />
+            </div>
         </div>
     </main>
 </template>
 
 <style scoped>
+.a4height {
+    height: 297mm;
+}
 .homeGrid > * {
     @apply border-2 border-dotted;
     border-color: var(--primary);
@@ -56,12 +64,15 @@ import Consumption from "@/components/home/Consumption.vue";
     grid-template-rows: repeat(10, 1fr);
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 800px) {
     .homeGrid {
         width: 100%;
         display: flex;
         flex-direction: column;
     }
+}
+
+@media (max-width: 1200px) {
     .tr,
     .br,
     .sidebar {

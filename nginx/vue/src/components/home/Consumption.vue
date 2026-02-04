@@ -5,6 +5,29 @@ import Header from "@/components/text/Header.vue";
 
 const data = [
     {
+        type: "Anime",
+        name: "Cowboy bebop",
+    },
+    {
+        type: "Game",
+        name: "Rounds",
+        link: "https://store.steampowered.com/app/1557740/ROUNDS/",
+    },
+    {
+        type: "Boardgame",
+        name: "Root",
+    },
+    {
+        type: "Game",
+        name: "The farmer was replaced",
+        link: "https://store.steampowered.com/app/2060160/The_Farmer_Was_Replaced/",
+    },
+    {
+        type: "Game",
+        name: "Higurashi When They Cry Hou - Ch.1",
+        link: "https://store.steampowered.com/app/310360/Higurashi_When_They_Cry_Hou__Ch1_Onikakushi/",
+    },
+    {
         type: "Substack",
         name: "By Ellie",
         link: "https://oceandrops.substack.com/p/japan-is-what-late-stage-capitalist?utm_source=%2Finbox&utm_medium=reader2",

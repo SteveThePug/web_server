@@ -67,9 +67,9 @@ function playFinishedSound() {
     >
         <h2 class="items-center">Timer</h2>
         <div v-if="finished && paused" class="flex flex-col">
-            <div class="flex flex-row p-2">
+            <div class="flex flex-row p-2 place-content-around">
                 <input
-                    class="w-full"
+                    class="w-2/3"
                     v-model="minutesInput"
                     type="range"
                     min="0"
@@ -77,9 +77,9 @@ function playFinishedSound() {
                 />
                 <p>{{ minutesInput }}m</p>
             </div>
-            <div class="flex flex-row p-2">
+            <div class="flex flex-row p-2 place-content-around">
                 <input
-                    class="w-full"
+                    class="w-2/3"
                     v-model="secondsInput"
                     type="range"
                     min="0"
