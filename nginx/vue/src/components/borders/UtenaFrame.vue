@@ -1,34 +1,41 @@
 <template>
-    <img src="/img/borders/utena.png" class="flower tl antirotate" />
-    <img src="/img/borders/utena.png" class="flower tr rotate" />
-    <img src="/img/borders/utena.png" class="flower bl rotate" />
-    <img src="/img/borders/utena.png" class="flower br antirotate" />
-    <slot />
+    <div class="container">
+        <img src="/img/borders/utena.png" class="flower tl antirotate" />
+        <img src="/img/borders/utena.png" class="flower tr rotate" />
+        <img src="/img/borders/utena.png" class="flower bl rotate" />
+        <img src="/img/borders/utena.png" class="flower br antirotate" />
+        <slot />
+    </div>
 </template>
 
 <style scoped>
+.container {
+    position: relative;
+    margin: 100px;
+}
+
 .flower {
     position: absolute;
     width: 150px;
 }
 .tl {
-    top: 100px;
-    left: 0px;
+    top: -80px;
+    left: -80px;
     --start: 0deg;
 }
 .tr {
-    top: 100px;
-    right: 0;
+    top: -80px;
+    right: -80px;
     --start: 90deg;
 }
 .bl {
-    bottom: -100px;
-    left: 0;
+    bottom: -80px;
+    left: -80px;
     --start: 180deg;
 }
 .br {
-    bottom: -100px;
-    right: 0;
+    bottom: -80px;
+    right: -80px;
     --start: 270deg;
 }
 .rotate {

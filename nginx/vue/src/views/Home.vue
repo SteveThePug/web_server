@@ -13,24 +13,28 @@ import Collage from "@/components/home/Collage.vue";
 import Favorites from "@/components/home/Favorites.vue";
 import Gym from "@/components/home/Gym.vue";
 import Consumption from "@/components/home/Consumption.vue";
+
+import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 </script>
 
 <template>
-    <main class="halftone justify-center flex flex-row w-full h-full p-10">
+    <main class="halftone justify-center flex flex-row w-full h-full">
         <div class="a4height flex flex-row">
-            <div class="a4page-portrait bdr-1 homeGrid relative">
-                <Intro class="intro" />
-                <Listening class="listening" />
-                <Stamps class="stamps" />
-                <Feed class="feed" />
-                <Links class="links" />
-                <Collage class="collage" />
-                <Consumption class="consumption" />
-                <Favorites class="favorites" />
-                <Gym class="gym" />
-            </div>
+            <UtenaFrame class="w-fit h-fit">
+                <div class="a4page-portrait homeGrid relative">
+                    <Intro class="intro" />
+                    <Listening class="listening" />
+                    <Stamps class="stamps" />
+                    <Feed class="feed" />
+                    <Links class="links" />
+                    <Collage class="collage" />
+                    <Consumption class="consumption" />
+                    <Favorites class="favorites" />
+                    <Gym class="gym" />
+                </div>
+            </UtenaFrame>
             <div
-                class="flex flex-col sidebar border-primary place-content-between h-full sticky m-10 w-60"
+                class="flex flex-col sidebar border-primary place-content-between h-full sticky mt-34 w-60"
             >
                 <div class="flex flex-col">
                     <Time />
