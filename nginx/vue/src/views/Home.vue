@@ -52,8 +52,8 @@ import Consumption from "@/components/home/Consumption.vue";
     height: 297mm;
 }
 .homeGrid > * {
-    @apply border-2 border-dotted;
-    border-color: var(--primary);
+    @apply border-2 border;
+    border-color: var(--quaternary);
     background-color: var(--bg_primary);
 }
 
@@ -64,7 +64,7 @@ import Consumption from "@/components/home/Consumption.vue";
     grid-template-rows: repeat(10, 1fr);
 }
 
-@media (max-width: 800px) {
+@media (max-width: 850px) {
     .homeGrid {
         width: 100%;
         display: flex;

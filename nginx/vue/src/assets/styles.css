@@ -41,8 +41,8 @@
     /* MAIN COLORS */
     --primary: #55ffbb;
     --secondary: #62ff57;
-    --tertiary: #57d2ff;
-    --quaternary: #400;
+    --tertiary: #ff579a;
+    --quaternary: #024942;
 
     /* BACKGROUND COLORS */
     --bg_primary: #1b110e;
@@ -69,6 +69,8 @@
     --color-link: var(--link);
 
     --borderWidth-primary: var(--primary);
+    --borderWidth-secondary: var(--secondary);
+    --borderWidth-tertiary: var(--tertiary);
 
     --font-heading: var(--font_heading);
     --default-font-family: var(--font_default);
