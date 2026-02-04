@@ -15,10 +15,7 @@
             </tbody>
         </table>
 
-        <div
-            class="no-print"
-            style="width: 100%; text-align: center; margin: 20px 0"
-        ></div>
+        <div class="no-print m-1 w-full text-center"></div>
         <div id="LloydsBank" class="a5page">
             <div class="contact">
                 <h1>Adam French</h1>

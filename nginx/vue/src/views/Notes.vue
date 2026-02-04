@@ -59,15 +59,15 @@ onMounted(fetchFile);
 </script>
 
 <template>
-    <main class="center-content flex-col">
+    <main class="items-center flex flex-col">
         <div class="background halftone" />
         <div
             v-if="file"
-            class="a4page-portrait bdr-primary flex-col relative scroll-y gap bg-primary"
+            class="a4page-portrait border-primary-1 flex flex-col relative overflow-scroll gap-1 bg-bg_primary"
         >
             <h1>{{ filename }}</h1>
             <small>{{ last_edited }}</small>
-            <Markdown class="fill wrap" :source="file" />
+            <Markdown class="flex-1 border-box text-wrap" :source="file" />
         </div>
 
         <div v-else>Loading…</div>

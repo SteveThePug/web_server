@@ -13,7 +13,7 @@ const keys = ["name", "link"];
 
 <template>
     <a
-        class="bdr-2 bg-secondary"
+        class="bdr-2 bg-bg_primary"
         v-for="(row, rowIndex) in linkArr"
         :key="rowIndex"
         :href="row.link"

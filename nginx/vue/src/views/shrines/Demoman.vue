@@ -11,9 +11,9 @@ const videoSources = [
 </script>
 
 <template>
-    <main class="center-content flex-col">
+    <main class="items-center flex flex-col">
         <div
-            class="a4page-portrait bdr-1 flex-row relative scroll-y center-content"
+            class="a4page-portrait bdr-1 flex flex-row relative overflow-scroll items-center"
         >
             <p>
                 <a href="https://wiki.teamfortress.com/wiki/Demoman"

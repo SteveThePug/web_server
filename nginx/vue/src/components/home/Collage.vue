@@ -38,7 +38,7 @@ onUnmounted(() => {
 <template>
     <Transition name="fade" mode="out-in">
         <div
-            class="image-viewer center-text"
+            class="image-viewer text-center"
             @click="nextImage"
             :key="currentIndex"
         >

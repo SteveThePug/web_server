@@ -16,14 +16,14 @@ function handleLogout() {
 </script>
 
 <template>
-    <div v-if="auth.loggedIn" class="flex-col">
+    <div v-if="auth.loggedIn" class="flex flex-col">
         <h1>Logged in</h1>
         <p>{{ auth.user.id }}</p>
         <p>{{ auth.user.username }}</p>
         <p>{{ auth.user.admin }}</p>
         <button @click="handleLogout">Log Out</button>
     </div>
-    <div v-else class="flex-col">
+    <div v-else class="flex flex-col">
         <h1>Login</h1>
         <input type="text" v-model="username" placeholder="Username" />
         <input type="password" v-model="password" placeholder="Password" />

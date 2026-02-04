@@ -16,11 +16,15 @@ const parentPath = computed(() => {
 </script>
 
 <template>
-    <nav class="left flex-col">
-        <RouterLink class="bdr-2 bg-primary" to="/">
-            <a>HOME</a>
+    <nav class="flex flex-col">
+        <RouterLink class="bdr-2 bg-bg_primary" to="/">
+            <a class="text-3xl">HOME</a>
         </RouterLink>
-        <RouterLink class="bdr-2 bg-primary" v-if="parentPath" :to="parentPath">
+        <RouterLink
+            class="bdr-2 bg-bg_primary"
+            v-if="parentPath"
+            :to="parentPath"
+        >
             <a>UP</a>
         </RouterLink>
     </nav>

@@ -1,10 +1,10 @@
 <template>
-    <div class="flex-col center-content">
-        <div class="flex-col">
+    <div class="flex-col items-center">
+        <div class="flex flex-col">
             <!-- <img src="/img/stamps/portal.gif" />
             <img src="/img/stamps/miku.gif" />
             <img src="/img/stamps/utau.gif" /> -->
-            <div class="flex-row center-content">
+            <div class="flex flex-row items-center">
                 <p>--> make webring w me --></p>
                 <a href="https://www.adam-french.co.uk">
                     <img
@@ -12,7 +12,7 @@
                     />
                 </a>
             </div>
-            <div class="flex-row center-content">
+            <div class="flex flex-row items-center">
                 <p>--> hit up bro --></p>
                 <a href="https://jacobbarron.xyz">
                     <img

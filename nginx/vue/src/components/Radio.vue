@@ -5,7 +5,7 @@
     </div>
     <div v-else>
         <img src="/img/tmpen31z3pe.PNG" />
-        <div class="margin1">
+        <div class="m-1">
             <p>Stream is offline. Tune in Fridays @ 6:00pm, Monday @ 8:00am</p>
             <button @click="checkStream()">Check Stream</button>
         </div>

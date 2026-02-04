@@ -1,5 +1,7 @@
 <template>
-    <div class="fill flex-col pad left-content">
+    <div
+        class="flex-1 border-box flex flex-col p-1 text-left items-start justify-start"
+    >
         <h2>Intro</h2>
         <p>
             Hi, I'm Adam, thank you for visiting my website. I'm currently a 20

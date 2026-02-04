@@ -2,6 +2,7 @@
 import Timer from "@/components/quick/Timer.vue";
 import Time from "@/components/quick/Time.vue";
 import Chat from "@/components/quick/Chat.vue";
+import MusicPlayer from "@/components/quick/MusicPlayer.vue";
 
 import Intro from "@/components/home/Intro.vue";
 import Stamps from "@/components/home/Stamps.vue";
@@ -15,18 +16,19 @@ import Watching from "@/components/home/Watching.vue";
 </script>
 
 <template>
-    <div class="overlay">
-        <img src="/img/memes/fire-woman.gif" class="br w-10vw" />
-        <div class="flex-col tr">
-            <Time class="bdr-2 bg-primary" />
-            <Timer class="bdr-2 bg-primary" />
-            <!-- <Chat class="bdr-2 bg-primary" /> -->
+    <div class="background halftone">
+        <img src="/img/memes/fire-woman.gif" class="br w-80" />
+        <div class="flex flex-col tr sidebar">
+            <Time />
+            <Timer />
+            <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
+            <MusicPlayer />
         </div>
     </div>
-    <div class="background halftone" />
+    <div class="-z-10 halftone" />
 
-    <main class="center-content flex-col">
-        <div class="page a4page-portrait bdr-1 grid relative">
+    <main class="items-center flex flex-col">
+        <div class="page a4page-portrait bdr-1 homeGrid relative">
             <Intro class="intro" />
             <Listening class="listening" />
             <Stamps class="stamps" />
@@ -46,7 +48,13 @@ import Watching from "@/components/home/Watching.vue";
     background-color: var(--bg_primary);
 }
 
-.grid {
+.sidebar > * {
+    background-color: var(--bg_primary);
+    border: 7px solid;
+    border-image: url("/img/borders/border4.gif") 7 round;
+}
+
+.homeGrid {
     display: grid;
     grid-gap: 5px;
     grid-template-columns: repeat(10, 1fr);

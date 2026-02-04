@@ -1,5 +1,5 @@
 <template>
-    <div class="a4page-portrait bdr-1 flex-col relative scroll-y">
+    <div class="a4page-portrait bdr-1 flex flex-col relative overflow-scroll">
         <RouterLink to="/" class="bdr-2">
             <img src="/img/memes/epic.jpeg" />
         </RouterLink>

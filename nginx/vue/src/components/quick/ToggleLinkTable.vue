@@ -17,7 +17,7 @@ const show_links = ref(false);
 </script>
 
 <template>
-    <div class="flex-row">
+    <div class="flex flex-row">
         <h2>{{ title }}</h2>
         <button @click="show_links = !show_links">Toggle</button>
     </div>

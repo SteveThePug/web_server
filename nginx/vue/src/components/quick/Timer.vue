@@ -62,20 +62,20 @@ function playFinishedSound() {
 </script>
 
 <template>
-    <div class="flex-col">
-        <h4 class="center-content">Timer</h4>
+    <div class="flex flex-col">
+        <h4 class="items-center">Timer</h4>
         <!-- Min input and Second input-->
-        <div v-if="finished && paused" class="flex-row">
+        <div v-if="finished && paused" class="flex flex-row">
             <input v-model="minutesInput" type="number" min="0" max="59" />
             <input v-model="secondsInput" type="number" min="0" max="59" />
         </div>
-        <div v-if="finished && !paused" class="flex-col">
+        <div v-if="finished && !paused" class="flex flex-col">
             <h1>Timer finished!</h1>
         </div>
         <div v-if="!finished && paused">
             <h1>Paused</h1>
         </div>
-        <div v-if="!finished && !paused" class="flex-col">
+        <div v-if="!finished && !paused" class="flex flex-col">
             <h1>
                 {{ minutes.toString().padStart(2, "0") }}:{{
                     seconds.toString().padStart(2, "0")
@@ -87,7 +87,7 @@ function playFinishedSound() {
                 }}
             </h1>
         </div>
-        <div class="flex-col">
+        <div class="flex flex-col">
             <button v-if="paused" @click="startTimer">Proceed</button>
             <button v-if="!finished && !paused" @click="pauseTimer">
                 Pause

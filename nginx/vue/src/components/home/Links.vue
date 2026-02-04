@@ -19,11 +19,11 @@ const social_links = [
 </script>
 
 <template>
-    <div class="flex-col space-between">
-        <div class="flex-col gap">
+    <div class="flex flex-col justify-between">
+        <div class="flex flex-col gap-1">
             <RouterTable :linkArr="site_links" />
         </div>
-        <div class="flex-col gap">
+        <div class="flex flex-col gap-1">
             <LinkTable :linkArr="social_links" />
         </div>
     </div>

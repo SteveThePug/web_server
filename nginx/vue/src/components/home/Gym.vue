@@ -8,10 +8,10 @@ const gym = [
 </script>
 
 <template>
-    <div class="flex-col center-content">
+    <div class="flex flex-col items-center">
         <h2>Gym</h2>
         <p>I'm not a gym geek but I have a consistent routine:</p>
-        <div class="scroll fill">
+        <div class="overflow-scroll flex-1 border-box">
             <OptionalLinkTable :data="gym" />
         </div>
     </div>

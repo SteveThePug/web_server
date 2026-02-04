@@ -13,7 +13,7 @@ const props = defineProps({
 <template>
     <div
         v-html="mdIt.render(props.source)"
-        class="flex-col center-content"
+        class="flex flex-col items-center"
     ></div>
 </template>
 

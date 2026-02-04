@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* PRINTING */
 @media print {
     .no-print,
@@ -37,25 +39,31 @@
     --portal_light_blue: #00a2ff;
 
     /* MAIN COLORS */
-    --primary: #5ea;
+    --primary: #5fb;
     --secondary: #5ea;
-    --tertiary: #fff;
-    --quaternary: #424542;
+    --tertiary: #2ea;
+    --quaternary: #400;
 
     /* BACKGROUND COLORS */
-    --bg-body: #000;
-    --bg_primary: #000;
-    --bg_secondary: #111;
-    --bg_tertiary: #222;
-    --bg_quaternary: #999;
+    --bg_primary: #011;
+    --bg_secondary: #000;
 
     --margin: 3px;
-    --padding: 3px;
-    --gap: 1px;
+    --spacing: 3px;
 
     /* FONTS USED */
     --font_heading: big_noodle_titling;
     --font_text: CreatoDisplay;
+}
+
+@theme {
+    --color-primary: var(--primary);
+    --color-secondary: var(--secondary);
+    --color-tertiary: var(--tertiary);
+    --color-quaternary: var(--quaternary);
+
+    --color-bg_primary: var(--bg_primary);
+    --color-bg_secondary: var(--bg_secondary);
 }
 /* END OF VARIABLES */
 
@@ -145,161 +153,6 @@ tr {
     border-image: url("/img/borders/bordercv.png") 30 round;
 }
 
-.bdr-primary {
-    border: 1px solid var(--primary);
-}
-
-.bdr-secondary {
-    border: 1px solid var(--secondary);
-}
-
-.bdr-tertiary {
-    border: 1px solid var(--tertiary);
-}
-
-.bdr-quaternary {
-    border: 1px solid var(--quaternary);
-}
-
-/* SHADOWS */
-
-.shadow-primary {
-    box-shadow: 0 20px 20px var(--primary);
-}
-
-.shadow-secondary {
-    box-shadow: 0 20px 20px var(--secondary);
-}
-
-.shadow-tertiary {
-    box-shadow: 0 20px 20px var(--tertiary);
-}
-
-.shadow-quaternary {
-    box-shadow: 0 20px 20px var(--quaternary);
-}
-
-/* BACKGROUNDS */
-
-.bg-white {
-    background: white;
-}
-
-.bg-primary {
-    background: var(--bg_primary);
-}
-
-.bg-secondary {
-    background: var(--bg_secondary);
-}
-
-.bg-tertiary {
-    background: var(--bg_tertiary);
-}
-
-.bg-quaternary {
-    background: var(--bg_quaternary);
-}
-
-/* SIZING */
-
-.fill {
-    flex: 1;
-    box-sizing: border-box;
-}
-
-.fill-width {
-    width: 100%;
-}
-
-.wrap {
-    text-wrap: break-word;
-}
-
-.margin {
-    margin: var(--margin);
-}
-
-.pad {
-    padding: var(--padding);
-}
-
-.gap {
-    gap: var(--gap);
-}
-
-/* ALIGNMENT */
-
-.relative {
-    position: relative;
-}
-
-.center-content {
-    align-items: center;
-}
-
-.center-text {
-    text-align: center;
-}
-
-.left-content {
-    text-align: left;
-    align-items: left;
-    justify-content: left;
-}
-
-.flex-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin: 0px;
-}
-
-.flex-center {
-    justify-content: center;
-}
-
-.scroll {
-    overflow: scroll;
-}
-
-.scroll-y {
-    overflow-y: scroll;
-    overflow-x: hidden;
-}
-
-.scroll-x {
-    overflow-y: hidden;
-    overflow-x: scroll;
-}
-
-.flex {
-    display: flex;
-    padding: 2px;
-}
-
-.flex-col {
-    display: flex;
-    flex-direction: column;
-    padding: 2px;
-}
-
-.inline {
-    display: inline;
-}
-
-.space-around {
-    justify-content: space-around;
-}
-
-.space-between {
-    justify-content: space-between;
-}
-
-.floating {
-    position: absolute;
-}
-
 /* A5 Page */
 .a5page-landscape {
     font-family: var(--font_text);
@@ -359,61 +212,22 @@ tr {
         box-sizing: border-box;
     }
 }
-/* END OF PHONE */
-
-/* BACKGROUND */
-.overlay {
-    position: fixed; /* not absolute */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
-.wfull {
-    width: 100%;
-}
-
-.hfill {
-    height: 100%;
-}
-
-.w-10vw {
-    width: 10vw;
-}
 
 .tl {
-    position: absolute;
-    top: 0px;
-    left: 0px;
+    @apply absolute top-0 left-0;
 }
-
 .tr {
-    position: absolute;
-    top: 0px;
-    right: 0px;
+    @apply absolute top-0 right-0;
 }
-
 .bl {
-    position: absolute;
-    left: 0px;
-    right: 0px;
+    @apply absolute bottom-0 left-0;
 }
-
 .br {
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
+    @apply absolute bottom-0 right-0;
 }
 
 .background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    pointer-events: none;
+    @apply fixed inset-0 -z-10 pointer-events-none;
 }
 
 .halftone {
@@ -421,13 +235,11 @@ tr {
     --bg_size: 3px;
     --bg_pos: calc(var(--bg_size) / 2);
     --blur: 0%;
-    --dot_color: #033;
-    --bg_color: #000;
 
-    background-color: var(--bg_color);
+    background-color: var(--bg_secondary);
     background-image: radial-gradient(
         circle at center,
-        var(--dot_color) var(--dot_size),
+        var(--bg_primary) var(--dot_size),
         transparent var(--blur)
     );
     background-size: var(--bg_size) var(--bg_size);

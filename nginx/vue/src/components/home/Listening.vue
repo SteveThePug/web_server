@@ -32,7 +32,7 @@ onUnmounted(() => {
         <div
             @click="nextSong"
             :key="song.track.id"
-            class="flex-col center-content center-text"
+            class="flex flex-col items-center text-center"
         >
             <h2>Listening To</h2>
             <img :src="song.track.album.images[0].url" />

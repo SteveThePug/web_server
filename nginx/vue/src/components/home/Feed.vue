@@ -40,16 +40,24 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="flex-col pad scroll-y left-content">
+    <div
+        class="flex flex-col p-1 overflow-scroll text-left items-start justify-start"
+    >
         <h2>{{ post.title }}</h2>
-        <Markdown class="fill wrap" :source="post.content" />
+        <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
         <p>by: {{ post.author.username }}</p>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
-        <div class="flex-row fill-width">
-            <button class="fill" v-if="!leftCap" @click="prevPost">Prev</button>
-            <button class="fill" v-if="!rightCap" @click="nextPost">
+        <div class="flex flex-row w-full">
+            <button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
+                Prev
+            </button>
+            <button
+                class="flex-1 border-box"
+                v-if="!rightCap"
+                @click="nextPost"
+            >
                 Next
             </button>
         </div>
