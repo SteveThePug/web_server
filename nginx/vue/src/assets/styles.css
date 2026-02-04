@@ -95,6 +95,10 @@ small {
     @apply text-tertiary;
 }
 
+code {
+    @apply text-tertiary;
+}
+
 h1,
 h2,
 h3,
