@@ -12,7 +12,7 @@ const gym = [
         <h2>Gym</h2>
         <p class="m-3">I'm not a gym geek but I always do:</p>
         <div class="overflow-scroll w-full flex-1 border-box">
-            <OptionalLinkTable :data="gym" />
+            <OptionalLinkTable class="w-full" :data="gym" />
         </div>
     </div>
 </template>
