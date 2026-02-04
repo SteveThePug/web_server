@@ -38,11 +38,7 @@ onUnmounted(() => {
 
 <template>
     <Transition name="fade" mode="out-in">
-        <div
-            class="image-viewer text-center"
-            @click="nextImage"
-            :key="currentIndex"
-        >
+        <div class="image-viewer" @click="nextImage" :key="currentIndex">
             <Header v-if="currentComment">
                 {{ currentComment }}
             </Header>
