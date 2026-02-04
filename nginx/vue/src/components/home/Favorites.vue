@@ -63,8 +63,8 @@ const favs = [
 <template>
     <div class="flex flex-col items-center">
         <h2>favs</h2>
-        <div class="overflow-scroll flex-1 border-box">
-            <OptionalLinkTable class="scroll" :data="favs" />
+        <div class="overflow-scroll w-full flex-1 border-box">
+            <OptionalLinkTable class="w-full" :data="favs" />
         </div>
     </div>
 </template>

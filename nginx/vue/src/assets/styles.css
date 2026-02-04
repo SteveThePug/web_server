@@ -39,13 +39,13 @@
     --portal_light_blue: #00a2ff;
 
     /* MAIN COLORS */
-    --primary: #5fb;
-    --secondary: #5ea;
+    --primary: #55ffbb;
+    --secondary: #62ff57;
     --tertiary: #2ea;
     --quaternary: #400;
 
     /* BACKGROUND COLORS */
-    --bg_primary: #011;
+    --bg_primary: #1b110e;
     --bg_secondary: #000;
     --link: #222;
 
@@ -67,6 +67,8 @@
     --color-bg_primary: var(--bg_primary);
     --color-bg_secondary: var(--bg_secondary);
     --color-link: var(--link);
+
+    --borderWidth-primary: var(--primary);
 
     --font-heading: var(--font_heading);
     --default-font-family: var(--font_default);
@@ -93,7 +95,12 @@ h1,
 h2,
 h3,
 h4 {
-    @apply m-1 border-primary border-b font-heading text-primary;
+    @apply m-1 font-heading text-primary;
+}
+
+h1,
+h2 {
+    @apply border-primary border-b;
 }
 
 p {
@@ -105,15 +112,27 @@ button {
 }
 
 a {
-    @apply text-primary bg-link text-center;
+    @apply text-primary bg-link text-center font-heading;
 }
 
 table {
     @apply border-primary border text-primary;
 }
 
+td {
+    @apply gap-1;
+}
+
 tr {
     @apply border-primary border-b text-primary;
+}
+
+th {
+    @apply pr-3 pl-3 border-r border-dotted border-tertiary;
+}
+
+td {
+    @apply pr-3 pl-3;
 }
 
 /* END OF ELEMENTS */
@@ -148,26 +167,26 @@ tr {
 
 /* A5 Page */
 .a5page-landscape {
-    @apply m-0;
+    @apply m-0 box-content;
     height: 148mm;
     width: 210mm;
 }
 
 .a5page-portrait {
-    @apply m-0;
+    @apply m-0 box-content;
     width: 148mm;
     height: 210mm;
 }
 
 /* A4 Page */
 .a4page-portrait {
-    @apply m-0;
+    @apply m-0 box-content;
     width: 210mm;
     height: 297mm;
 }
 
 .a4page-landscape {
-    @apply m-0;
+    @apply m-0 box-content;
     height: 210mm;
     width: 297mm;
 }

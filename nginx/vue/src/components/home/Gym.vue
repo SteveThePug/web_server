@@ -10,8 +10,8 @@ const gym = [
 <template>
     <div class="flex flex-col items-center">
         <h2>Gym</h2>
-        <p>I'm not a gym geek but I have a consistent routine:</p>
-        <div class="overflow-scroll flex-1 border-box">
+        <p class="m-3">I'm not a gym geek but I always do:</p>
+        <div class="overflow-scroll w-full flex-1 border-box">
             <OptionalLinkTable :data="gym" />
         </div>
     </div>
