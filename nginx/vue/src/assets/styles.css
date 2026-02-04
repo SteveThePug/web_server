@@ -99,6 +99,14 @@ code {
     @apply text-tertiary;
 }
 
+ul {
+    @apply text-tertiary;
+}
+
+li {
+    @apply text-tertiary;
+}
+
 h1,
 h2,
 h3,
