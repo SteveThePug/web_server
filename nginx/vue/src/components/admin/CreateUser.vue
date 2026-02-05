@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 import { ref, onMounted, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -22,6 +23,6 @@ function handleLogin() {
         <h1>Create User</h1>
         <input type="text" v-model="username" placeholder="Username" />
         <input type="password" v-model="password" placeholder="Password" />
-        <button @click="handleLogin">Create Account</button>
+        <Button @click="handleLogin">Create Account</Button>
     </div>
 </template>

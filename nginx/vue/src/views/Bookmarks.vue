@@ -240,16 +240,18 @@ const links = [
 </script>
 
 <template>
-    <main class="items-center flex flex-col">
-        <div class="background halftone" />
+    <main class="items-center flex flex-col halftone">
         <div
-            class="a4page-portrait bdr-1 flex flex-col relative overflow-scroll gap-1"
+            class="a4page-portrait bdr-1 flex flex-row flex-wrap overflow-x-auto gap-1"
         >
-            <ToggleLinkTable
-                v-for="link in links"
-                :title="link[0]"
-                :linkArr="link[1]"
-            />
+            <div class="w-full h-fit">
+                <ToggleLinkTable
+                    class="flex flex-col flex-wrap"
+                    v-for="link in links"
+                    :title="link[0]"
+                    :linkArr="link[1]"
+                />
+            </div>
         </div>
     </main>
 </template>

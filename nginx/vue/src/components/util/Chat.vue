@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 import { useMessagesStore } from "@/stores/messages";
 
 const messagesStore = useMessagesStore();
@@ -21,7 +22,7 @@ onUnmounted(() => {
         </div>
         <div class="flex flex-row">
             <input v-model="messageInput" @keyup.enter="sendMessage" />
-            <button @click="sendMessage">Send</button>
+            <Button @click="sendMessage">Send</Button>
         </div>
     </div>
 </template>

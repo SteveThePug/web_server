@@ -2,6 +2,8 @@
 import { ref, onMounted, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
+import Button from "@/components/input/Button.vue";
+
 const auth = useAuthStore();
 const username = ref("");
 const password = ref("");
@@ -21,12 +23,12 @@ function handleLogout() {
         <p>{{ auth.user.id }}</p>
         <p>{{ auth.user.username }}</p>
         <p>{{ auth.user.admin }}</p>
-        <button @click="handleLogout">Log Out</button>
+        <Button @click="handleLogout">Log Out</Button>
     </div>
     <div v-else class="flex flex-col">
         <h1>Login</h1>
         <input type="text" v-model="username" placeholder="Username" />
         <input type="password" v-model="password" placeholder="Password" />
-        <button @click="handleLogin">Log In</button>
+        <Button @click="handleLogin">Log In</Button>
     </div>
 </template>

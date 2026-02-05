@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
@@ -27,7 +28,7 @@ async function post() {
         <h1>Create Post</h1>
         <input type="text" v-model="title" placeholder="Title" />
         <textarea v-model="content" placeholder="Content"></textarea>
-        <button @click="post">Upload</button>
+        <Button @click="post">Upload</Button>
         <!-- make textarea take up most the space -->
     </div>
 </template>

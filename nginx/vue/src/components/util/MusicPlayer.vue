@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 
 </script>
 

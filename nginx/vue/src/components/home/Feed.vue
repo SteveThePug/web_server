@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
 import Header from "@/components/text/Header.vue";
 
@@ -51,18 +52,18 @@ onMounted(() => {
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
         <div class="flex flex-row w-full">
-            <button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
+            <Button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
                 Prev
-            </button>
-            <button
+            </Button>
+            <Button
                 class="flex-1 border-box"
                 v-if="!rightCap"
                 @click="nextPost"
             >
                 Next
-            </button>
+            </Button>
         </div>
-        <button v-if="userOwnsPost" @click="deletePost">Delete</button>
+        <Button v-if="userOwnsPost" @click="deletePost">Delete</Button>
     </div>
 </template>
 

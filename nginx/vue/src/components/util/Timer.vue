@@ -1,4 +1,5 @@
 <script setup>
+import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 
 const timer = ref(null);
@@ -87,15 +88,15 @@ function playFinishedSound() {
                 />
                 <p>{{ secondsInput }}s</p>
             </div>
-            <button @click="startTimer">Proceed</button>
+            <Button @click="startTimer">Proceed</Button>
         </div>
         <div v-if="finished && !paused" class="flex flex-col">
             <h1>Timer finished!</h1>
-            <button @click="resetTimer">Reset</button>
+            <Button @click="resetTimer">Reset</Button>
         </div>
         <div v-if="!finished && paused" class="flex flex-col">
             <h1>Paused</h1>
-            <button @click="resetTimer">Reset</button>
+            <Button @click="resetTimer">Reset</Button>
         </div>
         <div v-if="!finished && !paused" class="flex flex-col">
             <p>
@@ -108,7 +109,7 @@ function playFinishedSound() {
                     secondsInput.toString().padStart(2, "0")
                 }}
             </p>
-            <button @click="pauseTimer">Pause</button>
+            <Button @click="pauseTimer">Pause</Button>
         </div>
     </div>
 </template>

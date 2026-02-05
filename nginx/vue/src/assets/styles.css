@@ -129,10 +129,6 @@ p {
     @apply text-secondary;
 }
 
-button {
-    @apply text-primary bg-link text-center border;
-}
-
 a {
     @apply text-primary bg-link text-center font-heading text-xl tracking-wide;
 }

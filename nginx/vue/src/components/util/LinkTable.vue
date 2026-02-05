@@ -12,13 +12,8 @@ const keys = ["name", "link"];
 </script>
 
 <template>
-    <a
-        class="bdr-2 bg-bg_primary"
-        v-for="(row, rowIndex) in linkArr"
-        :key="rowIndex"
-        :href="row.link"
-    >
-        <p>
+    <a v-for="(row, rowIndex) in linkArr" :key="rowIndex" :href="row.link">
+        <p class="bdr-2 bg-bg_primary">
             {{ row.name }}
         </p>
     </a>

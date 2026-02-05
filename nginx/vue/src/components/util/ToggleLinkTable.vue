@@ -1,4 +1,6 @@
 <script setup>
+import ToggleHeader from "@/components/text/ToggleHeader.vue";
+
 import { ref } from "vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 
@@ -17,9 +19,10 @@ const show_links = ref(false);
 </script>
 
 <template>
-    <div class="flex flex-row">
-        <h2>{{ title }}</h2>
-        <button @click="show_links = !show_links">Toggle</button>
+    <div class="h-fit w-fit">
+        <ToggleHeader v-model="show_links" class="justify-between flex"
+            >{{ title }}
+        </ToggleHeader>
+        <LinkTable v-if="show_links" :linkArr="props.linkArr" />
     </div>
-    <LinkTable v-if="show_links" :linkArr="props.linkArr" />
 </template>
