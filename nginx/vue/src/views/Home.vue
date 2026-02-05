@@ -19,22 +19,20 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="a4height flex flex-row">
-            <UtenaFrame class="w-fit h-fit">
-                <div class="a4page-portrait homeGrid relative">
-                    <Intro class="intro" />
-                    <Listening class="listening" />
-                    <Stamps class="stamps" />
-                    <Feed class="feed" />
-                    <Links class="links" />
-                    <Collage class="collage" />
-                    <Consumption class="consumption" />
-                    <Favorites class="favorites" />
-                    <Gym class="gym" />
-                </div>
-            </UtenaFrame>
+        <div class="a4height flex flex-row m-32">
+            <div class="a4page-portrait homeGrid relative bdr-1">
+                <Intro class="intro" />
+                <Listening class="listening" />
+                <Stamps class="stamps" />
+                <Feed class="feed" />
+                <Links class="links" />
+                <Collage class="collage" />
+                <Consumption class="consumption" />
+                <Favorites class="favorites" />
+                <Gym class="gym" />
+            </div>
             <div
-                class="flex flex-col sidebar border-primary place-content-between h-full sticky mt-34 w-60"
+                class="flex flex-col sidebar border-primary place-content-between h-full sticky w-60 m-10"
             >
                 <div class="flex flex-col">
                     <Time />
