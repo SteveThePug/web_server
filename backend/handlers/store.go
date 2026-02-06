@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"adam-french.co.uk/backend/services"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -13,4 +15,7 @@ type Store struct {
 	SpotifyClient *spotify.Client
 	Auth          *services.Auth
 	Notes         *services.Notes
+
+	RecentSongs          *[]spotify.RecentlyPlayedItem
+	RecentSongsFetchedAt time.Time
 }

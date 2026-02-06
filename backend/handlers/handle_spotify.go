@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,10 @@ func (store *Store) ListeningTo(ctx *gin.Context) {
 func (store *Store) RecentlyPlayed(ctx *gin.Context) {
 	opts := spotify.RecentlyPlayedOptions{Limit: 3}
 
+	if store.RecentSongsFresh() {
+		ctx.JSON(200, *store.RecentSongs)
+	}
+
 	played, err := store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
@@ -61,4 +66,16 @@ func (store *Store) RecentlyPlayed(ctx *gin.Context) {
 	}
 
 	ctx.JSON(200, played)
+}
+
+func (s *Store) RecentSongsFresh() bool {
+	if s.RecentSongs == nil {
+		return false
+	}
+
+	if len(*s.RecentSongs) == 0 {
+		return false
+	}
+
+	return time.Since(s.RecentSongsFetchedAt) < time.Minute
 }

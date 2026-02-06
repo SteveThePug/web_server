@@ -1,10 +1,8 @@
 <script setup>
 import Button from "@/components/input/Button.vue";
-import { ref, onMounted, computed } from "vue";
+import { ref } from "vue";
 import axios from "axios";
-import { useAuthStore } from "@/stores/auth";
 
-const auth = useAuthStore();
 const title = ref("");
 const content = ref("");
 
@@ -24,7 +22,7 @@ async function post() {
 </script>
 
 <template>
-    <div class="flex flex-col" v-if="auth.loggedIn">
+    <div class="flex flex-col">
         <h1>Create Post</h1>
         <input type="text" v-model="title" placeholder="Title" />
         <textarea
