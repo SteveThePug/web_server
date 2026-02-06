@@ -18,7 +18,7 @@ let timeoutId;
 
 function handleHover() {
     cancelAnimationFrame(timeoutId);
-    setTimeout(() => requestAnimationFrame(tick), PAUSE);
+    setTimeout(() => (timeoutId = requestAnimationFrame(tick)), PAUSE);
 }
 
 function tick() {
