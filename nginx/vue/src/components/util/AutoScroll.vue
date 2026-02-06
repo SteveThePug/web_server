@@ -13,7 +13,6 @@ const SPEED = 0.5; // px per frame
 const PAUSE = 2000; // ms at top/bottom
 
 let direction = 1; // 1 = down, -1 = up
-let scrollPos = 0;
 let timeoutId;
 let timeoutId2;
 
@@ -28,8 +27,7 @@ function handleHover() {
 
 function tick() {
     const el = container.value;
-    scrollPos += SPEED * direction;
-    el.scrollTop = scrollPos;
+    el.scrollTop += SPEED * direction;
 
     const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
     const reachedTop = el.scrollTop <= 0;
