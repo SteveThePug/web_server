@@ -15,10 +15,15 @@ const FRAME_TIME = 50; // ms at top/bottom
 
 let direction = 1; // 1 = down, -1 = up
 let timeoutId;
+let timeoutId2;
 
 function handleHover() {
     cancelAnimationFrame(timeoutId);
-    setTimeout(() => (timeoutId = requestAnimationFrame(tick)), PAUSE);
+    clearTimeout(timeoutId2);
+    timeoutId2 = setTimeout(
+        () => (timeoutId = requestAnimationFrame(tick)),
+        PAUSE,
+    );
 }
 
 function tick() {
