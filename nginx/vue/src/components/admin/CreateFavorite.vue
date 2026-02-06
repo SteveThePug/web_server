@@ -2,7 +2,6 @@
 import Button from "@/components/input/Button.vue";
 
 import { ref } from "vue";
-import { useAuthStore } from "@/stores/auth";
 import axios from "axios";
 
 const type = ref("");

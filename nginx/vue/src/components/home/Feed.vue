@@ -3,7 +3,7 @@ import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
 import Header from "@/components/text/Header.vue";
 
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onBeforeMount } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 
@@ -36,7 +36,7 @@ function deletePost() {
     postsStore.deletePost(post.value);
 }
 
-onMounted(() => {
+onBeforeMount(() => {
     postsStore.fetchPosts();
 });
 </script>
