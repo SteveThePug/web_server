@@ -45,8 +45,8 @@ function deletePost() {
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
+        <small>By: {{ post.author.username }}</small>
         <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
-        <p>by: {{ post.author.username }}</p>
         <div class="flex flex-row w-full">
             <Button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
                 Prev
