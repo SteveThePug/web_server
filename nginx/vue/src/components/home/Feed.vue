@@ -42,11 +42,11 @@ function deletePost() {
         class="flex flex-col p-1 overflow-scroll text-left items-start justify-start"
     >
         <Header>{{ post.title }}</Header>
-        <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
-        <p>by: {{ post.author.username }}</p>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >
+        <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
+        <p>by: {{ post.author.username }}</p>
         <div class="flex flex-row w-full">
             <Button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
                 Prev
@@ -59,7 +59,9 @@ function deletePost() {
                 Next
             </Button>
         </div>
-        <Button v-if="userOwnsPost" @click="deletePost">Delete</Button>
+        <Button class="w-full" v-if="userOwnsPost" @click="deletePost"
+            >Delete</Button
+        >
     </div>
 </template>
 
