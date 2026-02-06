@@ -9,9 +9,8 @@ import { useTemplateRef, onMounted, onBeforeUnmount } from "vue";
 
 const container = useTemplateRef("container");
 
-const SPEED = 1; // px per frame
+const SPEED = 0.5; // px per frame
 const PAUSE = 2000; // ms at top/bottom
-const FRAME_TIME = 50; // ms at top/bottom
 
 let direction = 1; // 1 = down, -1 = up
 let timeoutId;
@@ -35,6 +34,8 @@ function tick() {
 
     if (reachedBottom || reachedTop) {
         direction *= -1;
+        handleHover();
+        return;
     }
 
     timeoutId = requestAnimationFrame(tick);
