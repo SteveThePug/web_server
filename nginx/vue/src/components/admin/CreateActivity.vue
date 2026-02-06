@@ -1,0 +1,36 @@
+<script setup>
+import Button from "@/components/input/Button.vue";
+
+import { ref } from "vue";
+import axios from "axios";
+
+const type = ref("");
+const name = ref("");
+const link = ref("");
+
+async function post() {
+    try {
+        const res = await axios.post("/api/activity", {
+            type: type.value,
+            name: name.value,
+            link: link.value || undefined,
+        });
+        type.value = "";
+        name.value = "";
+        link.value = "";
+        console.log(res.data);
+    } catch (err) {
+        console.error(err);
+    }
+}
+</script>
+
+<template>
+    <div class="flex flex-col">
+        <h1>Create Activity</h1>
+        <input type="text" v-model="type" placeholder="Type" />
+        <input type="text" v-model="name" placeholder="Name" />
+        <input type="text" v-model="link" placeholder="Link" />
+        <Button @click="post">Upload</Button>
+    </div>
+</template>
