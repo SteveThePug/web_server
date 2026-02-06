@@ -63,32 +63,47 @@ func main() {
 
 	protected := r.Group("/", store.AuthMiddlewear)
 
+	// FAVORITES
+	r.GET("/favorites", store.GetFavorites)
+	protected.POST("/favorites", store.CreateFavorite)
+
+	// ACTIVITIES
+	r.GET("/activity", store.GetActivity)
+	protected.POST("/activity", store.CreateActivity)
+
+	// POSTS
 	r.GET("/posts", store.GetPosts)
 	protected.POST("/posts", store.CreatePost)
 	r.GET("/posts/:id", store.GetPost)
 	protected.PUT("/posts/:id", store.UpdatePost)
 	protected.DELETE("/posts/:id", store.DeletePost)
 
+	// USERS
 	r.GET("/user/:id", store.GetUser)
 	protected.PUT("/user/:id", store.UpdateUser)
 	protected.DELETE("/user/:id", store.DeleteUser)
 	r.GET("/user", store.GetUsers)
 	r.POST("/user", store.CreateUser)
 
+	// AUTH
 	r.POST("/auth/login", store.Login)
 	r.POST("/auth/refresh", store.RefreshToken)
 	r.GET("/auth/check", store.CheckToken)
 	r.POST("/auth/logout", store.Logout)
 
+	// SPOTIFY
 	r.GET("/spotify/callback", store.CompleteSpotifyAuth)
 	r.GET("/spotify/listening", store.ListeningTo)
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
 
+	// MESSAGES
 	r.GET("/ws", store.ConnectWebSocket)
 
+	// NOTES
 	r.GET("/notes/*path", store.GetNoteFile)
 
+	// HELLO WORLD
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})

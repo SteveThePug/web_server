@@ -31,11 +31,12 @@ func connectToPostgreSQL(config *SQLConfig) (*gorm.DB, error) {
 }
 
 func migrateDatabase(db *gorm.DB) error {
-	err := db.AutoMigrate(&models.User{})
-	if err != nil {
-		return err
-	}
-	err = db.AutoMigrate(&models.Post{})
+	err := db.AutoMigrate(
+		&models.User{},
+		&models.Post{},
+		&models.Activity{},
+		&models.Favorite{},
+	)
 	if err != nil {
 		return err
 	}
