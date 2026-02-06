@@ -40,6 +40,9 @@ export const usePostsStore = defineStore("posts", () => {
       console.error("Delete failed:", err);
     }
   }
+
+  fetchPosts();
+
   return {
     posts,
 

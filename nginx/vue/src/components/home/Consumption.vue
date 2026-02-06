@@ -1,6 +1,4 @@
 <script setup>
-import { onBeforeMount } from "vue";
-
 import AutoScroll from "@/components/util/AutoScroll.vue";
 import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
 import Header from "@/components/text/Header.vue";
@@ -8,10 +6,6 @@ import Header from "@/components/text/Header.vue";
 import { useActivityStore } from "@/stores/activity";
 
 const activityStore = useActivityStore();
-
-onBeforeMount(() => {
-    activityStore.fetchActivity();
-});
 </script>
 
 <template>

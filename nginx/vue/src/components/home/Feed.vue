@@ -35,10 +35,6 @@ function prevPost() {
 function deletePost() {
     postsStore.deletePost(post.value);
 }
-
-onBeforeMount(() => {
-    postsStore.fetchPosts();
-});
 </script>
 
 <template>

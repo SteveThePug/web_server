@@ -25,6 +25,7 @@ export const useActivityStore = defineStore("activity", () => {
     }
   }
 
+  fetchActivity();
   return {
     activity,
     activityCount,
