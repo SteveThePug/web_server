@@ -25,6 +25,8 @@ export const useFavoritesStore = defineStore("favorites", () => {
     }
   }
 
+  fetchFavorites();
+
   return {
     favorites,
     favoritesCount,
