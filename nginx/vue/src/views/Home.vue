@@ -19,7 +19,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="a4height flex flex-row m-32">
+        <div class="h-fit flex flex-row m-32">
             <div class="a4page-portrait homeGrid relative bdr-1">
                 <Intro class="intro" />
                 <Listening class="listening" />
@@ -50,9 +50,6 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 </template>
 
 <style scoped>
-.a4height {
-    height: 297mm;
-}
 .homeGrid > * {
     @apply border-2 border;
     border-color: var(--quaternary);
