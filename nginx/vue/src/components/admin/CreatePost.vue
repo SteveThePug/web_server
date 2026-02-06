@@ -24,10 +24,14 @@ async function post() {
 </script>
 
 <template>
-    <div v-if="auth.loggedIn" class="flex flex-col">
+    <div class="flex flex-col" v-if="auth.loggedIn">
         <h1>Create Post</h1>
         <input type="text" v-model="title" placeholder="Title" />
-        <textarea v-model="content" placeholder="Content"></textarea>
+        <textarea
+            class="h-50"
+            v-model="content"
+            placeholder="Content"
+        ></textarea>
         <Button @click="post">Upload</Button>
         <!-- make textarea take up most the space -->
     </div>

@@ -133,6 +133,11 @@ a {
     @apply text-primary bg-link text-center font-heading text-xl tracking-wide;
 }
 
+input,
+textarea {
+    @apply text-primary border;
+}
+
 table {
     @apply border-primary border text-primary;
 }
