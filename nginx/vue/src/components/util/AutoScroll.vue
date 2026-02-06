@@ -1,50 +1,117 @@
-<template>
-    <div ref="container" @mouseover="handleHover" class="overflow-y-auto">
-        <slot />
-    </div>
-</template>
-
 <script setup>
-import { useTemplateRef, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watchEffect } from "vue";
 
-const container = useTemplateRef("container");
+const container = ref(null);
+const direction = ref(1); // 1 = down, -1 = up
+const isPaused = ref(false);
+const animationFrameId = ref(null);
+const lastTime = ref(0);
 
-const SPEED = 1; // px per frame
-const PAUSE = 2000; // ms at top/bottom
-const FRAME_TIME = 50; // ms at top/bottom
+const SPEED = 0.03; // px per ms (better for frame rate independence)
+const PAUSE_DURATION = 2000; // ms at top/bottom
 
-let direction = 1; // 1 = down, -1 = up
-let timeoutId;
+// Use requestAnimationFrame for smoother scrolling
+function scrollStep(timestamp) {
+    if (isPaused.value) return;
 
-function handleHover() {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(tick, PAUSE);
-}
+    if (!lastTime.value) lastTime.value = timestamp;
+    const deltaTime = timestamp - lastTime.value;
+    lastTime.value = timestamp;
 
-function tick() {
+    if (!container.value) return;
+
     const el = container.value;
+    const scrollDistance = SPEED * deltaTime * direction.value;
 
-    el.scrollTop += SPEED * direction;
+    el.scrollTop += scrollDistance;
 
-    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
-    const reachedTop = el.scrollTop <= 0;
+    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    const reachedTop = el.scrollTop <= 1;
 
     if (reachedBottom || reachedTop) {
-        direction *= -1;
+        direction.value *= -1;
+        isPaused.value = true;
 
-        timeoutId = setTimeout(tick, PAUSE);
+        setTimeout(() => {
+            isPaused.value = false;
+            if (!isPaused.value) {
+                animationFrameId.value = requestAnimationFrame(scrollStep);
+            }
+        }, PAUSE_DURATION);
 
         return;
     }
 
-    timeoutId = setTimeout(tick, FRAME_TIME);
+    animationFrameId.value = requestAnimationFrame(scrollStep);
+}
+
+function pauseScroll() {
+    isPaused.value = true;
+    lastTime.value = 0; // Reset time tracking
+}
+
+function resumeScroll() {
+    if (isPaused.value) {
+        isPaused.value = false;
+        animationFrameId.value = requestAnimationFrame(scrollStep);
+    }
+}
+
+function startScrolling() {
+    if (!isPaused.value) {
+        animationFrameId.value = requestAnimationFrame(scrollStep);
+    }
+}
+
+function stopScrolling() {
+    if (animationFrameId.value) {
+        cancelAnimationFrame(animationFrameId.value);
+        animationFrameId.value = null;
+    }
 }
 
 onMounted(() => {
-    timeoutId = setTimeout(tick, FRAME_TIME);
+    startScrolling();
 });
 
 onBeforeUnmount(() => {
-    clearTimeout(timeoutId);
+    stopScrolling();
+});
+
+// Optional: Auto-pause when component is not visible
+const observer = ref(null);
+onMounted(() => {
+    if ("IntersectionObserver" in window) {
+        observer.value = new IntersectionObserver(
+            (entries) => {
+                isPaused.value = !entries[0].isIntersecting;
+                if (!isPaused.value) {
+                    startScrolling();
+                }
+            },
+            { threshold: 0.1 },
+        );
+
+        if (container.value) {
+            observer.value.observe(container.value);
+        }
+    }
+});
+
+onBeforeUnmount(() => {
+    if (observer.value) {
+        observer.value.disconnect();
+    }
 });
 </script>
+
+<template>
+    <div
+        ref="container"
+        @mouseover="pauseScroll"
+        @mouseleave="resumeScroll"
+        class="overflow-y-auto"
+    >
+        <slot />
+    </div>
+</template>
