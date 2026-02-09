@@ -1,4 +1,5 @@
 <script setup>
+import Headline from "@/components/text/Headline.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
@@ -17,10 +18,36 @@ const parentPath = computed(() => {
 const inHome = computed(() => {
     return route.path == "/";
 });
+
+const faces = [
+    "^_^",
+    "¯\\_(ツ)_/¯",
+    "(◕‿◕✿)",
+    "ಠ_ಠ",
+    "ʘ‿ʘ",
+    "^̮^",
+    ">_>",
+    "¬_¬",
+    "˙ ͜ʟ˙",
+    "( ͡° ͜ʖ ͡°)",
+    "[̲̅$̲̅(̲̅5̲̅)̲̅$̲̅]",
+    "(ง'̀-'́)ง",
+    "\ (•◡•) /",
+    "( ͡ᵔ ͜ʖ ͡ᵔ )",
+    "ᕙ(⇀‸↼‶)ᕗ",
+    "⚆ _ ⚆",
+    "(｡◕‿◕｡)",
+    "(╯°□°)╯︵ ʞooqǝɔɐɟ",
+    "̿ ̿ ̿'̿'\̵͇̿̿\з=(•_•)=ε/̵͇̿̿/'̿'̿ ̿",
+    "(☞ﾟヮﾟ)☞ ☜(ﾟヮﾟ☜)",
+];
+const faces_string = faces.join("      ");
 </script>
 
 <template>
-    <nav class="flex flex-row w-fit h-fit background">
+    <nav
+        class="flex flex-row w-full h-fit background border border-primary bg-bg_primary"
+    >
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
             <a>HOME</a>
         </RouterLink>
@@ -31,6 +58,9 @@ const inHome = computed(() => {
         >
             <a>UP</a>
         </RouterLink>
+        <Headline class="border flex-1">
+            <code class="whitespace-pre">{{ faces_string }}</code>
+        </Headline>
     </nav>
 </template>
 
