@@ -84,7 +84,7 @@ body {
 }
 
 main {
-    @apply overflow-y-scroll;
+    @apply overflow-y-scroll w-full h-full p-10;
 }
 
 input {

@@ -157,9 +157,6 @@
                 </tbody>
             </table>
         </div>
-
-        <span class="no-print"></span>
-
         <div class="a4page">
             <h2>Experience</h2>
             <table>
@@ -437,15 +434,16 @@
     border: 1px solid var(--primary);
     overflow: auto;
     /* Enables scrolling when content exceeds height */
-    margin: 0 auto;
+    margin: auto auto;
     /* Centers the page horizontally */
 }
 
 /* Component Styling */
 main {
+    padding: 0px;
     display: flex;
     flex-direction: column;
-    gap: 0px;
+    height: fit-content;
 }
 
 span {

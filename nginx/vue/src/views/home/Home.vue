@@ -19,7 +19,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="h-fit flex flex-row m-32">
+        <div class="h-fit flex flex-row">
             <div class="a4page-portrait homeGrid relative bdr-1">
                 <Intro class="intro" />
                 <Listening class="listening" />

@@ -45,9 +45,7 @@ const faces_string = faces.join("      ");
 </script>
 
 <template>
-    <nav
-        class="flex flex-row w-full h-fit background border border-primary bg-bg_primary"
-    >
+    <nav class="flex flex-row w-full h-fit border border-primary bg-bg_primary">
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
             <a>HOME</a>
         </RouterLink>
