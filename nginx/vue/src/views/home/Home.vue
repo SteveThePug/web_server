@@ -4,15 +4,15 @@ import Time from "@/components/util/Time.vue";
 import Chat from "@/components/util/Chat.vue";
 import MusicPlayer from "@/components/util/MusicPlayer.vue";
 
-import Intro from "@/components/home/Intro.vue";
-import Stamps from "@/components/home/Stamps.vue";
-import Listening from "@/components/home/Listening.vue";
-import Links from "@/components/home/Links.vue";
-import Feed from "@/components/home/Feed.vue";
-import Collage from "@/components/home/Collage.vue";
-import Favorites from "@/components/home/Favorites.vue";
-import Gym from "@/components/home/Gym.vue";
-import Consumption from "@/components/home/Consumption.vue";
+import Intro from "./Intro.vue";
+import Stamps from "./Stamps.vue";
+import Listening from "./Listening.vue";
+import Links from "./Links.vue";
+import Feed from "./Feed.vue";
+import Collage from "./Collage.vue";
+import Favorites from "./Favorites.vue";
+import Gym from "./Gym.vue";
+import Consumption from "./Consumption.vue";
 
 import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 </script>
