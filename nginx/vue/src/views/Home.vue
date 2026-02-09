@@ -32,7 +32,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
                 <Gym class="gym" />
             </div>
             <div
-                class="flex flex-col sidebar border-primary place-content-between h-full sticky w-60 m-10"
+                class="sidebar border-primary place-content-between flex-1 flex flex-col m-10 w-60"
             >
                 <div class="flex flex-col">
                     <Time />
@@ -40,10 +40,12 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>
-                <img
-                    src="/img/memes/fire-woman.gif"
-                    class="border-tertiary border"
-                />
+                <div>
+                    <img
+                        src="/img/memes/fire-woman.gif"
+                        class="border-tertiary border"
+                    />
+                </div>
             </div>
         </div>
     </main>
@@ -51,7 +53,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 
 <style scoped>
 .homeGrid > * {
-    @apply border-2 border;
+    border: 2px solid var(--quaternary);
     border-color: var(--quaternary);
     background-color: var(--bg_primary);
 }
