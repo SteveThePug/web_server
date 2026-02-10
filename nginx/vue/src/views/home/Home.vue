@@ -38,7 +38,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
                 <div class="flex flex-col flex-1">
                     <Time class="bg-bg_primary border-primary border-b" />
                     <Timer class="border-primary border-b bg-bg_primary" />
-                    <Elle class="flex-1" />
+                    <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>
