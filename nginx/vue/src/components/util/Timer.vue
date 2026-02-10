@@ -63,9 +63,7 @@ function playFinishedSound() {
 </script>
 
 <template>
-    <div
-        class="flex flex-col gap-1 items-center border-primary border p-1 bg-bg_primary"
-    >
+    <div class="flex flex-col gap-1 p-1 items-center">
         <h2 class="items-center">Timer</h2>
         <div v-if="finished && paused" class="flex flex-col">
             <div class="flex flex-row p-2 place-content-around">

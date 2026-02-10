@@ -116,12 +116,12 @@ h4 {
 
 h3,
 h4 {
-    @apply text-base;
-}
-h2 {
     @apply text-lg;
 }
 h1 {
+    @apply text-2xl;
+}
+h2 {
     @apply text-xl;
 }
 
@@ -260,7 +260,7 @@ td {
 }
 
 .background {
-    @apply fixed inset-0 z-0;
+    @apply fixed;
 }
 
 .halftone {

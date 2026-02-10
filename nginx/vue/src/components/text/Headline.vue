@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, useTemplateRef, onUnmounted } from "vue";
 
-const container = ref(null);
-const item1 = ref(null);
-const item2 = ref(null);
-const offset = ref(0);
+const container = useTemplateRef("container");
+const item1 = useTemplateRef("item1");
+const item2 = useTemplateRef("item2");
+
+let offset = 0;
 
 let rafId;
 
@@ -17,14 +18,14 @@ function animate() {
 
     const width = Math.max(ctnr.offsetWidth, it1.scrollWidth);
 
-    offset.value -= speed;
+    offset -= speed;
 
-    if (offset.value <= -width) {
-        offset.value += width;
+    if (offset <= -width) {
+        offset += width;
     }
 
-    it1.style.transform = `translateX(${offset.value}px)`;
-    it2.style.transform = `translateX(${width + offset.value}px)`;
+    it1.style.transform = `translateX(${offset}px)`;
+    it2.style.transform = `translateX(${width + offset}px)`;
 
     rafId = requestAnimationFrame(animate);
 }
@@ -39,9 +40,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="marquee" ref="container">
-        <p class="item" ref="item1"><slot /></p>
-        <p class="item item2" ref="item2"><slot /></p>
+    <div class="marquee">
+        <div class="container" ref="container">
+            <div class="item" ref="item1"><slot /></div>
+            <div class="item item2" ref="item2"><slot /></div>
+        </div>
     </div>
 </template>
 
@@ -49,14 +52,25 @@ onUnmounted(() => {
 .marquee {
     overflow: hidden;
     width: 100%;
+}
+
+.container {
+    width: 100%;
+    height: fit-content;
+    position: relative;
     will-change: transform;
 }
 
 .item {
+    height: fit-content;
     top: 0px;
     padding-right: 3em;
     width: fit-content;
     white-space: nowrap;
+}
+
+.item1 {
+    left: 0px;
 }
 
 .item2 {

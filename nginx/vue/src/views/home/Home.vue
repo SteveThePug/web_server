@@ -1,5 +1,6 @@
 <script setup>
 import Timer from "@/components/util/Timer.vue";
+import Elle from "@/components/elle/Elle.vue";
 import Time from "@/components/util/Time.vue";
 import Chat from "@/components/util/Chat.vue";
 import MusicPlayer from "@/components/util/MusicPlayer.vue";
@@ -32,11 +33,12 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
                 <Gym class="gym" />
             </div>
             <div
-                class="sidebar border-primary place-content-between flex-1 flex flex-col m-10 w-60"
+                class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60 border-2"
             >
-                <div class="flex flex-col">
-                    <Time />
-                    <Timer />
+                <div class="flex flex-col flex-1">
+                    <Time class="bg-bg_primary border-primary border-b" />
+                    <Timer class="border-primary border-b bg-bg_primary" />
+                    <Elle class="flex-1" />
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>

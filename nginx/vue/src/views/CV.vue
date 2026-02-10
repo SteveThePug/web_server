@@ -15,9 +15,10 @@
             <p>
                 Recently graduated from the University of Leeds with a BSc
                 Computer Science with Mathematics (International) degree.
-                Currently self-studying <i>Complex Analysis</i> and
-                <i>"An Introduction to Statistical Learning"</i>. Also building
-                personal projects aligned with the type of roles I am seeking.
+                Currently self-studying and building projects aligned with the
+                type of roles I am seeking. I have a strong background across a
+                variety of programming languages and will be able to quickly get
+                on board with any codebase.
             </p>
             <p>
                 I am most keen to work for a company with altruistic values and
@@ -71,8 +72,8 @@
                         <td>C++, Soldering, Embedded Systems</td>
                         <td>2022 - 2025</td>
                         <td class="row-leftalign">
-                            Created room decorations using salvaged components
-                            from discarded electronics.
+                            Created decorations using salvaged components from
+                            discarded electronics.
                         </td>
                     </tr>
                     <tr>
@@ -401,6 +402,7 @@
     --font-text: CreatoDisplay;
     --font-size-text: 90%;
     --font-size-heading: 2.5em;
+    --font-size-subheading: 1.5em;
     --font-size-tableheading: 1.2em;
 }
 
@@ -469,6 +471,7 @@ h2 {
     margin: 0px;
     margin-bottom: 3px;
     border-bottom: 1px solid var(--primary);
+    font-size: var(--font-size-subheading);
 }
 
 p {

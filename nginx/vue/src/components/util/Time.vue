@@ -24,7 +24,7 @@ setInterval(updateDateTime, 60000);
 </script>
 
 <template>
-    <div class="items-center flex flex-col bg-bg_primary border-primary border">
+    <div class="items-center flex flex-col">
         <h1>{{ time }}</h1>
         <h1>{{ weekday }} {{ day }}, {{ month }}</h1>
     </div>
