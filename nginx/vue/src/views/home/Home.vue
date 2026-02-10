@@ -1,11 +1,12 @@
 <script setup>
 import Timer from "@/components/util/Timer.vue";
-import Elle from "@/components/elle/Elle.vue";
 import Time from "@/components/util/Time.vue";
+import Elle from "@/components/elle/Elle.vue";
 import Chat from "@/components/util/Chat.vue";
 import MusicPlayer from "@/components/util/MusicPlayer.vue";
 
 import Intro from "./Intro.vue";
+import Intro2 from "./Intro2.vue";
 import Stamps from "./Stamps.vue";
 import Listening from "./Listening.vue";
 import Links from "./Links.vue";
@@ -14,15 +15,14 @@ import Collage from "./Collage.vue";
 import Favorites from "./Favorites.vue";
 import Gym from "./Gym.vue";
 import Consumption from "./Consumption.vue";
-
-import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 </script>
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
         <div class="h-fit flex flex-row">
             <div class="a4page-portrait homeGrid relative bdr-1">
-                <Intro class="intro" />
+                <!-- <Intro class="intro" /> -->
+                <Intro2 class="intro" />
                 <Listening class="listening" />
                 <Stamps class="stamps" />
                 <Feed class="feed" />
@@ -32,21 +32,16 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
                 <Favorites class="favorites" />
                 <Gym class="gym" />
             </div>
-            <div
-                class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60 border-2"
-            >
+            <div class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60 ">
                 <div class="flex flex-col flex-1">
-                    <Time class="bg-bg_primary border-primary border-b" />
-                    <Timer class="border-primary border-b bg-bg_primary" />
+                    <Time class="bg-bg_primary border-primary border" />
+                    <Timer class="border-primary border bg-bg_primary" />
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>
                 <div>
-                    <img
-                        src="/img/memes/fire-woman.gif"
-                        class="border-tertiary border"
-                    />
+                    <img src="/img/memes/fire-woman.gif" class="border-tertiary border" />
                 </div>
             </div>
         </div>
@@ -54,7 +49,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 </template>
 
 <style scoped>
-.homeGrid > * {
+.homeGrid>* {
     border: 2px solid var(--quaternary);
     border-color: var(--quaternary);
     background-color: var(--bg_primary);
@@ -76,6 +71,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
 }
 
 @media (max-width: 1200px) {
+
     .tr,
     .br,
     .sidebar {
@@ -117,6 +113,7 @@ import UtenaFrame from "@/components/borders/UtenaFrame.vue";
     grid-column: span 4;
     grid-row: span 2;
 }
+
 .gym {
     grid-column: span 3;
     grid-row: span 2;

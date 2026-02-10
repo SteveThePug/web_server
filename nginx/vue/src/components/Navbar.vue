@@ -49,14 +49,10 @@ const faces_string = faces.join("      ");
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
             <a>HOME</a>
         </RouterLink>
-        <RouterLink
-            class="bdr-2 bg-bg_primary"
-            v-if="parentPath"
-            :to="parentPath"
-        >
+        <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
             <a>UP</a>
         </RouterLink>
-        <Headline class="border flex-1">
+        <Headline class="border flex-1 max-w-full">
             <code class="whitespace-pre">{{ faces_string }}</code>
         </Headline>
     </nav>

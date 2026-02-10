@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-
 	logsDir := "/backend/logs"
 	logFile, err := os.OpenFile(logsDir+"/go.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
