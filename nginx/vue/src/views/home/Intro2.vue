@@ -10,8 +10,8 @@ interface Item {
     content: string
 }
 
-const container = ref<HTMLDivElement | null>(null)
-const itemEls = ref<HTMLDivElement[]>([])
+const container = ref < HTMLDivElement | null > (null)
+const itemEls = ref < HTMLDivElement[] > ([])
 
 const phrases = [
     'Welcome to my website',
@@ -22,7 +22,7 @@ const phrases = [
     "Always watching too much youtube"
 ]
 
-const items = ref<Item[]>(
+const items = ref < Item[] > (
     phrases.map((text, i) => ({
         x: i * 20,
         y: i * 20,
