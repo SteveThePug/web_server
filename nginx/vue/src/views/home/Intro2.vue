@@ -10,19 +10,20 @@ interface Item {
     content: string
 }
 
-const container = ref < HTMLDivElement | null > (null)
-const itemEls = ref < HTMLDivElement[] > ([])
+const container = ref<HTMLDivElement | null>(null)
+const itemEls = ref<HTMLDivElement[]>([])
 
 const phrases = [
     'Welcome to my website',
     'Thank you for visiting',
     "I'd love to know your recommendations",
+    "Message me on discord or steam",
     "I like anime, all kinds of music and sci fic",
     "Try to stay away from instagram",
-    "Always watching too much youtube"
+    "Always watching too much youtube",
 ]
 
-const items = ref < Item[] > (
+const items = ref<Item[]>(
     phrases.map((text, i) => ({
         x: i * 20,
         y: i * 20,
@@ -73,9 +74,9 @@ onUnmounted(() => {
         <div v-for="(item, i) in items" :key="i" ref="itemEls" class=" absolute w-fit h-fit" :style="{
             transform: `translate(${item.x}px, ${item.y}px)`
         }">
-            <p>
+            <h1>
                 {{ item.content }}
-            </p>
+            </h1>
         </div>
     </div>
 </template>

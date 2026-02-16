@@ -6,7 +6,6 @@ import Paragraph from "@/components/text/Paragraph.vue";
 <template>
     <div class="flex-1 border-box flex flex-col p-1 text-left items-start justify-start">
         <Header>Yo</Header>
-
         <!-- <Header>Intro</Header> -->
         <!-- <Paragraph> -->
         <!--     Hi, I'm Adam, thank you for visiting my website. -->
