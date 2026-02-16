@@ -78,8 +78,10 @@ services:
       - ./.env
     ports:
       - "${ICECAST_PORT}:${ICECAST_PORT}"
+
   gitea:
     image: docker.gitea.com/gitea:1.25.4-rootless
+    container_name: "${GITEA_HOST}"
     networks:
       - app-network
     environment:
