@@ -7,7 +7,6 @@ import MusicPlayer from "@/components/util/MusicPlayer.vue";
 
 import Intro from "./Intro.vue";
 import Intro2 from "./Intro2.vue";
-import BadApple from "./BadApple.vue";
 import Stamps from "./Stamps.vue";
 import Listening from "./Listening.vue";
 import Links from "./Links.vue";
@@ -23,8 +22,7 @@ import Consumption from "./Consumption.vue";
         <div class="h-fit flex flex-row">
             <div class="a4page-portrait homeGrid relative bdr-1">
                 <!-- <Intro class="intro" /> -->
-                <!-- <Intro2 class="intro" /> -->
-                <BadApple class="intro" />
+                <Intro2 class="intro" />
                 <Listening class="listening" />
                 <Stamps class="stamps" />
                 <Feed class="feed" />
