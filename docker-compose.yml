@@ -16,6 +16,7 @@ services:
     depends_on:
       - backend
       - icecast2
+      - gitea
     networks:
       - app-network
     ports:
@@ -94,8 +95,6 @@ services:
     volumes:
       - ./gitea/data:/var/lib/gitea
       - ./gitea/config:/etc/gitea
-      - ./data:/var/lib/gitea
-      - ./config:/etc/gitea
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
