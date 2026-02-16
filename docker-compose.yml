@@ -78,9 +78,11 @@ services:
       - ./.env
     ports:
       - "${ICECAST_PORT}:${ICECAST_PORT}"
+
   gitea:
-    
     image: docker.gitea.com/gitea:1.25.4-rootless
+    networks:
+      - app-network
     environment:
       - GITEA__database__DB_TYPE=postgres
       - GITEA__database__HOST=${POSTGRES_HOST}
@@ -89,8 +91,8 @@ services:
       - GITEA__database__PASSWD=${POSTGRES_PASSWORD}
     restart: always
     volumes:
-      - ./data:/var/lib/gitea
-      - ./config:/etc/gitea
+      - ./gitea/data:/var/lib/gitea
+      - ./gitea/config:/etc/gitea
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
