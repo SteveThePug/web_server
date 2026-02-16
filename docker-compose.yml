@@ -80,6 +80,12 @@ services:
     ports:
       - "${ICECAST_PORT}:${ICECAST_PORT}"
 
+  gitea-runner:
+    image: gitea/act_runner:nightly-dind-rootless
+    container_name: "${GITEA_RUNNER_HOST}"
+    networks:
+      - app-network
+
   gitea:
     image: docker.gitea.com/gitea:1.25.4-rootless
     container_name: "${GITEA_HOST}"
