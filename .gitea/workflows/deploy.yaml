@@ -7,10 +7,6 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
-        container:
-            image: docker:24.0.7-cli
-            options: --workdir /home/adamf/deploy/web_server
-
         steps:
             # - name: Checkout repository
             #   uses: actions/checkout@v4
