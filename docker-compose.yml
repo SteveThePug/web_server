@@ -1,112 +1,123 @@
 networks:
-  app-network:
-    driver: bridge
+    app-network:
+        driver: bridge
 
 volumes:
-  dbdata:
+    dbdata:
 
 services:
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: nginx
-    env_file: ./.env
-    restart: always
-    depends_on:
-      - backend
-      - icecast2
-      - gitea
-    networks:
-      - app-network
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+    nginx:
+        build:
+            context: ./nginx
+            dockerfile: Dockerfile
+        container_name: nginx
+        env_file: ./.env
+        restart: always
+        depends_on:
+            - backend
+            - icecast2
+            - gitea
+        networks:
+            - app-network
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./certbot/conf:/etc/letsencrypt
+            - ./certbot/www:/var/www/certbot
 
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes:
-      - ./certbot/entrypoint.sh:/entrypoint.sh
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: ["/entrypoint.sh"]
-    env_file:
-      - .env
-    networks:
-      - app-network
+    certbot:
+        image: certbot/certbot
+        container_name: certbot
+        volumes:
+            - ./certbot/entrypoint.sh:/entrypoint.sh
+            - ./certbot/conf:/etc/letsencrypt
+            - ./certbot/www:/var/www/certbot
+        entrypoint: ["/entrypoint.sh"]
+        env_file:
+            - .env
+        networks:
+            - app-network
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: "${BACKEND_HOST}"
-    restart: always
-    depends_on:
-      - db
-    networks:
-      - app-network
-    env_file:
-      - ./.env
-    volumes:
-      - ./backend/token/:/backend/token
-      - ${OBSIDIAN_DIR}:/backend/notes
-      - ./logs:/backend/logs
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: "${BACKEND_HOST}"
+        restart: always
+        depends_on:
+            - db
+        networks:
+            - app-network
+        env_file:
+            - ./.env
+        volumes:
+            - ./backend/token/:/backend/token
+            - ${OBSIDIAN_DIR}:/backend/notes
+            - ./logs:/backend/logs
 
-  db:
-    image: postgres:16
-    container_name: "${POSTGRES_HOST}"
-    restart: always
-    env_file:
-      - ./.env
-    networks:
-      - app-network
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+    db:
+        image: postgres:16
+        container_name: "${POSTGRES_HOST}"
+        restart: always
+        env_file:
+            - ./.env
+        networks:
+            - app-network
+        volumes:
+            - dbdata:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
 
-  icecast2:
-    build:
-      context: ./icecast2
-      dockerfile: Dockerfile
-    container_name: "${ICECAST_HOST}"
-    restart: always
-    networks:
-      - app-network
-    env_file:
-      - ./.env
-    ports:
-      - "${ICECAST_PORT}:${ICECAST_PORT}"
+    icecast2:
+        build:
+            context: ./icecast2
+            dockerfile: Dockerfile
+        container_name: "${ICECAST_HOST}"
+        restart: always
+        networks:
+            - app-network
+        env_file:
+            - ./.env
+        ports:
+            - "${ICECAST_PORT}:${ICECAST_PORT}"
 
-  gitea-runner:
-    image: gitea/act_runner:nightly-dind-rootless
-    container_name: "${GITEA_RUNNER_HOST}"
-    networks:
-      - app-network
+    gitea-runner:
+        image: gitea/act_runner:latest
+        container_name: "${GITEA_RUNNER_HOST}"
+        environment:
+            GITEA_RUNNER_NAME: ${GITEA_RUNNER_NAME}
+            CONFIG_FILE: /config.yaml
+            GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN}
+            GITEA_INSTANCE_URL: "http://${GITEA_HOST}:3000"
+            GITEA_RUNNER_LABELS: "self-hosted:host"
+        volumes:
+            - ./gitea-runner/config.yaml:/config.yaml
+            - ./gitea-runner/data:/data
+            - /var/run/docker.sock:/var/run/docker.sock
+        restart: unless-stopped
+        networks:
+            - app-network
 
-  gitea:
-    image: docker.gitea.com/gitea:1.25.4-rootless
-    container_name: "${GITEA_HOST}"
-    networks:
-      - app-network
-    environment:
-      - GITEA__database__DB_TYPE=postgres
-      - GITEA__database__HOST=${POSTGRES_HOST}
-      - GITEA__database__NAME=${POSTGRES_GITEA_DB}
-      - GITEA__database__USER=${POSTGRES_USER}
-      - GITEA__database__PASSWD=${POSTGRES_PASSWORD}
-    restart: always
-    volumes:
-      - ./gitea/data:/var/lib/gitea
-      - ./gitea/config:/etc/gitea
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "3000:3000"
-      - "2222:2222"
-    depends_on:
-      - db
+    gitea:
+        image: docker.gitea.com/gitea:1.25.4-rootless
+        container_name: "${GITEA_HOST}"
+        networks:
+            - app-network
+        environment:
+            - GITEA__database__DB_TYPE=postgres
+            - GITEA__database__HOST=${POSTGRES_HOST}
+            - GITEA__database__NAME=${POSTGRES_GITEA_DB}
+            - GITEA__database__USER=${POSTGRES_USER}
+            - GITEA__database__PASSWD=${POSTGRES_PASSWORD}
+        restart: always
+        volumes:
+            - ./gitea/data:/var/lib/gitea
+            - ./gitea/config:/etc/gitea
+            - /etc/timezone:/etc/timezone:ro
+            - /etc/localtime:/etc/localtime:ro
+        ports:
+            - "3000:3000"
+            - "2222:2222"
+        depends_on:
+            - db

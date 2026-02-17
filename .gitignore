@@ -2,7 +2,9 @@ certbot/conf
 certbot/www
 backend/token/
 .env
+
 gitea/data/*
+gitea-runner/data/*
 
 # Logs
 logs
