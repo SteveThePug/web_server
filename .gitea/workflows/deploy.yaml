@@ -1,0 +1,29 @@
+name: Deploy with Docker Compose
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        container:
+            image: docker:24.0.7-cli
+            volumes:
+                - /var/run/docker.sock:/var/run/docker.sock
+            options: --workdir /home/adamf/deploy/web_server
+
+        steps:
+            # - name: Checkout repository
+            #   uses: actions/checkout@v4
+            - name: Pull changes
+              run: |
+                  cd /home/adamf/deploy/web_server
+                  git pull origin main
+
+            - name: Install Docker Compose (v2)
+              run: apk add --no-cache docker-compose
+
+            - name: Run docker compose up
+              run: docker compose up -d
+              working-directory: /home/adamf/deploy/web_server
