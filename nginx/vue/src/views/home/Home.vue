@@ -1,6 +1,7 @@
 <script setup>
 import Timer from "@/components/util/Timer.vue";
 import Time from "@/components/util/Time.vue";
+import Radio from "@/components/util/Radio.vue";
 import Elle from "@/components/elle/Elle.vue";
 import Chat from "@/components/util/Chat.vue";
 import MusicPlayer from "@/components/util/MusicPlayer.vue";
@@ -37,9 +38,12 @@ import Consumption from "./Consumption.vue";
             <div
                 class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60"
             >
-                <div class="flex flex-col flex-1">
-                    <Time class="bg-bg_primary border-primary border" />
+                <div class="flex flex-col flex-1 gap-2">
+                    <Time
+                        class="bg-bg_primary border-primary border text-center"
+                    />
                     <Timer class="border-primary border bg-bg_primary" />
+                    <Radio class="border-primary border bg-bg_primary" />
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
