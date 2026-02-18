@@ -14,4 +14,6 @@ jobs:
 
             - name: Run docker compose up
               working-directory: /home/adamf/deploy/web_server
+              env:
+                  DOCKER_API_VERSION: "1.41"
               run: docker compose up -d --build --remove-orphans
