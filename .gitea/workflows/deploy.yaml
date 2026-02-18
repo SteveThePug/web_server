@@ -6,18 +6,12 @@ on:
 
 jobs:
     deploy:
-        runs-on: ubuntu-latest
+        runs-on: self-hosted
         steps:
-            # - name: Checkout repository
-            #   uses: actions/checkout@v4
             - name: Pull changes
-              run: |
-                  cd /home/adamf/deploy/web_server
-                  git pull origin main
-
-            - name: Install Docker Compose (v2)
-              run: apk add --no-cache docker-compose
+              working-directory: /home/adamf/deploy/web_server
+              run: git pull origin main
 
             - name: Run docker compose up
-              run: docker compose up -d
               working-directory: /home/adamf/deploy/web_server
+              run: docker compose up -d --build --remove-orphans
