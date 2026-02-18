@@ -6,6 +6,9 @@ backend/token/
 gitea/data/*
 gitea-runner/data/*
 
+# Will add in future (webpack)
+nginx/vue/crates/
+
 # Logs
 logs
 *.log
