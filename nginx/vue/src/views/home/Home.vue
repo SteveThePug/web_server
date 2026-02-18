@@ -22,9 +22,9 @@ import Consumption from "./Consumption.vue";
     <main class="halftone justify-center flex flex-row w-full h-full">
         <div class="h-fit flex flex-row">
             <div class="a4page-portrait homeGrid relative bdr-1">
-                <!-- <Intro class="intro" /> -->
+                <Intro class="intro" />
                 <!-- <Intro2 class="intro" /> -->
-                <BadApple class="intro" />
+                <!-- <BadApple class="intro" /> -->
                 <Listening class="listening" />
                 <Stamps class="stamps" />
                 <Feed class="feed" />
@@ -34,7 +34,9 @@ import Consumption from "./Consumption.vue";
                 <Favorites class="favorites" />
                 <Gym class="gym" />
             </div>
-            <div class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60 ">
+            <div
+                class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60"
+            >
                 <div class="flex flex-col flex-1">
                     <Time class="bg-bg_primary border-primary border" />
                     <Timer class="border-primary border bg-bg_primary" />
@@ -43,7 +45,10 @@ import Consumption from "./Consumption.vue";
                     <!-- <MusicPlayer /> -->
                 </div>
                 <div>
-                    <img src="/img/memes/fire-woman.gif" class="border-tertiary border" />
+                    <img
+                        src="/img/memes/fire-woman.gif"
+                        class="border-tertiary border"
+                    />
                 </div>
             </div>
         </div>
@@ -51,7 +56,7 @@ import Consumption from "./Consumption.vue";
 </template>
 
 <style scoped>
-.homeGrid>* {
+.homeGrid > * {
     border: 2px solid var(--quaternary);
     border-color: var(--quaternary);
     background-color: var(--bg_primary);
@@ -73,7 +78,6 @@ import Consumption from "./Consumption.vue";
 }
 
 @media (max-width: 1200px) {
-
     .tr,
     .br,
     .sidebar {
