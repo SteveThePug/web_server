@@ -7,11 +7,11 @@ const site_links = [
     { name: "Bookmarks", link: "/bookmarks" },
     { name: "Notes", link: "/notes/Index.md" },
     { name: "Admin", link: "/admin" },
-    { name: "Gitea", link: "/gitea/" },
     // { name: "Shrines", link: "/shrines" },
 ];
 
 const social_links = [
+    { name: "Gitea", link: "/gitea" },
     { name: "Steam", link: "https://steamcommunity.com/id/SteveThePug" },
     { name: "Github", link: "https://github.com/SteveThePug" },
     { name: "Spotify", link: "https://open.spotify.com/user/stevethepug" },
