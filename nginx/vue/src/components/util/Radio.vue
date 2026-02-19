@@ -7,7 +7,7 @@
         <img src="/img/tmpen31z3pe.PNG" />
         <div class="m-1">
             <p>Stream is offline. Tune in Fridays @ 6:00pm, Monday @ 8:00am</p>
-            <Button @click="checkStream()">Check Stream</Button>
+            <Button class="w-full" @click="checkStream()">Check Stream</Button>
         </div>
     </div>
 </template>

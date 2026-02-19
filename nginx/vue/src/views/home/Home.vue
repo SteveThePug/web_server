@@ -43,7 +43,9 @@ import Consumption from "./Consumption.vue";
                         class="bg-bg_primary border-primary border text-center"
                     />
                     <Timer class="border-primary border bg-bg_primary" />
-                    <Radio class="border-primary border bg-bg_primary" />
+                    <Radio
+                        class="border-primary border bg-bg_primary text-center"
+                    />
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
