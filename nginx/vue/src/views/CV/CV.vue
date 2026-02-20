@@ -44,7 +44,7 @@ import Project from "./Project.vue";
                 <template v-slot:top>
                     <small>
                         Nginx, Vue, Postgres, Docker, Go, Python, Rust -> Wasm,
-                        Git Actions
+                        Git Actions, JWT Auth
                     </small>
                     <small>2025</small>
                 </template>
