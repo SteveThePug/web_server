@@ -17,7 +17,7 @@ const currentUrl = computed(() => images[currentIndex.value].url);
 
 let nextId;
 
-function nextRandomImage() {
+function nextImage() {
     clearTimeout(nextId);
     currentIndex.value = (currentIndex.value + 1) % images.length;
     nextId = setTimeout(nextImage, 10000);
