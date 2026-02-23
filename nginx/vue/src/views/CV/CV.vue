@@ -19,16 +19,14 @@ import Project from "./Project.vue";
 
             <h2>Profile</h2>
             <p>
-                Recently graduated from the University of Leeds with a BSc
-                Computer Science with Mathematics (International) degree.
-                Currently self-studying and building projects aligned with the
-                type of roles I am seeking. I have experience across full stack
-                CI/CD development, and will be able to quickly pick up any
-                codebase.
-            </p>
-            <p>
-                I am most keen to work for a company with altruistic values and
-                look forward to learning and sharing ideas with experts.
+                Recent Computer Science with Mathematics (International)
+                graduate from the University of Leeds, awarded First Class
+                Honours (81.1%). Strong foundation in full-stack software
+                development, CI/CD workflows, and modern programming languages.
+                Experienced in creating scalable, maintainable systems and
+                motivated by solving complex technical problems. Enthusiastic
+                about working within organisations that promote innovation,
+                collaboration, and positive social impact.
             </p>
 
             <h2>Projects</h2>
@@ -49,9 +47,10 @@ import Project from "./Project.vue";
                     <small>2025</small>
                 </template>
                 <p>
-                    My personal site, Currently <em>self hosted</em> and
-                    automatically maintained. In the past I have used: Svelte,
-                    React/Redux, SQLite, Rust Actix and Deno.
+                    Developed and self-hosted a personal website with a fully
+                    automated maintenance CI/CD pipeline. Experimented with
+                    diverse tech stacks including Svelte, React/Redux, SQLite,
+                    Rust Actix, and Deno.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -67,9 +66,9 @@ import Project from "./Project.vue";
                     <small>2026</small>
                 </template>
                 <p>
-                    A command line tool for creating and viewing code tutorials.
-                    Works similarly to git but allows easy traversal of commit
-                    history accompanied by explanations.
+                    Created a command-line tool for building and viewing
+                    interactive code tutorials. Designed functionality analogous
+                    to Git for intuitive version traversal and educational use.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -85,8 +84,10 @@ import Project from "./Project.vue";
                     <small>2023</small>
                 </template>
                 <p>
-                    A multithreaded, recursive ray tracer implemented in Rust as
-                    part of my university's computer graphics course.
+                    Built a parallelised, recursive ray tracer for realistic 3D
+                    rendering as part of a university module. Focused on
+                    algorithmic efficiency and low-level memory management in
+                    Rust.
                 </p>
             </Project>
             <Project>
@@ -101,18 +102,19 @@ import Project from "./Project.vue";
                     </p>
                 </template>
                 <template #top>
-                    <small>Student</small>
+                    <small>Wolfram Mathematica</small>
                     <small>2024</small>
                 </template>
                 <p>
-                    Designed and completed a time-constrained research project
-                    exploring Mobile Automata. Communicated findings through
-                    visualizations and presentations.
+                    Designed and implemented a research project on Mobile
+                    Automata, including data visualisation and presentation of
+                    findings. Completed the project within a short deadline and
+                    collaborated with academic mentors to refine outcomes.
                 </p>
             </Project>
             <h2>University & Modules</h2>
             <div class="w-full h-fit flex-row flex gap-5">
-                <div class="pr-5 flex-1 border-r border-dotted">
+                <div class="flex-1 border-r border-dotted pr-3">
                     <h3>University of Leeds</h3>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
@@ -122,8 +124,7 @@ import Project from "./Project.vue";
                     </div>
                     <small>BSc Computer Science with Mathematics </small>
                     <ul>
-                        <li>Procedural Programming</li>
-                        <li>Object Oriented Programming,</li>
+                        <li>Procedural & Object Oriented Programming,</li>
                         <li></li>
                         <li>Algorithms and Data Structures I & II</li>
 
@@ -137,7 +138,7 @@ import Project from "./Project.vue";
                         <li>Graph Algorithms & Complexity Theory</li>
                     </ul>
                 </div>
-                <div class="flex-1">
+                <div class="flex-1 pl-3">
                     <h3>The University of Waterloo</h3>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
@@ -329,6 +330,7 @@ ul {
 }
 
 li {
+    font-size: var(--font-size-small);
     color: var(--primary);
 }
 </style>
