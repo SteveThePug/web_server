@@ -42,7 +42,8 @@ img {
     width: 89px;
     height: 59px;
 }
+
 .tst {
-    width: calc(89px * 4);
+    min-width: calc(89px * 4);
 }
 </style>
