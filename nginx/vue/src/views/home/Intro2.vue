@@ -71,7 +71,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div ref="container" class="w-full h-full relative overflow-hidden">
+    <div
+        ref="container"
+        class="w-full h-full min-h-125 relative overflow-hidden"
+    >
         <div
             v-for="(item, i) in items"
             :key="i"
