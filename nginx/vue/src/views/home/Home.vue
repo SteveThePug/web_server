@@ -5,6 +5,7 @@ import Radio from "@/components/util/Radio.vue";
 import Elle from "@/components/elle/Elle.vue";
 import Chat from "@/components/util/Chat.vue";
 import MusicPlayer from "@/components/util/MusicPlayer.vue";
+import CommitHistory from "@/components/util/CommitHistory.vue";
 
 import Intro from "./Intro.vue";
 import Intro2 from "./Intro2.vue";
@@ -46,6 +47,10 @@ import Consumption from "./Consumption.vue";
                     <Radio
                         class="border-primary border bg-bg_primary text-center"
                     />
+                    <CommitHistory
+                        class="border-primary border bg-bg_primary text-center"
+                    />
+
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
