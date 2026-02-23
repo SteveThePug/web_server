@@ -43,7 +43,9 @@ onMounted(() => {
                 alt="User avatar"
                 class="avatar"
             />
-            <h3>repo: {{ feed.repo.full_name }}</h3>
+            <a :href="feed.repo.html_url">
+                <h3>repo: {{ feed.repo.full_name }}</h3>
+            </a>
             <p>Action: {{ feed.op_type }}</p>
             <p>Message: {{ JSON.parse(feed.content).Commits[0].Message }}</p>
             <small> {{ new Date(feed.created).toLocaleString() }}</small>
