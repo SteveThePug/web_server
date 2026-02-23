@@ -11,7 +11,7 @@ const site_links = [
 ];
 
 const social_links = [
-    { name: "Gitea", link: "/gitea" },
+    { name: "Gitea", link: "/gitea/explore/repos" },
     { name: "Steam", link: "https://steamcommunity.com/id/SteveThePug" },
     { name: "Github", link: "https://github.com/SteveThePug" },
     { name: "Spotify", link: "https://open.spotify.com/user/stevethepug" },
