@@ -1,6 +1,10 @@
 # Introduction
 
+![screenshot](nginx/vue/public/img/screenshot.png)
+
 Welcome to the source code for my website! Please contact me if you would like to collaborate and thank you for visiting.
+
+This website is currently self hosted on my Rasberry PI. Any interference and the killswitch will activate and stop the UK national grid power system so please don't tamper with my domain :).
 
 # Future ideas
 
