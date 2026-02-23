@@ -6,7 +6,7 @@
     <div v-else>
         <img src="/img/tmpen31z3pe.PNG" />
         <div class="m-1">
-            <p>Stream is offline. Tune in Fridays @ 6:00pm, Monday @ 8:00am</p>
+            <p>Radio is offline. Message for info!</p>
             <Button class="w-full" @click="checkStream()">Check Stream</Button>
         </div>
     </div>
