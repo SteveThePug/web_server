@@ -20,8 +20,8 @@ const phrases = [
     "I'd love to know your recommendations",
     "Message me on discord or steam",
     "I like anime, all kinds of music and sci fic",
-    "Try to stay away from instagram",
-    "Always watching too much youtube",
+    "I'm sorry the animations are so fast",
+    "Someday I'll slow it down >_< ",
 ];
 
 const items = ref<Item[]>(
