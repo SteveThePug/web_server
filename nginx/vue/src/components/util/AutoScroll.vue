@@ -29,8 +29,6 @@ function handleHover() {
 function tick() {
     const el = container.value;
 
-    pos = el.scrollTop / el.scrollHeight;
-
     const reachedBottom = pos <= 0;
     const reachedTop = pos >= 1;
 
