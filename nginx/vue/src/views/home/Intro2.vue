@@ -15,20 +15,19 @@ const itemEls = ref<HTMLDivElement[]>([]);
 
 const phrases = [
     "Welcome to my website",
-    "Eddy is a top G",
-    "Thank you for visiting",
+    "I'm looking to do a big revamp",
+    "A4 sheets of paper are what I'm used to",
     "I'd love to know your recommendations",
-    "Message me on discord or steam",
+    "for very short books",
+    "Message me by any means necessary",
     "I like anime, all kinds of music and sci fic",
-    "I'm sorry the animations are so fast",
-    "Someday I'll slow it down >_< ",
 ];
 
 const items = ref<Item[]>(
     phrases.map((text, i) => ({
         x: i * 20,
         y: i * 20,
-        dx: rand(0, 100) / 100,
+        dx: rand(0, 30) / 100,
         dy: 0.5,
         content: text,
     })),

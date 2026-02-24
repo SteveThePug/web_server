@@ -9,9 +9,10 @@ import { useTemplateRef, onMounted, onBeforeUnmount } from "vue";
 
 const container = useTemplateRef("container");
 
-const SPEED = 1; // px per frame
+const SPEED = 0.0005; // % per frame
 const PAUSE = 2000; // ms at top/bottom
 
+let pos = 0;
 let direction = 1; // 1 = down, -1 = up
 let timeoutId;
 let timeoutId2;
@@ -27,16 +28,26 @@ function handleHover() {
 
 function tick() {
     const el = container.value;
-    el.scrollTop += SPEED * direction;
 
-    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
-    const reachedTop = el.scrollTop <= 0;
+    const reachedBottom = pos <= 0;
+    const reachedTop = pos >= 1;
+    console.log("speed");
 
-    if (reachedBottom || reachedTop) {
-        direction *= -1;
+    if (reachedBottom) {
+        pos = 0.001;
+        direction = 1;
+        handleHover();
+        return;
+    } else if (reachedTop) {
+        pos = 0.999;
+        direction = -1;
         handleHover();
         return;
     }
+
+    pos += direction * SPEED;
+
+    el.scrollTop = pos * el.scrollHeight;
 
     timeoutId = requestAnimationFrame(tick);
 }
