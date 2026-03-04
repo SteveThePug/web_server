@@ -113,12 +113,18 @@ No text, no markdown, no explanation. Just the JSON object.`),
 	})
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to analyze image"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"raw":   message.Content[0].Text,
+			"error": err.Error(),
+		})
 		return
 	}
 
 	if len(message.Content) == 0 {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "empty response from Claude"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"raw":   message.Content[0].Text,
+			"error": "empty response from Claude",
+		})
 		return
 	}
 
