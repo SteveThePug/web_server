@@ -61,8 +61,8 @@ type Rowing struct {
 	CreatedAt   time.Time      `json:"createdAt"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt"`
 	Date        time.Time      `json:"date"`
-	Time        time.Duration  `json:"time"`
-	TimePer500m time.Duration  `json:"timePer500m"`
-	Distance    float64        `json:"distance"`
+	Time        uint64         `json:"time"`
+	Distance    uint64         `json:"distance"`
+	TimePer500m float64        `json:"timePer500m"`
 	Calories    float64        `json:"calories"`
 }

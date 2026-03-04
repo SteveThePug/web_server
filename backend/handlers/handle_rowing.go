@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
 
@@ -17,9 +16,9 @@ import (
 )
 
 type ExtractedRowingData struct {
-	TimeMinutes float64 `json:"timeMinutes"`
-	TimeSeconds float64 `json:"timeSeconds"`
-	Distance    float64 `json:"distance"`
+	TimeMinutes uint64 `json:"timeMinutes"`
+	TimeSeconds uint64 `json:"timeSeconds"`
+	Distance    uint64 `json:"distance"`
 }
 
 func (store *Store) GetRowing(ctx *gin.Context) {
@@ -153,15 +152,16 @@ No text, no markdown, no explanation. Just the JSON object.`),
 	}
 
 	totalSeconds := extractedData.TimeMinutes*60 + extractedData.TimeSeconds
-	totalDuration := time.Duration(totalSeconds * float64(time.Second))
-	per500m := time.Duration(totalSeconds / extractedData.Distance * 500 * float64(time.Second))
+
+	per500m := float64(totalSeconds) / float64(extractedData.Distance) * 500.0
+	calories := float64(extractedData.Distance) / 7500.0 * 500.0
 
 	rowing := models.Rowing{
 		Date:        dateTaken,
-		Time:        totalDuration,
+		Time:        totalSeconds,
 		TimePer500m: per500m,
 		Distance:    extractedData.Distance,
-		Calories:    extractedData.Distance / 7500.0 * 500.0,
+		Calories:    calories,
 	}
 
 	if err := store.DB.Create(&rowing).Error; err != nil {
