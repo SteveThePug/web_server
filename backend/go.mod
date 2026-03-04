@@ -7,12 +7,13 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/crypto v0.43.0
-	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5
+	golang.org/x/oauth2 v0.30.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
 require (
+	github.com/anthropics/anthropic-sdk-go v1.26.0 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
