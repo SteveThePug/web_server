@@ -4,10 +4,12 @@ import Project from "./Project.vue";
 
 <template>
     <main>
+        <div class="no-print w-full h-20">
+
+        </div>
         <div class="a4page">
             <div class="flex flex-row justify-between">
                 <h1 class="name">Adam French</h1>
-                <!-- <a href="covers.html"><img width=25 height=50 src="img/rune.png"></a> -->
                 <div class="contact-details text-right">
                     <p>+447563266931</p>
                     <p>adam.a.french@outlook.com</p>
@@ -19,15 +21,21 @@ import Project from "./Project.vue";
 
             <h2>Profile</h2>
             <p>
-                Recent Computer Science with Mathematics (International)
-                graduate from the University of Leeds, awarded First Class
-                Honours (81.1%). Strong foundation in full-stack software
-                development, CI/CD workflows, and modern programming languages.
-                Experienced in creating scalable, maintainable systems and
-                motivated by solving complex technical problems. Enthusiastic
-                about working within organisations that promote innovation,
-                collaboration, and positive social impact.
+                First Class Honours graduate in Computer Science with Mathematics
+                from the University of Leeds (81.1%), with a year abroad at the
+                University of Waterloo. Proficient in full-stack development,
+                systems programming, and CI/CD automation. Eager to contribute to
+                a collaborative engineering team, apply strong academic
+                foundations to real-world problems, and grow through hands-on
+                experience.
             </p>
+
+            <h2>Skills</h2>
+            <div class="skills-grid">
+                <div><strong>Languages</strong><br /><small>Go, Rust, Python, JavaScript / TypeScript, SQL</small></div>
+                <div><strong>Frontend</strong><br /><small>Vue, React / Redux, Svelte, Tailwind CSS, WebAssembly</small></div>
+                <div><strong>Backend / Infra</strong><br /><small>Nginx, Docker, PostgreSQL, SQLite, JWT Auth, Git Actions</small></div>
+            </div>
 
             <h2>Projects</h2>
 
@@ -41,16 +49,15 @@ import Project from "./Project.vue";
                 </template>
                 <template v-slot:top>
                     <small>
-                        Nginx, Vue, Postgres, Docker, Go, Python, Rust -> Wasm,
+                        Nginx, Vue, Postgres, Docker, Go, Python, Rust → Wasm,
                         Git Actions, JWT Auth
                     </small>
                     <small>2025</small>
                 </template>
                 <p>
-                    Developed and self-hosted a personal website with a fully
-                    automated maintenance CI/CD pipeline. Experimented with
-                    diverse tech stacks including Svelte, React/Redux, SQLite,
-                    Rust Actix, and Deno.
+                    Self-hosted personal website with a fully automated CI/CD
+                    pipeline. Iterated across diverse tech stacks including
+                    Svelte, React/Redux, SQLite, Rust Actix, and Deno.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -66,9 +73,8 @@ import Project from "./Project.vue";
                     <small>2026</small>
                 </template>
                 <p>
-                    Created a command-line tool for building and viewing
-                    interactive code tutorials. Designed functionality analogous
-                    to Git for intuitive version traversal and educational use.
+                    CLI tool for building and navigating interactive code
+                    tutorials, with version-traversal semantics inspired by Git.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -84,107 +90,105 @@ import Project from "./Project.vue";
                     <small>2023</small>
                 </template>
                 <p>
-                    Built a parallelised, recursive ray tracer for realistic 3D
-                    rendering as part of a university module. Focused on
-                    algorithmic efficiency and low-level memory management in
-                    Rust.
+                    Parallelised recursive ray tracer for realistic 3D rendering.
+                    Emphasised algorithmic efficiency and low-level memory
+                    management in Rust.
                 </p>
             </Project>
             <Project>
                 <template #left>
-                    <p>
-                        <a
-                            class="text-center w-full"
-                            href="https://community.wolfram.com/groups/-/m/t/3210947"
-                        >
-                            Wolfram Summer School
-                        </a>
-                    </p>
+                    <a
+                        class="text-center w-full"
+                        href="https://community.wolfram.com/groups/-/m/t/3210947"
+                    >
+                        Wolfram Summer School
+                    </a>
                 </template>
                 <template #top>
                     <small>Wolfram Mathematica</small>
                     <small>2024</small>
                 </template>
                 <p>
-                    Designed and implemented a research project on Mobile
-                    Automata, including data visualisation and presentation of
-                    findings. Completed the project within a short deadline and
-                    collaborated with academic mentors to refine outcomes.
+                    Research project on Mobile Automata with data visualisation
+                    and academic presentation. Delivered within a tight deadline
+                    in collaboration with academic mentors.
                 </p>
             </Project>
-            <h2>University & Modules</h2>
+
+            <h2>Education</h2>
             <div class="w-full h-fit flex-row flex gap-5">
                 <div class="flex-1 border-r border-dotted pr-3">
                     <h3>University of Leeds</h3>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
                     >
-                        <small> 81.1% (First Class Honours)</small>
-                        <small> 2021-2025 </small>
+                        <small>81.1% — First Class Honours</small>
+                        <small>2021–2025</small>
                     </div>
-                    <small>BSc Computer Science with Mathematics </small>
+                    <small>BSc Computer Science with Mathematics (International)</small>
                     <ul>
-                        <li>Procedural & Object Oriented Programming,</li>
-                        <li></li>
-                        <li>Algorithms and Data Structures I & II</li>
-
-                        <li>Databases</li>
-                        <li>Computer Processors</li>
+                        <li>Algorithms & Data Structures I & II</li>
                         <li>Compiler Design and Construction</li>
-
-                        <li>Formal Languages and Finite Automata</li>
-                        <li>Probability and Statistics I</li>
-                        <li>Machine Learning</li>
+                        <li>Formal Languages & Finite Automata</li>
                         <li>Graph Algorithms & Complexity Theory</li>
+                        <li>Machine Learning · Databases · Computer Processors</li>
+                        <li>Probability and Statistics I</li>
                     </ul>
                 </div>
                 <div class="flex-1 pl-3">
-                    <h3>The University of Waterloo</h3>
+                    <h3>University of Waterloo</h3>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
                     >
-                        <small>---</small>
-                        <small> 2023-2024 </small>
+                        <small>Year abroad</small>
+                        <small>2023–2024</small>
                     </div>
-                    <div class="flex-row flex place-content-between"></div>
                     <ul>
                         <li>Applied Cryptography</li>
                         <li>Introduction to Computer Graphics</li>
-                        <li>
-                            Introduction to Rings and Fields with Applications
-                        </li>
+                        <li>Introduction to Rings and Fields with Applications</li>
                     </ul>
                 </div>
             </div>
         </div>
-        <!-- <div class="a4page"> -->
-        <!--     <h2>Experience</h2> -->
-        <!--     <Project> -->
-        <!--         <template #left> -->
-        <!--             <p>Hospitality</p> -->
-        <!--         </template> -->
-        <!--         <template #top> -->
-        <!--             <small>Cashier, Bartender, Waiter</small> -->
-        <!--             <small>2018-2023</small> -->
-        <!--         </template> -->
-        <!--         <p> -->
-        <!--             Worked at venues including: -->
-        <!--             <em>Belgrave Music Hall</em>, -->
-        <!--             <em>The Crown and Anchor Eastbourne</em>, -->
-        <!--             <em>To The Rise Bakery</em>, -->
-        <!--             <em>BFI Riverfront Kitchen</em>. -->
-        <!--         </p> -->
-        <!--     </Project> -->
-        <!--     <h2>Commitments</h2> -->
-        <!--     <ul> -->
-        <!--         <li>Gym</li> -->
-        <!--         <li>Climbing</li> -->
-        <!--         <li>Meetup.com</li> -->
-        <!--         <li>Boardgames</li> -->
-        <!--         <li>Leetcode</li> -->
-        <!--         <li>Learning Mandarin</li> -->
-        <!--     </ul> -->
-        <!-- </div> -->
+
+        <div class="no-print w-full h-20">
+
+        </div>
+
+        <div class="a4page">
+            <div class="flex-1 pl-3">
+                <h2>Experience</h2>
+                <Project>
+                    <template #left>
+                        <p>Hospitality</p>
+                    </template>
+                    <template #top>
+                        <small>Cashier, Bartender, Waiter</small>
+                        <small>2018–2023</small>
+                    </template>
+                    <p>
+                        Worked at <em>Belgrave Music Hall</em>,
+                        <em>The Crown and Anchor</em>, and
+                        <em>BFI Riverfront Kitchen</em>. Developed
+                        communication, composure under pressure, and
+                        reliability in customer-facing roles.
+                    </p>
+                </Project>
+                <h2>Interests</h2>
+                <ul>
+                    <li>Leetcode — daily competitive problem solving</li>
+                    <li>Learning Mandarin</li>
+                    <li>Rhythm Games</li>
+                    <li>Climbing · Gym</li>
+                    <li>Board games · Meetup.com</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="no-print w-full h-20">
+
+        </div>
     </main>
 </template>
 
@@ -206,7 +210,6 @@ import Project from "./Project.vue";
 
 /* Variables */
 * {
-    /* Black - White */
     --primary: black;
     --secondary: #0000ff;
     --tertiary: #ff0000;
@@ -228,18 +231,14 @@ import Project from "./Project.vue";
     line-height: 1.6;
     font-family: var(--font-text);
     width: 210mm;
-    /* Standard A4 width */
     height: 297mm;
-    /* Standard A4 height */
     padding: 5mm;
     box-sizing: border-box;
     background-color: var(--background);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     border: 1px solid var(--primary);
     overflow: hidden;
-    /* Enables scrolling when content exceeds height */
     margin: auto auto;
-    /* Centers the page horizontally */
 }
 
 /* Component Styling */
@@ -298,7 +297,6 @@ table {
 }
 
 td {
-    /* border: 2px solid var(--tertiary); */
     color: var(--secondary);
     border-top: 1px solid var(--tertiary);
     padding: 1px 10px 1px 10px;
@@ -321,16 +319,27 @@ th {
         display: none !important;
     }
 }
+
 small {
     font-size: var(--font-size-small);
     color: var(--primary);
 }
+
 ul {
     font-size: var(--font-size-small);
+    margin: 0;
+    padding-left: 1.2em;
 }
 
 li {
     font-size: var(--font-size-small);
     color: var(--primary);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3em 1em;
+    margin-bottom: 0.2em;
 }
 </style>
