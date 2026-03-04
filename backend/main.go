@@ -39,12 +39,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// SPOTIFY
 	spotifyAuthState := os.Getenv("SPOTIFY_AUTH_STATE")
 	spotifyRedirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
 	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 	spotifyConfig := services.SpotifyConfig{AuthState: spotifyAuthState, RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
-	spotifyAuth, client := services.InitSpotifyAuth(&spotifyConfig)
+	spotifyAuth, spotifyClient := services.InitSpotifyAuth(&spotifyConfig)
+
+	// CLAUDE
+	claudeAPIKey := os.Getenv("CLAUDE_API_KEY")
+	claudeConfig := services.ClaudeConfig{APIKey: claudeAPIKey}
+	claudeClient := services.InitClaude(&claudeConfig)
 
 	authSecret := os.Getenv("BACKEND_SECRET")
 	domainName := os.Getenv("DOMAIN")
@@ -58,13 +64,17 @@ func main() {
 	notesConfig := services.NotesConfig{Dir: notesDir}
 	notes := services.InitNotes(&notesConfig)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: client, Auth: auth, Notes: notes}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes}
 
 	protected := r.Group("/", store.AuthMiddlewear)
 
 	// FAVORITES
 	r.GET("/favorites", store.GetFavorites)
 	protected.POST("/favorites", store.CreateFavorite)
+
+	// ROWING
+	r.GET("/rowing", store.GetRowing)
+	protected.POST("/rowing", store.CreateRowing)
 
 	// ACTIVITIES
 	r.GET("/activity", store.GetActivity)
