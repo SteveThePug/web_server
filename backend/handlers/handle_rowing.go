@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
@@ -122,9 +123,21 @@ No text, no markdown, no explanation. Just the JSON object.`),
 	}
 
 	extractedData := ExtractedRowingData{}
-	err = json.Unmarshal([]byte(message.Content[0].Text), &extractedData)
+	raw := message.Content[0].Text
+
+	raw = strings.TrimSpace(raw)
+	raw = strings.TrimPrefix(raw, "```json")
+	raw = strings.TrimPrefix(raw, "```")
+	raw = strings.TrimSuffix(raw, "```")
+	raw = strings.TrimSpace(raw)
+
+	err = json.Unmarshal([]byte(raw), &extractedData)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse JSON response"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "failed to parse JSON response",
+			"detail": err.Error(),
+			"raw":    raw,
+		})
 		return
 	}
 
