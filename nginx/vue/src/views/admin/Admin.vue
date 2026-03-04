@@ -2,11 +2,12 @@
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
-import Login from "@/components/admin/Login.vue";
-import CreateUser from "@/components/admin/CreateUser.vue";
-import CreatePost from "@/components/admin/CreatePost.vue";
-import CreateFavorite from "@/components/admin/CreateFavorite.vue";
-import CreateActivity from "@/components/admin/CreateActivity.vue";
+import Login from "./Login.vue";
+import CreateUser from "./CreateUser.vue";
+import CreatePost from "./CreatePost.vue";
+import CreateFavorite from "./CreateFavorite.vue";
+import CreateActivity from "./CreateActivity.vue";
+import CreateRowing from "./CreateRowing.vue";
 
 const auth = useAuthStore();
 </script>
@@ -21,6 +22,7 @@ const auth = useAuthStore();
             <CreatePost class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreateFavorite class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreateActivity class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
+            <CreateRowing class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
         </div>
     </main>
 </template>
