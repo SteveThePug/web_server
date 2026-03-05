@@ -38,6 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	services.InitWebSocket(db)
 
 	// SPOTIFY
 	spotifyAuthState := os.Getenv("SPOTIFY_AUTH_STATE")
