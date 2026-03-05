@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import Button from "@/components/input/Button.vue";
 import { useMessagesStore } from "@/stores/messages";
+import Header from "@/components/text/Header.vue";
 
 const messagesStore = useMessagesStore();
 const messages = computed(() => messagesStore.messages);
@@ -24,6 +25,7 @@ onUnmounted(() => {
 
 <template>
     <div class="flex flex-col">
+        <Header>Chat</Header>
         <div class="flex flex-col flex-1 overflow-x-scroll">
             <p v-for="message in messages" :key="message.id">
                 {{ message.text }}

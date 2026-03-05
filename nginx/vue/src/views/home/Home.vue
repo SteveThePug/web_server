@@ -25,10 +25,14 @@ import Consumption from "./Consumption.vue";
     <main class="halftone justify-center flex flex-row w-full h-full">
         <div class="h-fit flex flex-row">
             <div
-                class="sidebar border-children background-children place-content-between flex-1 flex flex-col m-10 w-60"
+                class="sidebar flex-1 flex flex-col m-10 w-60 gap-2 place-content-between"
             >
-                <Miku />
-                <Chat />
+                <div class="border-children background-children">
+                    <Chat class="h-80" />
+                </div>
+                <div>
+                    <Miku class="border-tertiary border bg-bg_secondary" />
+                </div>
             </div>
             <div
                 class="a4page-portrait homeGrid relative background-children border-children bdr-1"
@@ -51,10 +55,10 @@ import Consumption from "./Consumption.vue";
                 <div
                     class="flex flex-col background-children border-children flex-1 gap-2"
                 >
-                    <Time class="text-center" />
+                    <Time />
                     <Timer />
-                    <Radio class="text-center" />
-                    <CommitHistory class="text-center" />
+                    <Radio />
+                    <CommitHistory />
 
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <MusicPlayer /> -->

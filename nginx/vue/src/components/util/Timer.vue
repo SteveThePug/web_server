@@ -1,5 +1,7 @@
 <script setup>
 import Button from "@/components/input/Button.vue";
+import Header from "@/components/text/Header.vue";
+
 import { ref } from "vue";
 
 const timer = ref(null);
@@ -64,7 +66,7 @@ function playFinishedSound() {
 
 <template>
     <div class="flex flex-col gap-1 p-1 items-center">
-        <h2 class="items-center">Timer</h2>
+        <Header>Timer</Header>
         <div v-if="finished && paused" class="flex flex-col">
             <div class="flex flex-row p-2 place-content-around">
                 <input

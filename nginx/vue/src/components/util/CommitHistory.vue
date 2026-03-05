@@ -1,6 +1,7 @@
 <script setup>
 import axios from "axios";
 import { ref, onMounted } from "vue";
+import Header from "@/components/text/Header.vue";
 
 const url =
     "https://www.adam-french.co.uk/gitea/api/v1/users/adamf/activities/feeds?limit=1";
@@ -28,6 +29,8 @@ onMounted(() => {
 
 <template>
     <div class="justify-center text-center">
+        <Header class="text-left">Commits</Header>
+
         <div v-if="isLoading">
             <p>Loading latest activity...</p>
         </div>
