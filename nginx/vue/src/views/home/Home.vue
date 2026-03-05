@@ -22,14 +22,16 @@ import Consumption from "./Consumption.vue";
 </script>
 
 <template>
-    <main class="bg-random justify-center flex flex-row w-full h-full">
+    <main class="halftone justify-center flex flex-row w-full h-full">
         <div class="h-fit flex flex-row">
             <div
                 class="sidebar border-children background-children place-content-between flex-1 flex flex-col m-10 w-60"
             >
-                <Miku/>
+                <Miku />
             </div>
-            <div class="a4page-portrait homeGrid relative background-children border-children bdr-1">
+            <div
+                class="a4page-portrait homeGrid relative background-children border-children bdr-1"
+            >
                 <!-- <Intro class="intro" /> -->
                 <Intro2 class="intro" />
                 <!-- <BadApple class="intro" /> -->
@@ -45,17 +47,13 @@ import Consumption from "./Consumption.vue";
             <div
                 class="sidebar place-content-between flex-1 flex flex-col m-10 w-60"
             >
-                <div class="flex flex-col background-children border-children flex-1 gap-2">
-                    <Time
-                        class="text-center"
-                    />
-                    <Timer/>
-                    <Radio
-                        class="text-center"
-                    />
-                    <CommitHistory
-                        class=" text-center"
-                    />
+                <div
+                    class="flex flex-col background-children border-children flex-1 gap-2"
+                >
+                    <Time class="text-center" />
+                    <Timer />
+                    <Radio class="text-center" />
+                    <CommitHistory class="text-center" />
 
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
@@ -87,7 +85,6 @@ import Consumption from "./Consumption.vue";
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
 }
-
 
 @media (max-width: 850px) {
     .homeGrid {
