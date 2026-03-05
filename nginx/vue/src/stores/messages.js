@@ -1,16 +1,14 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
-const URL = "/api/ws";
-
-const message_template = {
-  id: 0,
-  content: "Yo",
-};
+function getWebSocketURL() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}/api/ws`;
+}
 
 export const useMessagesStore = defineStore("messages", () => {
   const socket = ref(null);
-  const messages = ref([message_template]);
+  const messages = ref([]);
   const isConnected = ref(false);
   const lastError = ref(null);
 
@@ -19,7 +17,7 @@ export const useMessagesStore = defineStore("messages", () => {
   function connect() {
     if (socket.value && isConnected.value) return;
 
-    socket.value = new WebSocket(URL);
+    socket.value = new WebSocket(getWebSocketURL());
 
     socket.value.onopen = () => {
       isConnected.value = true;
@@ -31,8 +29,7 @@ export const useMessagesStore = defineStore("messages", () => {
         const data = JSON.parse(event.data);
         messages.value.push(data);
       } catch {
-        // fallback if server sends plain text
-        messages.value.push(event.data);
+        messages.value.push({ text: event.data });
       }
     };
 
@@ -53,9 +50,9 @@ export const useMessagesStore = defineStore("messages", () => {
     isConnected.value = false;
   }
 
-  function sendMessage(payload) {
+  function sendMessage(text) {
     if (!socket.value || !isConnected.value) return;
-    socket.value.send(JSON.stringify(payload));
+    socket.value.send(JSON.stringify({ text }));
   }
 
   function clearMessages() {

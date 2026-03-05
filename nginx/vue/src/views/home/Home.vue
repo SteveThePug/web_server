@@ -28,6 +28,7 @@ import Consumption from "./Consumption.vue";
                 class="sidebar border-children background-children place-content-between flex-1 flex flex-col m-10 w-60"
             >
                 <Miku />
+                <Chat />
             </div>
             <div
                 class="a4page-portrait homeGrid relative background-children border-children bdr-1"
@@ -56,7 +57,6 @@ import Consumption from "./Consumption.vue";
                     <CommitHistory class="text-center" />
 
                     <!-- <Elle class="flex-1" /> -->
-                    <!-- <Chat class="bdr-2 bg-bg_primary" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>
                 <div>
