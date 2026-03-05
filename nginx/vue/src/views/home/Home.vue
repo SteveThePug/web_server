@@ -28,7 +28,7 @@ import Consumption from "./Consumption.vue";
                 class="sidebar flex-1 flex flex-col m-10 w-60 gap-2 place-content-between"
             >
                 <div class="border-children background-children">
-                    <Chat class="h-80" />
+                    <Chat class="h-200" />
                 </div>
                 <div>
                     <Miku class="border-tertiary border bg-bg_secondary" />
