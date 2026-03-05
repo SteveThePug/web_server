@@ -10,6 +10,42 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const maxMessages = 50
+
+type MessageRing struct {
+	buf  []models.Message
+	next int  // index to write next
+	full bool // have we wrapped at least once
+}
+
+func NewMessageRing(size int) *MessageRing {
+	return &MessageRing{
+		buf: make([]models.Message, size),
+	}
+}
+
+func (r *MessageRing) Add(m models.Message) {
+	r.buf[r.next] = m
+	r.next = (r.next + 1) % len(r.buf)
+	if r.next == 0 {
+		r.full = true
+	}
+}
+
+// Messages returns messages in chronological order (oldest -> newest).
+func (r *MessageRing) Messages() []models.Message {
+	if !r.full {
+		// buffer not wrapped yet; only use [0:next)
+		return r.buf[:r.next]
+	}
+
+	// wrapped: start at next, then to end, then from 0 to next
+	out := make([]models.Message, len(r.buf))
+	copy(out, r.buf[r.next:])
+	copy(out[len(r.buf)-r.next:], r.buf[:r.next])
+	return out
+}
+
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -20,7 +56,7 @@ var Upgrader = websocket.Upgrader{
 
 var (
 	clients  = make(map[*websocket.Conn]bool)
-	messages = make([]models.Message, 0)
+	messages = NewMessageRing(maxMessages)
 	mu       sync.Mutex
 )
 
@@ -30,13 +66,16 @@ func HandleWebSocket(conn *websocket.Conn) {
 	mu.Lock()
 	clients[conn] = true
 
+	history := messages.Messages()
+
 	// Send existing message history to new client
-	for _, msg := range messages {
+	for _, msg := range history {
 		if err := conn.WriteJSON(msg); err != nil {
 			mu.Unlock()
 			return
 		}
 	}
+
 	mu.Unlock()
 
 	for {
@@ -49,7 +88,7 @@ func HandleWebSocket(conn *websocket.Conn) {
 
 		// Store and broadcast
 		mu.Lock()
-		messages = append(messages, incoming)
+		messages.Add(incoming)
 
 		for client := range clients {
 			if err := client.WriteJSON(incoming); err != nil {
