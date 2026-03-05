@@ -1,4 +1,4 @@
-# Adam's Website
+# My Web
 
 ![screenshot](nginx/vue/public/img/screenshot.png)
 
@@ -44,14 +44,14 @@ certbot         ── SSL Certificate Management
 
 ## Pages
 
-| Route | Description |
-|---|---|
-| `/` | Home dashboard with grid layout |
-| `/admin` | Admin panel (authenticated) |
-| `/cv` | Curriculum Vitae |
-| `/bookmarks` | Bookmarks |
-| `/notes/:path` | Obsidian note viewer |
-| `/shrines` | Fan shrine index + individual shrines |
+| Route          | Description                           |
+| -------------- | ------------------------------------- |
+| `/`            | Home dashboard with grid layout       |
+| `/admin`       | Admin panel (authenticated)           |
+| `/cv`          | Curriculum Vitae                      |
+| `/bookmarks`   | Bookmarks                             |
+| `/notes/:path` | Obsidian note viewer                  |
+| `/shrines`     | Fan shrine index + individual shrines |
 
 ## API
 
