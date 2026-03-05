@@ -23,15 +23,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col place-content-around h-full">
         <div class="flex flex-col">
             <p v-for="message in messages" :key="message.id">
                 {{ message.text }}
             </p>
         </div>
-        <div class="flex flex-row">
-            <input v-model="messageInput" @keyup.enter="sendMessage" />
-            <Button @click="sendMessage">Send</Button>
-        </div>
+        <input v-model="messageInput" @keyup.enter="sendMessage" />
+        <Button @click="sendMessage">Send</Button>
     </div>
 </template>
