@@ -23,8 +23,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col place-content-around h-full">
-        <div class="flex flex-col">
+    <div class="flex flex-col">
+        <div class="flex flex-col flex-1 overflow-x-scroll">
             <p v-for="message in messages" :key="message.id">
                 {{ message.text }}
             </p>
