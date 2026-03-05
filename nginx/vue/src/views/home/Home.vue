@@ -10,6 +10,7 @@ import CommitHistory from "@/components/util/CommitHistory.vue";
 import Intro from "./Intro.vue";
 import Intro2 from "./Intro2.vue";
 import BadApple from "./BadApple.vue";
+import Miku from "./Miku.vue";
 import Stamps from "./Stamps.vue";
 import Listening from "./Listening.vue";
 import Links from "./Links.vue";
@@ -21,9 +22,14 @@ import Consumption from "./Consumption.vue";
 </script>
 
 <template>
-    <main class="halftone justify-center flex flex-row w-full h-full">
+    <main class="bg-random justify-center flex flex-row w-full h-full">
         <div class="h-fit flex flex-row">
-            <div class="a4page-portrait homeGrid relative bdr-1">
+            <div
+                class="sidebar border-children background-children place-content-between flex-1 flex flex-col m-10 w-60"
+            >
+                <Miku/>
+            </div>
+            <div class="a4page-portrait homeGrid relative background-children border-children bdr-1">
                 <!-- <Intro class="intro" /> -->
                 <Intro2 class="intro" />
                 <!-- <BadApple class="intro" /> -->
@@ -37,18 +43,18 @@ import Consumption from "./Consumption.vue";
                 <Gym class="gym" />
             </div>
             <div
-                class="sidebar border-quaternary place-content-between flex-1 flex flex-col m-10 w-60"
+                class="sidebar place-content-between flex-1 flex flex-col m-10 w-60"
             >
-                <div class="flex flex-col flex-1 gap-2">
+                <div class="flex flex-col background-children border-children flex-1 gap-2">
                     <Time
-                        class="bg-bg_primary border-primary border text-center"
+                        class="text-center"
                     />
-                    <Timer class="border-primary border bg-bg_primary" />
+                    <Timer/>
                     <Radio
-                        class="border-primary border bg-bg_primary text-center"
+                        class="text-center"
                     />
                     <CommitHistory
-                        class="border-primary border bg-bg_primary text-center"
+                        class=" text-center"
                     />
 
                     <!-- <Elle class="flex-1" /> -->
@@ -67,9 +73,11 @@ import Consumption from "./Consumption.vue";
 </template>
 
 <style scoped>
-.homeGrid > * {
+.border-children > * {
     border: 2px solid var(--quaternary);
-    border-color: var(--quaternary);
+}
+
+.background-children > * {
     background-color: var(--bg_primary);
 }
 
@@ -79,6 +87,7 @@ import Consumption from "./Consumption.vue";
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
 }
+
 
 @media (max-width: 850px) {
     .homeGrid {
@@ -139,5 +148,11 @@ import Consumption from "./Consumption.vue";
 .favorites {
     grid-column: span 3;
     grid-row: span 2;
+}
+
+.bg-random {
+    background-color: var(--bg_primary);
+    background-image: url("/img/miku/miku2.gif");
+    background-size: 10px 10px;
 }
 </style>
