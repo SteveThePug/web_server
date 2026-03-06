@@ -2,8 +2,6 @@
 
 ## Important TODO
 
-- Make chat box auto scroll down
-- Make chat box persistent across reboot
 - Get a new background
 
 ![screenshot](nginx/vue/public/img/screenshot.png)
