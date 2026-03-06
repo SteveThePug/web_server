@@ -40,7 +40,7 @@ onUnmounted(() => {
         <Header>Chat</Header>
         <div
             ref="messagesContainer"
-            class="flex flex-col flex-1 overflow-y-auto"
+            class="flex flex-col flex-1 overflow-y-auto p-2"
         >
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
