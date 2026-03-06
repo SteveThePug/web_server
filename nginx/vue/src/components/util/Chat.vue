@@ -39,7 +39,7 @@ onUnmounted(() => {
         <Header>Chat</Header>
         <div ref="messagesContainer" class="flex flex-col flex-1 overflow-y-auto">
             <p v-for="message in messages" :key="message.id">
-                {{ message.text }}
+                <span class="font-bold">User {{ message.authorId }}:</span> {{ message.text }}
             </p>
         </div>
         <input v-model="messageInput" @keyup.enter="sendMessage" />
