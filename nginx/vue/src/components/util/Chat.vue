@@ -12,7 +12,8 @@ const messagesContainer = ref(null);
 function scrollToBottom() {
     nextTick(() => {
         if (messagesContainer.value) {
-            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+            messagesContainer.value.scrollTop =
+                messagesContainer.value.scrollHeight;
         }
     });
 }
@@ -37,9 +38,13 @@ onUnmounted(() => {
 <template>
     <div class="flex flex-col">
         <Header>Chat</Header>
-        <div ref="messagesContainer" class="flex flex-col flex-1 overflow-y-auto">
+        <div
+            ref="messagesContainer"
+            class="flex flex-col flex-1 overflow-y-auto"
+        >
             <p v-for="message in messages" :key="message.id">
-                <span class="font-bold">User {{ message.authorId }}:</span> {{ message.text }}
+                <small>{{ message.authorId }}:</small>
+                {{ message.text }}
             </p>
         </div>
         <input v-model="messageInput" @keyup.enter="sendMessage" />
