@@ -43,7 +43,7 @@ onUnmounted(() => {
             class="flex flex-col flex-1 overflow-y-auto"
         >
             <p v-for="message in messages" :key="message.id">
-                <small>{{ message.authorId }}:</small>
+                <span class="text-tertiary">{{ message.authorId }}:</span>
                 {{ message.text }}
             </p>
         </div>
