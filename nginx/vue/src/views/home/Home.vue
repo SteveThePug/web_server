@@ -17,7 +17,8 @@ import Links from "./Links.vue";
 import Feed from "./Feed.vue";
 import Collage from "./Collage.vue";
 import Favorites from "./Favorites.vue";
-import Gym from "./Gym.vue";
+// import Gym from "./Gym.vue";
+import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
 </script>
 
@@ -47,7 +48,8 @@ import Consumption from "./Consumption.vue";
                 <Collage class="collage" />
                 <Consumption class="consumption" />
                 <Favorites class="favorites" />
-                <Gym class="gym" />
+                <!-- <Gym class="gym" /> -->
+                <Gym2 class="gym" />
             </div>
             <div
                 class="sidebar place-content-between flex-1 flex flex-col m-10 w-60"
