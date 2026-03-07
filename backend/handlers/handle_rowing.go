@@ -82,6 +82,13 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 	}
 	encoded := base64.StdEncoding.EncodeToString(data)
 
+	// Reject duplicates: same EXIF datetime already recorded
+	var existing models.Rowing
+	if err := store.DB.Where("date = ?", dateTaken).First(&existing).Error; err == nil {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "duplicate entry for this date"})
+		return
+	}
+
 	// Build the message with an image + text prompt
 	message, err := store.ClaudeClient.Messages.New(context.Background(), anthropic.MessageNewParams{
 		Model:     anthropic.ModelClaudeHaiku4_5,
@@ -173,13 +180,6 @@ No text, no markdown, no explanation. Just the JSON object.`),
 	per500m := float64(totalSeconds) / float64(extractedData.Distance) * 500.0
 	if per500m < minPacePer500m || per500m > maxPacePer500m {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "anomalous pace value"})
-		return
-	}
-
-	// Reject duplicates: same EXIF datetime already recorded
-	var existing models.Rowing
-	if err := store.DB.Where("date = ?", dateTaken).First(&existing).Error; err == nil {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "duplicate entry for this date"})
 		return
 	}
 
