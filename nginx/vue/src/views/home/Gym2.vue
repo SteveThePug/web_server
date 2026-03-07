@@ -31,10 +31,10 @@ const activeMetric = computed(() => METRICS.find((m) => m.key === metric.value))
 // SVG layout constants
 const W = 290;
 const H = 120;
-const PL = 38; // padding left
+const PL = 46; // padding left
 const PT = 8;  // padding top
 const PR = 8;  // padding right
-const PB = 22; // padding bottom
+const PB = 28; // padding bottom
 const PLOT_W = W - PL - PR;
 const PLOT_H = H - PT - PB;
 
@@ -80,10 +80,13 @@ const xLabels = computed(() => {
 const yLabels = computed(() => {
     const min = minVal.value;
     const max = maxVal.value;
-    return [0, 0.5, 1].map((t) => ({
-        y: PT + PLOT_H - t * PLOT_H,
-        label: Math.round(min + t * (max - min)),
-    }));
+    return [0, 0.5, 1].map((t) => {
+        const raw = Math.round(min + t * (max - min));
+        return {
+            y: PT + PLOT_H - t * PLOT_H,
+            label: metric.value === "timePer500m" ? formatTime(raw) : raw,
+        };
+    });
 });
 
 function formatTime(secs) {
@@ -188,7 +191,7 @@ function formatValue(key, val) {
                         :x="PL - 3"
                         :y="yl.y + 3"
                         text-anchor="end"
-                        font-size="6"
+                        font-size="10"
                         fill="var(--primary)"
                         font-family="var(--font_heading)"
                     >{{ yl.label }}</text>
@@ -200,7 +203,7 @@ function formatValue(key, val) {
                         :x="xl.x"
                         :y="H - 4"
                         text-anchor="middle"
-                        font-size="6"
+                        font-size="10"
                         fill="var(--primary)"
                         font-family="var(--font_heading)"
                     >{{ xl.label }}</text>
@@ -212,26 +215,26 @@ function formatValue(key, val) {
                     <!-- Tooltip -->
                     <g v-if="hovered !== null && points[hovered]">
                         <rect
-                            :x="Math.min(points[hovered].x + 4, W - 70)"
-                            :y="points[hovered].y - 18"
-                            width="68"
-                            height="25"
+                            :x="Math.min(points[hovered].x + 4, W - 85)"
+                            :y="points[hovered].y - 20"
+                            width="82"
+                            height="32"
                             fill="var(--bg_primary)"
                             :stroke="activeMetric.color"
                             stroke-width="0.5"
                             rx="1"
                         />
                         <text
-                            :x="Math.min(points[hovered].x + 7, W - 67)"
+                            :x="Math.min(points[hovered].x + 7, W - 82)"
                             :y="points[hovered].y - 6"
-                            font-size="8"
+                            font-size="12"
                             fill="var(--secondary)"
                             font-family="var(--font_heading)"
                         >{{ points[hovered].date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" }) }}</text>
                         <text
-                            :x="Math.min(points[hovered].x + 7, W - 67)"
-                            :y="points[hovered].y + 4"
-                            font-size="9"
+                            :x="Math.min(points[hovered].x + 7, W - 82)"
+                            :y="points[hovered].y + 8"
+                            font-size="14"
                             :fill="activeMetric.color"
                             font-family="var(--font_heading)"
                         >{{ formatValue(metric, points[hovered].value) }}</text>
