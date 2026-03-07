@@ -38,6 +38,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if os.Getenv("SEED_DB") == "true" {
+		services.SeedDatabase(db)
+	}
 	services.InitWebSocket(db)
 
 	// SPOTIFY

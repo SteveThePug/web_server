@@ -1,0 +1,93 @@
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    server_tokens off;
+    charset utf-8;
+
+    log_format compact
+        '$remote_addr "$request" $status rt=$request_time';
+
+    access_log /var/log/nginx/access.log compact;
+
+    types {
+        text/javascript mjs;
+    }
+
+    server {
+        listen 80;
+        server_name $DOMAIN www.$DOMAIN;
+
+        root /etc/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location = /robots.txt {
+            allow all;
+            log_not_found off;
+            access_log off;
+        }
+
+        location = /img/stamps/mine.gif {
+            add_header Access-Control-Allow-Origin *;
+        }
+
+        location $BACKEND_ENDPOINT {
+            return 301 $BACKEND_ENDPOINT/;
+        }
+
+        location $BACKEND_ENDPOINT/ws {
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location $BACKEND_ENDPOINT/ {
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /radio {
+            return 301 /radio/;
+        }
+
+        location /radio/ {
+            proxy_pass http://$ICECAST_HOST:$ICECAST_PORT/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /gitea {
+            return 301 /gitea/;
+        }
+
+        location /gitea/ {
+            proxy_pass http://$GITEA_HOST:$GITEA_PORT/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+    }
+
+}

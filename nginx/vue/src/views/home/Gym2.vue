@@ -17,7 +17,7 @@ const METRICS = [
 
 onMounted(async () => {
     try {
-        const res = await axios.get("https://www.adam-french.co.uk/api/rowing");
+        const res = await axios.get("/api/rowing");
         rows.value = res.data.slice().reverse(); // API returns DESC, reverse to chronological
     } catch (e) {
         error.value = e.message;

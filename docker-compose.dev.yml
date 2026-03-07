@@ -1,0 +1,9 @@
+services:
+  nginx:
+    environment:
+      - DEV_MODE=true
+    ports:
+      - 80:80
+  certbot:
+    profiles:
+      - disabled

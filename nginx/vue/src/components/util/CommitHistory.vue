@@ -4,7 +4,7 @@ import { ref, onMounted } from "vue";
 import Header from "@/components/text/Header.vue";
 
 const url =
-    "https://www.adam-french.co.uk/gitea/api/v1/users/adamf/activities/feeds?limit=1";
+    "/gitea/api/v1/users/adamf/activities/feeds?limit=1";
 
 const feed = ref(null);
 const isLoading = ref(true);

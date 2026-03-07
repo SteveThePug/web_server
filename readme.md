@@ -61,6 +61,16 @@ certbot         ── SSL Certificate Management
 
 Public endpoints for posts, users, favorites, activities, rowing, Spotify, notes, and WebSocket messaging. Protected endpoints for creating/updating/deleting content require JWT authentication via `/auth/login`.
 
+## Local Testing (Dev Mode)
+
+Run the full stack over plain HTTP without SSL certificates:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+This uses an HTTP-only nginx config with all routing (SPA, backend proxy, radio, gitea) and disables certbot. Visit `http://localhost` to test.
+
 ## Future Ideas
 
 - More Rust to WASM
@@ -95,6 +105,10 @@ BACKEND_PORT=
 BACKEND_HOST=
 BACKEND_SECRET=
 BACKEND_ENDPOINT=
+
+CLAUDE_API_KEY=
+
+SEED_DB=
 
 OBSIDIAN_DIR=
 

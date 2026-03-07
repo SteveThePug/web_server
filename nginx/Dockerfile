@@ -26,6 +26,7 @@ RUN mkdir -p /etc/nginx/html \
 
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
+COPY nginx_dev.conf.template /etc/nginx/nginx_dev.conf.template
 COPY robots.txt /etc/nginx/html/robots.txt
 COPY entrypoint.sh /entrypoint.sh
 
