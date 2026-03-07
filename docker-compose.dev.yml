@@ -1,9 +1,10 @@
 services:
-  nginx:
-    environment:
-      - DEV_MODE=true
-    ports:
-      - 80:80
-  certbot:
-    profiles:
-      - disabled
+    nginx:
+        environment:
+            - DEV_MODE=true
+            - SEED_DB=true
+        ports:
+            - 80:80
+    certbot:
+        profiles:
+            - disabled

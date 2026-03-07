@@ -53,10 +53,16 @@ func (store *Store) ListeningTo(ctx *gin.Context) {
 }
 
 func (store *Store) RecentlyPlayed(ctx *gin.Context) {
+	if store.SpotifyClient == nil {
+		ctx.JSON(500, gin.H{"error": "Spotify not authenticated"})
+		return
+	}
+
 	opts := spotify.RecentlyPlayedOptions{Limit: 3}
 
 	if store.RecentSongsFresh() {
 		ctx.JSON(200, *store.RecentSongs)
+		return
 	}
 
 	played, err := store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
