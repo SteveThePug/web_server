@@ -212,26 +212,26 @@ function formatValue(key, val) {
                     <!-- Tooltip -->
                     <g v-if="hovered !== null && points[hovered]">
                         <rect
-                            :x="Math.min(points[hovered].x + 4, W - 60)"
-                            :y="points[hovered].y - 16"
-                            width="58"
-                            height="20"
+                            :x="Math.min(points[hovered].x + 4, W - 70)"
+                            :y="points[hovered].y - 18"
+                            width="68"
+                            height="25"
                             fill="var(--bg_primary)"
                             :stroke="activeMetric.color"
                             stroke-width="0.5"
                             rx="1"
                         />
                         <text
-                            :x="Math.min(points[hovered].x + 7, W - 57)"
-                            :y="points[hovered].y - 7"
-                            font-size="5.5"
+                            :x="Math.min(points[hovered].x + 7, W - 67)"
+                            :y="points[hovered].y - 6"
+                            font-size="8"
                             fill="var(--secondary)"
                             font-family="var(--font_heading)"
                         >{{ points[hovered].date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" }) }}</text>
                         <text
-                            :x="Math.min(points[hovered].x + 7, W - 57)"
-                            :y="points[hovered].y + 1"
-                            font-size="6"
+                            :x="Math.min(points[hovered].x + 7, W - 67)"
+                            :y="points[hovered].y + 4"
+                            font-size="9"
                             :fill="activeMetric.color"
                             font-family="var(--font_heading)"
                         >{{ formatValue(metric, points[hovered].value) }}</text>
