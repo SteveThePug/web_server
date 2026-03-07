@@ -49,7 +49,7 @@ const faces_string = faces.join("      ");
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
             <a>HOME</a>
         </RouterLink>
-        <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath && !route.path.startsWith('/notes/')" :to="parentPath">
+        <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
             <a>UP</a>
         </RouterLink>
         <Headline class="border flex-1 max-w-full">
