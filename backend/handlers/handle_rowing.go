@@ -110,7 +110,6 @@ No text, no markdown, no explanation. Just the JSON object.`),
 			},
 		},
 	})
-
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"raw":   message.Content[0].Text,
@@ -153,7 +152,37 @@ No text, no markdown, no explanation. Just the JSON object.`),
 
 	totalSeconds := extractedData.TimeMinutes*60 + extractedData.TimeSeconds
 
+	// Validate for anomalous values
+	const (
+		minDistance    = 100    // metres
+		maxDistance    = 100000 // metres
+		minTotalSecs   = 30     // 30 seconds
+		maxTotalSecs   = 7200   // 2 hours
+		minPacePer500m = 80     // ~1:20 /500m (faster than any human)
+		maxPacePer500m = 150    // ~2:30 /500m (slow, not important)
+	)
+	if extractedData.Distance < minDistance || extractedData.Distance > maxDistance {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "anomalous distance value"})
+		return
+	}
+	if totalSeconds < minTotalSecs || totalSeconds > maxTotalSecs {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "anomalous time value"})
+		return
+	}
+
 	per500m := float64(totalSeconds) / float64(extractedData.Distance) * 500.0
+	if per500m < minPacePer500m || per500m > maxPacePer500m {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "anomalous pace value"})
+		return
+	}
+
+	// Reject duplicates: same EXIF datetime already recorded
+	var existing models.Rowing
+	if err := store.DB.Where("date = ?", dateTaken).First(&existing).Error; err == nil {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "duplicate entry for this date"})
+		return
+	}
+
 	calories := float64(extractedData.Distance) / 7500.0 * 500.0
 
 	rowing := models.Rowing{
