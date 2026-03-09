@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -71,21 +70,9 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	filename := hex.EncodeToString(b) + ext
 
 	uploadDir := "/backend/uploads/"
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upload directory"})
-		return
-	}
-	if err := os.Chmod(uploadDir, 0755); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to set directory permissions"})
-		return
-	}
 	dest := filepath.Join(uploadDir, filename)
 	if err := ctx.SaveUploadedFile(file, dest); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
-		return
-	}
-	if err := os.Chmod(dest, 0644); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to set file permissions"})
 		return
 	}
 
