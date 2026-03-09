@@ -120,6 +120,18 @@ import Consumption from "./Consumption.vue";
     .homeGrid {
         display: flex;
         flex-direction: column;
+        height: auto;
+    }
+
+    .sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .sidebar > * {
+        max-width: 400px;
+        width: 100%;
     }
 }
 
