@@ -135,6 +135,20 @@ import Consumption from "./Consumption.vue";
     }
 }
 
+@media (max-width: 500px) {
+    main {
+        overflow-x: hidden;
+    }
+
+    .outerWrap {
+        max-width: 100vw;
+    }
+
+    .sidebar {
+        margin: 5px 0;
+    }
+}
+
 .intro {
     grid-column: 1 / span 6;
     grid-row: 1 / span 4;
