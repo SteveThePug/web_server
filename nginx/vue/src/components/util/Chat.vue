@@ -2,9 +2,11 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import Button from "@/components/input/Button.vue";
 import { useMessagesStore } from "@/stores/messages";
+import { useAuthStore } from "@/stores/auth";
 import Header from "@/components/text/Header.vue";
 
 const messagesStore = useMessagesStore();
+const authStore = useAuthStore();
 const messages = computed(() => messagesStore.messages);
 const messageInput = ref("");
 const messagesContainer = ref(null);
@@ -80,7 +82,7 @@ onUnmounted(() => {
                @change="onFileSelected" />
         <div class="flex gap-2">
             <Button @click="sendMessage">Send</Button>
-            <Button @click="fileInput.click()">Attach</Button>
+            <Button v-if="authStore.user.admin" @click="fileInput.click()">Attach</Button>
         </div>
     </div>
 </template>
