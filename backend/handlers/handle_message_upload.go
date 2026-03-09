@@ -18,8 +18,8 @@ var allowedExtensions = map[string]bool{
 }
 
 var extensionToMIMEPrefix = map[string]string{
-	".jpg": "image/", ".jpeg": "image/", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp",
-	".mp4": "video/", ".webm": "video/webm", ".mp3": "audio/", ".ogg": "audio/",
+	".jpg": "image/", ".jpeg": "image/", ".png": "image/", ".gif": "image/", ".webp": "image/",
+	".mp4": "video/", ".webm": "video/",
 	".pdf": "application/pdf", ".txt": "text/",
 }
 
@@ -49,8 +49,12 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 		return
 	}
 	buf := make([]byte, 512)
-	n, _ := f.Read(buf)
+	n, err := f.Read(buf)
 	f.Close()
+	if err != nil && n == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "failed to read file content"})
+		return
+	}
 	detectedType := http.DetectContentType(buf[:n])
 
 	expectedPrefix, ok := extensionToMIMEPrefix[ext]
