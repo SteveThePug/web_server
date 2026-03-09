@@ -291,8 +291,4 @@ td {
             transparent var(--blur));
     background-size: var(--bg_size) var(--bg_size);
     background-position: 0 0;
-
-    mask-image: linear-gradient(-180deg,
-            rgba(1, 1, 1, 1) 0%,
-            rgba(1, 1, 1, 0.92) 100%);
 }

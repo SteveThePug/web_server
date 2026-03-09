@@ -27,8 +27,8 @@ const phrases = [
 const animState = phrases.map((text, i) => ({
     x: i * 20,
     y: i * 20,
-    dx: rand(0, 30) / 100,
-    dy: 0.5,
+    dx: rand(0, 60) / 100,
+    dy: 1.0,
     content: text,
     cachedW: 0,
     cachedH: 0,
@@ -48,6 +48,8 @@ const items = ref<Item[]>(
 let rafId = 0;
 let cachedCW = 0;
 let cachedCH = 0;
+let lastFrameTime = 0;
+const FRAME_INTERVAL = 1000 / 30;
 
 function measureSizes() {
     const c = container.value;
@@ -63,11 +65,17 @@ function measureSizes() {
     });
 }
 
-function animate() {
+function animate(timestamp: number) {
     if (!cachedCW || !cachedCH) {
         rafId = requestAnimationFrame(animate);
         return;
     }
+
+    if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+        rafId = requestAnimationFrame(animate);
+        return;
+    }
+    lastFrameTime = timestamp;
 
     for (let i = 0; i < animState.length; i++) {
         const s = animState[i];

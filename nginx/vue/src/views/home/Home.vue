@@ -69,6 +69,7 @@ import Consumption from "./Consumption.vue";
                     <img
                         src="/img/memes/fire-woman.gif"
                         class="border-tertiary border"
+                        loading="lazy"
                     />
                 </div>
             </div>
