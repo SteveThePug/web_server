@@ -71,6 +71,10 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}
+	if err := os.Chmod(dest, 0644); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to set file permissions"})
+		return
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{"url": "/uploads/" + filename})
 }
