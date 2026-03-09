@@ -2,7 +2,9 @@ package services
 
 import (
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 
 	"adam-french.co.uk/backend/models"
 	"gorm.io/gorm"
@@ -12,11 +14,19 @@ import (
 
 const maxMessages = 50
 
+var allowedDomain string
+
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return false
+		}
+		origin = strings.TrimPrefix(origin, "https://")
+		origin = strings.TrimPrefix(origin, "http://")
+		return origin == allowedDomain || origin == "www."+allowedDomain
 	},
 }
 
@@ -27,8 +37,14 @@ var (
 	nextAuthorID uint
 )
 
-func InitWebSocket(database *gorm.DB) {
+const (
+	rateLimitWindow   = time.Second
+	rateLimitMaxMsgs  = 10
+)
+
+func InitWebSocket(database *gorm.DB, domain string) {
 	wsDB = database
+	allowedDomain = domain
 }
 
 func HandleWebSocket(conn *websocket.Conn) {
@@ -50,10 +66,23 @@ func HandleWebSocket(conn *websocket.Conn) {
 	}
 	mu.Unlock()
 
+	msgCount := 0
+	windowStart := time.Now()
+
 	for {
 		var incoming models.Message
 		if err := conn.ReadJSON(&incoming); err != nil {
 			break
+		}
+
+		now := time.Now()
+		if now.Sub(windowStart) > rateLimitWindow {
+			msgCount = 0
+			windowStart = now
+		}
+		msgCount++
+		if msgCount > rateLimitMaxMsgs {
+			continue
 		}
 
 		incoming.AuthorID = authorID

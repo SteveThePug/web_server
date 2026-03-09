@@ -15,6 +15,21 @@ type UserCredentials struct {
 }
 
 func (store *Store) CreateUser(ctx *gin.Context) {
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+	if !(*claims)["admin"].(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+		return
+	}
+
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, err.Error())
@@ -31,31 +46,8 @@ func (store *Store) CreateUser(ctx *gin.Context) {
 	tx := store.DB.Create(&user)
 	if tx.Error != nil {
 		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
-	}
-
-	// Generate JWT token
-	tokens, err := store.Auth.GenerateJWT(&user)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	ctx.SetCookie(
-		"access_token",
-		tokens.AccessToken,
-		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
-		store.Auth.Config.Domain,
-		true, true,
-	)
-	ctx.SetCookie(
-		"refresh_token",
-		tokens.RefreshToken,
-		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
-		store.Auth.Config.Domain,
-		true, true,
-	)
 
 	ctx.JSON(http.StatusOK, user)
 }
@@ -141,6 +133,7 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetSameSite(http.SameSiteLaxMode)
 	ctx.SetCookie(
 		"access_token",
 		"",

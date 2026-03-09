@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"adam-french.co.uk/backend/models"
@@ -68,9 +67,8 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 	claims, err := store.Auth.VerifyJWT(refreshToken)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, err.Error())
+		return
 	}
-
-	fmt.Printf("claims: %v\n", claims)
 
 	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
@@ -93,6 +91,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetSameSite(http.SameSiteLaxMode)
 	ctx.SetCookie(
 		"access_token",
 		tokens.AccessToken,
@@ -122,12 +121,12 @@ func (store *Store) Login(ctx *gin.Context) {
 
 	user := models.User{}
 	if err := store.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, err.Error())
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(input.Password)); err != nil {
-		ctx.JSON(http.StatusUnauthorized, err.Error())
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
@@ -137,6 +136,7 @@ func (store *Store) Login(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetSameSite(http.SameSiteLaxMode)
 	ctx.SetCookie(
 		"access_token",
 		tokens.AccessToken,
@@ -164,6 +164,7 @@ func (store *Store) Logout(ctx *gin.Context) {
 }
 
 func removeCookies(ctx *gin.Context) {
+	ctx.SetSameSite(http.SameSiteLaxMode)
 	ctx.SetCookie(
 		"access_token",
 		"",

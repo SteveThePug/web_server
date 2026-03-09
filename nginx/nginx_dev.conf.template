@@ -11,6 +11,10 @@ http {
 
     client_max_body_size 10M;
 
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+    limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/m;
+
     log_format compact
         '$remote_addr "$request" $status rt=$request_time';
 
@@ -64,7 +68,28 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
+        location $BACKEND_ENDPOINT/auth/login {
+            limit_req zone=login burst=3 nodelay;
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location $BACKEND_ENDPOINT/messages/upload {
+            limit_req zone=upload burst=3 nodelay;
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
         location $BACKEND_ENDPOINT/ {
+            limit_req zone=api burst=20 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
             proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
             proxy_set_header Host $host;

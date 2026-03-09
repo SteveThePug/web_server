@@ -39,6 +39,10 @@ function isImageUrl(url) {
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
+function isSafeFileUrl(url) {
+    return typeof url === "string" && url.startsWith("/uploads/");
+}
+
 onMounted(() => {
     messagesStore.connect();
 });
@@ -57,7 +61,7 @@ onUnmounted(() => {
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
                 {{ message.text }}
-                <template v-if="message.fileUrl">
+                <template v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)">
                     <img v-if="isImageUrl(message.fileUrl)" :src="message.fileUrl"
                          class="max-w-xs max-h-48 rounded" />
                     <a v-else :href="message.fileUrl" target="_blank"

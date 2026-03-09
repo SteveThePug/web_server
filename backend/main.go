@@ -41,7 +41,8 @@ func main() {
 	if os.Getenv("SEED_DB") == "true" {
 		services.SeedDatabase(db)
 	}
-	services.InitWebSocket(db)
+	domainName := os.Getenv("DOMAIN")
+	services.InitWebSocket(db, domainName)
 
 	// SPOTIFY
 	spotifyAuthState := os.Getenv("SPOTIFY_AUTH_STATE")
@@ -57,7 +58,6 @@ func main() {
 	claudeClient := services.InitClaude(&claudeConfig)
 
 	authSecret := os.Getenv("BACKEND_SECRET")
-	domainName := os.Getenv("DOMAIN")
 	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
 	accessTokenLifetime := 24 * time.Hour
 	refreshTokenLifetime := 365 * 24 * time.Hour
@@ -96,7 +96,7 @@ func main() {
 	protected.PUT("/user/:id", store.UpdateUser)
 	protected.DELETE("/user/:id", store.DeleteUser)
 	r.GET("/user", store.GetUsers)
-	r.POST("/user", store.CreateUser)
+	protected.POST("/user", store.CreateUser)
 
 	// AUTH
 	r.POST("/auth/login", store.Login)
@@ -112,7 +112,7 @@ func main() {
 
 	// MESSAGES
 	r.GET("/ws", store.ConnectWebSocket)
-	r.POST("/messages/upload", store.UploadMessageFile)
+	protected.POST("/messages/upload", store.UploadMessageFile)
 
 	// NOTES
 	r.GET("/notes/*path", store.GetNoteFile)

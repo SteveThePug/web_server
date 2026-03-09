@@ -17,6 +17,12 @@ var allowedExtensions = map[string]bool{
 	".pdf": true, ".txt": true,
 }
 
+var extensionToMIMEPrefix = map[string]string{
+	".jpg": "image/", ".jpeg": "image/", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp",
+	".mp4": "video/", ".webm": "video/webm", ".mp3": "audio/", ".ogg": "audio/",
+	".pdf": "application/pdf", ".txt": "text/",
+}
+
 func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	file, err := ctx.FormFile("file")
 	if err != nil {
@@ -33,6 +39,23 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if !allowedExtensions[ext] {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "file type not allowed"})
+		return
+	}
+
+	// Validate actual content type matches extension
+	f, err := file.Open()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
+		return
+	}
+	buf := make([]byte, 512)
+	n, _ := f.Read(buf)
+	f.Close()
+	detectedType := http.DetectContentType(buf[:n])
+
+	expectedPrefix, ok := extensionToMIMEPrefix[ext]
+	if ok && !strings.HasPrefix(detectedType, expectedPrefix) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "file content does not match extension"})
 		return
 	}
 
