@@ -39,6 +39,10 @@ function isImageUrl(url) {
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
+function isVideoUrl(url) {
+    return /\.(mp4|webm|ogg|mov)$/i.test(url);
+}
+
 function isSafeFileUrl(url) {
     return typeof url === "string" && url.startsWith("/uploads/");
 }
@@ -64,6 +68,8 @@ onUnmounted(() => {
                 <template v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)">
                     <img v-if="isImageUrl(message.fileUrl)" :src="message.fileUrl"
                          class="max-w-xs max-h-48 rounded" />
+                    <video v-else-if="isVideoUrl(message.fileUrl)" :src="message.fileUrl"
+                           controls class="max-w-xs max-h-48 rounded" />
                     <a v-else :href="message.fileUrl" target="_blank"
                        class="underline">{{ message.fileUrl.split('/').pop() }}</a>
                 </template>
