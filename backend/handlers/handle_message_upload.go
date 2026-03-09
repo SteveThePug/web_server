@@ -3,7 +3,9 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -71,7 +73,22 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 
 	uploadDir := "/backend/uploads/"
 	dest := filepath.Join(uploadDir, filename)
-	if err := ctx.SaveUploadedFile(file, dest); err != nil {
+
+	src, err := file.Open()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
+		return
+	}
+	defer src.Close()
+
+	out, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		return
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, src); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}
