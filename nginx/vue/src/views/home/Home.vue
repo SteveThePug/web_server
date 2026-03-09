@@ -24,7 +24,7 @@ import Consumption from "./Consumption.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="h-fit flex flex-row">
+        <div class="outerWrap h-fit flex flex-row">
             <div
                 class="sidebar flex-1 flex flex-col m-10 w-60 gap-2 place-content-between"
             >
@@ -87,24 +87,37 @@ import Consumption from "./Consumption.vue";
 
 .homeGrid {
     display: grid;
-    grid-gap: 5px;
+    gap: 5px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
 }
 
-@media (max-width: 850px) {
-    .homeGrid {
-        width: 100%;
-        display: flex;
+@media (max-width: 1200px) {
+    .outerWrap {
         flex-direction: column;
+        align-items: stretch;
+    }
+
+    .homeGrid {
+        order: -1;
+        width: 100%;
+        margin-inline: 0;
+        box-sizing: border-box;
+    }
+
+    .sidebar {
+        width: 100%;
+        margin: 5px 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
     }
 }
 
-@media (max-width: 1200px) {
-    .tr,
-    .br,
-    .sidebar {
-        display: none;
+@media (max-width: 850px) {
+    .homeGrid {
+        display: flex;
+        flex-direction: column;
     }
 }
 
