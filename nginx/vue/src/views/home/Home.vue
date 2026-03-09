@@ -102,7 +102,7 @@ import Consumption from "./Consumption.vue";
     .homeGrid {
         order: -1;
         width: 100%;
-        height: 297mm;
+        height: 350mm;
         margin-inline: 0;
         box-sizing: border-box;
     }
