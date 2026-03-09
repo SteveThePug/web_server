@@ -31,6 +31,7 @@ type Message struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	Content   string         `json:"text"`
 	AuthorID  uint           `json:"authorId"`
+	FileURL   string         `json:"fileUrl,omitempty"`
 	CreatedAt time.Time      `json:"createdAt"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
 }

@@ -17,5 +17,8 @@ else
     envsubst '${DOMAIN}' < /etc/nginx/nginx_setup.conf.template > /etc/nginx/nginx.conf
 fi
 
+# Ensure uploads are readable by nginx worker processes
+chmod -R a+rX /uploads 2>/dev/null || true
+
 # Start nginx
 nginx -g 'daemon off;'

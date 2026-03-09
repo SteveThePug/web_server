@@ -9,6 +9,8 @@ http {
     server_tokens off;
     charset utf-8;
 
+    client_max_body_size 10M;
+
     log_format compact
         '$remote_addr "$request" $status rt=$request_time';
 
@@ -54,6 +56,13 @@ http {
 
 		ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
 		ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+        location /uploads/ {
+            alias /uploads/;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
 
         location / {
             try_files $uri $uri/ /index.html;

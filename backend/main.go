@@ -112,6 +112,7 @@ func main() {
 
 	// MESSAGES
 	r.GET("/ws", store.ConnectWebSocket)
+	r.POST("/messages/upload", store.UploadMessageFile)
 
 	// NOTES
 	r.GET("/notes/*path", store.GetNoteFile)

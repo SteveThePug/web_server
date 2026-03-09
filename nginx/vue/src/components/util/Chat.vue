@@ -8,6 +8,7 @@ const messagesStore = useMessagesStore();
 const messages = computed(() => messagesStore.messages);
 const messageInput = ref("");
 const messagesContainer = ref(null);
+const fileInput = ref(null);
 
 function scrollToBottom() {
     nextTick(() => {
@@ -25,6 +26,17 @@ function sendMessage() {
     if (!text) return;
     messagesStore.sendMessage(text);
     messageInput.value = "";
+}
+
+async function onFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    await messagesStore.uploadAndSendFile(file);
+    fileInput.value.value = "";
+}
+
+function isImageUrl(url) {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
 onMounted(() => {
@@ -45,9 +57,20 @@ onUnmounted(() => {
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
                 {{ message.text }}
+                <template v-if="message.fileUrl">
+                    <img v-if="isImageUrl(message.fileUrl)" :src="message.fileUrl"
+                         class="max-w-xs max-h-48 rounded" />
+                    <a v-else :href="message.fileUrl" target="_blank"
+                       class="underline">{{ message.fileUrl.split('/').pop() }}</a>
+                </template>
             </p>
         </div>
         <input v-model="messageInput" @keyup.enter="sendMessage" />
-        <Button @click="sendMessage">Send</Button>
+        <input ref="fileInput" type="file" class="hidden"
+               @change="onFileSelected" />
+        <div class="flex gap-2">
+            <Button @click="sendMessage">Send</Button>
+            <Button @click="fileInput.click()">Attach</Button>
+        </div>
     </div>
 </template>

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import axios from "axios";
 
 function getWebSocketURL() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -59,6 +60,19 @@ export const useMessagesStore = defineStore("messages", () => {
     messages.value = [];
   }
 
+  async function uploadAndSendFile(file) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await axios.post("/api/messages/upload", formData);
+      const { url } = res.data;
+      if (!socket.value || !isConnected.value) return;
+      socket.value.send(JSON.stringify({ text: "", fileUrl: url }));
+    } catch (err) {
+      lastError.value = err;
+    }
+  }
+
   return {
     messages,
     isConnected,
@@ -70,5 +84,6 @@ export const useMessagesStore = defineStore("messages", () => {
     disconnect,
     sendMessage,
     clearMessages,
+    uploadAndSendFile,
   };
 });
