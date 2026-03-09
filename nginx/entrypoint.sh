@@ -17,5 +17,8 @@ else
   envsubst '${DOMAIN}' </etc/nginx/nginx_setup.conf.template >/etc/nginx/nginx.conf
 fi
 
+# Ensure upload directory is traversable by nginx worker
+chmod 755 /uploads 2>/dev/null || true
+
 # Start nginx
 nginx -g 'daemon off;'
