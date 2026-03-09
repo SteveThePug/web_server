@@ -16,6 +16,12 @@ let pos = 0;
 let direction = 1; // 1 = down, -1 = up
 let timeoutId;
 let timeoutId2;
+let cachedScrollHeight = 0;
+
+function measureScrollHeight() {
+    const el = container.value;
+    if (el) cachedScrollHeight = el.scrollHeight;
+}
 
 function handleHover() {
     cancelAnimationFrame(timeoutId);
@@ -28,6 +34,10 @@ function handleHover() {
 
 function tick() {
     const el = container.value;
+    if (!el || cachedScrollHeight === 0) {
+        timeoutId = requestAnimationFrame(tick);
+        return;
+    }
 
     const reachedBottom = pos <= 0;
     const reachedTop = pos >= 1;
@@ -46,16 +56,23 @@ function tick() {
 
     pos += direction * SPEED;
 
-    el.scrollTop = pos * el.scrollHeight;
+    el.scrollTop = pos * cachedScrollHeight;
 
     timeoutId = requestAnimationFrame(tick);
 }
 
+let resizeObserver;
+
 onMounted(() => {
+    measureScrollHeight();
     timeoutId = requestAnimationFrame(tick);
+
+    resizeObserver = new ResizeObserver(measureScrollHeight);
+    resizeObserver.observe(container.value);
 });
 
 onBeforeUnmount(() => {
     cancelAnimationFrame(timeoutId);
+    resizeObserver?.disconnect();
 });
 </script>
