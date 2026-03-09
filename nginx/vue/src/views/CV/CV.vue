@@ -7,15 +7,22 @@ import Project from "./Project.vue";
         <div class="no-print w-full h-20">
 
         </div>
+        <div class="no-print w-full text-center flex flex-row place-content-around">
+        </div>
+        <div class="no-print w-full h-20">
+
+        </div>
         <div class="a4page">
             <div class="flex flex-row justify-between">
                 <h1 class="name">Adam French</h1>
                 <div class="contact-details text-right">
                     <p>+447563266931</p>
                     <p>adam.a.french@outlook.com</p>
+                    <h4>
                     <a href="https://www.adam-french.co.uk">
                         www.adam-french.co.uk
                     </a>
+                    </h4>
                 </div>
             </div>
 
@@ -41,11 +48,13 @@ import Project from "./Project.vue";
 
             <Project class="border-b border-dotted">
                 <template v-slot:left>
+                    <h4>
                     <a
                         href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
                     >
                         web_server.git
                     </a>
+                    </h4>
                 </template>
                 <template v-slot:top>
                     <small>
@@ -62,11 +71,13 @@ import Project from "./Project.vue";
             </Project>
             <Project class="border-b border-dotted">
                 <template v-slot:left>
+                    <h4>
                     <a
                         href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
                     >
                         tour.git
                     </a>
+                    </h4>
                 </template>
                 <template v-slot:top>
                     <small>Rust</small>
@@ -79,11 +90,13 @@ import Project from "./Project.vue";
             </Project>
             <Project class="border-b border-dotted">
                 <template v-slot:left>
+                    <h4>
                     <a
                         href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
                     >
                         rust-raytracer.git
                     </a>
+                    </h4>
                 </template>
                 <template v-slot:top>
                     <small>Rust, Linear Algebra, Multithreading</small>
@@ -97,12 +110,14 @@ import Project from "./Project.vue";
             </Project>
             <Project>
                 <template #left>
+                    <h4>
                     <a
                         class="text-center w-full"
                         href="https://community.wolfram.com/groups/-/m/t/3210947"
                     >
                         Wolfram Summer School
                     </a>
+                    </h4>
                 </template>
                 <template #top>
                     <small>Wolfram Mathematica</small>
@@ -118,7 +133,11 @@ import Project from "./Project.vue";
             <h2>Education</h2>
             <div class="w-full h-fit flex-row flex gap-5">
                 <div class="flex-1 border-r border-dotted pr-3">
-                    <h3>University of Leeds</h3>
+                    <h3>
+                        <a  href="https://www.adam-french.co.uk/pdf/transcript.pdf">
+                            University of Leeds
+                        </a>
+                    </h3>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
                     >

@@ -2,6 +2,7 @@
 
 /* PRINTING */
 @media print {
+
     .no-print,
     .no-print * {
         display: none !important;
@@ -11,6 +12,7 @@
         height: 0px;
     }
 }
+
 /* END OF PRINTING */
 
 /* FONTS */
@@ -27,6 +29,7 @@
     font-weight: normal;
     font-style: normal;
 }
+
 /* END OF FONTS */
 
 /* VARIABLES */
@@ -75,6 +78,7 @@
     --font-heading: var(--font_heading);
     --default-font-family: var(--font_default);
 }
+
 /* END OF VARIABLES */
 /* ELEMENTS */
 body {
@@ -118,9 +122,11 @@ h3,
 h4 {
     @apply text-lg;
 }
+
 h1 {
     @apply text-2xl;
 }
+
 h2 {
     @apply text-xl;
 }
@@ -130,7 +136,7 @@ p {
 }
 
 a {
-    @apply text-primary bg-link text-center font-heading text-xl tracking-wide;
+    @apply text-primary bg-link text-center font-heading tracking-wide;
 }
 
 input,
@@ -219,18 +225,24 @@ td {
 /* PHONE */
 @media (max-width: 850px) {
     .a4page-portrait {
-        width: 100%; /* fill mobile width */
+        width: 100%;
+        /* fill mobile width */
         height: fit-content;
-        margin: 0 auto; /* center horizontally */
+        margin: 0 auto;
+        /* center horizontally */
         box-sizing: border-box;
     }
+
     .a4page-landscape {
-        width: 100%; /* fill mobile width */
+        width: 100%;
+        /* fill mobile width */
         height: fit-content;
-        margin: 0 auto; /* center horizontally */
+        margin: 0 auto;
+        /* center horizontally */
         box-sizing: border-box;
     }
 }
+
 @media (max-width: 600px) {
     .a5page-portrait {
         width: 100%;
@@ -238,6 +250,7 @@ td {
         margin: 0 auto;
         box-sizing: border-box;
     }
+
     .a5page-landscape {
         width: 100%;
         height: fit-content;
@@ -249,12 +262,15 @@ td {
 .tl {
     @apply absolute top-0 left-0;
 }
+
 .tr {
     @apply absolute top-0 right-0;
 }
+
 .bl {
     @apply absolute bottom-0 left-0;
 }
+
 .br {
     @apply absolute bottom-0 right-0;
 }
@@ -270,17 +286,13 @@ td {
     --blur: 0%;
 
     background-color: var(--bg_secondary);
-    background-image: radial-gradient(
-        circle at center,
-        var(--bg_primary) var(--dot_size),
-        transparent var(--blur)
-    );
+    background-image: radial-gradient(circle at center,
+            var(--bg_primary) var(--dot_size),
+            transparent var(--blur));
     background-size: var(--bg_size) var(--bg_size);
     background-position: 0 0;
 
-    mask-image: linear-gradient(
-        -180deg,
-        rgba(1, 1, 1, 1) 0%,
-        rgba(1, 1, 1, 0.92) 100%
-    );
+    mask-image: linear-gradient(-180deg,
+            rgba(1, 1, 1, 1) 0%,
+            rgba(1, 1, 1, 0.92) 100%);
 }
