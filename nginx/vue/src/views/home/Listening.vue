@@ -29,7 +29,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Transition name="fade" mode="out-in">
+    <div class="listening-wrapper">
+    <Transition name="fade">
         <div
             @click="nextSong"
             :key="song.track.id"
@@ -45,9 +46,16 @@ onUnmounted(() => {
             </p>
         </div>
     </Transition>
+    </div>
 </template>
 
 <style scoped>
+.listening-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 img {
     width: 70%;
 }
@@ -56,15 +64,17 @@ p {
     margin: 0 auto;
 }
 
-.fade-enter-active {
-    transition: opacity 0.5s ease;
-}
+.fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.5s ease;
 }
-.fade-enter-from {
-    opacity: 0;
+.fade-leave-active {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
 }
+.fade-enter-from,
 .fade-leave-to {
     opacity: 0;
 }

@@ -7,11 +7,6 @@ import Project from "./Project.vue";
         <div class="no-print w-full h-20">
 
         </div>
-        <div class="no-print w-full text-center flex flex-row place-content-around">
-        </div>
-        <div class="no-print w-full h-20">
-
-        </div>
         <div class="a4page">
             <div class="flex flex-row justify-between">
                 <h1 class="name">Adam French</h1>

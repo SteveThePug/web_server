@@ -35,19 +35,28 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Transition name="fade" mode="out-in">
-        <div class="image-viewer" @click="nextImage" :key="currentIndex">
-            <Header v-if="currentComment">
-                {{ currentComment }}
-            </Header>
-            <img :src="currentUrl" alt="Image Viewer" />
-        </div>
-    </Transition>
+    <div class="slideshow-wrapper">
+        <Transition name="fade">
+            <div class="image-viewer" @click="nextImage" :key="currentIndex">
+                <Header v-if="currentComment">
+                    {{ currentComment }}
+                </Header>
+                <img :src="currentUrl" alt="Image Viewer" />
+            </div>
+        </Transition>
+    </div>
 </template>
 
 <style scoped>
+.slideshow-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .image-viewer {
     width: 100%;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -60,6 +69,12 @@ img {
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.5s ease;
+}
+.fade-leave-active {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
 }
 .fade-enter-from,
 .fade-leave-to {
