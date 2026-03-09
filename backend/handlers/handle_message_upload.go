@@ -66,6 +66,7 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	}
 	filename := hex.EncodeToString(b) + ext
 
+	uploadDir := "/backend/uploads/"
 	dest := filepath.Join(uploadDir, filename)
 	if err := ctx.SaveUploadedFile(file, dest); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
