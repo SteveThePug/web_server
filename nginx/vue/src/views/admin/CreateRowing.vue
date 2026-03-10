@@ -44,8 +44,8 @@ async function submit() {
         <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple @change="onFileChange" />
         <Button @click="submit">Upload</Button>
         <div v-for="r in results" :key="r.name">
-            <span>{{ r.name }}: </span>
-            <span :class="r.ok ? '' : 'text-red-500'">{{ r.status }}</span>
+            <span class="text-primary">{{ r.name }}: </span>
+            <span :class="r.ok ? 'text-secondary' : 'text-red-500'">{{ r.status }}</span>
         </div>
     </div>
 </template>

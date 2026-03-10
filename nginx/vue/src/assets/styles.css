@@ -141,7 +141,12 @@ a {
 
 input,
 textarea {
-    @apply text-primary border;
+    @apply text-primary border p-2 w-full;
+}
+
+input::placeholder,
+textarea::placeholder {
+    @apply text-secondary opacity-50;
 }
 
 table {

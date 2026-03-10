@@ -24,7 +24,7 @@ async function post() {
 <template>
     <div class="flex flex-col">
         <h1>Create Post</h1>
-        <input type="text" v-model="title" placeholder="Title" />
+        <input type="text" v-model="title" placeholder="Title" @keyup.enter="post" />
         <textarea
             class="h-50"
             v-model="content"

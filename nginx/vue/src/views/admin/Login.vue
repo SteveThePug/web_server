@@ -27,8 +27,8 @@ function handleLogout() {
     </div>
     <div v-else class="flex flex-col">
         <h1>Login</h1>
-        <input type="text" v-model="username" placeholder="Username" />
-        <input type="password" v-model="password" placeholder="Password" />
+        <input type="text" v-model="username" placeholder="Username" @keyup.enter="handleLogin" />
+        <input type="password" v-model="password" placeholder="Password" @keyup.enter="handleLogin" />
         <Button @click="handleLogin">Log In</Button>
     </div>
 </template>

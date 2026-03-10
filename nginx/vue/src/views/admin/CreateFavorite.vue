@@ -28,9 +28,9 @@ async function post() {
 <template>
     <div class="flex flex-col">
         <h1>Create Favorite</h1>
-        <input type="text" v-model="type" placeholder="Type" />
-        <input type="text" v-model="name" placeholder="Name" />
-        <input type="text" v-model="link" placeholder="Link" />
+        <input type="text" v-model="type" placeholder="Type" @keyup.enter="post" />
+        <input type="text" v-model="name" placeholder="Name" @keyup.enter="post" />
+        <input type="text" v-model="link" placeholder="Link" @keyup.enter="post" />
         <Button @click="post">Upload</Button>
     </div>
 </template>

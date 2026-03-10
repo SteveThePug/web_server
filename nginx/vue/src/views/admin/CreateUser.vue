@@ -32,8 +32,8 @@ async function handleCreate() {
         <h1>Create User</h1>
         <p v-if="message" class="text-green-500">{{ message }}</p>
         <p v-if="error" class="text-red-500">{{ error }}</p>
-        <input type="text" v-model="username" placeholder="Username" />
-        <input type="password" v-model="password" placeholder="Password" />
+        <input type="text" v-model="username" placeholder="Username" @keyup.enter="handleCreate" />
+        <input type="password" v-model="password" placeholder="Password" @keyup.enter="handleCreate" />
         <Button @click="handleCreate">Create Account</Button>
     </div>
     <div v-else-if="auth.loggedIn" class="flex flex-col">
