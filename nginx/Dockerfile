@@ -1,5 +1,6 @@
 # Stage 1: Build Vue app
 FROM node:22-slim AS build
+RUN apt-get update && apt-get install -y make git && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY vue/package.json vue/package-lock.json ./
 RUN npm ci
