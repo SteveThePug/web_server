@@ -67,22 +67,46 @@ onUnmounted(() => {
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
                 {{ message.text }}
-                <template v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)">
-                    <img v-if="isImageUrl(message.fileUrl)" :src="message.fileUrl"
-                         class="max-w-xs max-h-48 rounded" />
-                    <video v-else-if="isVideoUrl(message.fileUrl)" :src="message.fileUrl"
-                           controls class="max-w-xs max-h-48 rounded" />
-                    <a v-else :href="message.fileUrl" target="_blank"
-                       class="underline">{{ message.fileUrl.split('/').pop() }}</a>
+                <template
+                    v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)"
+                >
+                    <img
+                        v-if="isImageUrl(message.fileUrl)"
+                        :src="message.fileUrl"
+                        class="max-w-xs max-h-48 rounded"
+                    />
+                    <video
+                        v-else-if="isVideoUrl(message.fileUrl)"
+                        :src="message.fileUrl"
+                        controls
+                        class="max-w-xs max-h-48 rounded"
+                    />
+                    <a
+                        v-else
+                        :href="message.fileUrl"
+                        target="_blank"
+                        class="underline"
+                        >{{ message.fileUrl.split("/").pop() }}</a
+                    >
                 </template>
             </p>
         </div>
         <input v-model="messageInput" @keyup.enter="sendMessage" />
-        <input ref="fileInput" type="file" class="hidden"
-               @change="onFileSelected" />
-        <div class="flex gap-2">
+        <input
+            ref="fileInput"
+            type="file"
+            class="hidden"
+            @change="onFileSelected"
+        />
+        <div class="flex justify-between">
             <Button @click="sendMessage">Send</Button>
-            <Button v-if="authStore.user.admin" @click="fileInput.click()">Attach</Button>
+            <Button v-if="authStore.user.admin" @click="fileInput.click()"
+                >Attach</Button
+            >
+            <div class="flex gap-2">
+                <Button @click="fileInput.click()">Attach</Button>
+                <Button @click="scrollToBottom">To Bottom</Button>
+            </div>
         </div>
     </div>
 </template>
