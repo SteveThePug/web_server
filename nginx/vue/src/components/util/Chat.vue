@@ -109,12 +109,14 @@ onUnmounted(() => {
                         v-if="isImageUrl(message.fileUrl)"
                         :src="message.fileUrl"
                         class="max-w-xs max-h-48 rounded"
+                        @load="scrollToBottom"
                     />
                     <video
                         v-else-if="isVideoUrl(message.fileUrl)"
                         :src="message.fileUrl"
                         controls
                         class="max-w-xs max-h-48 rounded"
+                        @loadedmetadata="scrollToBottom"
                     />
                     <a
                         v-else
