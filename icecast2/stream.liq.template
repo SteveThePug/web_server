@@ -1,4 +1,4 @@
-settings.server.telnet.set(false)
+settings.server.telnet := false
 
 music = playlist("/music", mode="randomize", reload_mode="watch")
 
