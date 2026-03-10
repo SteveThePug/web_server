@@ -30,7 +30,10 @@ async function checkStream() {
         streamLive.value = true;
         streamUrl.value = "/radio/stream";
 
-        if (audio.value) audio.value.load();
+        if (audio.value) {
+            audio.value.load();
+            audio.value.volume = 0.2;
+        }
     } catch (err) {
         streamLive.value = false;
     }
