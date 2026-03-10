@@ -57,7 +57,10 @@ function parseMessageParts(text) {
     let match;
     while ((match = urlRegex.exec(text)) !== null) {
         if (match.index > lastIndex) {
-            parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
+            parts.push({
+                type: "text",
+                value: text.slice(lastIndex, match.index),
+            });
         }
         parts.push({ type: "link", value: match[1] });
         lastIndex = urlRegex.lastIndex;
@@ -85,8 +88,18 @@ onUnmounted(() => {
         >
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
-                <template v-for="(part, i) in parseMessageParts(message.text || '')" :key="i">
-                    <a v-if="part.type === 'link'" :href="part.value" target="_blank" rel="noopener noreferrer" class="text-primary underline">{{ part.value }}</a>
+                <template
+                    v-for="(part, i) in parseMessageParts(message.text || '')"
+                    :key="i"
+                >
+                    <a
+                        v-if="part.type === 'link'"
+                        :href="part.value"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-primary underline"
+                        >{{ part.value }}</a
+                    >
                     <span v-else>{{ part.value }}</span>
                 </template>
                 <template
@@ -126,8 +139,7 @@ onUnmounted(() => {
                 >Attach</Button
             >
             <div class="flex gap-2">
-                <Button @click="fileInput.click()">Attach</Button>
-                <Button @click="scrollToBottom">To Bottom</Button>
+                <Button @click="scrollToBottom">Bottom</Button>
             </div>
         </div>
     </div>
