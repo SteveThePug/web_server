@@ -28,6 +28,7 @@ export const useMessagesStore = defineStore("messages", () => {
       isConnected.value = true;
       lastError.value = null;
       reconnectDelay = 1000;
+      messages.value = [];
     };
 
     socket.value.onmessage = (event) => {
