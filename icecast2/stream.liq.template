@@ -12,5 +12,6 @@ output.icecast(
   port=${ICECAST_PORT},
   password="${ICECAST_SOURCE_PASSWORD}",
   mount="${ICECAST_MOUNT}",
+  fallible=true,
   radio
 )
