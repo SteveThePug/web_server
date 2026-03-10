@@ -1,5 +1,5 @@
 <template>
-    <div v-if="streamLive">
+    <div v-if="streamLive" class="overflow-hidden">
         <Header>Radio</Header>
         <img src="/img/tmpen31z3pe.PNG" />
         <audio controls :src="streamUrl" ref="audio"></audio>
