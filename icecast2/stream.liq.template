@@ -4,7 +4,7 @@ music = playlist("/music", mode="randomize", reload_mode="watch")
 
 live = input.harbor("${LIQUIDSOAP_HARBOR_MOUNT}", port=${LIQUIDSOAP_HARBOR_PORT}, password="${ICECAST_SOURCE_PASSWORD}")
 
-radio = fallback(track_sensitive=false, [live, music, blank()])
+radio = amplify(0.7, fallback(track_sensitive=false, [live, music, blank()]))
 
 output.icecast(
   %mp3,
