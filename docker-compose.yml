@@ -80,6 +80,10 @@ services:
             - app-network
         env_file:
             - ./.env
+        volumes:
+            - ./icecast2/fallback_music:/music:ro
+        ports:
+            - "${LIQUIDSOAP_HARBOR_PORT:-8001}:${LIQUIDSOAP_HARBOR_PORT:-8001}"
 
     gitea-runner:
         image: gitea/act_runner:latest
