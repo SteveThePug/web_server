@@ -17,22 +17,24 @@
 <script setup>
 import Button from "@/components/input/Button.vue";
 import Header from "@/components/text/Header.vue";
-import { ref, onMounted } from "vue";
+import { ref, useTemplateRef, onMounted, nextTick } from "vue";
 import axios from "axios";
 
 const streamUrl = ref("");
 const streamLive = ref(false);
-const audio = ref(null);
+const audio = useTemplateRef("audio");
 
 async function checkStream() {
     try {
         await axios.head("/radio/stream");
-        streamLive.value = true;
-        streamUrl.value = "/radio/stream";
-
-        if (audio.value) {
-            audio.value.load();
-            audio.value.volume = 0.2;
+        if (!streamLive.value) {
+            streamLive.value = true;
+            streamUrl.value = "/radio/stream";
+            await nextTick();
+            if (audio.value) {
+                audio.value.load();
+                audio.value.volume = 0.2;
+            }
         }
     } catch (err) {
         streamLive.value = false;
