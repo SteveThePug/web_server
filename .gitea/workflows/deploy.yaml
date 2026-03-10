@@ -17,3 +17,6 @@ jobs:
               env:
                   DOCKER_API_VERSION: "1.41"
               run: docker compose up -d --build --remove-orphans
+
+            - name: Prune unused Docker resources
+              run: docker image prune -f
