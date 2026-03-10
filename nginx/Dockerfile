@@ -1,33 +1,20 @@
-FROM nginx:latest
-RUN rm -rf /etc/nginx/html/*
-
-# Install dependencies needed to add NodeSource repo
-RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
-    git \
-    gettext-base \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js LTS + npm
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g npm@latest
-
-
+# Stage 1: Build Vue app
+FROM node:22-slim AS build
 WORKDIR /app
+COPY vue/package.json vue/package-lock.json ./
+RUN npm ci
 COPY vue/ ./
-RUN npm install
 RUN npm run build
 
-
-RUN mkdir -p /etc/nginx/html \
-    && cp -r ./dist/* /etc/nginx/html/
-
+# Stage 2: Serve with nginx
+FROM nginx:latest
+RUN rm -rf /etc/nginx/html/* && \
+    apt-get update && apt-get install -y gettext-base && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=build /app/dist /etc/nginx/html/
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
 COPY nginx_dev.conf.template /etc/nginx/nginx_dev.conf.template
 COPY robots.txt /etc/nginx/html/robots.txt
 COPY entrypoint.sh /entrypoint.sh
-
 ENTRYPOINT ["/entrypoint.sh"]
