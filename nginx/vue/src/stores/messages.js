@@ -12,17 +12,22 @@ export const useMessagesStore = defineStore("messages", () => {
   const messages = ref([]);
   const isConnected = ref(false);
   const lastError = ref(null);
+  let intentionalClose = false;
+  let reconnectDelay = 1000;
+  let reconnectTimer = null;
 
   const messagesCount = computed(() => messages.value.length);
 
   function connect() {
     if (socket.value && isConnected.value) return;
+    intentionalClose = false;
 
     socket.value = new WebSocket(getWebSocketURL());
 
     socket.value.onopen = () => {
       isConnected.value = true;
       lastError.value = null;
+      reconnectDelay = 1000;
     };
 
     socket.value.onmessage = (event) => {
@@ -41,10 +46,18 @@ export const useMessagesStore = defineStore("messages", () => {
     socket.value.onclose = () => {
       isConnected.value = false;
       socket.value = null;
+      if (!intentionalClose) {
+        reconnectTimer = setTimeout(() => {
+          connect();
+        }, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      }
     };
   }
 
   function disconnect() {
+    intentionalClose = true;
+    clearTimeout(reconnectTimer);
     if (!socket.value) return;
     socket.value.close();
     socket.value = null;
