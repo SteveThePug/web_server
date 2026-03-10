@@ -5,6 +5,7 @@ import (
 
 	"adam-french.co.uk/backend/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,6 +24,28 @@ func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 
 	// store claims in Gin context
 	ctx.Set("userClaims", claims)
+	ctx.Next()
+}
+
+func (store *Store) AdminMiddleware(ctx *gin.Context) {
+	claims, exists := ctx.Get("userClaims")
+	if !exists {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	mapClaims, ok := claims.(*jwt.MapClaims)
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
+		return
+	}
+
+	admin, ok := (*mapClaims)["admin"].(bool)
+	if !ok || !admin {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+		return
+	}
+
 	ctx.Next()
 }
 

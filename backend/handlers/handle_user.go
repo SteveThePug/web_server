@@ -19,21 +19,6 @@ type SetAdminInput struct {
 }
 
 func (store *Store) CreateUser(ctx *gin.Context) {
-	claimsVal, ok := ctx.Get("userClaims")
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
-		return
-	}
-	claims, ok := claimsVal.(*jwt.MapClaims)
-	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
-		return
-	}
-	if !(*claims)["admin"].(bool) {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
-		return
-	}
-
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, err.Error())
@@ -116,11 +101,6 @@ func (store *Store) SetUserAdmin(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
 		return
 	}
-	if !(*claims)["admin"].(bool) {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
-		return
-	}
-
 	callerIDF, ok := (*claims)["id"].(float64)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
