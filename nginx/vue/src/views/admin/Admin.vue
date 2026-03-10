@@ -8,6 +8,7 @@ import CreatePost from "./CreatePost.vue";
 import CreateFavorite from "./CreateFavorite.vue";
 import CreateActivity from "./CreateActivity.vue";
 import CreateRowing from "./CreateRowing.vue";
+import ManageUsers from "./ManageUsers.vue";
 
 const auth = useAuthStore();
 </script>
@@ -21,6 +22,7 @@ const auth = useAuthStore();
             <CreateFavorite class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreateActivity class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreateRowing class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
+            <ManageUsers class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
         </div>
     </main>
 </template>

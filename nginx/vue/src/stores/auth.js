@@ -59,6 +59,16 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function setUserAdmin(userId, admin) {
+    try {
+      const res = await axios.patch(`/api/user/${userId}/admin`, { admin });
+      return res.data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
   return {
     user,
 
@@ -69,5 +79,6 @@ export const useAuthStore = defineStore("auth", () => {
     refreshToken,
     logOut,
     createUser,
+    setUserAdmin,
   };
 });
