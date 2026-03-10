@@ -49,6 +49,25 @@ function isSafeFileUrl(url) {
     return typeof url === "string" && url.startsWith("/uploads/");
 }
 
+const urlRegex = /(https?:\/\/[^\s<]+)/g;
+
+function parseMessageParts(text) {
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
+        }
+        parts.push({ type: "link", value: match[1] });
+        lastIndex = urlRegex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+        parts.push({ type: "text", value: text.slice(lastIndex) });
+    }
+    return parts;
+}
+
 onMounted(() => {
     messagesStore.connect();
 });
@@ -66,7 +85,10 @@ onUnmounted(() => {
         >
             <p v-for="message in messages" :key="message.id">
                 <span class="text-tertiary">{{ message.authorId }}:</span>
-                {{ message.text }}
+                <template v-for="(part, i) in parseMessageParts(message.text || '')" :key="i">
+                    <a v-if="part.type === 'link'" :href="part.value" target="_blank" rel="noopener noreferrer" class="text-primary underline">{{ part.value }}</a>
+                    <span v-else>{{ part.value }}</span>
+                </template>
                 <template
                     v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)"
                 >
