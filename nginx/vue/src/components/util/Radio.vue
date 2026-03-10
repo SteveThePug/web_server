@@ -20,23 +20,17 @@ import Header from "@/components/text/Header.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";
 
-const streamMount = ref("");
 const streamUrl = ref("");
 const streamLive = ref(false);
 const audio = ref(null);
 
 async function checkStream() {
     try {
-        const res = await axios.get("/radio/status-json.xsl");
-        const data = res.data;
+        await axios.head("/radio/stream");
+        streamLive.value = true;
+        streamUrl.value = "/radio/stream";
 
-        streamMount.value = data.icestats.source.listenurl.split("/").pop();
-        if (streamMount.value) {
-            streamLive.value = true;
-            streamUrl.value = "/radio/" + streamMount.value;
-
-            if (audio.value) audio.value.load();
-        }
+        if (audio.value) audio.value.load();
     } catch (err) {
         streamLive.value = false;
     }
