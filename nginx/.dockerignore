@@ -1,0 +1,5 @@
+vue/node_modules
+vue/.vite
+vue/dist
+**/.git
+**/.DS_Store
