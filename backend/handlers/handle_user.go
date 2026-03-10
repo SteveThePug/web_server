@@ -14,6 +14,10 @@ type UserCredentials struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type SetAdminInput struct {
+	Admin *bool `json:"admin" binding:"required"`
+}
+
 func (store *Store) CreateUser(ctx *gin.Context) {
 	claimsVal, ok := ctx.Get("userClaims")
 	if !ok {
@@ -99,6 +103,57 @@ func (store *Store) UpdateUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusInternalServerError, gin.H{"error": "will be implemented"})
+}
+
+func (store *Store) SetUserAdmin(ctx *gin.Context) {
+	claimsVal, ok := ctx.Get("userClaims")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		return
+	}
+	claims, ok := claimsVal.(*jwt.MapClaims)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		return
+	}
+	if !(*claims)["admin"].(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+		return
+	}
+
+	callerIDF, ok := (*claims)["id"].(float64)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		return
+	}
+	callerID := uint(callerIDF)
+
+	targetID := ctx.Param("id")
+
+	var input SetAdminInput
+	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := store.DB.First(&user, targetID).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	if user.ID == callerID {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "cannot change your own admin status"})
+		return
+	}
+
+	user.Admin = *input.Admin
+	if err := store.DB.Save(&user).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (store *Store) DeleteUser(ctx *gin.Context) {

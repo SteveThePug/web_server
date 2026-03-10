@@ -97,6 +97,7 @@ func main() {
 	protected.DELETE("/user/:id", store.DeleteUser)
 	r.GET("/user", store.GetUsers)
 	protected.POST("/user", store.CreateUser)
+	protected.PATCH("/user/:id/admin", store.SetUserAdmin)
 
 	// AUTH
 	r.POST("/auth/login", store.Login)
