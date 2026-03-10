@@ -47,8 +47,6 @@ coverage
 # Vitest
 __screenshots__/
 
-icecast2/fallback_music/
-!icecast2/fallback_music/.gitkeep
 
 .deploy
 *.xcf
