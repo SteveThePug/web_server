@@ -80,68 +80,77 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col">
+    <div class="flex-1 flex-col flex">
         <Header>Chat</Header>
-        <div
-            ref="messagesContainer"
-            class="flex flex-col flex-1 overflow-y-auto p-2"
-        >
-            <p v-for="message in messages" :key="message.id">
-                <span class="text-tertiary">{{ message.authorId }}:</span>
-                <template
-                    v-for="(part, i) in parseMessageParts(message.text || '')"
-                    :key="i"
-                >
-                    <a
-                        v-if="part.type === 'link'"
-                        :href="part.value"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-primary underline"
-                        >{{ part.value }}</a
-                    >
-                    <span v-else>{{ part.value }}</span>
-                </template>
-                <template
-                    v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)"
-                >
-                    <img
-                        v-if="isImageUrl(message.fileUrl)"
-                        :src="message.fileUrl"
-                        class="max-w-xs max-h-48 rounded"
-                        @load="scrollToBottom"
-                    />
-                    <video
-                        v-else-if="isVideoUrl(message.fileUrl)"
-                        :src="message.fileUrl"
-                        controls
-                        class="max-w-xs max-h-48 rounded"
-                        @loadedmetadata="scrollToBottom"
-                    />
-                    <a
-                        v-else
-                        :href="message.fileUrl"
-                        target="_blank"
-                        class="underline"
-                        >{{ message.fileUrl.split("/").pop() }}</a
-                    >
-                </template>
-            </p>
-        </div>
-        <input v-model="messageInput" @keyup.enter="sendMessage" />
-        <input
-            ref="fileInput"
-            type="file"
-            class="hidden"
-            @change="onFileSelected"
-        />
-        <div class="flex justify-between">
-            <Button @click="sendMessage">Send</Button>
-            <Button v-if="authStore.user.admin" @click="fileInput.click()"
-                >Attach</Button
+        <div class="flex-col flex flex-1">
+            <div
+                ref="messagesContainer"
+                class="flex flex-col flex-1 overflow-y-auto p-2"
             >
-            <div class="flex gap-2">
-                <Button @click="scrollToBottom">Bottom</Button>
+                <p v-for="message in messages" :key="message.id">
+                    <span class="text-tertiary">{{ message.authorId }}:</span>
+                    <template
+                        v-for="(part, i) in parseMessageParts(
+                            message.text || '',
+                        )"
+                        :key="i"
+                    >
+                        <a
+                            v-if="part.type === 'link'"
+                            :href="part.value"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-primary underline"
+                            >{{ part.value }}</a
+                        >
+                        <span v-else>{{ part.value }}</span>
+                    </template>
+                    <template
+                        v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)"
+                    >
+                        <img
+                            v-if="isImageUrl(message.fileUrl)"
+                            :src="message.fileUrl"
+                            class="max-w-xs max-h-48 rounded"
+                            @load="scrollToBottom"
+                        />
+                        <video
+                            v-else-if="isVideoUrl(message.fileUrl)"
+                            :src="message.fileUrl"
+                            controls
+                            class="max-w-xs max-h-48 rounded"
+                            @loadedmetadata="scrollToBottom"
+                        />
+                        <a
+                            v-else
+                            :href="message.fileUrl"
+                            target="_blank"
+                            class="underline"
+                            >{{ message.fileUrl.split("/").pop() }}</a
+                        >
+                    </template>
+                </p>
+            </div>
+            <div>
+                <input v-model="messageInput" @keyup.enter="sendMessage" />
+                <input
+                    ref="fileInput"
+                    type="file"
+                    class="hidden"
+                    @change="onFileSelected"
+                />
+                <div class="flex gap-2">
+                    <Button class="flex-1" @click="sendMessage">Send</Button>
+                    <Button
+                        v-if="authStore.user.admin"
+                        class="flex-1"
+                        @click="fileInput.click()"
+                        >Attach</Button
+                    >
+                    <Button class="flex-1" @click="scrollToBottom"
+                        >Bottom</Button
+                    >
+                </div>
             </div>
         </div>
     </div>

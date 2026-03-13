@@ -28,8 +28,10 @@ import Consumption from "./Consumption.vue";
             <div
                 class="sidebar flex-1 flex flex-col m-10 w-60 gap-2 place-content-between"
             >
-                <div class="border-children background-children">
-                    <Chat class="h-200" />
+                <div
+                    class="flex flex-col background-children border-children flex-1 gap-2"
+                >
+                    <Chat class="flex-1" />
                 </div>
                 <div>
                     <Miku class="border-tertiary border bg-bg_secondary" />
@@ -52,7 +54,7 @@ import Consumption from "./Consumption.vue";
                 <Gym2 class="gym" />
             </div>
             <div
-                class="sidebar place-content-between flex-1 flex flex-col m-10 w-60"
+                class="sidebar place-content-between flex-1 flex flex-col m-10 w-60 gap-2"
             >
                 <div
                     class="flex flex-col background-children border-children flex-1 gap-2"
@@ -60,7 +62,7 @@ import Consumption from "./Consumption.vue";
                     <Time />
                     <Timer />
                     <Radio />
-                    <CommitHistory class="h-100 overflow-y-scroll" />
+                    <CommitHistory class="flex-1 overflow-y-scroll" />
 
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <MusicPlayer /> -->
