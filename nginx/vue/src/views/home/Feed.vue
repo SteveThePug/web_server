@@ -38,10 +38,10 @@ function deletePost() {
 </script>
 
 <template>
+    <Header>{{ post.title }}</Header>
     <div
         class="flex flex-col p-1 overflow-scroll text-left items-start justify-start"
     >
-        <Header>{{ post.title }}</Header>
         <small
             >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
         >

@@ -3,8 +3,7 @@ import axios from "axios";
 import { ref, onMounted } from "vue";
 import Header from "@/components/text/Header.vue";
 
-const url =
-    "/gitea/api/v1/users/adamf/activities/feeds?limit=1";
+const url = "/gitea/api/v1/users/adamf/activities/feeds?limit=1";
 
 const feed = ref(null);
 const isLoading = ref(true);
@@ -39,7 +38,10 @@ onMounted(() => {
             <p>Could not fetch feed. Please try again later.</p>
         </div>
 
-        <div v-else-if="feed" class="flex-col justify-center flex">
+        <div
+            v-else-if="feed"
+            class="flex-col justify-center flex overflow-y-scroll"
+        >
             <h3>Last git activity</h3>
             <img
                 :src="feed.act_user.avatar_url"
