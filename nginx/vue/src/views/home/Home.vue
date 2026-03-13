@@ -31,7 +31,7 @@ import Consumption from "./Consumption.vue";
                 <div
                     class="flex flex-col background-children border-children gap-2"
                 >
-                    <Chat class="h-306 overflow-y-scroll" />
+                    <Chat class="h-306" />
                 </div>
                 <div>
                     <Miku class="border-tertiary border bg-bg_secondary" />
