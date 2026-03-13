@@ -60,7 +60,7 @@ import Consumption from "./Consumption.vue";
                     <Time />
                     <Timer />
                     <Radio />
-                    <CommitHistory />
+                    <CommitHistory class="h-100 overflow-y-scroll" />
 
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <MusicPlayer /> -->
