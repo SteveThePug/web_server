@@ -27,20 +27,20 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="justify-center text-center">
+    <div class="flex flex-col text-center h-full">
         <Header class="text-left">Commits</Header>
 
-        <div v-if="isLoading">
+        <div v-if="isLoading" class="flex-1 overflow-y-auto">
             <p>Loading latest activity...</p>
         </div>
 
-        <div v-else-if="hasError">
+        <div v-else-if="hasError" class="flex-1 overflow-y-auto">
             <p>Could not fetch feed. Please try again later.</p>
         </div>
 
         <div
             v-else-if="feed"
-            class="flex-col justify-center flex overflow-y-scroll"
+            class="flex-1 flex flex-col justify-center overflow-y-auto"
         >
             <h3>Last git activity</h3>
             <img
@@ -56,7 +56,7 @@ onMounted(() => {
             <small> {{ new Date(feed.created).toLocaleString() }}</small>
         </div>
 
-        <div v-else>
+        <div v-else class="flex-1 overflow-y-auto">
             <p>No activity found.</p>
         </div>
     </div>

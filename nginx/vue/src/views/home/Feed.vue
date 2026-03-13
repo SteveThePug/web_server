@@ -38,30 +38,40 @@ function deletePost() {
 </script>
 
 <template>
-    <Header>{{ post.title }}</Header>
-    <div
-        class="flex flex-col p-1 overflow-scroll text-left items-start justify-start"
-    >
-        <small
-            >Created at: {{ new Date(post.createdAt).toLocaleString() }}</small
+    <div class="flex flex-col flex-1 min-h-0">
+        <Header>{{ post.title }}</Header>
+        <div
+            class="flex flex-col flex-1 min-h-0 p-1 overflow-auto text-left items-start justify-start"
         >
-        <small>By: {{ post.author.username }}</small>
-        <Markdown class="flex-1 border-box text-wrap" :source="post.content" />
-        <div class="flex flex-row w-full">
-            <Button class="flex-1 border-box" v-if="!leftCap" @click="prevPost">
-                Prev
-            </Button>
-            <Button
-                class="flex-1 border-box"
-                v-if="!rightCap"
-                @click="nextPost"
+            <small
+                >Created at:
+                {{ new Date(post.createdAt).toLocaleString() }}</small
             >
-                Next
-            </Button>
+            <small>By: {{ post.author.username }}</small>
+            <Markdown
+                class="flex-1 border-box text-wrap"
+                :source="post.content"
+            />
+            <div class="flex flex-row w-full">
+                <Button
+                    class="flex-1 border-box"
+                    v-if="!leftCap"
+                    @click="prevPost"
+                >
+                    Prev
+                </Button>
+                <Button
+                    class="flex-1 border-box"
+                    v-if="!rightCap"
+                    @click="nextPost"
+                >
+                    Next
+                </Button>
+            </div>
+            <Button class="w-full" v-if="userOwnsPost" @click="deletePost"
+                >Delete</Button
+            >
         </div>
-        <Button class="w-full" v-if="userOwnsPost" @click="deletePost"
-            >Delete</Button
-        >
     </div>
 </template>
 
