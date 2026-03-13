@@ -80,7 +80,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex-1 flex-col flex">
+    <div class="flex-col flex">
         <Header>Chat</Header>
         <div class="flex-col flex flex-1">
             <div
