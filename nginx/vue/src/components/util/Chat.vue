@@ -80,7 +80,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div>
+    <div class="flex-col flex">
         <Header>Chat</Header>
         <div ref="messagesContainer" class="flex flex-col overflow-y-auto p-2">
             <p v-for="message in messages" :key="message.id">
