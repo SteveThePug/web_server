@@ -5,6 +5,7 @@ certbot/www
 backend/token/
 .env
 
+gitea/config/app.ini
 gitea/data/*
 gitea-runner/data/*
 
