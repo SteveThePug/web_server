@@ -1,0 +1,28 @@
+type SpotifyArtist {
+  name: String!
+}
+
+type SpotifyImage {
+  url: String!
+}
+
+type SpotifyAlbum {
+  name: String!
+  images: [SpotifyImage!]!
+}
+
+type SpotifyTrack {
+  name: String!
+  artists: [SpotifyArtist!]!
+  album: SpotifyAlbum!
+}
+
+type SpotifyPlaying {
+  playing: Boolean!
+  track: SpotifyTrack
+}
+
+type SpotifyRecentItem {
+  track: SpotifyTrack!
+  playedAt: Time!
+}

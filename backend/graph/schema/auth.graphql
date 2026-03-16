@@ -1,0 +1,8 @@
+input LoginInput {
+  username: String!
+  password: String!
+}
+
+type AuthPayload {
+  user: User!
+}

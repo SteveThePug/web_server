@@ -2,15 +2,15 @@
 import Button from "@/components/input/Button.vue";
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
-import axios from "axios";
+import { gql } from "@/graphql";
 
 const auth = useAuthStore();
 const users = ref([]);
 
 async function fetchUsers() {
     try {
-        const res = await axios.get("/api/user");
-        users.value = res.data;
+        const data = await gql(`query { users { id username admin } }`);
+        users.value = data.users;
     } catch (err) {
         console.error(err);
     }
@@ -18,8 +18,8 @@ async function fetchUsers() {
 
 async function toggleAdmin(user) {
     try {
-        const res = await auth.setUserAdmin(user.id, !user.admin);
-        user.admin = res.admin;
+        const data = await auth.setUserAdmin(user.id, !user.admin);
+        user.admin = data.admin;
     } catch (err) {
         console.error(err);
     }

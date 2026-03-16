@@ -1,16 +1,26 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import axios from "axios";
+import { computed, ref, watch } from "vue";
+import { gql } from "@/graphql";
+import { useHomeDataStore } from "@/stores/homeData";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
   const loggedIn = computed(() => !!user.value.username);
 
-  checkToken();
+  const homeData = useHomeDataStore();
+  watch(
+    () => homeData.me,
+    (me) => {
+      if (me) {
+        user.value = me;
+      }
+    },
+    { immediate: true },
+  );
 
   async function logOut() {
     try {
-      const res = await axios.post("/api/auth/logout");
+      await gql(`mutation { logout }`);
     } catch (err) {
       console.error(err);
     }
@@ -19,11 +29,11 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function logIn(username, password) {
     try {
-      const res = await axios.post("/api/auth/login", {
-        username,
-        password,
-      });
-      user.value = res.data;
+      const data = await gql(
+        `mutation Login($input: LoginInput!) { login(input: $input) { user { id username admin } } }`,
+        { input: { username, password } },
+      );
+      user.value = data.login.user;
     } catch (err) {
       console.error(err);
     }
@@ -31,38 +41,35 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function createUser(username, password) {
     try {
-      const res = await axios.post("/api/user", {
-        username,
-        password,
-      });
-      user.value = res.data;
+      const data = await gql(
+        `mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id username admin } }`,
+        { input: { username, password } },
+      );
+      return data.createUser;
     } catch (err) {
       console.error(err);
+      throw err;
     }
   }
 
   async function refreshToken() {
     try {
-      const res = await axios.post("/api/auth/refresh");
-      user.value = res.data;
+      const data = await gql(
+        `mutation { refreshToken { user { id username admin } } }`,
+      );
+      user.value = data.refreshToken.user;
     } catch (err) {
       console.log(err);
     }
   }
 
-  async function checkToken() {
-    try {
-      const res = await axios.get("/api/auth/check");
-      user.value = res.data;
-    } catch (err) {
-      user.value = {};
-    }
-  }
-
   async function setUserAdmin(userId, admin) {
     try {
-      const res = await axios.patch(`/api/user/${userId}/admin`, { admin });
-      return res.data;
+      const data = await gql(
+        `mutation SetUserAdmin($id: ID!, $admin: Boolean!) { setUserAdmin(id: $id, admin: $admin) { id username admin } }`,
+        { id: userId, admin },
+      );
+      return data.setUserAdmin;
     } catch (err) {
       console.error(err);
       throw err;
@@ -75,7 +82,6 @@ export const useAuthStore = defineStore("auth", () => {
     loggedIn,
 
     logIn,
-    checkToken,
     refreshToken,
     logOut,
     createUser,

@@ -1,0 +1,29 @@
+scalar Time
+
+type Query {
+  users: [User!]!
+  user(id: ID!): User
+  posts: [Post!]!
+  post(id: ID!): Post
+  activities: [Activity!]!
+  favorites: [Favorite!]!
+  rowingSessions: [Rowing!]!
+  messages: [Message!]!
+  spotifyListening: SpotifyPlaying
+  spotifyRecent: [SpotifyRecentItem!]!
+  me: User
+}
+
+type Mutation {
+  login(input: LoginInput!): AuthPayload!
+  logout: Boolean!
+  refreshToken: AuthPayload!
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Post!
+  createUser(input: CreateUserInput!): User!
+  deleteUser(id: ID!): User!
+  setUserAdmin(id: ID!, admin: Boolean!): User!
+  createFavorite(input: CreateFavoriteInput!): Favorite!
+  createActivity(input: CreateActivityInput!): Activity!
+}

@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import axios from "axios";
+import { computed, ref, watch } from "vue";
+import { gql } from "@/graphql";
+import { useHomeDataStore } from "@/stores/homeData";
 
 const post_template = {
   title: "Can't fetch from the db yo",
@@ -17,31 +18,33 @@ export const usePostsStore = defineStore("posts", () => {
 
   const postsCount = computed(() => posts.value.length);
 
-  async function fetchPosts() {
-    try {
-      const res = await axios.get("/api/posts");
-      if (!Array.isArray(res.data)) {
-        throw new Error("Invalid response from posts API");
+  const homeData = useHomeDataStore();
+  watch(
+    () => homeData.posts,
+    (newPosts) => {
+      if (newPosts.length > 0) {
+        posts.value = newPosts;
       }
-      posts.value = res.data;
-    } catch (err) {
-      console.error("Cannot connect to Post API", err);
-    }
+    },
+    { immediate: true },
+  );
+
+  async function fetchPosts() {
+    await homeData.fetchAll();
   }
 
   async function deletePost(post) {
     try {
-      const res = await axios.delete(
-        `/api/posts/${encodeURIComponent(post.id)}`,
+      await gql(
+        `mutation DeletePost($id: ID!) { deletePost(id: $id) { id } }`,
+        { id: post.id },
       );
-      console.log("Deleted:", res.data);
-      fetchPosts();
+      console.log("Deleted:", post.id);
+      await homeData.fetchAll();
     } catch (err) {
       console.error("Delete failed:", err);
     }
   }
-
-  fetchPosts();
 
   return {
     posts,

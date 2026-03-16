@@ -2,7 +2,7 @@
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/auth";
-import axios from "axios";
+import { gql } from "@/graphql";
 
 const auth = useAuthStore();
 const username = ref("");
@@ -14,15 +14,15 @@ async function handleCreate() {
     message.value = "";
     error.value = "";
     try {
-        const res = await axios.post("/api/user", {
-            username: username.value,
-            password: password.value,
-        });
-        message.value = `User "${res.data.username}" created successfully.`;
+        const data = await gql(
+            `mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id username } }`,
+            { input: { username: username.value, password: password.value } },
+        );
+        message.value = `User "${data.createUser.username}" created successfully.`;
         username.value = "";
         password.value = "";
     } catch (err) {
-        error.value = err.response?.data?.message || "Failed to create user.";
+        error.value = err.message || "Failed to create user.";
     }
 }
 </script>

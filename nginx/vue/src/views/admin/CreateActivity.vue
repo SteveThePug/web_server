@@ -2,7 +2,7 @@
 import Button from "@/components/input/Button.vue";
 
 import { ref } from "vue";
-import axios from "axios";
+import { gql } from "@/graphql";
 
 const type = ref("");
 const name = ref("");
@@ -10,15 +10,14 @@ const link = ref("");
 
 async function post() {
     try {
-        const res = await axios.post("/api/activity", {
-            type: type.value,
-            name: name.value,
-            link: link.value || undefined,
-        });
+        const data = await gql(
+            `mutation CreateActivity($input: CreateActivityInput!) { createActivity(input: $input) { id } }`,
+            { input: { type: type.value, name: name.value, link: link.value || undefined } },
+        );
         type.value = "";
         name.value = "";
         link.value = "";
-        console.log(res.data);
+        console.log(data.createActivity);
     } catch (err) {
         console.error(err);
     }

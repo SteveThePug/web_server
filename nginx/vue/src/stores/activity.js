@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import axios from "axios";
+import { computed, ref, watch } from "vue";
+import { useHomeDataStore } from "@/stores/homeData";
 
 const activity_template = {
   type: "activity",
@@ -13,19 +13,21 @@ export const useActivityStore = defineStore("activity", () => {
 
   const activityCount = computed(() => activity.value.length);
 
-  async function fetchActivity() {
-    try {
-      const res = await axios.get("/api/activity");
-      if (!Array.isArray(res.data)) {
-        throw new Error("Invalid response from posts API");
+  const homeData = useHomeDataStore();
+  watch(
+    () => homeData.activities,
+    (newActivities) => {
+      if (newActivities.length > 0) {
+        activity.value = newActivities;
       }
-      activity.value = res.data;
-    } catch (err) {
-      console.error("Cannot connect to activity API", err);
-    }
+    },
+    { immediate: true },
+  );
+
+  async function fetchActivity() {
+    await homeData.fetchAll();
   }
 
-  fetchActivity();
   return {
     activity,
     activityCount,

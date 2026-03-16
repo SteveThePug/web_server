@@ -1,13 +1,12 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import axios from "axios";
+import { ref, computed, watch } from "vue";
+import { gql } from "@/graphql";
+import { useHomeDataStore } from "@/stores/homeData";
 
 const song_template = {
-  id: 1,
   track: {
-    id: 1,
     name: "^_^",
-    album: { images: [{ url: "/img/Untitled.png" }] },
+    album: { name: "", images: [{ url: "/img/Untitled.png" }] },
     artists: [{ name: ">_<" }],
   },
 };
@@ -17,13 +16,34 @@ export const useSongsStore = defineStore("songs", () => {
 
   const songsCount = computed(() => songs.value.length);
 
+  const homeData = useHomeDataStore();
+  watch(
+    () => homeData.spotifyRecent,
+    (newSongs) => {
+      if (newSongs.length > 0) {
+        songs.value = newSongs;
+      }
+    },
+    { immediate: true },
+  );
+
   async function fetchSongs() {
     try {
-      const res = await axios.get("/api/spotify/recent");
-      if (!Array.isArray(res.data)) {
-        throw new Error("Invalid response from Spotify API");
+      const data = await gql(`
+        query {
+          spotifyRecent {
+            track {
+              name
+              album { name images { url } }
+              artists { name }
+            }
+            playedAt
+          }
+        }
+      `);
+      if (Array.isArray(data.spotifyRecent) && data.spotifyRecent.length > 0) {
+        songs.value = data.spotifyRecent;
       }
-      songs.value = res.data;
     } catch (err) {
       console.error("Cannot connect to Spotify API", err);
     }

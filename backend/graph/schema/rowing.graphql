@@ -1,0 +1,9 @@
+type Rowing {
+  id: ID!
+  createdAt: Time!
+  date: Time!
+  time: Int!
+  distance: Int!
+  timePer500m: Float!
+  calories: Float!
+}

@@ -1,0 +1,59 @@
+schema:
+  - graph/schema/*.graphql
+
+exec:
+  filename: graph/generated.go
+  package: graph
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  filename_template: "{name}.resolvers.go"
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.IntID
+  User:
+    model:
+      - adam-french.co.uk/backend/models.User
+    fields:
+      password:
+        resolver: false
+      deletedAt:
+        resolver: false
+  Post:
+    model:
+      - adam-french.co.uk/backend/models.Post
+    fields:
+      deletedAt:
+        resolver: false
+  Activity:
+    model:
+      - adam-french.co.uk/backend/models.Activity
+    fields:
+      deletedAt:
+        resolver: false
+  Favorite:
+    model:
+      - adam-french.co.uk/backend/models.Favorite
+    fields:
+      deletedAt:
+        resolver: false
+  Rowing:
+    model:
+      - adam-french.co.uk/backend/models.Rowing
+    fields:
+      deletedAt:
+        resolver: false
+  Message:
+    model:
+      - adam-french.co.uk/backend/models.Message
+    fields:
+      deletedAt:
+        resolver: false

@@ -33,7 +33,7 @@ onUnmounted(() => {
     <Transition name="fade">
         <div
             @click="nextSong"
-            :key="song.track.id"
+            :key="song.track.name"
             class="flex flex-col items-center"
         >
             <Header>Listening To</Header>

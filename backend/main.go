@@ -7,8 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
 
+	"adam-french.co.uk/backend/graph"
 	"adam-french.co.uk/backend/handlers"
 	"adam-french.co.uk/backend/services"
 )
@@ -118,6 +121,17 @@ func main() {
 
 	// NOTES
 	r.GET("/notes/*path", store.GetNoteFile)
+
+	// GRAPHQL
+	gqlSrv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{Store: &store},
+	}))
+	r.POST("/graphql", graph.AuthContextMiddleware(auth), func(c *gin.Context) {
+		gqlSrv.ServeHTTP(c.Writer, c.Request)
+	})
+	r.GET("/graphql", func(c *gin.Context) {
+		playground.Handler("GraphQL Playground", "/graphql").ServeHTTP(c.Writer, c.Request)
+	})
 
 	// HELLO WORLD
 	r.GET("/", func(c *gin.Context) {

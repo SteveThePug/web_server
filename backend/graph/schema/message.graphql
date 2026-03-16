@@ -1,0 +1,7 @@
+type Message {
+  id: ID!
+  content: String!
+  authorId: Int!
+  fileUrl: String
+  createdAt: Time!
+}

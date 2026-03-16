@@ -1,0 +1,14 @@
+type Activity {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  type: String!
+  name: String!
+  link: String
+}
+
+input CreateActivityInput {
+  type: String!
+  name: String!
+  link: String
+}

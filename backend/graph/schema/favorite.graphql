@@ -1,0 +1,14 @@
+type Favorite {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  type: String!
+  name: String!
+  link: String
+}
+
+input CreateFavoriteInput {
+  type: String!
+  name: String!
+  link: String
+}

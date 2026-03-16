@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
-import axios from "axios";
+import { computed, ref, watch } from "vue";
+import { useHomeDataStore } from "@/stores/homeData";
 
 const favorite_template = {
   type: "favorite",
@@ -13,19 +13,20 @@ export const useFavoritesStore = defineStore("favorites", () => {
 
   const favoritesCount = computed(() => favorites.value.length);
 
-  async function fetchFavorites() {
-    try {
-      const res = await axios.get("/api/favorites");
-      if (!Array.isArray(res.data)) {
-        throw new Error("Invalid response from favorites API");
+  const homeData = useHomeDataStore();
+  watch(
+    () => homeData.favorites,
+    (newFavorites) => {
+      if (newFavorites.length > 0) {
+        favorites.value = newFavorites;
       }
-      favorites.value = res.data;
-    } catch (err) {
-      console.error("Cannot connect to favorites API", err);
-    }
-  }
+    },
+    { immediate: true },
+  );
 
-  fetchFavorites();
+  async function fetchFavorites() {
+    await homeData.fetchAll();
+  }
 
   return {
     favorites,

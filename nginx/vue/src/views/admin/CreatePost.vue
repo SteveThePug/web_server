@@ -1,20 +1,20 @@
 <script setup>
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
-import axios from "axios";
+import { gql } from "@/graphql";
 
 const title = ref("");
 const content = ref("");
 
 async function post() {
     try {
-        const res = await axios.post("/api/posts", {
-            title: title.value,
-            content: content.value,
-        });
+        const data = await gql(
+            `mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { id } }`,
+            { input: { title: title.value, content: content.value } },
+        );
         title.value = "";
         content.value = "";
-        console.log(res.data);
+        console.log(data.createPost);
     } catch (err) {
         console.error(err);
     }
