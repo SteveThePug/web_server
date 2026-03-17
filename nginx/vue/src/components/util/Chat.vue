@@ -81,8 +81,8 @@ onUnmounted(() => {
 <template>
   <div class="flex-col flex">
     <Header>Chat</Header>
-    <div ref="messagesContainer" class="flex flex-col overflow-y-auto p-2">
-      <p v-for="message in messages" :key="message.id">
+    <div ref="messagesContainer" class="flex flex-col overflow-y-auto overflow-x-hidden p-2 min-w-0">
+      <p v-for="message in messages" :key="message.id" class="break-words min-w-0 w-full">
         <span class="text-tertiary">{{ message.authorId }}:</span>
         <template
           v-for="(part, i) in parseMessageParts(message.text || '')"
@@ -93,7 +93,7 @@ onUnmounted(() => {
             :href="part.value"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-primary underline"
+            class="text-primary underline break-all"
             >{{ part.value }}</a
           >
           <span v-else>{{ part.value }}</span>
@@ -102,17 +102,17 @@ onUnmounted(() => {
           <img
             v-if="isImageUrl(message.fileUrl)"
             :src="message.fileUrl"
-            class="w-full max-h-48 rounded"
+            class="w-full max-w-full max-h-48 rounded block"
             @load="scrollToBottom"
           />
           <video
             v-else-if="isVideoUrl(message.fileUrl)"
             :src="message.fileUrl"
             controls
-            class="w-full max-h-48 rounded"
+            class="w-full max-w-full max-h-48 rounded block"
             @loadedmetadata="scrollToBottom"
           />
-          <a v-else :href="message.fileUrl" target="_blank" class="underline">{{
+          <a v-else :href="message.fileUrl" target="_blank" class="underline break-all">{{
             message.fileUrl.split("/").pop()
           }}</a>
         </template>
