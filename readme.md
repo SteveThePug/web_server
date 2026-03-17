@@ -26,9 +26,9 @@ certbot         ── SSL Certificate Management
 
 ## Tech Stack
 
-**Frontend** - Vue 3, Vite, Tailwind CSS, Pinia, Vue Router, markdown-it, Rust/WASM
+**Frontend** - Vue 3, Vite, Tailwind CSS v4, Pinia, Vue Router, markdown-it (wikilinks + KaTeX), Rust/WASM
 
-**Backend** - Go (Gin), GORM, PostgreSQL, JWT auth, WebSockets
+**Backend** - Go (Gin), gqlgen (GraphQL), GORM, PostgreSQL, JWT auth, WebSockets
 
 **Integrations** - Spotify API, Anthropic Claude API, Icecast2
 
@@ -43,7 +43,7 @@ certbot         ── SSL Certificate Management
 - Blog with admin panel (CRUD)
 - Activity and rowing session tracking
 - Fan shrines (GTO, Evangelion, Demoman, Skip Skip Benben)
-- Self-hosted Git (Gitea) with CI/CD
+- Self-hosted Git (Gitea) with CI/CD and commit feed on homepage
 - Claude AI integration
 
 ## Pages
@@ -59,7 +59,11 @@ certbot         ── SSL Certificate Management
 
 ## API
 
-Public endpoints for posts, users, favorites, activities, rowing, Spotify, notes, and WebSocket messaging. Protected endpoints for creating/updating/deleting content require JWT authentication via `/auth/login`.
+The primary API is **GraphQL** at `POST /api/graphql` (with a playground at `GET /api/graphql`). Queries cover posts, users, favorites, activities, rowing sessions, Spotify (currently playing, recently played), Gitea feed, and messages.
+
+REST endpoints handle auth (`/auth/*`), Spotify OAuth (`/spotify/*`), file uploads (`/messages/upload`), note serving (`/notes/*`), and WebSocket chat (`/api/ws`).
+
+Protected endpoints require JWT authentication via `/auth/login` (tokens set as HTTP-only cookies).
 
 ## Local Testing (Dev Mode)
 
