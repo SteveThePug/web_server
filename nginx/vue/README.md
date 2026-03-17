@@ -1,6 +1,31 @@
-# my-vue-app
+# My Web - Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 SPA for [adam-french.co.uk](https://adam-french.co.uk). Built with Vite, Tailwind CSS v4, Pinia, and Vue Router.
+
+## Setup
+
+```sh
+npm install
+```
+
+## Development
+
+```sh
+npm run dev
+```
+
+The Vite dev server proxies API requests:
+- `/api` -> `http://localhost:8080` (Go backend)
+- `/gitea` -> `http://localhost:3000` (Gitea)
+- `/radio` -> `http://localhost:8000` (Icecast2)
+
+## Production Build
+
+```sh
+npm run build
+```
+
+In production, the built `dist/` is served by Nginx inside a Docker container (see `../Dockerfile`).
 
 ## Recommended IDE Setup
 
@@ -9,30 +34,8 @@ This template should help get you started developing with Vue 3 in Vite.
 ## Recommended Browser Setup
 
 - Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
   - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
 - Firefox:
   - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
   - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
