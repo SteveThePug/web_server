@@ -71,7 +71,10 @@ func main() {
 	notesConfig := services.NotesConfig{Dir: notesDir}
 	notes := services.InitNotes(&notesConfig)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes}
+	giteaHost := os.Getenv("GITEA_HOST")
+	giteaPort := os.Getenv("GITEA_PORT")
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, GiteaHost: giteaHost, GiteaPort: giteaPort}
 
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)

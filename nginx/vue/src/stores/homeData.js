@@ -26,10 +26,10 @@ export const useHomeDataStore = defineStore("homeData", () => {
             activities { id type name link createdAt }
             spotifyRecent { track { name album { name images { url } } artists { name } } playedAt }
             rowingSessions { id date time distance timePer500m calories }
+            giteaFeed { avatarUrl repoUrl repoName opType commitMessage createdAt }
             me { id username admin }
           }
         `),
-        fetchGitFeed(),
         fetchRadioStatus(),
       ]);
       posts.value = data.posts;
@@ -37,20 +37,12 @@ export const useHomeDataStore = defineStore("homeData", () => {
       activities.value = data.activities;
       spotifyRecent.value = data.spotifyRecent;
       rowingSessions.value = data.rowingSessions;
+      gitFeed.value = data.giteaFeed || null;
       me.value = data.me || null;
       loaded.value = true;
     } catch (err) {
       console.error("HomeData fetch failed:", err);
       error.value = err;
-    }
-  }
-
-  async function fetchGitFeed() {
-    try {
-      const res = await axios.get("/gitea/api/v1/users/adamf/activities/feeds?limit=1");
-      gitFeed.value = res.data[0] || null;
-    } catch {
-      gitFeed.value = null;
     }
   }
 

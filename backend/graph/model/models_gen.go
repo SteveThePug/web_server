@@ -34,6 +34,15 @@ type CreateUserInput struct {
 	Password string `json:"password"`
 }
 
+type GiteaFeedItem struct {
+	AvatarURL     string    `json:"avatarUrl"`
+	RepoURL       string    `json:"repoUrl"`
+	RepoName      string    `json:"repoName"`
+	OpType        string    `json:"opType"`
+	CommitMessage string    `json:"commitMessage"`
+	CreatedAt     time.Time `json:"createdAt"`
+}
+
 type LoginInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

@@ -66,6 +66,15 @@ type ComplexityRoot struct {
 		UpdatedAt func(childComplexity int) int
 	}
 
+	GiteaFeedItem struct {
+		AvatarURL     func(childComplexity int) int
+		CommitMessage func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		OpType        func(childComplexity int) int
+		RepoName      func(childComplexity int) int
+		RepoURL       func(childComplexity int) int
+	}
+
 	Message struct {
 		AuthorID  func(childComplexity int) int
 		Content   func(childComplexity int) int
@@ -100,6 +109,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Activities       func(childComplexity int) int
 		Favorites        func(childComplexity int) int
+		GiteaFeed        func(childComplexity int) int
 		Me               func(childComplexity int) int
 		Messages         func(childComplexity int) int
 		Post             func(childComplexity int, id int) int
@@ -197,6 +207,7 @@ type QueryResolver interface {
 	Messages(ctx context.Context) ([]*models.Message, error)
 	SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error)
 	SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error)
+	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
 	Me(ctx context.Context) (*models.User, error)
 }
 type RowingResolver interface {
@@ -303,6 +314,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Favorite.UpdatedAt(childComplexity), true
+
+	case "GiteaFeedItem.avatarUrl":
+		if e.ComplexityRoot.GiteaFeedItem.AvatarURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.AvatarURL(childComplexity), true
+	case "GiteaFeedItem.commitMessage":
+		if e.ComplexityRoot.GiteaFeedItem.CommitMessage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.CommitMessage(childComplexity), true
+	case "GiteaFeedItem.createdAt":
+		if e.ComplexityRoot.GiteaFeedItem.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.CreatedAt(childComplexity), true
+	case "GiteaFeedItem.opType":
+		if e.ComplexityRoot.GiteaFeedItem.OpType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.OpType(childComplexity), true
+	case "GiteaFeedItem.repoName":
+		if e.ComplexityRoot.GiteaFeedItem.RepoName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.RepoName(childComplexity), true
+	case "GiteaFeedItem.repoUrl":
+		if e.ComplexityRoot.GiteaFeedItem.RepoURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GiteaFeedItem.RepoURL(childComplexity), true
 
 	case "Message.authorId":
 		if e.ComplexityRoot.Message.AuthorID == nil {
@@ -496,6 +544,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Favorites(childComplexity), true
+	case "Query.giteaFeed":
+		if e.ComplexityRoot.Query.GiteaFeed == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.GiteaFeed(childComplexity), true
 
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
@@ -796,7 +850,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -811,6 +865,7 @@ var sources = []*ast.Source{
 	{Name: "schema/activity.graphql", Input: sourceData("schema/activity.graphql"), BuiltIn: false},
 	{Name: "schema/auth.graphql", Input: sourceData("schema/auth.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
+	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
 	{Name: "schema/post.graphql", Input: sourceData("schema/post.graphql"), BuiltIn: false},
 	{Name: "schema/rowing.graphql", Input: sourceData("schema/rowing.graphql"), BuiltIn: false},
@@ -1402,6 +1457,180 @@ func (ec *executionContext) fieldContext_Favorite_link(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_avatarUrl,
+		func(ctx context.Context) (any, error) {
+			return obj.AvatarURL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_avatarUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_repoUrl(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_repoUrl,
+		func(ctx context.Context) (any, error) {
+			return obj.RepoURL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_repoUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_repoName(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_repoName,
+		func(ctx context.Context) (any, error) {
+			return obj.RepoName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_repoName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_opType(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_opType,
+		func(ctx context.Context) (any, error) {
+			return obj.OpType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_opType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_commitMessage(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_commitMessage,
+		func(ctx context.Context) (any, error) {
+			return obj.CommitMessage, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_commitMessage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GiteaFeedItem_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.GiteaFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_GiteaFeedItem_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_GiteaFeedItem_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2708,6 +2937,49 @@ func (ec *executionContext) fieldContext_Query_spotifyRecent(_ context.Context, 
 				return ec.fieldContext_SpotifyRecentItem_playedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SpotifyRecentItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_giteaFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_giteaFeed,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().GiteaFeed(ctx)
+		},
+		nil,
+		ec.marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐGiteaFeedItem,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_giteaFeed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "avatarUrl":
+				return ec.fieldContext_GiteaFeedItem_avatarUrl(ctx, field)
+			case "repoUrl":
+				return ec.fieldContext_GiteaFeedItem_repoUrl(ctx, field)
+			case "repoName":
+				return ec.fieldContext_GiteaFeedItem_repoName(ctx, field)
+			case "opType":
+				return ec.fieldContext_GiteaFeedItem_opType(ctx, field)
+			case "commitMessage":
+				return ec.fieldContext_GiteaFeedItem_commitMessage(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_GiteaFeedItem_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GiteaFeedItem", field.Name)
 		},
 	}
 	return fc, nil
@@ -5472,6 +5744,70 @@ func (ec *executionContext) _Favorite(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var giteaFeedItemImplementors = []string{"GiteaFeedItem"}
+
+func (ec *executionContext) _GiteaFeedItem(ctx context.Context, sel ast.SelectionSet, obj *model.GiteaFeedItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, giteaFeedItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GiteaFeedItem")
+		case "avatarUrl":
+			out.Values[i] = ec._GiteaFeedItem_avatarUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "repoUrl":
+			out.Values[i] = ec._GiteaFeedItem_repoUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "repoName":
+			out.Values[i] = ec._GiteaFeedItem_repoName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "opType":
+			out.Values[i] = ec._GiteaFeedItem_opType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "commitMessage":
+			out.Values[i] = ec._GiteaFeedItem_commitMessage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._GiteaFeedItem_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *models.Message) graphql.Marshaler {
@@ -6022,6 +6358,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "giteaFeed":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_giteaFeed(ctx, field)
 				return res
 			}
 
@@ -7503,6 +7858,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐGiteaFeedItem(ctx context.Context, sel ast.SelectionSet, v *model.GiteaFeedItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GiteaFeedItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPost2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPost(ctx context.Context, sel ast.SelectionSet, v *models.Post) graphql.Marshaler {

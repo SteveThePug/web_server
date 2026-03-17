@@ -1,0 +1,8 @@
+type GiteaFeedItem {
+  avatarUrl: String!
+  repoUrl: String!
+  repoName: String!
+  opType: String!
+  commitMessage: String!
+  createdAt: Time!
+}

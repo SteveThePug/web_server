@@ -20,4 +20,16 @@ type Store struct {
 
 	RecentSongs          *[]spotify.RecentlyPlayedItem
 	RecentSongsFetchedAt time.Time
+
+	GiteaHost          string
+	GiteaPort          string
+	GiteaFeed          *services.GiteaFeedResponse
+	GiteaFeedFetchedAt time.Time
+}
+
+func (s *Store) GiteaFeedFresh() bool {
+	if s.GiteaFeed == nil {
+		return false
+	}
+	return time.Since(s.GiteaFeedFetchedAt) < time.Minute
 }

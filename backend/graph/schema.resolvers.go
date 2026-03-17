@@ -13,6 +13,7 @@ import (
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	spotify "github.com/zmb3/spotify/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -429,6 +430,26 @@ func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRece
 	return mapRecentItems(played), nil
 }
 
+// GiteaFeed is the resolver for the giteaFeed field.
+func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error) {
+	if r.Store.GiteaFeedFresh() {
+		return mapGiteaFeed(r.Store.GiteaFeed), nil
+	}
+
+	feed, err := services.FetchLatestFeed(r.Store.GiteaHost, r.Store.GiteaPort)
+	if err != nil {
+		return nil, err
+	}
+	if feed == nil {
+		return nil, nil
+	}
+
+	r.Store.GiteaFeed = feed
+	r.Store.GiteaFeedFetchedAt = time.Now()
+
+	return mapGiteaFeed(feed), nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	userID, ok := UserIDFromCtx(ctx)
@@ -453,4 +474,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
