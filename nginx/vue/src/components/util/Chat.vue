@@ -79,9 +79,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex-col flex">
+  <div class="flex-col flex min-h-0">
     <Header>Chat</Header>
-    <div ref="messagesContainer" class="flex flex-col overflow-y-auto overflow-x-hidden p-2 min-w-0">
+    <div ref="messagesContainer" class="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 min-w-0">
       <p v-for="message in messages" :key="message.id" class="break-words min-w-0 w-full">
         <span class="text-tertiary">{{ message.authorId }}:</span>
         <template

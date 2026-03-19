@@ -8,7 +8,7 @@ const { gitFeed: feed, loaded } = storeToRefs(homeData);
 </script>
 
 <template>
-  <div class="flex flex-col text-center h-full">
+  <div class="flex flex-col text-center min-h-0 h-full">
     <Header class="text-left">Commits</Header>
 
     <div v-if="!loaded" class="flex-1 overflow-y-auto">

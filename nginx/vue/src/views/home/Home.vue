@@ -24,14 +24,12 @@ import Consumption from "./Consumption.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="outerWrap h-fit flex flex-row">
-            <div
-                class="sidebar place-content-between flex-1 flex flex-col m-10 w-60 gap-2"
-            >
+        <div class="outerWrap flex flex-row" style="height: 310mm">
+            <div class="sidebar flex-1 flex flex-col m-10 w-60 gap-2">
                 <div
-                    class="flex flex-col background-children border-children gap-2"
+                    class="flex-1 flex flex-col min-h-0 background-children border-children gap-2"
                 >
-                    <Chat class="h-306" />
+                    <Chat class="flex-1 min-h-0" />
                 </div>
                 <div>
                     <Miku class="border-tertiary border bg-bg_secondary" />
@@ -53,16 +51,14 @@ import Consumption from "./Consumption.vue";
                 <!-- <Gym class="gym" /> -->
                 <Gym2 class="gym" />
             </div>
-            <div
-                class="sidebar place-content-between flex-1 flex flex-col m-10 w-60 gap-2"
-            >
+            <div class="sidebar flex-1 flex flex-col m-10 w-60 gap-2">
                 <div
-                    class="flex flex-col background-children border-children gap-2"
+                    class="flex-1 flex flex-col min-h-0 background-children border-children gap-2"
                 >
                     <Time />
                     <Timer />
                     <Radio />
-                    <CommitHistory class="h-120" />
+                    <CommitHistory class="flex-1" />
 
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <MusicPlayer /> -->
