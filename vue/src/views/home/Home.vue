@@ -32,7 +32,7 @@ import Consumption from "./Consumption.vue";
                     <Chat class="flex-1 min-h-0" />
                 </div>
                 <div class="sidebar-image">
-                    <Miku class="border-tertiary border bg-bg_secondary" />
+                    <Miku class="border-tertiary border bg-bg_secondary h-60" />
                 </div>
             </div>
             <div
