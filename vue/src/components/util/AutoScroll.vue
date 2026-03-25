@@ -1,5 +1,5 @@
 <template>
-    <div ref="container" @mouseover="handleHover" class="overflow-y-auto">
+    <div ref="container" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave" class="overflow-y-auto">
         <slot />
     </div>
 </template>
@@ -14,8 +14,9 @@ const PAUSE = 2000; // ms at top/bottom
 
 let pos = 0;
 let direction = 1; // 1 = down, -1 = up
-let timeoutId;
-let timeoutId2;
+let hovered = false;
+let rafId = null;
+let pauseTimeoutId = null;
 let cachedScrollHeight = 0;
 
 function measureScrollHeight() {
@@ -23,34 +24,63 @@ function measureScrollHeight() {
     if (el) cachedScrollHeight = el.scrollHeight;
 }
 
-function handleHover() {
-    cancelAnimationFrame(timeoutId);
-    clearTimeout(timeoutId2);
-    timeoutId2 = setTimeout(
-        () => (timeoutId = requestAnimationFrame(tick)),
-        PAUSE,
-    );
+function stopLoop() {
+    if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+    if (pauseTimeoutId !== null) {
+        clearTimeout(pauseTimeoutId);
+        pauseTimeoutId = null;
+    }
+}
+
+function startLoop() {
+    stopLoop();
+    rafId = requestAnimationFrame(tick);
+}
+
+function onMouseEnter() {
+    hovered = true;
+    stopLoop();
+}
+
+function onMouseLeave() {
+    hovered = false;
+    const el = container.value;
+    if (el && cachedScrollHeight > 0) {
+        pos = el.scrollTop / cachedScrollHeight;
+    }
+    startLoop();
+}
+
+function schedulePause(callback) {
+    stopLoop();
+    pauseTimeoutId = setTimeout(callback, PAUSE);
 }
 
 function tick() {
+    rafId = null;
     const el = container.value;
+    if (hovered) return;
+
     if (!el || cachedScrollHeight === 0) {
-        timeoutId = requestAnimationFrame(tick);
+        rafId = requestAnimationFrame(tick);
         return;
     }
 
-    const reachedBottom = pos <= 0;
-    const reachedTop = pos >= 1;
+    const reachedBottom = pos >= 1;
+    const reachedTop = pos <= 0;
 
     if (reachedBottom) {
-        pos = 0.001;
-        direction = 1;
-        handleHover();
-        return;
-    } else if (reachedTop) {
         pos = 0.999;
         direction = -1;
-        handleHover();
+        schedulePause(startLoop);
+        return;
+    } else if (reachedTop && direction === -1) {
+        pos = 0.001;
+        direction = 1;
+        schedulePause(startLoop);
         return;
     }
 
@@ -58,21 +88,21 @@ function tick() {
 
     el.scrollTop = pos * cachedScrollHeight;
 
-    timeoutId = requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
 }
 
 let resizeObserver;
 
 onMounted(() => {
     measureScrollHeight();
-    timeoutId = requestAnimationFrame(tick);
+    schedulePause(startLoop);
 
     resizeObserver = new ResizeObserver(measureScrollHeight);
     resizeObserver.observe(container.value);
 });
 
 onBeforeUnmount(() => {
-    cancelAnimationFrame(timeoutId);
+    stopLoop();
     resizeObserver?.disconnect();
 });
 </script>
