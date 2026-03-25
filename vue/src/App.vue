@@ -6,7 +6,11 @@ import Footer from "@/components/Footer.vue";
 
 <template>
     <Navbar class="no-print sticky" />
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+        <Transition name="slide" mode="out-in">
+            <component :is="Component" :key="$route.path" />
+        </Transition>
+    </RouterView>
 
     <!-- <Footer style="height: 10vh" /> -->
 </template>
