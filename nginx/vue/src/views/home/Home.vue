@@ -31,7 +31,7 @@ import Consumption from "./Consumption.vue";
                 >
                     <Chat class="flex-1 min-h-0" />
                 </div>
-                <div>
+                <div class="sidebar-image">
                     <Miku class="border-tertiary border bg-bg_secondary" />
                 </div>
             </div>
@@ -63,7 +63,7 @@ import Consumption from "./Consumption.vue";
                     <!-- <Elle class="flex-1" /> -->
                     <!-- <MusicPlayer /> -->
                 </div>
-                <div>
+                <div class="sidebar-image">
                     <img
                         src="/img/memes/fire-woman.gif"
                         class="border-tertiary border"
@@ -122,14 +122,24 @@ import Consumption from "./Consumption.vue";
     }
 
     .sidebar {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 8px;
+        justify-items: stretch;
     }
 
     .sidebar > * {
-        max-width: 400px;
-        width: 100%;
+        max-width: none;
+        width: auto;
+    }
+
+    .sidebar-image {
+        max-height: 200px;
+    }
+
+    .sidebar-image :deep(img) {
+        max-height: 200px;
+        object-fit: contain;
     }
 }
 

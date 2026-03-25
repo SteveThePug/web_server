@@ -29,3 +29,10 @@ setInterval(updateDateTime, 60000);
         <h1>{{ time }}</h1>
     </div>
 </template>
+
+<style scoped>
+div {
+    text-align: center;
+    padding: 4px;
+}
+</style>

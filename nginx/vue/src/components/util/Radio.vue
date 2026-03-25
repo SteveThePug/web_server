@@ -46,3 +46,11 @@ onMounted(() => {
     setInterval(checkStream, 120000);
 });
 </script>
+
+<style scoped>
+img {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+}
+</style>
