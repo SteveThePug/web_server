@@ -1,13 +1,18 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "@/views/home/Home.vue";
+import Landing from "@/views/Landing.vue";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         {
             path: "/",
+            name: "landing",
+            component: Landing,
+        },
+        {
+            path: "/stp",
             name: "home",
-            component: Home,
+            component: () => import("@/views/home/Home.vue"),
         },
         {
             path: "/cv",
