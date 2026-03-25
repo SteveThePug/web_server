@@ -27,8 +27,8 @@ const touchscreen = ref(null);
 let animId = null;
 let posX = 0;
 let posY = 0;
-let dx = 0.5;
-let dy = 0.3;
+let dx = 0.2;
+let dy = 0.12;
 
 function bounce() {
     const el = touchscreen.value?.$el;
