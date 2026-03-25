@@ -49,32 +49,26 @@ onUnmounted(() => {
 
 <style scoped>
 .slideshow-wrapper {
-    position: relative;
+    display: grid;
     width: 100%;
-    height: 100%;
+    overflow: hidden;
 }
 
 .image-viewer {
+    grid-area: 1 / 1;
     width: 100%;
-    height: 100%;
     overflow: hidden;
 }
 
 img {
     width: 100%;
-    height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.5s ease;
-}
-.fade-leave-active {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
 }
 .fade-enter-from,
 .fade-leave-to {
