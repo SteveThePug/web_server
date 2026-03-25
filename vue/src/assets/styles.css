@@ -3,7 +3,9 @@
 /* Route transitions */
 .slide-enter-active,
 .slide-leave-active {
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition:
+        transform 0.3s ease,
+        opacity 0.3s ease;
 }
 .slide-enter-from {
     transform: translateX(30px);
@@ -16,7 +18,6 @@
 
 /* PRINTING */
 @media print {
-
     .no-print,
     .no-print * {
         display: none !important;
@@ -100,10 +101,6 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: var(--bg_secondary);
-}
-
-main {
-    @apply overflow-y-scroll w-full h-full p-10;
 }
 
 input {
@@ -306,9 +303,11 @@ td {
     --blur: 0%;
 
     background-color: var(--bg_secondary);
-    background-image: radial-gradient(circle at center,
-            var(--bg_primary) var(--dot_size),
-            transparent var(--blur));
+    background-image: radial-gradient(
+        circle at center,
+        var(--bg_primary) var(--dot_size),
+        transparent var(--blur)
+    );
     background-size: var(--bg_size) var(--bg_size);
     background-position: 0 0;
 }
