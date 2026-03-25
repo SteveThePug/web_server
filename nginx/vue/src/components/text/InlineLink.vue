@@ -6,7 +6,6 @@ const props = defineProps({
     to: { type: String, default: "" },
     target: { type: String, default: undefined },
     rel: { type: String, default: undefined },
-    bare: { type: Boolean, default: false },
 });
 
 const computedRel = computed(() => {
@@ -17,22 +16,24 @@ const computedRel = computed(() => {
 </script>
 
 <template>
-    <RouterLink v-if="to" :to="to" :class="{ link: !bare }">
+    <RouterLink v-if="to" :to="to" class="inline-link">
         <slot />
     </RouterLink>
-    <a v-else :href="href" :target="target" :rel="computedRel" :class="{ link: !bare }">
+    <a v-else :href="href" :target="target" :rel="computedRel" class="inline-link">
         <slot />
     </a>
 </template>
 
 <style scoped>
-.link {
+.inline-link {
     color: var(--primary);
+    font-weight: bold;
+    font-style: italic;
     text-decoration: none;
     transition: color 0.15s ease;
 }
 
-.link:hover {
+.inline-link:hover {
     color: var(--tertiary);
 }
 </style>
