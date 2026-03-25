@@ -121,6 +121,10 @@ import Consumption from "./Consumption.vue";
         height: auto;
     }
 
+    .stamps {
+        max-height: 130px;
+    }
+
     .sidebar {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
