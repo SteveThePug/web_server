@@ -4,6 +4,7 @@ import Button from "@/components/input/Button.vue";
 import { useMessagesStore } from "@/stores/messages";
 import { useAuthStore } from "@/stores/auth";
 import Header from "@/components/text/Header.vue";
+import Link from "@/components/text/Link.vue";
 
 const messagesStore = useMessagesStore();
 const authStore = useAuthStore();
@@ -79,7 +80,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex-col flex min-h-0">
+  <div class="chat-root flex-col flex min-h-0">
     <Header>Chat</Header>
     <div ref="messagesContainer" class="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 min-w-0">
       <p v-for="message in messages" :key="message.id" class="break-words min-w-0 w-full">
@@ -88,13 +89,13 @@ onUnmounted(() => {
           v-for="(part, i) in parseMessageParts(message.text || '')"
           :key="i"
         >
-          <a
+          <Link
             v-if="part.type === 'link'"
+            bare
             :href="part.value"
             target="_blank"
-            rel="noopener noreferrer"
             class="text-primary underline break-all"
-            >{{ part.value }}</a
+            >{{ part.value }}</Link
           >
           <span v-else>{{ part.value }}</span>
         </template>
@@ -112,9 +113,9 @@ onUnmounted(() => {
             class="w-full max-w-full max-h-48 rounded block"
             @loadedmetadata="scrollToBottom"
           />
-          <a v-else :href="message.fileUrl" target="_blank" class="underline break-all">{{
+          <Link v-else bare :href="message.fileUrl" target="_blank" class="underline break-all">{{
             message.fileUrl.split("/").pop()
-          }}</a>
+          }}</Link>
         </template>
       </p>
     </div>
@@ -139,3 +140,11 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@media (max-width: 850px) {
+    .chat-root {
+        max-height: 400px;
+    }
+}
+</style>

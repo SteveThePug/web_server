@@ -1,5 +1,6 @@
 <script setup>
 import VideoTable from "@/components/util/VideoTable.vue";
+import Link from "@/components/text/Link.vue";
 
 const videoSources = [
     { name: "demoman", link: "/img/demoman/1760582395316219.webm" },
@@ -16,8 +17,8 @@ const videoSources = [
             class="a4page-portrait bdr-1 flex flex-row relative overflow-scroll items-center"
         >
             <p>
-                <a href="https://wiki.teamfortress.com/wiki/Demoman"
-                    >The goat</a
+                <Link href="https://wiki.teamfortress.com/wiki/Demoman"
+                    >The goat</Link
                 >
             </p>
             <div>

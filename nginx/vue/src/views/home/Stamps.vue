@@ -2,6 +2,7 @@
 import { ref } from "vue";
 
 import Touchscreen from "@/components/util/Touchscreen.vue";
+import Link from "@/components/text/Link.vue";
 import { shuffleArray } from "@/js/utils.js";
 
 let srcs = [
@@ -23,15 +24,15 @@ shuffleArray(srcs);
 <template>
     <Touchscreen>
         <div class="flex flex-wrap tst">
-            <a href="https://www.adam-french.co.uk">
+            <Link bare href="https://www.adam-french.co.uk">
                 <img src="https://www.adam-french.co.uk/img/stamps/mine.gif" />
-            </a>
-            <a href="https://jacobbarron.xyz">
+            </Link>
+            <Link bare href="https://jacobbarron.xyz">
                 <img
                     src="https://jacobbarron.xyz/Banneh.gif"
                     alt="jacobbarron.xyz"
                 />
-            </a>
+            </Link>
             <img v-for="src in srcs" :src="src" />
         </div>
     </Touchscreen>

@@ -16,7 +16,7 @@ const parentPath = computed(() => {
 });
 
 const inHome = computed(() => {
-    return route.path == "/";
+    return route.path == "/" || route.path == "/stp";
 });
 
 const faces = [
@@ -47,10 +47,10 @@ const faces_string = faces.join("      ");
 <template>
     <nav class="flex flex-row w-full h-fit border border-primary bg-bg_primary">
         <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
-            <a>HOME</a>
+            <span>HOME</span>
         </RouterLink>
         <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
-            <a>UP</a>
+            <span>UP</span>
         </RouterLink>
         <Headline class="border flex-1 max-w-full">
             <code class="whitespace-pre">{{ faces_string }}</code>

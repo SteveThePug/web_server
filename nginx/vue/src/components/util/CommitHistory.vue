@@ -2,6 +2,7 @@
 import { useHomeDataStore } from "@/stores/homeData";
 import { storeToRefs } from "pinia";
 import Header from "@/components/text/Header.vue";
+import Link from "@/components/text/Link.vue";
 
 const homeData = useHomeDataStore();
 const { gitFeed: feed, loaded } = storeToRefs(homeData);
@@ -18,9 +19,9 @@ const { gitFeed: feed, loaded } = storeToRefs(homeData);
     <div v-else-if="feed" class="flex-1 flex flex-col overflow-y-auto">
       <h3>Last git activity</h3>
       <img :src="feed.avatarUrl" alt="User avatar" class="avatar" />
-      <a :href="feed.repoUrl">
+      <Link :href="feed.repoUrl">
         <h3>repo: {{ feed.repoName }}</h3>
-      </a>
+      </Link>
       <p>Action: {{ feed.opType }}</p>
       <p>Message: {{ feed.commitMessage }}</p>
       <small> {{ new Date(feed.createdAt).toLocaleString() }}</small>
