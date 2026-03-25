@@ -4,9 +4,7 @@ import Project from "./Project.vue";
 
 <template>
     <main>
-        <div class="no-print w-full h-20">
-
-        </div>
+        <div class="no-print w-full h-20"></div>
         <div class="a4page">
             <div class="flex flex-row justify-between">
                 <h1 class="name">Adam French</h1>
@@ -14,29 +12,43 @@ import Project from "./Project.vue";
                     <p>+447563266931</p>
                     <p>adam.a.french@outlook.com</p>
                     <h4>
-                    <a href="https://www.adam-french.co.uk">
-                        www.adam-french.co.uk
-                    </a>
+                        <a href="https://www.adam-french.co.uk">
+                            www.adam-french.co.uk
+                        </a>
                     </h4>
                 </div>
             </div>
 
             <h2>Profile</h2>
             <p>
-                First Class Honours graduate in Computer Science with Mathematics
-                from the University of Leeds (81.1%), with a year abroad at the
-                University of Waterloo. Proficient in full-stack development,
-                systems programming, and CI/CD automation. Eager to contribute to
-                a collaborative engineering team, apply strong academic
-                foundations to real-world problems, and grow through hands-on
-                experience.
+                First Class Honours graduate in Computer Science with
+                Mathematics from the University of Leeds (81.1%), with a year
+                abroad at the University of Waterloo. Proficient in full-stack
+                development, systems programming, and CI/CD automation. Eager to
+                contribute to a collaborative engineering team, apply strong
+                academic foundations to real-world problems, and grow through
+                hands-on experience.
             </p>
 
             <h2>Skills</h2>
             <div class="skills-grid">
-                <div><strong>Languages</strong><br /><small>Go, Rust, Python, JavaScript / TypeScript, SQL</small></div>
-                <div><strong>Frontend</strong><br /><small>Vue, React / Redux, Svelte, Tailwind CSS, WebAssembly</small></div>
-                <div><strong>Backend / Infra</strong><br /><small>Nginx, Docker, PostgreSQL, SQLite, JWT Auth, Git Actions</small></div>
+                <div>
+                    <strong>Languages</strong><br /><small
+                        >Go, Rust, Python, JavaScript / TypeScript, SQL</small
+                    >
+                </div>
+                <div>
+                    <strong>Frontend</strong><br /><small
+                        >Vue, React / Redux, Svelte, Tailwind CSS,
+                        WebAssembly</small
+                    >
+                </div>
+                <div>
+                    <strong>Backend / Infra</strong><br /><small
+                        >Nginx, Docker, PostgreSQL, SQLite, JWT Auth, Git
+                        Actions</small
+                    >
+                </div>
             </div>
 
             <h2>Projects</h2>
@@ -44,11 +56,11 @@ import Project from "./Project.vue";
             <Project class="border-b border-dotted">
                 <template v-slot:left>
                     <h4>
-                    <a
-                        href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
-                    >
-                        web_server.git
-                    </a>
+                        <a
+                            href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
+                        >
+                            web_server.git
+                        </a>
                     </h4>
                 </template>
                 <template v-slot:top>
@@ -67,11 +79,11 @@ import Project from "./Project.vue";
             <Project class="border-b border-dotted">
                 <template v-slot:left>
                     <h4>
-                    <a
-                        href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
-                    >
-                        tour.git
-                    </a>
+                        <a
+                            href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
+                        >
+                            tour.git
+                        </a>
                     </h4>
                 </template>
                 <template v-slot:top>
@@ -86,11 +98,11 @@ import Project from "./Project.vue";
             <Project class="border-b border-dotted">
                 <template v-slot:left>
                     <h4>
-                    <a
-                        href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
-                    >
-                        rust-raytracer.git
-                    </a>
+                        <a
+                            href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
+                        >
+                            rust-raytracer.git
+                        </a>
                     </h4>
                 </template>
                 <template v-slot:top>
@@ -98,20 +110,20 @@ import Project from "./Project.vue";
                     <small>2023</small>
                 </template>
                 <p>
-                    Parallelised recursive ray tracer for realistic 3D rendering.
-                    Emphasised algorithmic efficiency and low-level memory
-                    management in Rust.
+                    Parallelised recursive ray tracer for realistic 3D
+                    rendering. Emphasised algorithmic efficiency and low-level
+                    memory management in Rust.
                 </p>
             </Project>
             <Project>
                 <template #left>
                     <h4>
-                    <a
-                        class="text-center w-full"
-                        href="https://community.wolfram.com/groups/-/m/t/3210947"
-                    >
-                        Wolfram Summer School
-                    </a>
+                        <a
+                            class="text-center w-full"
+                            href="https://community.wolfram.com/groups/-/m/t/3210947"
+                        >
+                            Wolfram Summer School
+                        </a>
                     </h4>
                 </template>
                 <template #top>
@@ -129,7 +141,9 @@ import Project from "./Project.vue";
             <div class="w-full h-fit flex-row flex gap-5">
                 <div class="flex-1 border-r border-dotted pr-3">
                     <h3>
-                        <a  href="https://www.adam-french.co.uk/pdf/transcript.pdf">
+                        <a
+                            href="https://www.adam-french.co.uk/pdf/transcript.pdf"
+                        >
                             University of Leeds
                         </a>
                     </h3>
@@ -139,14 +153,18 @@ import Project from "./Project.vue";
                         <small>81.1% — First Class Honours</small>
                         <small>2021–2025</small>
                     </div>
-                    <small>BSc Computer Science with Mathematics (International)</small>
+                    <small
+                        >BSc Computer Science with Mathematics
+                        (International)</small
+                    >
                     <ul>
                         <li>Algorithms & Data Structures I & II</li>
                         <li>Compiler Design and Construction</li>
                         <li>Formal Languages & Finite Automata</li>
                         <li>Graph Algorithms & Complexity Theory</li>
-                        <li>Machine Learning · Databases · Computer Processors</li>
-                        <li>Probability and Statistics I</li>
+                        <li>
+                            Machine Learning · Databases · Computer Processors
+                        </li>
                     </ul>
                 </div>
                 <div class="flex-1 pl-3">
@@ -160,15 +178,15 @@ import Project from "./Project.vue";
                     <ul>
                         <li>Applied Cryptography</li>
                         <li>Introduction to Computer Graphics</li>
-                        <li>Introduction to Rings and Fields with Applications</li>
+                        <li>
+                            Introduction to Rings and Fields with Applications
+                        </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="no-print w-full h-20">
-
-        </div>
+        <div class="no-print w-full h-20"></div>
 
         <div class="a4page">
             <div class="flex-1 pl-3">
@@ -185,8 +203,8 @@ import Project from "./Project.vue";
                         Worked at <em>Belgrave Music Hall</em>,
                         <em>The Crown and Anchor</em>, and
                         <em>BFI Riverfront Kitchen</em>. Developed
-                        communication, composure under pressure, and
-                        reliability in customer-facing roles.
+                        communication, composure under pressure, and reliability
+                        in customer-facing roles.
                     </p>
                 </Project>
                 <h2>Interests</h2>
@@ -200,9 +218,7 @@ import Project from "./Project.vue";
             </div>
         </div>
 
-        <div class="no-print w-full h-20">
-
-        </div>
+        <div class="no-print w-full h-20"></div>
     </main>
 </template>
 
