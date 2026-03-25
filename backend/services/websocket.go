@@ -26,7 +26,9 @@ var Upgrader = websocket.Upgrader{
 		}
 		origin = strings.TrimPrefix(origin, "https://")
 		origin = strings.TrimPrefix(origin, "http://")
-		return origin == allowedDomain || origin == "www."+allowedDomain
+		// Strip port for localhost comparisons (e.g. "localhost:80")
+		host := strings.Split(origin, ":")[0]
+		return origin == allowedDomain || origin == "www."+allowedDomain || host == "localhost"
 	},
 }
 
