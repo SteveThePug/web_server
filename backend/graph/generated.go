@@ -2917,9 +2917,9 @@ func (ec *executionContext) _Query_spotifyRecent(ctx context.Context, field grap
 			return ec.Resolvers.Query().SpotifyRecent(ctx)
 		},
 		nil,
-		ec.marshalNSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ,
+		ec.marshalOSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -6348,16 +6348,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "spotifyRecent":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_spotifyRecent(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -7586,22 +7583,6 @@ func (ec *executionContext) marshalNSpotifyImage2ᚖadamᚑfrenchᚗcoᚗukᚋba
 	return ec._SpotifyImage(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SpotifyRecentItem) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNSpotifyRecentItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItem(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNSpotifyRecentItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItem(ctx context.Context, sel ast.SelectionSet, v *model.SpotifyRecentItem) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -7879,6 +7860,25 @@ func (ec *executionContext) marshalOSpotifyPlaying2ᚖadamᚑfrenchᚗcoᚗukᚋ
 		return graphql.Null
 	}
 	return ec._SpotifyPlaying(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SpotifyRecentItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSpotifyRecentItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItem(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOSpotifyTrack2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyTrack(ctx context.Context, sel ast.SelectionSet, v *model.SpotifyTrack) graphql.Marshaler {

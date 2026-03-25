@@ -10,7 +10,7 @@ type Query {
   rowingSessions: [Rowing!]!
   messages: [Message!]!
   spotifyListening: SpotifyPlaying
-  spotifyRecent: [SpotifyRecentItem!]!
+  spotifyRecent: [SpotifyRecentItem!]
   giteaFeed: GiteaFeedItem
   me: User
 }

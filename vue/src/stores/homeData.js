@@ -35,7 +35,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
       posts.value = data.posts;
       favorites.value = data.favorites;
       activities.value = data.activities;
-      spotifyRecent.value = data.spotifyRecent;
+      spotifyRecent.value = data.spotifyRecent || [];
       rowingSessions.value = data.rowingSessions;
       gitFeed.value = data.giteaFeed || null;
       me.value = data.me || null;

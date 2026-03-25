@@ -392,7 +392,7 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error)
 // SpotifyListening is the resolver for the spotifyListening field.
 func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error) {
 	if r.Store.SpotifyClient == nil {
-		return nil, fmt.Errorf("Spotify not authenticated")
+		return nil, nil
 	}
 
 	playing, err := r.Store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
@@ -411,7 +411,7 @@ func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPla
 // SpotifyRecent is the resolver for the spotifyRecent field.
 func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error) {
 	if r.Store.SpotifyClient == nil {
-		return nil, fmt.Errorf("Spotify not authenticated")
+		return []*model.SpotifyRecentItem{}, nil
 	}
 
 	if r.Store.RecentSongsFresh() {
