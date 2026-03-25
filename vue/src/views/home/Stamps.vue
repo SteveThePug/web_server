@@ -17,11 +17,16 @@ let srcs = [
     "/img/stamps/tetris.gif",
     "/img/stamps/tf2.gif",
     "/img/stamps/demo.gif",
+    "/img/stamps/demo.gif",
+    "/img/stamps/demo.gif",
+    "/img/stamps/demo.gif",
 ];
 shuffleArray(srcs);
 
 const touchscreen = ref(null);
 let animId = null;
+let posX = 0;
+let posY = 0;
 let dx = 0.5;
 let dy = 0.3;
 
@@ -33,12 +38,26 @@ function bounce() {
     const maxY = el.scrollHeight - el.clientHeight;
 
     if (maxX > 0) {
-        el.scrollLeft += dx;
-        if (el.scrollLeft <= 0 || el.scrollLeft >= maxX) dx = -dx;
+        posX += dx;
+        if (posX <= 0) {
+            posX = 0;
+            dx = -dx;
+        } else if (posX >= maxX) {
+            posX = maxX;
+            dx = -dx;
+        }
+        el.scrollLeft = posX;
     }
     if (maxY > 0) {
-        el.scrollTop += dy;
-        if (el.scrollTop <= 0 || el.scrollTop >= maxY) dy = -dy;
+        posY += dy;
+        if (posY <= 0) {
+            posY = 0;
+            dy = -dy;
+        } else if (posY >= maxY) {
+            posY = maxY;
+            dy = -dy;
+        }
+        el.scrollTop = posY;
     }
 
     animId = requestAnimationFrame(bounce);
