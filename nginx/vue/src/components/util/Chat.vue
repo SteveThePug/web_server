@@ -152,12 +152,14 @@ onUnmounted(() => {
             <img
               v-if="isImageUrl(message.fileUrl)"
               :src="message.fileUrl"
+              loading="lazy"
               class="w-full max-w-full max-h-48 rounded block"
             />
             <video
               v-else-if="isVideoUrl(message.fileUrl)"
               :src="message.fileUrl"
               controls
+              preload="none"
               class="w-full max-w-full max-h-48 rounded block"
             />
             <Link v-else bare :href="message.fileUrl" target="_blank" class="underline break-all">{{
