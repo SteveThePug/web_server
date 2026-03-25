@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 
 import Touchscreen from "@/components/util/Touchscreen.vue";
 import Link from "@/components/text/Link.vue";
@@ -19,10 +19,42 @@ let srcs = [
     "/img/stamps/demo.gif",
 ];
 shuffleArray(srcs);
+
+const touchscreen = ref(null);
+let animId = null;
+let dx = 0.5;
+let dy = 0.3;
+
+function bounce() {
+    const el = touchscreen.value?.$el;
+    if (!el) return;
+
+    const maxX = el.scrollWidth - el.clientWidth;
+    const maxY = el.scrollHeight - el.clientHeight;
+
+    if (maxX > 0) {
+        el.scrollLeft += dx;
+        if (el.scrollLeft <= 0 || el.scrollLeft >= maxX) dx = -dx;
+    }
+    if (maxY > 0) {
+        el.scrollTop += dy;
+        if (el.scrollTop <= 0 || el.scrollTop >= maxY) dy = -dy;
+    }
+
+    animId = requestAnimationFrame(bounce);
+}
+
+onMounted(() => {
+    animId = requestAnimationFrame(bounce);
+});
+
+onUnmounted(() => {
+    if (animId) cancelAnimationFrame(animId);
+});
 </script>
 
 <template>
-    <Touchscreen>
+    <Touchscreen ref="touchscreen">
         <div class="flex flex-wrap tst">
             <Link bare href="https://www.adam-french.co.uk">
                 <img src="https://www.adam-french.co.uk/img/stamps/mine.gif" />
