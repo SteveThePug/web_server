@@ -22,7 +22,7 @@ const show = ref(false);
 </script>
 
 <template>
-    <div v-if="title" class="h-fit w-fit">
+    <div v-if="title" class="h-fit w-full">
         <ToggleHeader v-model="show" class="justify-between flex">
             {{ title }}
         </ToggleHeader>
@@ -35,7 +35,7 @@ const show = ref(false);
             >
                 <p class="bdr-2 bg-bg_tertiary">{{ item.name }}</p>
             </Link>
-            <table v-else>
+            <table class="w-full" v-else>
                 <tbody>
                     <tr v-for="item in items" :key="item.id">
                         <th>{{ item.type }}</th>
@@ -58,7 +58,7 @@ const show = ref(false);
                 <p class="bdr-2 bg-bg_tertiary">{{ item.name }}</p>
             </Link>
         </template>
-        <table v-else>
+        <table class="w-full" v-else>
             <tbody>
                 <tr v-for="item in items" :key="item.id">
                     <th>{{ item.type }}</th>

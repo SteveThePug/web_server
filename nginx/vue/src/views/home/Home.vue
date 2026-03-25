@@ -135,11 +135,14 @@ import Consumption from "./Consumption.vue";
 
     .sidebar-image {
         max-height: 200px;
+        overflow: hidden;
     }
 
     .sidebar-image :deep(img) {
         max-height: 200px;
         object-fit: contain;
+        display: block;
+        margin-inline: auto;
     }
 }
 
