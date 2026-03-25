@@ -24,7 +24,7 @@ const social_links = [
             <RouterTable :linkArr="site_links" />
         </div>
         <div class="flex flex-col gap-1">
-            <LinkTable :linkArr="social_links" />
+            <LinkTable :items="social_links" />
         </div>
     </div>
 </template>

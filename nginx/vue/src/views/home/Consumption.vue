@@ -1,6 +1,6 @@
 <script setup>
 import AutoScroll from "@/components/util/AutoScroll.vue";
-import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
 import Header from "@/components/text/Header.vue";
 
 import { useActivityStore } from "@/stores/activity";
@@ -12,7 +12,7 @@ const activityStore = useActivityStore();
     <div class="flex flex-col items-center">
         <Header>Consumption</Header>
         <AutoScroll class="flex-1 w-full">
-            <OptionalLinkTable class="w-full" :data="activityStore.activity" />
+            <LinkTable variant="table" class="w-full" :items="activityStore.activity" />
         </AutoScroll>
     </div>
 </template>

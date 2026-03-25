@@ -1,6 +1,6 @@
 <script setup>
 import Header from "@/components/text/Header.vue";
-import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
 import AutoScroll from "@/components/util/AutoScroll.vue";
 
 import { useFavoritesStore } from "@/stores/favorites";
@@ -12,9 +12,10 @@ const favoritesStore = useFavoritesStore();
     <div class="flex flex-col items-center">
         <Header>favs</Header>
         <AutoScroll class="w-full flex-1">
-            <OptionalLinkTable
+            <LinkTable
+                variant="table"
                 class="w-full"
-                :data="favoritesStore.favorites"
+                :items="favoritesStore.favorites"
             />
         </AutoScroll>
     </div>

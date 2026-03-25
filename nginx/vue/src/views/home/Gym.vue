@@ -1,6 +1,6 @@
 <script setup>
 import Header from "@/components/text/Header.vue";
-import OptionalLinkTable from "@/components/util/OptionalLinkTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
 const gym = [
     { name: "Row", type: "30 min" },
     { name: "Run", type: "5k" },
@@ -14,7 +14,7 @@ const gym = [
         <p>I'm not a gym geek</p>
         <p>4/7 days I do:</p>
         <div class="overflow-scroll w-full border-box">
-            <OptionalLinkTable class="w-full" :data="gym" />
+            <LinkTable variant="table" class="w-full" :items="gym" />
         </div>
     </div>
 </template>

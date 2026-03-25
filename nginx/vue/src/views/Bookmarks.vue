@@ -1,7 +1,5 @@
 <script setup>
-import { ref } from "vue";
-
-import ToggleLinkTable from "@/components/util/ToggleLinkTable.vue";
+import LinkTable from "@/components/util/LinkTable.vue";
 
 const links = [
     [
@@ -245,11 +243,11 @@ const links = [
             class="a4page-portrait bdr-1 flex flex-row flex-wrap overflow-x-auto gap-1"
         >
             <div class="w-full h-fit">
-                <ToggleLinkTable
+                <LinkTable
                     class="flex flex-col flex-wrap"
                     v-for="link in links"
                     :title="link[0]"
-                    :linkArr="link[1]"
+                    :items="link[1]"
                 />
             </div>
         </div>
