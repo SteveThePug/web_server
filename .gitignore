@@ -9,8 +9,8 @@ gitea/config/app.ini
 gitea/data/*
 gitea-runner/data/*
 
-# Will add in future (webpack)
-nginx/vue/crates/
+# Rust build artifacts
+**/target/
 
 # Logs
 logs

@@ -1,4 +1,11 @@
 services:
+    vue:
+        command: ["npm", "run", "dev"]
+        volumes:
+            - ./vue:/app
+            - /app/node_modules
+        environment:
+            - NODE_ENV=development
     nginx:
         environment:
             - DEV_MODE=true

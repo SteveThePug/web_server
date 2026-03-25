@@ -20,5 +20,20 @@ fi
 # Ensure upload directory is traversable by nginx worker
 chmod 755 /uploads 2>/dev/null || true
 
+# Wait for Vue assets in production mode
+if [ "$DEV_MODE" != "true" ]; then
+  echo "Waiting for Vue assets..."
+  elapsed=0
+  while [ ! -f /etc/nginx/html/index.html ] && [ $elapsed -lt 120 ]; do
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  if [ ! -f /etc/nginx/html/index.html ]; then
+    echo "WARNING: Vue assets not found after 120s, starting nginx anyway"
+  else
+    echo "Vue assets ready."
+  fi
+fi
+
 # Start nginx
 nginx -g 'daemon off;'

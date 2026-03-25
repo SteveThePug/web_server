@@ -5,8 +5,19 @@ networks:
 volumes:
     dbdata:
     uploads:
+    vue_dist:
 
 services:
+    vue:
+        build:
+            context: ./vue
+            dockerfile: Dockerfile
+        container_name: vue
+        volumes:
+            - vue_dist:/output
+        networks:
+            - app-network
+
     nginx:
         build:
             context: ./nginx
@@ -15,6 +26,7 @@ services:
         env_file: ./.env
         restart: always
         depends_on:
+            - vue
             - backend
             - icecast2
             - gitea
@@ -27,6 +39,7 @@ services:
             - ./certbot/conf:/etc/letsencrypt
             - ./certbot/www:/var/www/certbot
             - uploads:/uploads
+            - vue_dist:/etc/nginx/html
 
     certbot:
         image: certbot/certbot

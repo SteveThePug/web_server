@@ -17,13 +17,13 @@ docker compose up --build
 
 ### Frontend only (hot reload)
 ```
-cd nginx/vue && npm run dev
+cd vue && npm run dev
 ```
 Vite dev server proxies `/api` to `localhost:8080`, `/gitea` to `localhost:3000`, `/radio` to `localhost:8000`.
 
 ### Frontend build
 ```
-cd nginx/vue && npm run build
+cd vue && npm run build
 ```
 
 ### Regenerate GraphQL (after editing schema files)
@@ -38,7 +38,7 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 
 **Backend** (`backend/`): Go with Gin router. GraphQL API via gqlgen at `POST /api/graphql`. REST endpoints for auth, file uploads, Spotify OAuth, and WebSockets. GORM for PostgreSQL with auto-migrations (no separate migration files). JWT auth stored in HTTP-only cookies.
 
-**Frontend** (`nginx/vue/`): Vue 3 SPA with Vite, Tailwind CSS v4, Pinia stores, Vue Router. Served as static files through Nginx.
+**Frontend** (`vue/`): Vue 3 SPA with Vite, Tailwind CSS v4, Pinia stores, Vue Router. Built in a separate container; assets served through Nginx (production) or proxied to Vite dev server (dev mode).
 
 **Nginx** (`nginx/`): Reverse proxy + SPA server. Config is templated (`nginx.conf.template`) and selected at runtime by `entrypoint.sh` based on `DEV_MODE` and certificate presence. Rate limiting on login (5/min), API (30/sec), uploads (5/min).
 
