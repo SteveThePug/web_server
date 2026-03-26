@@ -25,68 +25,76 @@ import Steam from "./Steam.vue";
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="outerWrap flex flex-row" style="height: 310mm">
-            <div class="sidebar flex-1 flex flex-col m-10 w-60 gap-2">
-                <div
-                    class="flex-1 flex flex-col min-h-0 background-children border-children gap-2"
-                >
-                    <Chat class="flex-1 min-h-0" />
-                    <Steam />
-                </div>
-                <div class="sidebar-image">
-                    <Miku class="border-tertiary border bg-bg_secondary h-60" />
-                </div>
-            </div>
-            <div
-                class="a4page-portrait homeGrid relative background-children border-children bdr-1"
-            >
-                <!-- <Intro class="intro" /> -->
-                <Intro2 class="intro" />
-                <!-- <BadApple class="intro" /> -->
-                <Listening class="listening" />
-                <Stamps class="stamps" />
-                <Feed class="feed" />
-                <Links class="links" />
-                <Collage class="collage" />
-                <Consumption class="consumption" />
-                <Favorites class="favorites" />
-                <!-- <Gym class="gym" /> -->
-                <Gym2 class="gym" />
-            </div>
-            <div class="sidebar flex-1 flex flex-col m-10 w-60 gap-2">
-                <div
-                    class="flex-1 flex flex-col min-h-0 background-children border-children gap-2"
-                >
-                    <Time />
-                    <Timer />
-                    <Radio />
-                    <CommitHistory class="flex-1" />
+        <div class="outerWrap flex flex-row">
+            <div class="sidebar">
+                <Time class="sidebar-cell" />
+                <Timer class="sidebar-cell" />
+                <Radio class="sidebar-cell" />
+                <CommitHistory class="flex-1 sidebar-cell" />
 
-                    <!-- <Elle class="flex-1" /> -->
-                    <!-- <MusicPlayer /> -->
-                </div>
-                <div class="sidebar-image">
-                    <img
-                        src="/img/memes/fire-woman.gif"
-                        alt=""
-                        width="178"
-                        height="178"
-                        class="border-tertiary border"
-                        loading="lazy"
-                    />
-                </div>
+                <!-- <Elle class="flex-1" /> -->
+                <!-- <MusicPlayer /> -->
+                <img
+                    src="/img/memes/fire-woman.gif"
+                    alt=""
+                    width="178"
+                    height="178"
+                    class="border-tertiary border-2 sidebar-image box-border w-full bg-tertiary"
+                    loading="lazy"
+                />
+            </div>
+            <div class="a4page-portrait homeGrid relative">
+                <!-- <Intro class="intro" /> -->
+                <Intro2 class="intro grid-cell" />
+                <!-- <BadApple class="intro" /> -->
+                <Listening class="listening grid-cell" />
+                <Stamps class="stamps grid-cell" />
+                <Feed class="feed grid-cell" />
+                <Links class="links grid-cell" />
+                <Collage class="collage grid-cell" />
+                <Consumption class="consumption grid-cell" />
+                <Favorites class="favorites grid-cell" />
+                <!-- <Gym class="gym" /> -->
+                <Gym2 class="gym grid-cell" />
+            </div>
+            <div class="sidebar">
+                <Steam class="sidebar-cell" />
+                <Chat class="flex-1 min-h-0 chat-home grid-cell" />
+                <Miku
+                    class="sidebar-image miku-image box-border border-tertiary border-2 bg-bg_primary"
+                />
             </div>
         </div>
     </main>
 </template>
 
 <style scoped>
-.border-children > * {
-    border: 2px solid var(--quaternary);
+.grid-cell {
+    background-color: var(--bg_primary);
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--quaternary);
 }
 
-.background-children > * {
-    background-color: var(--bg_primary);
+.sidebar-cell {
+    background-color: var(--bg_quaternary);
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--quaternary);
+}
+
+.sidebar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin: 2.5rem;
+    width: 15rem;
+    min-height: 0;
+    gap: 0.5rem;
+}
+
+.outerWrap {
+    height: 310mm;
 }
 
 .homeGrid {
@@ -96,16 +104,26 @@ import Steam from "./Steam.vue";
     grid-template-rows: repeat(10, 1fr);
 }
 
+.chat-home {
+    max-height: 800px;
+}
+
+.miku-image {
+    height: 15rem;
+}
+
 @media (max-width: 1200px) {
     .outerWrap {
         flex-direction: column;
         align-items: stretch;
+        height: auto;
     }
 
     .homeGrid {
         order: -1;
         width: 100%;
-        height: 350mm;
+        height: auto;
+        min-height: 400mm;
         margin-inline: 0;
         box-sizing: border-box;
     }
@@ -113,9 +131,26 @@ import Steam from "./Steam.vue";
     .sidebar {
         width: 100%;
         margin: 5px 10px;
-        flex-direction: column;
-        align-items: center;
+        flex-direction: row;
         gap: 8px;
+    }
+
+    .sidebar > * {
+        min-height: 80px;
+    }
+
+    .sidebar-image {
+        max-height: 150px;
+        max-width: 150px;
+        object-fit: contain;
+    }
+
+    .sidebar-image {
+        display: none;
+    }
+
+    .miku-image {
+        display: none;
     }
 }
 
@@ -124,6 +159,7 @@ import Steam from "./Steam.vue";
         display: flex;
         flex-direction: column;
         height: auto;
+        min-height: 0;
     }
 
     .stamps {
@@ -140,18 +176,13 @@ import Steam from "./Steam.vue";
     .sidebar > * {
         max-width: none;
         width: auto;
+        min-height: 80px;
     }
 
-    .sidebar-image {
-        max-height: 200px;
-        overflow: hidden;
-    }
-
-    .sidebar-image :deep(img) {
-        max-height: 200px;
-        object-fit: contain;
-        display: block;
-        margin-inline: auto;
+    .chat-home {
+        max-height: none;
+        min-height: 350px;
+        height: 400px;
     }
 }
 
@@ -167,6 +198,7 @@ import Steam from "./Steam.vue";
     .sidebar {
         margin: 5px 0;
     }
+
 }
 
 .intro {
