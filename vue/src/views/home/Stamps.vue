@@ -84,7 +84,7 @@ onUnmounted(() => {
                     alt="jacobbarron.xyz"
                 />
             </Link>
-            <img v-for="src in srcs" :src="src" />
+            <img v-for="src in srcs" :src="src" loading="lazy" />
         </div>
     </Touchscreen>
 </template>

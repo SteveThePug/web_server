@@ -5,7 +5,7 @@
         >
             <h1>404</h1>
             <RouterLink to="/" class="bdr-2">
-                <img src="/img/memes/epic.jpeg" />
+                <img src="/img/memes/epic.jpeg" loading="lazy" />
             </RouterLink>
             <h1>Click her, she will take you home</h1>
         </div>

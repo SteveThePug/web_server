@@ -226,16 +226,18 @@ import Project from "./Project.vue";
 /* Fonts */
 @font-face {
     font-family: "big_noodle_titling";
-    src: url("/fonts/big_noodle_titling.ttf") format("truetype");
+    src: url("/fonts/big_noodle_titling.woff2") format("woff2");
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "CreatoDisplay";
-    src: url("/fonts/CreatoDisplay-Bold.otf") format("opentype");
+    src: url("/fonts/CreatoDisplay-Bold.woff2") format("woff2");
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 /* Variables */

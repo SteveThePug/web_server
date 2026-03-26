@@ -21,7 +21,7 @@ const { gitFeed: feed, loaded } = storeToRefs(homeData);
             class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden"
         >
             <h3>Last git activity</h3>
-            <img :src="feed.avatarUrl" alt="User avatar" class="avatar" />
+            <img :src="feed.avatarUrl" alt="User avatar" class="avatar" loading="lazy" />
             <Link :href="feed.repoUrl">
                 <h3>repo: {{ feed.repoName }}</h3>
             </Link>
