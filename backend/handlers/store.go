@@ -25,6 +25,12 @@ type Store struct {
 	GiteaPort          string
 	GiteaFeed          *services.GiteaFeedResponse
 	GiteaFeedFetchedAt time.Time
+
+	SteamAPIKey      string
+	SteamID          string
+	SteamRecentGames []services.SteamRecentGame
+	SteamOnline      bool
+	SteamFetchedAt   time.Time
 }
 
 func (s *Store) GiteaFeedFresh() bool {
@@ -32,4 +38,11 @@ func (s *Store) GiteaFeedFresh() bool {
 		return false
 	}
 	return time.Since(s.GiteaFeedFetchedAt) < time.Minute
+}
+
+func (s *Store) SteamFresh() bool {
+	if s.SteamRecentGames == nil {
+		return false
+	}
+	return time.Since(s.SteamFetchedAt) < 5*time.Minute
 }

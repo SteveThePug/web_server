@@ -20,6 +20,7 @@ import Favorites from "./Favorites.vue";
 // import Gym from "./Gym.vue";
 import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
+import Steam from "./Steam.vue";
 </script>
 
 <template>
@@ -30,6 +31,7 @@ import Consumption from "./Consumption.vue";
                     class="flex-1 flex flex-col min-h-0 background-children border-children gap-2"
                 >
                     <Chat class="flex-1 min-h-0" />
+                    <Steam />
                 </div>
                 <div class="sidebar-image">
                     <Miku class="border-tertiary border bg-bg_secondary h-60" />

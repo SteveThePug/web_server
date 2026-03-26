@@ -1,0 +1,12 @@
+type SteamGame {
+  appId: Int!
+  name: String!
+  playtime2Weeks: Int!
+  playtimeForever: Int!
+  headerImageUrl: String!
+}
+
+type SteamStatus {
+  online: Boolean!
+  recentGames: [SteamGame!]!
+}

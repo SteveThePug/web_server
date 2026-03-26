@@ -74,7 +74,10 @@ func main() {
 	giteaHost := os.Getenv("GITEA_HOST")
 	giteaPort := os.Getenv("GITEA_PORT")
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, GiteaHost: giteaHost, GiteaPort: giteaPort}
+	steamAPIKey := os.Getenv("STEAM_API_KEY")
+	steamID := os.Getenv("STEAM_ID")
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
 
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)

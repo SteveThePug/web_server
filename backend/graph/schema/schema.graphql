@@ -12,6 +12,7 @@ type Query {
   spotifyListening: SpotifyPlaying
   spotifyRecent: [SpotifyRecentItem!]
   giteaFeed: GiteaFeedItem
+  steamStatus: SteamStatus
   me: User
 }
 

@@ -450,6 +450,44 @@ func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, er
 	return mapGiteaFeed(feed), nil
 }
 
+// SteamStatus is the resolver for the steamStatus field.
+func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, error) {
+	if r.Store.SteamAPIKey == "" {
+		return nil, nil
+	}
+
+	if r.Store.SteamFresh() {
+		return &model.SteamStatus{
+			Online:      r.Store.SteamOnline,
+			RecentGames: mapSteamGames(r.Store.SteamRecentGames),
+		}, nil
+	}
+
+	games, err := services.FetchRecentlyPlayedGames(r.Store.SteamAPIKey, r.Store.SteamID)
+	if err != nil {
+		return nil, err
+	}
+
+	summary, err := services.FetchPlayerSummary(r.Store.SteamAPIKey, r.Store.SteamID)
+	if err != nil {
+		return nil, err
+	}
+
+	online := false
+	if summary != nil {
+		online = summary.PersonaState > 0
+	}
+
+	r.Store.SteamRecentGames = games
+	r.Store.SteamOnline = online
+	r.Store.SteamFetchedAt = time.Now()
+
+	return &model.SteamStatus{
+		Online:      online,
+		RecentGames: mapSteamGames(games),
+	}, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	userID, ok := UserIDFromCtx(ctx)

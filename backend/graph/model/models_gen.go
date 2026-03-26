@@ -83,6 +83,19 @@ type SpotifyTrack struct {
 	Album   *SpotifyAlbum    `json:"album"`
 }
 
+type SteamGame struct {
+	AppID           int    `json:"appId"`
+	Name            string `json:"name"`
+	Playtime2Weeks  int    `json:"playtime2Weeks"`
+	PlaytimeForever int    `json:"playtimeForever"`
+	HeaderImageURL  string `json:"headerImageUrl"`
+}
+
+type SteamStatus struct {
+	Online      bool         `json:"online"`
+	RecentGames []*SteamGame `json:"recentGames"`
+}
+
 type UpdatePostInput struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`

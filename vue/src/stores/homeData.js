@@ -14,6 +14,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
   const spotifyRecent = ref([]);
   const rowingSessions = ref([]);
   const gitFeed = ref(null);
+  const steamStatus = ref(null);
   const radioLive = ref(false);
 
   async function fetchAll() {
@@ -27,6 +28,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
             spotifyRecent { track { name album { name images { url } } artists { name } } playedAt }
             rowingSessions { id date time distance timePer500m calories }
             giteaFeed { avatarUrl repoUrl repoName opType commitMessage createdAt }
+            steamStatus { online recentGames { appId name playtime2Weeks playtimeForever headerImageUrl } }
             me { id username admin }
           }
         `),
@@ -38,6 +40,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
       spotifyRecent.value = data.spotifyRecent || [];
       rowingSessions.value = data.rowingSessions;
       gitFeed.value = data.giteaFeed || null;
+      steamStatus.value = data.steamStatus || null;
       me.value = data.me || null;
       loaded.value = true;
     } catch (err) {
@@ -67,6 +70,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
     spotifyRecent,
     rowingSessions,
     gitFeed,
+    steamStatus,
     radioLive,
     fetchAll,
     fetchRadioStatus,

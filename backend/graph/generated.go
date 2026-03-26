@@ -117,6 +117,7 @@ type ComplexityRoot struct {
 		RowingSessions   func(childComplexity int) int
 		SpotifyListening func(childComplexity int) int
 		SpotifyRecent    func(childComplexity int) int
+		SteamStatus      func(childComplexity int) int
 		User             func(childComplexity int, id int) int
 		Users            func(childComplexity int) int
 	}
@@ -158,6 +159,19 @@ type ComplexityRoot struct {
 		Album   func(childComplexity int) int
 		Artists func(childComplexity int) int
 		Name    func(childComplexity int) int
+	}
+
+	SteamGame struct {
+		AppID           func(childComplexity int) int
+		HeaderImageURL  func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Playtime2Weeks  func(childComplexity int) int
+		PlaytimeForever func(childComplexity int) int
+	}
+
+	SteamStatus struct {
+		Online      func(childComplexity int) int
+		RecentGames func(childComplexity int) int
 	}
 
 	User struct {
@@ -208,6 +222,7 @@ type QueryResolver interface {
 	SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error)
 	SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error)
 	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
+	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
 	Me(ctx context.Context) (*models.User, error)
 }
 type RowingResolver interface {
@@ -598,6 +613,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SpotifyRecent(childComplexity), true
+	case "Query.steamStatus":
+		if e.ComplexityRoot.Query.SteamStatus == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SteamStatus(childComplexity), true
 	case "Query.user":
 		if e.ComplexityRoot.Query.User == nil {
 			break
@@ -731,6 +752,50 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.SpotifyTrack.Name(childComplexity), true
 
+	case "SteamGame.appId":
+		if e.ComplexityRoot.SteamGame.AppID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamGame.AppID(childComplexity), true
+	case "SteamGame.headerImageUrl":
+		if e.ComplexityRoot.SteamGame.HeaderImageURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamGame.HeaderImageURL(childComplexity), true
+	case "SteamGame.name":
+		if e.ComplexityRoot.SteamGame.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamGame.Name(childComplexity), true
+	case "SteamGame.playtime2Weeks":
+		if e.ComplexityRoot.SteamGame.Playtime2Weeks == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamGame.Playtime2Weeks(childComplexity), true
+	case "SteamGame.playtimeForever":
+		if e.ComplexityRoot.SteamGame.PlaytimeForever == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamGame.PlaytimeForever(childComplexity), true
+
+	case "SteamStatus.online":
+		if e.ComplexityRoot.SteamStatus.Online == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamStatus.Online(childComplexity), true
+	case "SteamStatus.recentGames":
+		if e.ComplexityRoot.SteamStatus.RecentGames == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SteamStatus.RecentGames(childComplexity), true
+
 	case "User.admin":
 		if e.ComplexityRoot.User.Admin == nil {
 			break
@@ -850,7 +915,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -871,6 +936,7 @@ var sources = []*ast.Source{
 	{Name: "schema/rowing.graphql", Input: sourceData("schema/rowing.graphql"), BuiltIn: false},
 	{Name: "schema/schema.graphql", Input: sourceData("schema/schema.graphql"), BuiltIn: false},
 	{Name: "schema/spotify.graphql", Input: sourceData("schema/spotify.graphql"), BuiltIn: false},
+	{Name: "schema/steam.graphql", Input: sourceData("schema/steam.graphql"), BuiltIn: false},
 	{Name: "schema/user.graphql", Input: sourceData("schema/user.graphql"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2985,6 +3051,41 @@ func (ec *executionContext) fieldContext_Query_giteaFeed(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_steamStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_steamStatus,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SteamStatus(ctx)
+		},
+		nil,
+		ec.marshalOSteamStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamStatus,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_steamStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "online":
+				return ec.fieldContext_SteamStatus_online(ctx, field)
+			case "recentGames":
+				return ec.fieldContext_SteamStatus_recentGames(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SteamStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3681,6 +3782,221 @@ func (ec *executionContext) fieldContext_SpotifyTrack_album(_ context.Context, f
 				return ec.fieldContext_SpotifyAlbum_images(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SpotifyAlbum", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamGame_appId(ctx context.Context, field graphql.CollectedField, obj *model.SteamGame) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamGame_appId,
+		func(ctx context.Context) (any, error) {
+			return obj.AppID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamGame_appId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamGame",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamGame_name(ctx context.Context, field graphql.CollectedField, obj *model.SteamGame) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamGame_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamGame_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamGame",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamGame_playtime2Weeks(ctx context.Context, field graphql.CollectedField, obj *model.SteamGame) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamGame_playtime2Weeks,
+		func(ctx context.Context) (any, error) {
+			return obj.Playtime2Weeks, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamGame_playtime2Weeks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamGame",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamGame_playtimeForever(ctx context.Context, field graphql.CollectedField, obj *model.SteamGame) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamGame_playtimeForever,
+		func(ctx context.Context) (any, error) {
+			return obj.PlaytimeForever, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamGame_playtimeForever(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamGame",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamGame_headerImageUrl(ctx context.Context, field graphql.CollectedField, obj *model.SteamGame) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamGame_headerImageUrl,
+		func(ctx context.Context) (any, error) {
+			return obj.HeaderImageURL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamGame_headerImageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamGame",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamStatus_online(ctx context.Context, field graphql.CollectedField, obj *model.SteamStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamStatus_online,
+		func(ctx context.Context) (any, error) {
+			return obj.Online, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamStatus_online(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SteamStatus_recentGames(ctx context.Context, field graphql.CollectedField, obj *model.SteamStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SteamStatus_recentGames,
+		func(ctx context.Context) (any, error) {
+			return obj.RecentGames, nil
+		},
+		nil,
+		ec.marshalNSteamGame2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamGameᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SteamStatus_recentGames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SteamStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "appId":
+				return ec.fieldContext_SteamGame_appId(ctx, field)
+			case "name":
+				return ec.fieldContext_SteamGame_name(ctx, field)
+			case "playtime2Weeks":
+				return ec.fieldContext_SteamGame_playtime2Weeks(ctx, field)
+			case "playtimeForever":
+				return ec.fieldContext_SteamGame_playtimeForever(ctx, field)
+			case "headerImageUrl":
+				return ec.fieldContext_SteamGame_headerImageUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SteamGame", field.Name)
 		},
 	}
 	return fc, nil
@@ -6383,6 +6699,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "steamStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_steamStatus(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "me":
 			field := field
 
@@ -6825,6 +7160,109 @@ func (ec *executionContext) _SpotifyTrack(ctx context.Context, sel ast.Selection
 			}
 		case "album":
 			out.Values[i] = ec._SpotifyTrack_album(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var steamGameImplementors = []string{"SteamGame"}
+
+func (ec *executionContext) _SteamGame(ctx context.Context, sel ast.SelectionSet, obj *model.SteamGame) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, steamGameImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SteamGame")
+		case "appId":
+			out.Values[i] = ec._SteamGame_appId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SteamGame_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "playtime2Weeks":
+			out.Values[i] = ec._SteamGame_playtime2Weeks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "playtimeForever":
+			out.Values[i] = ec._SteamGame_playtimeForever(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "headerImageUrl":
+			out.Values[i] = ec._SteamGame_headerImageUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var steamStatusImplementors = []string{"SteamStatus"}
+
+func (ec *executionContext) _SteamStatus(ctx context.Context, sel ast.SelectionSet, obj *model.SteamStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, steamStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SteamStatus")
+		case "online":
+			out.Values[i] = ec._SteamStatus_online(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recentGames":
+			out.Values[i] = ec._SteamStatus_recentGames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7603,6 +8041,32 @@ func (ec *executionContext) marshalNSpotifyTrack2ᚖadamᚑfrenchᚗcoᚗukᚋba
 	return ec._SpotifyTrack(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSteamGame2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamGameᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SteamGame) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSteamGame2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamGame(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSteamGame2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamGame(ctx context.Context, sel ast.SelectionSet, v *model.SteamGame) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SteamGame(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7886,6 +8350,13 @@ func (ec *executionContext) marshalOSpotifyTrack2ᚖadamᚑfrenchᚗcoᚗukᚋba
 		return graphql.Null
 	}
 	return ec._SpotifyTrack(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSteamStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamStatus(ctx context.Context, sel ast.SelectionSet, v *model.SteamStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SteamStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {
