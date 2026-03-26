@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSteamStore } from "@/stores/steam";
 import { useHomeDataStore } from "@/stores/homeData";
@@ -10,11 +10,28 @@ const { steamStatus } = storeToRefs(steamStore);
 const homeData = useHomeDataStore();
 const { loaded } = storeToRefs(homeData);
 
-let refreshInterval;
+const idx = ref(0);
+const game = computed(() => steamStatus.value.recentGames[idx.value]);
+
+let nextId = null;
+let refreshId = null;
+
+function nextGame() {
+  clearTimeout(nextId);
+  nextId = setTimeout(nextGame, 5000);
+  if (steamStatus.value.recentGames.length) {
+    idx.value = (idx.value + 1) % steamStatus.value.recentGames.length;
+  }
+}
+
 onMounted(() => {
-  refreshInterval = setInterval(() => steamStore.fetchSteam(), 5 * 60 * 1000);
+  nextId = setTimeout(nextGame, 5000);
+  refreshId = setInterval(() => steamStore.fetchSteam(), 5 * 60 * 1000);
 });
-onUnmounted(() => clearInterval(refreshInterval));
+onUnmounted(() => {
+  clearTimeout(nextId);
+  clearInterval(refreshId);
+});
 
 function formatHours(minutes) {
   const hrs = (minutes / 60).toFixed(1);
@@ -23,7 +40,7 @@ function formatHours(minutes) {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-0 overflow-hidden">
+  <div class="steam-wrapper">
     <Header class="text-left">
       <span class="flex items-center gap-2">
         Steam
@@ -37,30 +54,54 @@ function formatHours(minutes) {
 
     <div v-if="!loaded" class="p-2 text-sm">Loading...</div>
 
-    <div
-      v-else-if="steamStatus.recentGames.length"
-      class="flex-1 overflow-y-auto flex flex-col gap-2 p-1"
-    >
-      <div
-        v-for="game in steamStatus.recentGames"
-        :key="game.appId"
-        class="flex flex-col"
-      >
+    <Transition name="fade" v-else-if="game">
+      <div @click="nextGame" :key="game.appId" class="flex flex-col items-center">
         <img
           :src="game.headerImageUrl"
           :alt="game.name"
-          class="w-full object-cover"
-          loading="lazy"
+          class="game-img"
         />
-        <div class="px-1 py-0.5 text-xs">
-          <p class="font-bold truncate">{{ game.name }}</p>
-          <p class="text-tertiary">
-            {{ formatHours(game.playtime2Weeks) }} last 2 weeks
-          </p>
-        </div>
+        <p class="text-center">
+          <strong>{{ game.name }}</strong>
+        </p>
+        <p class="text-center text-tertiary text-xs">
+          {{ formatHours(game.playtime2Weeks) }} last 2 weeks
+        </p>
       </div>
-    </div>
+    </Transition>
 
     <div v-else class="p-2 text-sm">No recent games.</div>
   </div>
 </template>
+
+<style scoped>
+.steam-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.game-img {
+  width: 90%;
+}
+
+p {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-leave-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
