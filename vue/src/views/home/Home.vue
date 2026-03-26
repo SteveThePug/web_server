@@ -43,7 +43,9 @@ import Steam from "./Steam.vue";
                     loading="lazy"
                 />
             </div>
-            <div class="a4page-portrait homeGrid relative border-2 border-quaternary">
+            <div
+                class="a4page-portrait homeGrid relative bdr-1 border-quaternary"
+            >
                 <!-- <Intro class="intro" /> -->
                 <Intro2 class="intro grid-cell" />
                 <!-- <BadApple class="intro" /> -->
@@ -84,10 +86,11 @@ import Steam from "./Steam.vue";
 }
 
 .sidebar {
+    margin-top: 1.7rem;
+    margin-bottom: 1.2rem;
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin: 2.5rem;
     width: 15rem;
     min-height: 0;
     gap: 0.5rem;
@@ -95,6 +98,7 @@ import Steam from "./Steam.vue";
 
 .outerWrap {
     height: 310mm;
+    gap: 10px;
 }
 
 .homeGrid {
@@ -102,7 +106,6 @@ import Steam from "./Steam.vue";
     gap: 5px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
-    margin-block: 2.5rem;
 }
 
 .chat-home {
@@ -123,15 +126,13 @@ import Steam from "./Steam.vue";
     .homeGrid {
         order: -1;
         width: 100%;
-        height: auto;
-        min-height: 400mm;
+        height: 150vw;
         margin-inline: 0;
         box-sizing: border-box;
     }
 
     .sidebar {
         width: 100%;
-        margin: 5px 10px;
         flex-direction: row;
         gap: 8px;
     }
@@ -199,7 +200,6 @@ import Steam from "./Steam.vue";
     .sidebar {
         margin: 5px 0;
     }
-
 }
 
 .intro {
