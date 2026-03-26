@@ -15,7 +15,7 @@ const auth = useAuthStore();
 
 <template>
     <main class="halftone justify-center flex flex-row w-full h-full">
-        <div class="a5page-portrait bdr-1 flex flex-col">
+        <div class="bdr-1 flex flex-col">
             <Login class="bdr-2 bg-bg_primary" />
             <CreateUser class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreatePost class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
