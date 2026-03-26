@@ -64,6 +64,8 @@ function formatHours(minutes) {
                     <img
                         :src="game.headerImageUrl"
                         :alt="game.name"
+                        width="145"
+                        height="68"
                         class="game-img"
                     />
                     <p class="text-center">

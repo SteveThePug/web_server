@@ -7,7 +7,7 @@ import Button from "@/components/input/Button.vue";
     <audio/>
     <div class="musicPlayerGrid">
         <div class="album_cover">
-            <img src="/img/Untitled.png"></img>
+            <img src="/img/Untitled.png" alt=""></img>
         </div>
         <div class="controls">
             <div class="sliders">

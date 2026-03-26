@@ -68,6 +68,9 @@ import Steam from "./Steam.vue";
                 <div class="sidebar-image">
                     <img
                         src="/img/memes/fire-woman.gif"
+                        alt=""
+                        width="178"
+                        height="178"
                         class="border-tertiary border"
                         loading="lazy"
                     />

@@ -75,6 +75,7 @@ function playFinishedSound() {
                     type="range"
                     min="0"
                     max="59"
+                    aria-label="Minutes"
                 />
                 <p>{{ minutesInput }}m</p>
             </div>
@@ -85,6 +86,7 @@ function playFinishedSound() {
                     type="range"
                     min="0"
                     max="59"
+                    aria-label="Seconds"
                 />
                 <p>{{ secondsInput }}s</p>
             </div>

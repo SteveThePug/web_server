@@ -1,12 +1,12 @@
 <template>
     <div v-if="streamLive" class="overflow-hidden">
         <Header>Radio</Header>
-        <img src="/img/tmpen31z3pe.PNG" />
+        <img src="/img/tmpen31z3pe.PNG" alt="Radio" width="176" height="177" />
         <audio controls :src="streamUrl" ref="audio"></audio>
     </div>
     <div v-else>
         <Header>Radio</Header>
-        <img src="/img/tmpen31z3pe.PNG" />
+        <img src="/img/tmpen31z3pe.PNG" alt="Radio" width="176" height="177" />
         <div class="m-1 text-center">
             <p>Radio is offline. Message for info!</p>
             <Button class="w-full" @click="checkStream()">Check Stream</Button>

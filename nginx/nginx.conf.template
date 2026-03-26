@@ -118,6 +118,13 @@ http {
 
         location = /img/stamps/mine.gif {
             add_header Access-Control-Allow-Origin *;
+            expires 7d;
+            add_header Cache-Control "public";
+        }
+
+        location /sound/ {
+            expires 7d;
+            add_header Cache-Control "public";
         }
 
         location $BACKEND_ENDPOINT {

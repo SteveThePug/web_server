@@ -76,7 +76,7 @@ onUnmounted(() => {
     <Touchscreen ref="touchscreen">
         <div class="flex flex-wrap tst">
             <Link bare href="https://www.adam-french.co.uk">
-                <img src="https://www.adam-french.co.uk/img/stamps/mine.gif" />
+                <img src="https://www.adam-french.co.uk/img/stamps/mine.gif" alt="adam-french.co.uk" />
             </Link>
             <Link bare href="https://jacobbarron.xyz">
                 <img
@@ -84,7 +84,7 @@ onUnmounted(() => {
                     alt="jacobbarron.xyz"
                 />
             </Link>
-            <img v-for="src in srcs" :src="src" loading="lazy" />
+            <img v-for="src in srcs" :src="src" :alt="src.split('/').pop().split('.')[0]" loading="lazy" />
         </div>
     </Touchscreen>
 </template>

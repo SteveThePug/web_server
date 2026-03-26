@@ -41,7 +41,7 @@ onUnmounted(() => {
                 <Header v-if="currentComment">
                     {{ currentComment }}
                 </Header>
-                <img :src="currentUrl" alt="Image Viewer" loading="lazy" />
+                <img :src="currentUrl" alt="Image Viewer" fetchpriority="high" />
             </div>
         </Transition>
     </div>

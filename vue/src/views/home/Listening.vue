@@ -37,7 +37,7 @@ onUnmounted(() => {
             class="flex flex-col items-center"
         >
             <Header>Listening To</Header>
-            <img :src="song.track.album.images[0].url" />
+            <img :src="song.track.album.images[0].url" :alt="song.track.album.name + ' album art'" width="217" height="217" />
             <p class="text-center">
                 <strong>Song:</strong> {{ song.track.name }}
             </p>

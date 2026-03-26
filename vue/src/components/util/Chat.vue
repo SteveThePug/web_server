@@ -152,6 +152,7 @@ onUnmounted(() => {
             <img
               v-if="isImageUrl(message.fileUrl)"
               :src="message.fileUrl"
+              alt="Uploaded image"
               loading="lazy"
               class="w-full max-w-full max-h-48 rounded block"
             />
@@ -170,7 +171,7 @@ onUnmounted(() => {
       </div>
     </div>
     <div>
-      <input v-model="messageInput" @keyup.enter="sendMessage" />
+      <input v-model="messageInput" @keyup.enter="sendMessage" aria-label="Chat message" />
       <input
         ref="fileInput"
         type="file"
