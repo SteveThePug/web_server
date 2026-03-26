@@ -61,7 +61,7 @@ import Steam from "./Steam.vue";
             </div>
             <div class="sidebar">
                 <Steam class="sidebar-cell" />
-                <Chat class="flex-1 min-h-0 chat-home grid-cell" />
+                <Chat class="flex-1 min-h-0 chat-home sidebar-cell" />
                 <Miku
                     class="sidebar-image miku-image box-border border-tertiary border-2 bg-bg_primary"
                 />
@@ -79,7 +79,7 @@ import Steam from "./Steam.vue";
 }
 
 .sidebar-cell {
-    background-color: var(--bg_quaternary);
+    background-color: var(--bg_secondary);
     border-width: 2px;
     border-style: solid;
     border-color: var(--quaternary);
@@ -126,7 +126,7 @@ import Steam from "./Steam.vue";
     .homeGrid {
         order: -1;
         width: 100%;
-        height: 150vw;
+        height: 130vw;
         margin-inline: 0;
         box-sizing: border-box;
     }
@@ -138,7 +138,7 @@ import Steam from "./Steam.vue";
     }
 
     .sidebar > * {
-        min-height: 80px;
+        min-height: 300px;
     }
 
     .sidebar-image {
@@ -178,7 +178,7 @@ import Steam from "./Steam.vue";
     .sidebar > * {
         max-width: none;
         width: auto;
-        min-height: 80px;
+        min-height: 120px;
     }
 
     .chat-home {
