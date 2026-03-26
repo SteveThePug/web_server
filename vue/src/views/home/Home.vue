@@ -43,7 +43,7 @@ import Steam from "./Steam.vue";
                     loading="lazy"
                 />
             </div>
-            <div class="a4page-portrait homeGrid relative">
+            <div class="a4page-portrait homeGrid relative border-2 border-quaternary">
                 <!-- <Intro class="intro" /> -->
                 <Intro2 class="intro grid-cell" />
                 <!-- <BadApple class="intro" /> -->
@@ -102,6 +102,7 @@ import Steam from "./Steam.vue";
     gap: 5px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
+    margin-block: 2.5rem;
 }
 
 .chat-home {
