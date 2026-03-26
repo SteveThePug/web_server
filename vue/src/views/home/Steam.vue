@@ -120,4 +120,11 @@ p {
 .fade-leave-to {
     opacity: 0;
 }
+
+@media (max-width: 850px) {
+    .steam-wrapper {
+        height: auto;
+        min-height: 120px;
+    }
+}
 </style>

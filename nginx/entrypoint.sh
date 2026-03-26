@@ -3,7 +3,15 @@ set -e
 
 # Check if dev mode, certificate exists, or setup mode
 if [ "$DEV_MODE" = "true" ]; then
-  echo "Dev mode. Using HTTP-only nginx config."
+  echo "Dev mode. Generating self-signed certificate for HTTPS."
+  CERT_DIR="/etc/letsencrypt/live/localhost"
+  if [ ! -f "$CERT_DIR/fullchain.pem" ]; then
+    mkdir -p "$CERT_DIR"
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout "$CERT_DIR/privkey.pem" \
+      -out "$CERT_DIR/fullchain.pem" \
+      -subj "/CN=localhost" 2>/dev/null
+  fi
   envsubst '${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT}' \
     </etc/nginx/nginx_dev.conf.template \
     >/etc/nginx/nginx.conf

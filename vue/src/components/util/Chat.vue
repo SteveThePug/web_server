@@ -195,7 +195,8 @@ onUnmounted(() => {
 <style scoped>
 @media (max-width: 850px) {
     .chat-root {
-        max-height: 400px;
+        max-height: none;
+        height: 100%;
     }
 }
 </style>

@@ -6,12 +6,16 @@ services:
             - /app/node_modules
         environment:
             - NODE_ENV=development
+    backend:
+        environment:
+            - SPOTIFY_REDIRECT_URI=https://localhost/api/spotify/callback
     nginx:
         environment:
             - DEV_MODE=true
             - SEED_DB=true
         ports:
             - 80:80
+            - 443:443
     certbot:
         profiles:
             - disabled

@@ -21,7 +21,10 @@ func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
 		return
 	}
 
-	services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token)
+	if err := services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token); err != nil {
+		ctx.String(http.StatusInternalServerError, "Failed to save token: %v", err)
+		return
+	}
 
 	client := spotify.New(store.SpotifyAuth.Client(c, token))
 

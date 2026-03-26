@@ -1,6 +1,6 @@
 FROM nginx:latest
 RUN rm -rf /etc/nginx/html/* && \
-    apt-get update && apt-get install -y gettext-base && \
+    apt-get update && apt-get install -y gettext-base openssl && \
     rm -rf /var/lib/apt/lists/*
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template

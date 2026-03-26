@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/zmb3/spotify/v2"
@@ -32,6 +33,10 @@ func SaveSpotifyToken(path string, tok *oauth2.Token) error {
 		RefreshToken: tok.RefreshToken,
 		TokenType:    tok.TokenType,
 		Expiry:       tok.Expiry,
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return fmt.Errorf("creating token directory: %w", err)
 	}
 
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
