@@ -37,11 +37,11 @@ const user = "visitor";
 
         <div class="modules-right">
             <span class="module greeting">Hi, {{ user }}!</span>
-            <span class="module cpu">CPU 3%</span>
-            <span class="module mem">MEM 42%</span>
-            <span class="module disk">DISK 67%</span>
-            <span class="module network">↑ 12K ↓ 84K</span>
-            <span class="module battery">BAT 98%</span>
+            <span class="module cpu hide-sm">CPU 3%</span>
+            <span class="module mem hide-sm">MEM 42%</span>
+            <span class="module disk hide-sm">DISK 67%</span>
+            <span class="module network hide-sm">↑ 12K ↓ 84K</span>
+            <span class="module battery hide-sm">BAT 98%</span>
             <span class="module clock">{{ clock }}</span>
         </div>
     </footer>
@@ -127,11 +127,7 @@ const user = "visitor";
         padding: 2px 6px;
     }
 
-    .cpu,
-    .mem,
-    .disk,
-    .network,
-    .battery {
+    .hide-sm {
         display: none;
     }
 }
