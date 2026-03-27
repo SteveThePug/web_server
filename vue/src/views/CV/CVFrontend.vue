@@ -154,18 +154,13 @@ import Project from "./Project.vue";
                         <small>81.1% — First Class Honours</small>
                         <small>2021–2025</small>
                     </div>
-                    <small
-                        >BSc Computer Science with Mathematics
-                        (International)</small
-                    >
-                    <ul>
+                    <small>BSc Computer Science with Mathematics </small>
+                    <ul class="list-disc list-inside">
                         <li>Algorithms & Data Structures I & II</li>
                         <li>Compiler Design and Construction</li>
                         <li>Formal Languages & Finite Automata</li>
                         <li>Graph Algorithms & Complexity Theory</li>
-                        <li>
-                            Machine Learning · Databases · Computer Processors
-                        </li>
+                        <li>Machine Learning & Databases & Computer Processors</li>
                     </ul>
                 </div>
                 <div class="flex-1 pl-3">
@@ -176,12 +171,10 @@ import Project from "./Project.vue";
                         <small>Year abroad</small>
                         <small>2023–2024</small>
                     </div>
-                    <ul>
+                    <ul class="list-disc list-inside">
                         <li>Applied Cryptography</li>
                         <li>Introduction to Computer Graphics</li>
-                        <li>
-                            Introduction to Rings and Fields with Applications
-                        </li>
+                        <li>Introduction to Rings and Fields with Applications</li>
                     </ul>
                 </div>
             </div>
@@ -209,7 +202,7 @@ import Project from "./Project.vue";
                     </p>
                 </Project>
                 <h2>Interests</h2>
-                <ul>
+                <ul class="list-disc list-inside">
                     <li>Leetcode — daily competitive problem solving</li>
                     <li>Learning Mandarin</li>
                     <li>Rhythm Games</li>

@@ -93,8 +93,8 @@ import Project from "./Project.vue";
                 <p>
                     CLI tool for building and navigating interactive code
                     tutorials, with version-traversal semantics inspired by Git.
-                    Designed for robustness with comprehensive error handling and
-                    structured file operations.
+                    Designed for robustness with comprehensive error handling
+                    and structured file operations.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -153,18 +153,14 @@ import Project from "./Project.vue";
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
                     >
-                        <small>81.1% — First Class Honours</small>
+                        <small>First Class Honours (81.1%)</small>
                         <small>2021–2025</small>
                     </div>
-                    <small
-                        >BSc Computer Science with Mathematics
-                        (International)</small
-                    >
-                    <ul>
-                        <li>Algorithms & Data Structures I & II</li>
+                    <small>BSc Computer Science with Mathematics </small>
+                    <ul class="list-disc list-inside">
                         <li>Compiler Design and Construction</li>
                         <li>Graph Algorithms & Complexity Theory</li>
-                        <li>Formal Languages & Finite Automata</li>
+                        <li>Algorithms & Data Structures I & II</li>
                         <li>Databases · Computer Processors</li>
                     </ul>
                 </div>
@@ -176,12 +172,11 @@ import Project from "./Project.vue";
                         <small>Year abroad</small>
                         <small>2023–2024</small>
                     </div>
-                    <ul>
+                    <ul class="list-disc list-inside">
                         <li>Applied Cryptography</li>
                         <li>Introduction to Computer Graphics</li>
-                        <li>
-                            Introduction to Rings and Fields with Applications
-                        </li>
+                        <li>Introduction to Rings and Fields with Applications</li>
+                        <li>Formal Languages & Finite Automata</li>
                     </ul>
                 </div>
             </div>
@@ -209,7 +204,7 @@ import Project from "./Project.vue";
                     </p>
                 </Project>
                 <h2>Interests</h2>
-                <ul>
+                <ul class="list-disc list-inside">
                     <li>Leetcode — daily competitive problem solving</li>
                     <li>Learning Mandarin</li>
                     <li>Rhythm Games</li>

@@ -22,11 +22,11 @@ import Project from "./Project.vue";
             <h2>Profile</h2>
             <p>
                 First Class Honours graduate in Computer Science with
-                Mathematics from the University of Leeds (81.1%). Dependable
-                and personable team player with five years of hospitality
-                experience across busy bars, restaurants, and event venues.
-                Thrives under pressure, communicates clearly, and takes
-                pride in providing excellent customer service.
+                Mathematics from the University of Leeds (81.1%). Dependable and
+                personable team player with five years of hospitality experience
+                across busy bars, restaurants, and event venues. Thrives under
+                pressure, communicates clearly, and takes pride in providing
+                excellent customer service.
             </p>
 
             <h2>Experience</h2>
@@ -37,13 +37,13 @@ import Project from "./Project.vue";
                 </template>
                 <template #top>
                     <small>Bartender & Waiter</small>
-                    <small>2021–2023</small>
+                    <small>2021–2025</small>
                 </template>
                 <p>
-                    Served food and drinks in a high-volume live-music venue
-                    in Leeds. Handled busy weekend shifts, managed multiple
-                    tables simultaneously, and maintained a calm, friendly
-                    demeanour during peak hours.
+                    Served food and drinks in a high-volume live-music venue in
+                    Leeds. Handled busy weekend shifts, managed multiple tables
+                    simultaneously, and maintained a calm, friendly demeanour
+                    during peak hours.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -55,10 +55,10 @@ import Project from "./Project.vue";
                     <small>2020–2021</small>
                 </template>
                 <p>
-                    Worked front-of-house at a busy pub, pulling pints,
-                    taking orders, and ensuring a welcoming atmosphere.
-                    Built rapport with regulars and adapted quickly to
-                    changing priorities during service.
+                    Worked front-of-house at a busy pub, pulling pints, taking
+                    orders, and ensuring a welcoming atmosphere. Built rapport
+                    with regulars and adapted quickly to changing priorities
+                    during service.
                 </p>
             </Project>
             <Project class="border-b border-dotted">
@@ -70,10 +70,10 @@ import Project from "./Project.vue";
                     <small>2018–2020</small>
                 </template>
                 <p>
-                    Operated the till, served customers, and helped
-                    coordinate table service at a café on London's South
-                    Bank. Developed strong cash-handling accuracy and
-                    customer interaction skills in a fast-paced environment.
+                    Operated the till, served customers, and helped coordinate
+                    table service at a café on London's South Bank. Developed
+                    strong cash-handling accuracy and customer interaction
+                    skills in a fast-paced environment.
                 </p>
             </Project>
 
@@ -81,8 +81,8 @@ import Project from "./Project.vue";
             <div class="skills-grid">
                 <div>
                     <strong>Service</strong><br /><small
-                        >Bar work, Table service, Cash handling, Till
-                        operation, Food hygiene</small
+                        >Bar work, Table service, Cash handling, Till operation,
+                        Food hygiene</small
                     >
                 </div>
                 <div>
@@ -112,13 +112,10 @@ import Project from "./Project.vue";
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
                     >
-                        <small>81.1% — First Class Honours</small>
+                        <small>First Class Honours (81.1%)</small>
                         <small>2021–2025</small>
                     </div>
-                    <small
-                        >BSc Computer Science with Mathematics
-                        (International)</small
-                    >
+                    <small>BSc Computer Science with Mathematics </small>
                 </div>
                 <div class="flex-1 pl-3">
                     <h3>University of Waterloo</h3>
@@ -132,7 +129,7 @@ import Project from "./Project.vue";
             </div>
 
             <h2>Interests</h2>
-            <ul>
+            <ul class="list-disc list-inside">
                 <li>Leetcode — daily competitive problem solving</li>
                 <li>Learning Mandarin</li>
                 <li>Rhythm Games</li>

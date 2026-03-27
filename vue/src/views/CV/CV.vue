@@ -22,10 +22,14 @@ function select(index) {
     selected.value = index;
     currentComponent.value = templates[index].component;
 }
+
+function print() {
+    window.print();
+}
 </script>
 
 <template>
-    <div>
+    <div class="cv-root">
         <div class="no-print cv-selector">
             <button
                 v-for="(t, i) in templates"
@@ -35,12 +39,19 @@ function select(index) {
             >
                 {{ t.label }}
             </button>
+            <button class="cv-btn cv-print-btn" @click="print()">Print</button>
         </div>
-        <component :is="currentComponent" />
+        <Transition name="cv-fade" mode="out-in">
+            <component :is="currentComponent" :key="selected" />
+        </Transition>
     </div>
 </template>
 
 <style scoped>
+.cv-root {
+    background: white;
+}
+
 .cv-selector {
     position: sticky;
     top: 0;
@@ -71,6 +82,25 @@ function select(index) {
 .cv-btn.active {
     background: #333;
     color: white;
+}
+
+.cv-print-btn {
+    margin-left: 1rem;
+}
+
+.cv-fade-enter-active,
+.cv-fade-leave-active {
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.cv-fade-enter-from {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.cv-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
 }
 
 @media print {
