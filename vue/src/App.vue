@@ -14,7 +14,7 @@ import Footer from "@/components/Footer.vue";
                 </Transition>
             </RouterView>
         </main>
-        <Footer class="sticky bottom-0 z-50" />
+        <Footer class="no-print sticky bottom-0 z-50" />
     </div>
 </template>
 

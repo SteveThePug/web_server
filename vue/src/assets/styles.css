@@ -66,7 +66,8 @@
 
     /* BACKGROUND COLORS */
     --bg_primary: #1b110e;
-    --bg_secondary: #000;
+    --bg_secondary: #04080f;
+    --bg_tertiary: #0c1c10;
     --link: #222;
 
     --bdr: 2px;
@@ -102,7 +103,6 @@ body {
     margin: 0 auto;
     width: 100vw;
     height: 100vh;
-    background-color: var(--bg_secondary);
 }
 
 input {
@@ -299,17 +299,23 @@ td {
 }
 
 .halftone {
-    --dot_size: 1px;
-    --bg_size: 3px;
+    --dot_size: 4px;
+    --bg_size: 12px;
     --bg_pos: calc(var(--bg_size) / 2);
     --blur: 0%;
 
     background-color: var(--bg_secondary);
-    background-image: radial-gradient(
-        circle at center,
-        var(--bg_primary) var(--dot_size),
-        transparent var(--blur)
-    );
-    background-size: var(--bg_size) var(--bg_size);
-    background-position: 0 0;
+    background-image:
+        linear-gradient(to top, transparent 0%, var(--bg_primary) 100%),
+        radial-gradient(
+            circle at center,
+            var(--bg_tertiary) var(--dot_size),
+            transparent var(--blur)
+        );
+    background-size:
+        100% 100%,
+        var(--bg_size) var(--bg_size);
+    background-position:
+        0 0,
+        0 0;
 }

@@ -1,0 +1,301 @@
+<script setup>
+import Project from "./Project.vue";
+</script>
+
+<template>
+    <main>
+        <div class="no-print w-full h-20"></div>
+        <div class="a4page">
+            <div class="flex flex-row justify-between">
+                <h1 class="name">Adam French</h1>
+                <div class="contact-details text-right">
+                    <p>+447563266931</p>
+                    <p>adam.a.french@outlook.com</p>
+                    <h4>
+                        <a href="https://www.adam-french.co.uk">
+                            www.adam-french.co.uk
+                        </a>
+                    </h4>
+                </div>
+            </div>
+
+            <h2>Profile</h2>
+            <p>
+                First Class Honours graduate in Computer Science with
+                Mathematics from the University of Leeds (81.1%). Dependable
+                and personable team player with five years of hospitality
+                experience across busy bars, restaurants, and event venues.
+                Thrives under pressure, communicates clearly, and takes
+                pride in providing excellent customer service.
+            </p>
+
+            <h2>Experience</h2>
+
+            <Project class="border-b border-dotted">
+                <template #left>
+                    <h4>Belgrave Music Hall</h4>
+                </template>
+                <template #top>
+                    <small>Bartender & Waiter</small>
+                    <small>2021–2023</small>
+                </template>
+                <p>
+                    Served food and drinks in a high-volume live-music venue
+                    in Leeds. Handled busy weekend shifts, managed multiple
+                    tables simultaneously, and maintained a calm, friendly
+                    demeanour during peak hours.
+                </p>
+            </Project>
+            <Project class="border-b border-dotted">
+                <template #left>
+                    <h4>The Crown and Anchor</h4>
+                </template>
+                <template #top>
+                    <small>Bartender & Waiter</small>
+                    <small>2020–2021</small>
+                </template>
+                <p>
+                    Worked front-of-house at a busy pub, pulling pints,
+                    taking orders, and ensuring a welcoming atmosphere.
+                    Built rapport with regulars and adapted quickly to
+                    changing priorities during service.
+                </p>
+            </Project>
+            <Project class="border-b border-dotted">
+                <template #left>
+                    <h4>BFI Riverfront Kitchen</h4>
+                </template>
+                <template #top>
+                    <small>Cashier & Waiter</small>
+                    <small>2018–2020</small>
+                </template>
+                <p>
+                    Operated the till, served customers, and helped
+                    coordinate table service at a café on London's South
+                    Bank. Developed strong cash-handling accuracy and
+                    customer interaction skills in a fast-paced environment.
+                </p>
+            </Project>
+
+            <h2>Skills</h2>
+            <div class="skills-grid">
+                <div>
+                    <strong>Service</strong><br /><small
+                        >Bar work, Table service, Cash handling, Till
+                        operation, Food hygiene</small
+                    >
+                </div>
+                <div>
+                    <strong>Soft Skills</strong><br /><small
+                        >Communication, Teamwork, Time management, Composure
+                        under pressure</small
+                    >
+                </div>
+                <div>
+                    <strong>Technical</strong><br /><small
+                        >EPOS systems, Stock management, Event
+                        coordination</small
+                    >
+                </div>
+            </div>
+
+            <h2>Education</h2>
+            <div class="w-full h-fit flex-row flex gap-5">
+                <div class="flex-1 border-r border-dotted pr-3">
+                    <h3>
+                        <a
+                            href="https://www.adam-french.co.uk/pdf/transcript.pdf"
+                        >
+                            University of Leeds
+                        </a>
+                    </h3>
+                    <div
+                        class="flex-row flex place-content-between m-auto place-items-center"
+                    >
+                        <small>81.1% — First Class Honours</small>
+                        <small>2021–2025</small>
+                    </div>
+                    <small
+                        >BSc Computer Science with Mathematics
+                        (International)</small
+                    >
+                </div>
+                <div class="flex-1 pl-3">
+                    <h3>University of Waterloo</h3>
+                    <div
+                        class="flex-row flex place-content-between m-auto place-items-center"
+                    >
+                        <small>Year abroad</small>
+                        <small>2023–2024</small>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Interests</h2>
+            <ul>
+                <li>Leetcode — daily competitive problem solving</li>
+                <li>Learning Mandarin</li>
+                <li>Rhythm Games</li>
+                <li>Climbing · Gym</li>
+                <li>Board games · Meetup.com</li>
+            </ul>
+        </div>
+
+        <div class="no-print w-full h-20"></div>
+    </main>
+</template>
+
+<style scoped>
+/* Fonts */
+@font-face {
+    font-family: "big_noodle_titling";
+    src: url("/fonts/big_noodle_titling.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "CreatoDisplay";
+    src: url("/fonts/CreatoDisplay-Bold.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Variables */
+* {
+    --primary: black;
+    --secondary: #0000ff;
+    --tertiary: #ff0000;
+    --quaternary: #cccccc;
+    --background: white;
+
+    --font-heading: big_noodle_titling;
+    --font-text: CreatoDisplay;
+    --font-size-name: 2.5em;
+    --font-size-text: 100%;
+    --font-size-small: 0.9em;
+    --font-size-heading: 2.1em;
+    --font-size-subheading: 1.7em;
+    --font-size-subsubheading: 1.4em;
+}
+
+/* A4 Page */
+.a4page {
+    line-height: 1.6;
+    font-family: var(--font-text);
+    width: 210mm;
+    height: 297mm;
+    padding: 5mm;
+    box-sizing: border-box;
+    background-color: var(--background);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--primary);
+    overflow: hidden;
+    margin: auto auto;
+}
+
+/* Component Styling */
+main {
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    background-color: white;
+}
+
+span {
+    height: 2em;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    border: none;
+    color: var(--primary);
+    font-family: var(--font-heading);
+    text-transform: capitalize;
+}
+
+h1 {
+    font-size: var(--font-size-heading);
+}
+
+h2 {
+    border-bottom: 1px solid var(--primary);
+    font-size: var(--font-size-subheading);
+}
+
+h3 {
+    font-size: var(--font-size-subsubheading);
+}
+
+a:hover {
+    color: var(--tertiary);
+}
+a {
+    background-color: transparent;
+    color: var(--secondary);
+}
+
+p {
+    margin-bottom: 0.2em;
+    color: var(--primary);
+    font-size: var(--font-size-text);
+}
+
+table {
+    color: var(--secondary);
+    border-collapse: collapse;
+    border: 1px solid black;
+}
+
+td {
+    color: var(--secondary);
+    border-top: 1px solid var(--tertiary);
+    padding: 1px 10px 1px 10px;
+    font-size: var(--font-size-text);
+    text-align: left;
+}
+
+th {
+    color: var(--secondary);
+    border: 2px solid var(--tertiary);
+    padding: 1px 0px 1px 7px;
+    font-family: var(--font-heading);
+    font-size: var(--font-size-subsubheading);
+    background-color: var(--quaternary);
+    text-align: left;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
+small {
+    font-size: var(--font-size-small);
+    color: var(--primary);
+}
+
+ul {
+    font-size: var(--font-size-small);
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+li {
+    font-size: var(--font-size-small);
+    color: var(--primary);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3em 1em;
+    margin-bottom: 0.2em;
+}
+</style>

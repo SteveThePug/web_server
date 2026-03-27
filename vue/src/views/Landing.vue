@@ -12,7 +12,7 @@ const links = [
 </script>
 
 <template>
-    <main class="halftone flex justify-center px-4 py-16">
+    <main class="flex justify-center px-4 py-16">
         <div class="max-w-xl w-full flex flex-col gap-12">
             <section>
                 <Header>Adam French</Header>

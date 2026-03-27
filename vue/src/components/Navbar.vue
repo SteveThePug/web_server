@@ -15,10 +15,6 @@ const parentPath = computed(() => {
     }
 });
 
-const inHome = computed(() => {
-    return route.path == "/" || route.path == "/stp";
-});
-
 const faces = [
     "^_^",
     "¯\\_(ツ)_/¯",
@@ -46,10 +42,7 @@ const faces_string = faces.join("      ");
 
 <template>
     <nav class="flex flex-row w-full h-fit border border-primary bg-bg_primary">
-        <RouterLink class="bdr-2 bg-bg_primary" to="/" v-if="!inHome">
-            <span>HOME</span>
-        </RouterLink>
-        <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
+<RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
             <span>UP</span>
         </RouterLink>
         <Headline class="border flex-1 max-w-full">

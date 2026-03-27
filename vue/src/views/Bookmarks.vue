@@ -238,7 +238,7 @@ const links = [
 </script>
 
 <template>
-    <main class="items-center flex flex-col halftone">
+    <main class="items-center flex flex-col">
         <div
             class="a4page-portrait bdr-1 flex flex-row flex-wrap overflow-x-auto gap-1"
         >

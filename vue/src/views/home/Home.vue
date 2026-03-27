@@ -24,7 +24,7 @@ import Steam from "./Steam.vue";
 </script>
 
 <template>
-    <main class="halftone justify-center flex flex-row w-full h-full">
+    <main class="justify-center flex flex-row w-full h-full">
         <div class="outerWrap flex flex-row">
             <div class="sidebar">
                 <Time class="sidebar-cell" />
@@ -79,7 +79,7 @@ import Steam from "./Steam.vue";
 }
 
 .sidebar-cell {
-    background-color: var(--bg_secondary);
+    background-color: var(--bg_primary);
     border-width: 2px;
     border-style: solid;
     border-color: var(--quaternary);
