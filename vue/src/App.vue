@@ -5,7 +5,7 @@ import Footer from "@/components/Footer.vue";
 </script>
 
 <template>
-    <div class="app-layout">
+    <div class="app-layout halftone">
         <Navbar class="no-print sticky top-0 z-50" />
         <main class="app-content">
             <RouterView v-slot="{ Component }">
