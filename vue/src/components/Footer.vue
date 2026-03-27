@@ -1,10 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 
-
 const clock = ref("");
 let timer;
-
 
 function updateClock() {
     const now = new Date();
@@ -112,7 +110,7 @@ const user = "visitor";
     color: var(--primary);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
     .waybar {
         font-size: 11px;
         padding: 4px 4px;
