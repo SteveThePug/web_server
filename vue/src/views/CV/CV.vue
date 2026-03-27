@@ -3,16 +3,16 @@ import { ref, shallowRef, defineAsyncComponent } from "vue";
 import CVGeneral from "./CVGeneral.vue";
 import CVBackend from "./CVBackend.vue";
 import CVFrontend from "./CVFrontend.vue";
+import CVTemp from "./CVTemp.vue";
 
-const CVHospitality = defineAsyncComponent(() =>
-    import("./CVHospitality.vue"),
-);
+const CVHospitality = defineAsyncComponent(() => import("./CVHospitality.vue"));
 
 const templates = [
     { label: "General", component: CVGeneral },
     { label: "Backend", component: CVBackend },
     { label: "Frontend", component: CVFrontend },
     { label: "Hospitality", component: CVHospitality },
+    { label: "Temp", component: CVTemp },
 ];
 
 const selected = ref(0);
@@ -72,7 +72,9 @@ function print() {
     color: #333;
     cursor: pointer;
     font-size: 0.9rem;
-    transition: background 0.15s, color 0.15s;
+    transition:
+        background 0.15s,
+        color 0.15s;
 }
 
 .cv-btn:hover {
@@ -90,7 +92,9 @@ function print() {
 
 .cv-fade-enter-active,
 .cv-fade-leave-active {
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
 }
 
 .cv-fade-enter-from {

@@ -5,185 +5,204 @@ import Project from "./Project.vue";
 <template>
     <main>
         <div class="no-print w-full h-20"></div>
-        <div class="a4page">
-            <div class="flex flex-row justify-between">
-                <h1 class="name">Adam French</h1>
-                <div class="contact-details text-right">
-                    <p>+447563266931</p>
-                    <p>adam.a.french@outlook.com</p>
-                    <h4>
-                        <a href="https://www.adam-french.co.uk">
-                            www.adam-french.co.uk
-                        </a>
-                    </h4>
-                </div>
-            </div>
-
-            <h2>Profile</h2>
-            <p>
-                First Class Honours graduate in Computer Science with
-                Mathematics from the University of Leeds (81.1%), with a year
-                abroad at the University of Waterloo. Passionate about crafting
-                responsive, accessible, and performant user interfaces.
-                Experienced across multiple frontend frameworks with a solid
-                understanding of the full stack.
-            </p>
-
-            <h2>Skills</h2>
-            <div class="skills-grid">
-                <div>
-                    <strong>Frontend</strong><br /><small
-                        >Vue, React / Redux, Svelte, Tailwind CSS, HTML / CSS,
-                        WebAssembly</small
-                    >
-                </div>
-                <div>
-                    <strong>Languages</strong><br /><small
-                        >JavaScript / TypeScript, Rust, Go, Python, SQL</small
-                    >
-                </div>
-                <div>
-                    <strong>Tooling / Infra</strong><br /><small
-                        >Vite, Docker, Nginx, Git Actions, PostgreSQL,
-                        Figma</small
-                    >
-                </div>
-            </div>
-
-            <h2>Projects</h2>
-
-            <Project class="border-b border-dotted">
-                <template v-slot:left>
-                    <h4>
-                        <a
-                            href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
-                        >
-                            web_server.git
-                        </a>
-                    </h4>
-                </template>
-                <template v-slot:top>
-                    <small>
-                        Vue 3, Tailwind CSS, Vite, Pinia, Responsive Design,
-                        Rust → Wasm
-                    </small>
-                    <small>2025</small>
-                </template>
-                <p>
-                    Personal website SPA built with Vue 3, Tailwind CSS, and
-                    Pinia for state management. Features responsive layouts,
-                    dark mode, WebAssembly integration, and a custom component
-                    library. Iterated through Svelte and React/Redux before
-                    settling on Vue.
-                </p>
-            </Project>
-            <Project class="border-b border-dotted">
-                <template v-slot:left>
-                    <h4>
-                        <a
-                            href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
-                        >
-                            tour.git
-                        </a>
-                    </h4>
-                </template>
-                <template v-slot:top>
-                    <small>Rust</small>
-                    <small>2026</small>
-                </template>
-                <p>
-                    CLI tool for building and navigating interactive code
-                    tutorials, with version-traversal semantics inspired by Git.
-                </p>
-            </Project>
-            <Project class="border-b border-dotted">
-                <template v-slot:left>
-                    <h4>
-                        <a
-                            href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
-                        >
-                            rust-raytracer.git
-                        </a>
-                    </h4>
-                </template>
-                <template v-slot:top>
-                    <small>Rust, Linear Algebra, Multithreading</small>
-                    <small>2023</small>
-                </template>
-                <p>
-                    Parallelised recursive ray tracer for realistic 3D
-                    rendering. Emphasised algorithmic efficiency and low-level
-                    memory management in Rust.
-                </p>
-            </Project>
-            <Project>
-                <template #left>
-                    <h4>
-                        <a
-                            class="text-center w-full"
-                            href="https://community.wolfram.com/groups/-/m/t/3210947"
-                        >
-                            Wolfram Summer School
-                        </a>
-                    </h4>
-                </template>
-                <template #top>
-                    <small>Wolfram Mathematica</small>
-                    <small>2024</small>
-                </template>
-                <p>
-                    Research project on Mobile Automata with data visualisation
-                    and academic presentation. Delivered within a tight deadline
-                    in collaboration with academic mentors.
-                </p>
-            </Project>
-
-            <h2>Education</h2>
-            <div class="w-full h-fit flex-row flex gap-5">
-                <div class="flex-1 border-r border-dotted pr-3">
-                    <h3>
-                        <a
-                            href="https://www.adam-french.co.uk/pdf/transcript.pdf"
-                        >
-                            University of Leeds
-                        </a>
-                    </h3>
-                    <div
-                        class="flex-row flex place-content-between m-auto place-items-center"
-                    >
-                        <small>81.1% — First Class Honours</small>
-                        <small>2021–2025</small>
+        <div class="a4page justify-between">
+            <section>
+                <div class="flex flex-row justify-between">
+                    <h1 class="name">Adam French</h1>
+                    <div class="contact-details text-right">
+                        <p>+447563266931</p>
+                        <p>adam.a.french@outlook.com</p>
+                        <h4>
+                            <a href="https://www.adam-french.co.uk">
+                                www.adam-french.co.uk
+                            </a>
+                        </h4>
                     </div>
-                    <small>BSc Computer Science with Mathematics </small>
-                    <ul class="list-disc list-inside">
-                        <li>Algorithms & Data Structures I & II</li>
-                        <li>Compiler Design and Construction</li>
-                        <li>Formal Languages & Finite Automata</li>
-                        <li>Graph Algorithms & Complexity Theory</li>
-                        <li>Machine Learning & Databases & Computer Processors</li>
-                    </ul>
                 </div>
-                <div class="flex-1 pl-3">
-                    <h3>University of Waterloo</h3>
-                    <div
-                        class="flex-row flex place-content-between m-auto place-items-center"
-                    >
-                        <small>Year abroad</small>
-                        <small>2023–2024</small>
+            </section>
+
+            <section>
+                <h2>Profile</h2>
+                <p>
+                    First Class Honours graduate in Computer Science with
+                    Mathematics from the University of Leeds (81.1%), with a
+                    year abroad at the University of Waterloo. Passionate about
+                    crafting responsive, accessible, and performant user
+                    interfaces. Experienced across multiple frontend frameworks
+                    with a solid understanding of the full stack.
+                </p>
+            </section>
+
+            <section>
+                <h2>Skills</h2>
+                <div class="skills-grid">
+                    <div>
+                        <strong>Frontend</strong><br /><small
+                            >Vue, React / Redux, Svelte, Tailwind CSS, HTML /
+                            CSS, WebAssembly</small
+                        >
                     </div>
-                    <ul class="list-disc list-inside">
-                        <li>Applied Cryptography</li>
-                        <li>Introduction to Computer Graphics</li>
-                        <li>Introduction to Rings and Fields with Applications</li>
-                    </ul>
+                    <div>
+                        <strong>Languages</strong><br /><small
+                            >JavaScript / TypeScript, Rust, Go, Python,
+                            SQL</small
+                        >
+                    </div>
+                    <div>
+                        <strong>Tooling / Infra</strong><br /><small
+                            >Vite, Docker, Nginx, Git Actions, PostgreSQL,
+                            Figma</small
+                        >
+                    </div>
                 </div>
-            </div>
+            </section>
+
+            <section>
+                <h2>Projects</h2>
+
+                <Project class="border-b border-dotted">
+                    <template v-slot:left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
+                            >
+                                web_server.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template v-slot:top>
+                        <small>
+                            Vue 3, Tailwind CSS, Vite, Pinia, Responsive Design,
+                            Rust → Wasm
+                        </small>
+                        <small>2025</small>
+                    </template>
+                    <p>
+                        Personal website SPA built with Vue 3, Tailwind CSS, and
+                        Pinia for state management. Features responsive layouts,
+                        dark mode, WebAssembly integration, and a custom
+                        component library. Iterated through Svelte and
+                        React/Redux before settling on Vue.
+                    </p>
+                </Project>
+                <Project class="border-b border-dotted">
+                    <template v-slot:left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
+                            >
+                                tour.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template v-slot:top>
+                        <small>Rust</small>
+                        <small>2026</small>
+                    </template>
+                    <p>
+                        CLI tool for building and navigating interactive code
+                        tutorials, with version-traversal semantics inspired by
+                        Git.
+                    </p>
+                </Project>
+                <Project class="border-b border-dotted">
+                    <template v-slot:left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
+                            >
+                                rust-raytracer.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template v-slot:top>
+                        <small>Rust, Linear Algebra, Multithreading</small>
+                        <small>2023</small>
+                    </template>
+                    <p>
+                        Parallelised recursive ray tracer for realistic 3D
+                        rendering. Emphasised algorithmic efficiency and
+                        low-level memory management in Rust.
+                    </p>
+                </Project>
+                <Project>
+                    <template #left>
+                        <h4>
+                            <a
+                                class="text-center w-full"
+                                href="https://community.wolfram.com/groups/-/m/t/3210947"
+                            >
+                                Wolfram Summer School
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <small>Wolfram Mathematica</small>
+                        <small>2024</small>
+                    </template>
+                    <p>
+                        Research project on Mobile Automata with data
+                        visualisation and academic presentation. Delivered
+                        within a tight deadline in collaboration with academic
+                        mentors.
+                    </p>
+                </Project>
+            </section>
+
+            <section>
+                <h2>Education</h2>
+                <div class="w-full h-fit flex-row flex gap-5">
+                    <div class="flex-1 border-r border-dotted pr-3">
+                        <h3>
+                            <a
+                                href="https://www.adam-french.co.uk/pdf/transcript.pdf"
+                            >
+                                University of Leeds
+                            </a>
+                        </h3>
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
+                        >
+                            <small>81.1% — First Class Honours</small>
+                            <small>2021–2025</small>
+                        </div>
+                        <small>BSc Computer Science with Mathematics </small>
+                        <ul class="list-disc list-inside">
+                            <li>Algorithms & Data Structures I & II</li>
+                            <li>Compiler Design and Construction</li>
+                            <li>Formal Languages & Finite Automata</li>
+                            <li>Graph Algorithms & Complexity Theory</li>
+                            <li>
+                                Machine Learning & Databases & Computer
+                                Processors
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 pl-3">
+                        <h3>University of Waterloo</h3>
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
+                        >
+                            <small>Year abroad</small>
+                            <small>2023–2024</small>
+                        </div>
+                        <ul class="list-disc list-inside">
+                            <li>Applied Cryptography</li>
+                            <li>Introduction to Computer Graphics</li>
+                            <li>
+                                Introduction to Rings and Fields with
+                                Applications
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div class="no-print w-full h-20"></div>
 
-        <div class="a4page">
-            <div class="flex-1 pl-3">
+        <div class="a4page gap-10">
+            <section>
                 <h2>Experience</h2>
                 <Project>
                     <template #left>
@@ -201,6 +220,8 @@ import Project from "./Project.vue";
                         in customer-facing roles.
                     </p>
                 </Project>
+            </section>
+            <section>
                 <h2>Interests</h2>
                 <ul class="list-disc list-inside">
                     <li>Leetcode — daily competitive problem solving</li>
@@ -209,7 +230,7 @@ import Project from "./Project.vue";
                     <li>Climbing · Gym</li>
                     <li>Board games · Meetup.com</li>
                 </ul>
-            </div>
+            </section>
         </div>
 
         <div class="no-print w-full h-20"></div>
@@ -265,6 +286,9 @@ import Project from "./Project.vue";
     border: 1px solid var(--primary);
     overflow: hidden;
     margin: auto auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 /* Component Styling */
@@ -284,6 +308,7 @@ h1,
 h2,
 h3,
 h4 {
+    margin: 0px;
     border: none;
     color: var(--primary);
     font-family: var(--font-heading);
