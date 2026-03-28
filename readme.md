@@ -15,6 +15,7 @@ This website is currently self hosted on my Raspberry Pi. Any interference and t
 All services run in Docker containers orchestrated by Docker Compose:
 
 ```
+vue             ── Frontend build (outputs dist to shared volume)
 nginx (80, 443) ── Frontend SPA + Reverse Proxy
 backend (8080)  ── Go API
 db (5432)       ── PostgreSQL 16
@@ -30,29 +31,34 @@ certbot         ── SSL Certificate Management
 
 **Backend** - Go (Gin), gqlgen (GraphQL), GORM, PostgreSQL, JWT auth, WebSockets
 
-**Integrations** - Spotify API, Anthropic Claude API, Icecast2
+**Integrations** - Spotify API, Steam API, Anthropic Claude API, Icecast2
 
 **Infrastructure** - Docker Compose, Nginx, Let's Encrypt (Certbot), Gitea + Act Runner
 
 ## Features
 
 - Spotify integration (currently playing, recently played)
+- Steam integration (online status, recent games)
 - Obsidian note viewer with wikilink and LaTeX support
 - Live radio streaming via Icecast2
-- Real-time chat over WebSockets
+- Real-time chat over WebSockets with image/video uploads
 - Blog with admin panel (CRUD)
 - Activity and rowing session tracking
 - Fan shrines (GTO, Evangelion, Demoman, Skip Skip Benben)
 - Self-hosted Git (Gitea) with CI/CD and commit feed on homepage
 - Claude AI integration
+- Printable CV with role-specific sections
+- Landing page with animated stamps section
+- Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
 
 ## Pages
 
 | Route          | Description                           |
 | -------------- | ------------------------------------- |
-| `/`            | Home dashboard with grid layout       |
+| `/`            | Landing page                          |
+| `/stp`         | Home dashboard with grid layout       |
 | `/admin`       | Admin panel (authenticated)           |
-| `/cv`          | Curriculum Vitae                      |
+| `/cv`          | Curriculum Vitae (printable)          |
 | `/bookmarks`   | Bookmarks                             |
 | `/notes/:path` | Obsidian note viewer                  |
 | `/shrines`     | Fan shrine index + individual shrines |
@@ -61,7 +67,7 @@ certbot         ── SSL Certificate Management
 
 The primary API is **GraphQL** at `POST /api/graphql` (with a playground at `GET /api/graphql`). Queries cover posts, users, favorites, activities, rowing sessions, Spotify (currently playing, recently played), Gitea feed, and messages.
 
-REST endpoints handle auth (`/auth/*`), Spotify OAuth (`/spotify/*`), file uploads (`/messages/upload`), note serving (`/notes/*`), and WebSocket chat (`/api/ws`).
+REST endpoints handle auth (`/auth/*`), Spotify OAuth (`/spotify/*`), file uploads (`/messages/upload`), note serving (`/notes/*`), and WebSocket chat (`/api/ws`). Steam data (online status, recent games) is also available via the GraphQL API.
 
 Protected endpoints require JWT authentication via `/auth/login` (tokens set as HTTP-only cookies).
 
@@ -120,6 +126,9 @@ SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 SPOTIFY_REDIRECT_URI=
 SPOTIFY_AUTH_STATE=
+
+STEAM_API_KEY=
+STEAM_ID=
 
 ICECAST_SOURCE_PASSWORD=
 ICECAST_RELAY_PASSWORD=
