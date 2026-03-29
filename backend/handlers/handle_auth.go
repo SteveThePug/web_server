@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"adam-french.co.uk/backend/models"
@@ -12,13 +13,13 @@ import (
 func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 	access_token, err := ctx.Cookie("access_token")
 	if err != nil {
-		ctx.AbortWithStatusJSON(401, err.Error())
+		ctx.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	claims, err := store.Auth.VerifyJWT(access_token)
 	if err != nil {
-		ctx.AbortWithStatusJSON(401, err.Error())
+		ctx.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -58,13 +59,13 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 
 	claims, err := store.Auth.VerifyJWT(access_token)
 	if err != nil {
-		ctx.JSON(401, err.Error())
+		ctx.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
-		ctx.JSON(401, gin.H{"error": "claims does not contain id"})
+		ctx.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
 	userID := uint(userIDF)
@@ -72,8 +73,9 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 	user := models.User{ID: userID}
 	tx := store.DB.First(&user)
 	if tx.Error != nil {
-		ctx.JSON(http.StatusNotFound, tx.Error.Error())
-		removeCookies(ctx)
+		log.Println(tx.Error)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		store.removeCookies(ctx)
 		return
 	}
 
@@ -83,13 +85,13 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 func (store *Store) RefreshToken(ctx *gin.Context) {
 	refreshToken, err := ctx.Cookie("refresh_token")
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, err.Error())
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	claims, err := store.Auth.VerifyJWT(refreshToken)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, err.Error())
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -103,14 +105,16 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 	user := models.User{ID: userID}
 	tx := store.DB.First(&user)
 	if tx.Error != nil {
-		ctx.JSON(http.StatusNotFound, tx.Error.Error())
-		removeCookies(ctx)
+		log.Println(tx.Error)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		store.removeCookies(ctx)
 		return
 	}
 
 	tokens, err := store.Auth.GenerateJWT(&user)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -138,7 +142,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 func (store *Store) Login(ctx *gin.Context) {
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -155,7 +159,8 @@ func (store *Store) Login(ctx *gin.Context) {
 
 	tokens, err := store.Auth.GenerateJWT(&user)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -181,27 +186,27 @@ func (store *Store) Login(ctx *gin.Context) {
 }
 
 func (store *Store) Logout(ctx *gin.Context) {
-	removeCookies(ctx)
+	store.removeCookies(ctx)
 
 	ctx.Status(http.StatusOK)
 }
 
-func removeCookies(ctx *gin.Context) {
+func (store *Store) removeCookies(ctx *gin.Context) {
 	ctx.SetSameSite(http.SameSiteLaxMode)
 	ctx.SetCookie(
 		"access_token",
 		"",
 		-1,
-		"",
-		"",
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
 		true, true,
 	)
 	ctx.SetCookie(
 		"refresh_token",
 		"",
 		-1,
-		"",
-		"",
+		store.Auth.Config.Endpoint,
+		store.Auth.Config.Domain,
 		true, true,
 	)
 }

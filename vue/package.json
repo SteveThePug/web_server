@@ -16,6 +16,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.13.2",
+    "dompurify": "^3.3.3",
     "katex": "^0.16.27",
     "markdown-it": "^14.1.0",
     "markdown-it-wikilinks": "^1.4.0",

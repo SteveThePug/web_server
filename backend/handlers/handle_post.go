@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -17,7 +18,8 @@ type CreatePostInput struct {
 func (store *Store) GetPosts(ctx *gin.Context) {
 	var posts []models.Post
 	if err := store.DB.Preload("Author").Order("Created_At DESC").Find(&posts).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	ctx.JSON(http.StatusOK, posts)
@@ -34,7 +36,8 @@ func (store *Store) GetPost(ctx *gin.Context) {
 
 	post := models.Post{ID: uint(postID)}
 	if err := store.DB.First(&post).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 
@@ -44,25 +47,25 @@ func (store *Store) GetPost(ctx *gin.Context) {
 func (store *Store) CreatePost(ctx *gin.Context) {
 	var input CreatePostInput
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
 	claimsVal, ok := ctx.Get("userClaims")
 	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	claims, ok := claimsVal.(*jwt.MapClaims)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	userID := uint(userIDF)
@@ -71,7 +74,8 @@ func (store *Store) CreatePost(ctx *gin.Context) {
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
 	tx := store.DB.Create(&post)
 	if tx.Error != nil {
-		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+		log.Println(tx.Error)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -82,36 +86,38 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 	postID := ctx.Param("id")
 	var post models.Post
 	if err := store.DB.First(&post, postID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 
 	claimsVal, ok := ctx.Get("userClaims")
 	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	claims, ok := claimsVal.(*jwt.MapClaims)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	userID := uint(userIDF)
 
 	if !(userID == post.AuthorID) {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
 	}
 
 	var input CreatePostInput
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -119,7 +125,8 @@ func (store *Store) UpdatePost(ctx *gin.Context) {
 	post.Content = input.Content
 	tx := store.DB.Save(&post)
 	if tx.Error != nil {
-		ctx.JSON(http.StatusInternalServerError, tx.Error.Error())
+		log.Println(tx.Error)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -130,31 +137,33 @@ func (store *Store) DeletePost(ctx *gin.Context) {
 	postID := ctx.Param("id")
 	var post models.Post
 	if err := store.DB.First(&post, postID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 
 	claimsVal, ok := ctx.Get("userClaims")
 	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user claims could not be found"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
 	claims, ok := claimsVal.(*jwt.MapClaims)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	userIDF, ok := (*claims)["id"].(float64)
 	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id in claims"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	userID := uint(userIDF)
 
 	if !(userID == post.AuthorID) {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user and post author id missmatch"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
 	}
 
 	store.DB.Delete(&post)

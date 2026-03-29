@@ -1,4 +1,4 @@
-FROM nginx:latest
+FROM nginx:1.27
 RUN rm -rf /etc/nginx/html/* && \
     apt-get update && apt-get install -y gettext-base openssl && \
     rm -rf /var/lib/apt/lists/*

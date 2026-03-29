@@ -77,6 +77,11 @@ http {
 		ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
 		ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+
         # Vite hashed assets - immutable, cache 1 year
         location /assets/ {
             expires 1y;
@@ -117,7 +122,7 @@ http {
         }
 
         location = /img/stamps/mine.gif {
-            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Origin "https://www.$DOMAIN";
             expires 7d;
             add_header Cache-Control "public";
         }

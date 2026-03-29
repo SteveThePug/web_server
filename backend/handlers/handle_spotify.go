@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -17,12 +18,14 @@ func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
 
 	token, err := store.SpotifyAuth.Token(c, state, ctx.Request)
 	if err != nil {
-		ctx.String(http.StatusInternalServerError, "Couldn't get token: %v", err)
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "authentication failed"})
 		return
 	}
 
 	if err := services.SaveSpotifyToken(services.SPOTIFY_TOKEN_JSON_PATH, token); err != nil {
-		ctx.String(http.StatusInternalServerError, "Failed to save token: %v", err)
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -32,9 +35,6 @@ func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Authentication successful",
-		"token":   token.AccessToken,
-		"type":    token.TokenType,
-		"expiry":  token.Expiry,
 	})
 }
 
@@ -48,7 +48,8 @@ func (store *Store) ListeningTo(ctx *gin.Context) {
 
 	playing, err := store.SpotifyClient.PlayerCurrentlyPlaying(c)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		log.Println(err)
+		ctx.JSON(500, gin.H{"error": "failed to fetch currently playing"})
 		return
 	}
 
@@ -70,7 +71,8 @@ func (store *Store) RecentlyPlayed(ctx *gin.Context) {
 
 	played, err := store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		log.Println(err)
+		ctx.JSON(500, gin.H{"error": "failed to fetch recently played"})
 		return
 	}
 

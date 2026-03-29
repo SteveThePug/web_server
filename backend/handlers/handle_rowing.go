@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -24,7 +25,8 @@ type ExtractedRowingData struct {
 func (store *Store) GetRowing(ctx *gin.Context) {
 	var rowing []models.Rowing
 	if err := store.DB.Order("Created_At DESC").Find(&rowing).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 	ctx.JSON(http.StatusOK, rowing)
@@ -118,18 +120,13 @@ No text, no markdown, no explanation. Just the JSON object.`),
 		},
 	})
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"raw":   message.Content[0].Text,
-			"error": err.Error(),
-		})
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process image"})
 		return
 	}
 
 	if len(message.Content) == 0 {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"raw":   message.Content[0].Text,
-			"error": "empty response from Claude",
-		})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "empty response from image processor"})
 		return
 	}
 
@@ -144,11 +141,8 @@ No text, no markdown, no explanation. Just the JSON object.`),
 
 	err = json.Unmarshal([]byte(raw), &extractedData)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error":  "failed to parse JSON response",
-			"detail": err.Error(),
-			"raw":    raw,
-		})
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse image data"})
 		return
 	}
 

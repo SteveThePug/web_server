@@ -8,8 +8,12 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
+	"github.com/vektah/gqlparser/v2/ast"
 
 	"adam-french.co.uk/backend/graph"
 	"adam-french.co.uk/backend/handlers"
@@ -129,15 +133,27 @@ func main() {
 	r.GET("/notes/*path", store.GetNoteFile)
 
 	// GRAPHQL
-	gqlSrv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+	gqlSrv := handler.New(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{Store: &store},
 	}))
+	gqlSrv.AddTransport(transport.Websocket{KeepAlivePingInterval: 10 * time.Second})
+	gqlSrv.AddTransport(transport.Options{})
+	gqlSrv.AddTransport(transport.GET{})
+	gqlSrv.AddTransport(transport.POST{})
+	gqlSrv.AddTransport(transport.MultipartForm{})
+	gqlSrv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+	gqlSrv.Use(extension.FixedComplexityLimit(200))
+	if os.Getenv("GQL_INTROSPECTION") == "true" {
+		gqlSrv.Use(extension.Introspection{})
+	}
 	r.POST("/graphql", graph.AuthContextMiddleware(auth), func(c *gin.Context) {
 		gqlSrv.ServeHTTP(c.Writer, c.Request)
 	})
-	r.GET("/graphql", func(c *gin.Context) {
-		playground.Handler("GraphQL Playground", "/graphql").ServeHTTP(c.Writer, c.Request)
-	})
+	if os.Getenv("GQL_PLAYGROUND") == "true" {
+		r.GET("/graphql", func(c *gin.Context) {
+			playground.Handler("GraphQL Playground", "/graphql").ServeHTTP(c.Writer, c.Request)
+		})
+	}
 
 	// HELLO WORLD
 	r.GET("/", func(c *gin.Context) {

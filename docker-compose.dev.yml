@@ -9,6 +9,8 @@ services:
     backend:
         environment:
             - SPOTIFY_REDIRECT_URI=https://localhost/api/spotify/callback
+            - GQL_PLAYGROUND=true
+            - GQL_INTROSPECTION=true
     nginx:
         environment:
             - DEV_MODE=true
@@ -16,6 +18,10 @@ services:
         ports:
             - 80:80
             - 443:443
+    hasura:
+        environment:
+            HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+            HASURA_GRAPHQL_DEV_MODE: "true"
     certbot:
         profiles:
             - disabled
