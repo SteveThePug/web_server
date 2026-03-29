@@ -288,7 +288,6 @@ import Project from "./Project.vue";
     margin: auto auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
 
 /* Component Styling */
