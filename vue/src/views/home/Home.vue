@@ -80,15 +80,33 @@ import Steam from "./Steam.vue";
     border-color: var(--quaternary);
 }
 
-.intro { grid-area: intro; }
-.listening { grid-area: listening; }
-.stamps { grid-area: stamps; }
-.feed { grid-area: feed; }
-.links { grid-area: links; }
-.collage { grid-area: collage; }
-.consumption { grid-area: consumption; }
-.gym { grid-area: gym; }
-.favorites { grid-area: favorites; }
+.intro {
+    grid-area: intro;
+}
+.listening {
+    grid-area: listening;
+}
+.stamps {
+    grid-area: stamps;
+}
+.feed {
+    grid-area: feed;
+}
+.links {
+    grid-area: links;
+}
+.collage {
+    grid-area: collage;
+}
+.consumption {
+    grid-area: consumption;
+}
+.gym {
+    grid-area: gym;
+}
+.favorites {
+    grid-area: favorites;
+}
 
 .sidebar-cell {
     background-color: var(--bg_primary);
@@ -156,15 +174,15 @@ import Steam from "./Steam.vue";
     .sidebar {
         width: 95vw;
         flex-direction: column;
+        align-items: center;
         justify-content: space-around;
     }
 
     .commits-sidebar,
     .steam-sidebar,
     .chat-sidebar {
-        min-width: 250px;
+        width: 100%;
         min-height: 250px;
-        max-width: 400px;
         max-height: 400px;
         height: 15vh;
     }
@@ -187,21 +205,21 @@ import Steam from "./Steam.vue";
     .homeGrid {
         border-image: none;
         border-width: 0;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         grid-template-rows: repeat(11, 1fr);
         height: 150vh;
         grid-template-areas:
-            "intro       intro"
-            "intro       intro"
-            "listening   stamps"
-            "listening   feed"
-            "listening   feed"
-            "links       feed"
-            "links       feed"
-            "links       feed"
-            "favorites   consumption"
-            "favorites   consumption"
-            "favorites   consumption";
+            "intro       intro       intro"
+            "intro       intro       intro"
+            "listening   stamps      stamps"
+            "listening   feed        feed"
+            "links   feed        feed"
+            "links       feed        feed"
+            "links       feed        feed"
+            "favorites       feed        feed"
+            "favorites   consumption consumption"
+            "favorites   consumption consumption"
+            "favorites   consumption consumption";
     }
 
     .collage {
