@@ -99,6 +99,8 @@ function formatHours(minutes) {
 
 .game-img {
     width: 90%;
+    max-width: 300px;
+    height: auto;
 }
 
 p {

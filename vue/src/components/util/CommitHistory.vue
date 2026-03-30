@@ -18,7 +18,7 @@ const { gitFeed: feed, loaded } = storeToRefs(homeData);
 
         <div
             v-else-if="feed"
-            class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden"
+            class="flex-1 flex flex-col items-center overflow-y-auto overflow-x-hidden"
         >
             <h3>Last git activity</h3>
             <img :src="feed.avatarUrl" alt="User avatar" class="avatar" loading="lazy" />
@@ -35,3 +35,11 @@ const { gitFeed: feed, loaded } = storeToRefs(homeData);
         </div>
     </div>
 </template>
+
+<style scoped>
+.avatar {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+}
+</style>
