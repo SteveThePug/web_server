@@ -133,14 +133,13 @@ import Steam from "./Steam.vue";
 }
 
 .sidebar {
-    margin-top: 1.7rem;
-    margin-bottom: 1.2rem;
+    margin: 0;
     flex: 1;
     display: flex;
     flex-direction: column;
     width: 15rem;
     min-height: 0;
-    gap: 0.5rem;
+    gap: 5px;
 }
 
 .outerWrap {
@@ -179,9 +178,7 @@ import Steam from "./Steam.vue";
     }
 
     .sidebar {
-        margin-top: 0px;
-        margin-bottom: 0px;
-        width: 100%;
+        width: 95vw;
         flex-direction: column;
         justify-content: space-around;
     }
@@ -191,6 +188,8 @@ import Steam from "./Steam.vue";
     .chat-sidebar {
         min-width: 250px;
         min-height: 250px;
+        max-width: 400px;
+        max-height: 400px;
         height: 15vh;
     }
 
