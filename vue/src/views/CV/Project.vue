@@ -1,8 +1,8 @@
 <script setup></script>
 
 <template>
-    <div class="flex-row flex">
-        <div class="w-2/7 mt-auto mb-auto ml-0">
+    <div class="flex flex-col sm:flex-row">
+        <div class="sm:w-2/7 mt-auto mb-auto ml-0">
             <slot name="left" />
         </div>
         <div class="w-full p-2">

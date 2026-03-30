@@ -57,6 +57,7 @@ function print() {
     top: 0;
     z-index: 40;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem;

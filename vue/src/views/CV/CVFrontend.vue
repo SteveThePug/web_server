@@ -7,9 +7,9 @@ import Project from "./Project.vue";
         <div class="no-print w-full h-20"></div>
         <div class="a4page justify-between">
             <section>
-                <div class="flex flex-row justify-between">
+                <div class="flex flex-col sm:flex-row sm:justify-between">
                     <h1 class="name">Adam French</h1>
-                    <div class="contact-details text-right">
+                    <div class="contact-details sm:text-right">
                         <p>+447563266931</p>
                         <p>adam.a.french@outlook.com</p>
                         <h4>
@@ -151,8 +151,8 @@ import Project from "./Project.vue";
 
             <section>
                 <h2>Education</h2>
-                <div class="w-full h-fit flex-row flex gap-5">
-                    <div class="flex-1 border-r border-dotted pr-3">
+                <div class="w-full h-fit flex flex-col sm:flex-row gap-5">
+                    <div class="flex-1 sm:border-r border-dotted sm:pr-3">
                         <h3>
                             <a
                                 href="https://www.adam-french.co.uk/pdf/transcript.pdf"
@@ -178,7 +178,7 @@ import Project from "./Project.vue";
                             </li>
                         </ul>
                     </div>
-                    <div class="flex-1 pl-3">
+                    <div class="flex-1 sm:pl-3">
                         <h3>University of Waterloo</h3>
                         <div
                             class="flex-row flex place-content-between m-auto place-items-center"
@@ -392,5 +392,19 @@ li {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 0.3em 1em;
     margin-bottom: 0.2em;
+}
+
+@media (max-width: 640px) {
+    .a4page {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        box-shadow: none;
+        border: none;
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
