@@ -58,6 +58,16 @@ async function deleteSong(name) {
     }
 }
 
+async function toggleSong(song) {
+    const action = song.disabled ? "enable" : "disable";
+    try {
+        await axios.patch(`/api/radio/songs/${encodeURIComponent(song.name)}/${action}`);
+        await fetchSongs();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 function formatSize(bytes) {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -76,9 +86,16 @@ onMounted(fetchSongs);
             <span class="text-primary">{{ r.name }}: </span>
             <span :class="r.ok ? 'text-secondary' : 'text-red-500'">{{ r.status }}</span>
         </div>
-        <div v-for="song in songs" :key="song.name" class="flex flex-row items-center gap-2">
-            <span>{{ song.name }}</span>
+        <div
+            v-for="song in songs"
+            :key="song.name"
+            class="flex flex-row items-center gap-2"
+            :class="{ 'opacity-50': song.disabled }"
+        >
+            <span :class="{ 'line-through': song.disabled }">{{ song.name }}</span>
             <span class="text-secondary text-sm">{{ formatSize(song.size) }}</span>
+            <span v-if="song.disabled" class="text-red-400 text-xs">disabled</span>
+            <Button @click="toggleSong(song)">{{ song.disabled ? "Enable" : "Disable" }}</Button>
             <Button @click="deleteSong(song.name)">Delete</Button>
         </div>
     </div>

@@ -129,6 +129,8 @@ func main() {
 	admin.POST("/radio/upload", store.UploadRadioSong)
 	admin.GET("/radio/songs", store.ListRadioSongs)
 	admin.DELETE("/radio/songs/:filename", store.DeleteRadioSong)
+	admin.PATCH("/radio/songs/:filename/disable", store.DisableRadioSong)
+	admin.PATCH("/radio/songs/:filename/enable", store.EnableRadioSong)
 
 	// MESSAGES
 	r.GET("/ws", store.ConnectWebSocket)
