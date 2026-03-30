@@ -25,7 +25,7 @@ const phrases = [
 
 // Non-reactive animation state to avoid triggering Vue re-renders every frame
 const animState = phrases.map((text, i) => ({
-    x: i * 20,
+    x: 0,
     y: i * 20,
     dx: rand(0, 60) / 100,
     dy: 1.0,

@@ -27,10 +27,10 @@ import Steam from "./Steam.vue";
     <main class="justify-center flex flex-row w-full h-full">
         <div class="outerWrap flex flex-row">
             <div class="sidebar">
-                <Time class="sidebar-cell" />
-                <Timer class="sidebar-cell" />
-                <Radio class="sidebar-cell" />
-                <CommitHistory class="flex-1 sidebar-cell" />
+                <Time class="time-sidebar sidebar-cell" />
+                <Timer class="timer-sidebar sidebar-cell" />
+                <Radio class="radio-sidebar sidebar-cell" />
+                <CommitHistory class="commits-sidebar flex-1 sidebar-cell" />
 
                 <!-- <Elle class="flex-1" /> -->
                 <!-- <MusicPlayer /> -->
@@ -60,8 +60,10 @@ import Steam from "./Steam.vue";
                 <Gym2 class="gym grid-cell" />
             </div>
             <div class="sidebar">
-                <Steam class="sidebar-cell" />
-                <Chat class="flex-1 min-h-0 chat-home sidebar-cell" />
+                <Steam class="steam-sidebar sidebar-cell" />
+                <Chat
+                    class="chat-sidebar flex-1 min-h-0 chat-home sidebar-cell"
+                />
                 <Miku
                     class="sidebar-image miku-image box-border border-tertiary border-2 bg-bg_primary"
                 />
@@ -76,130 +78,6 @@ import Steam from "./Steam.vue";
     border-width: 2px;
     border-style: solid;
     border-color: var(--quaternary);
-}
-
-.sidebar-cell {
-    background-color: var(--bg_primary);
-    border-width: 2px;
-    border-style: solid;
-    border-color: var(--quaternary);
-}
-
-.sidebar {
-    margin-top: 1.7rem;
-    margin-bottom: 1.2rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    width: 15rem;
-    min-height: 0;
-    gap: 0.5rem;
-}
-
-.outerWrap {
-    height: 310mm;
-    gap: 10px;
-}
-
-.homeGrid {
-    display: grid;
-    gap: 5px;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, 1fr);
-}
-
-.chat-home {
-    max-height: 800px;
-}
-
-.miku-image {
-    height: 15rem;
-}
-
-@media (max-width: 1200px) {
-    .outerWrap {
-        flex-direction: column;
-        align-items: stretch;
-        height: auto;
-    }
-
-    .homeGrid {
-        order: -1;
-        width: 100%;
-        height: 130vw;
-        margin-inline: 0;
-        box-sizing: border-box;
-    }
-
-    .sidebar {
-        width: 100%;
-        flex-direction: row;
-        gap: 8px;
-    }
-
-    .sidebar > * {
-        min-height: 300px;
-    }
-
-    .sidebar-image {
-        max-height: 150px;
-        max-width: 150px;
-        object-fit: contain;
-    }
-
-    .sidebar-image {
-        display: none;
-    }
-
-    .miku-image {
-        display: none;
-    }
-}
-
-@media (max-width: 850px) {
-    .homeGrid {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-        min-height: 0;
-    }
-
-    .stamps {
-        max-height: 130px;
-    }
-
-    .sidebar {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 8px;
-        justify-items: stretch;
-    }
-
-    .sidebar > * {
-        max-width: none;
-        width: auto;
-        min-height: 120px;
-    }
-
-    .chat-home {
-        max-height: none;
-        min-height: 350px;
-        height: 400px;
-    }
-}
-
-@media (max-width: 500px) {
-    main {
-        overflow-x: hidden;
-    }
-
-    .outerWrap {
-        max-width: 100vw;
-    }
-
-    .sidebar {
-        margin: 5px 0;
-    }
 }
 
 .intro {
@@ -245,6 +123,141 @@ import Steam from "./Steam.vue";
 .favorites {
     grid-column: span 3;
     grid-row: span 2;
+}
+
+.sidebar-cell {
+    background-color: var(--bg_primary);
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--quaternary);
+}
+
+.sidebar {
+    margin-top: 1.7rem;
+    margin-bottom: 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 15rem;
+    min-height: 0;
+    gap: 0.5rem;
+}
+
+.outerWrap {
+    height: 310mm;
+    gap: 10px;
+}
+
+.homeGrid {
+    display: grid;
+    gap: 5px;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+}
+
+.chat-home {
+    max-height: 800px;
+}
+
+.miku-image {
+    height: 15rem;
+}
+
+@media (max-width: 1360px) {
+    .outerWrap {
+        flex-direction: column;
+        align-items: center;
+        height: auto;
+    }
+
+    .homeGrid {
+        order: -1;
+        width: 95vw;
+        height: 120vh;
+        margin-inline: 0;
+        box-sizing: border-box;
+    }
+
+    .sidebar {
+        margin-top: 0px;
+        margin-bottom: 0px;
+        width: 100%;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    .commits-sidebar,
+    .steam-sidebar,
+    .chat-sidebar {
+        min-width: 250px;
+        min-height: 250px;
+        height: 15vh;
+    }
+
+    .time-sidebar,
+    .sidebar-image,
+    .radio-sidebar,
+    .timer-sidebar {
+        display: none;
+    }
+
+    /* .sidebar-image { */
+    /*     max-height: 150px; */
+    /*     max-width: 150px; */
+    /*     object-fit: contain; */
+    /* } */
+}
+
+@media (max-width: 509px) {
+    .homeGrid {
+        border-image: none;
+        border-width: 0;
+        grid-template-rows: repeat(11, 1fr);
+        height: 150vh;
+    }
+
+    .intro {
+        grid-column: 1 / -1;
+        grid-row: 1 / span 2;
+    }
+
+    .listening {
+        grid-column: 1 / span 1;
+        grid-row: 3 / span 3;
+    }
+
+    .stamps {
+        grid-column: 2 / -1;
+        grid-row: 3 / span 1;
+    }
+
+    .feed {
+        grid-column: 2 / -1;
+        grid-row: 4 / span 5;
+    }
+
+    .links {
+        grid-column: 1 / span 1;
+        grid-row: 6 / span 3;
+    }
+
+    .collage {
+        display: none;
+    }
+
+    .consumption {
+        grid-column: 2 / -1;
+        grid-row: 9 / span 3;
+    }
+
+    .gym {
+        display: none;
+    }
+
+    .favorites {
+        grid-column: 1 / span 1;
+        grid-row: 9 / span 3;
+    }
 }
 
 .bg-random {

@@ -1,6 +1,7 @@
 <script setup>
 import RouterTable from "@/components/util/RouterTable.vue";
 import LinkTable from "@/components/util/LinkTable.vue";
+import Header from "@/components/text/Header.vue";
 
 const site_links = [
     { name: "CV", link: "/cv" },
@@ -19,7 +20,8 @@ const social_links = [
 </script>
 
 <template>
-    <div class="flex flex-col justify-between">
+    <div class="flex flex-col justify-between overflow-auto">
+        <Header>Links</Header>
         <div class="flex flex-col gap-1">
             <RouterTable :linkArr="site_links" />
         </div>
