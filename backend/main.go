@@ -125,6 +125,11 @@ func main() {
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
 
+	// RADIO
+	admin.POST("/radio/upload", store.UploadRadioSong)
+	admin.GET("/radio/songs", store.ListRadioSongs)
+	admin.DELETE("/radio/songs/:filename", store.DeleteRadioSong)
+
 	// MESSAGES
 	r.GET("/ws", store.ConnectWebSocket)
 	protected.POST("/messages/upload", store.UploadMessageFile)

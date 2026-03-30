@@ -9,6 +9,7 @@ import CreateFavorite from "./CreateFavorite.vue";
 import CreateActivity from "./CreateActivity.vue";
 import CreateRowing from "./CreateRowing.vue";
 import ManageUsers from "./ManageUsers.vue";
+import ManageRadio from "./ManageRadio.vue";
 
 const auth = useAuthStore();
 </script>
@@ -23,6 +24,7 @@ const auth = useAuthStore();
             <CreateActivity class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <CreateRowing class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
             <ManageUsers class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
+            <ManageRadio class="bdr-2 bg-bg_primary" v-if="auth.loggedIn" />
         </div>
     </main>
 </template>
