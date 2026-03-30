@@ -80,50 +80,15 @@ import Steam from "./Steam.vue";
     border-color: var(--quaternary);
 }
 
-.intro {
-    grid-column: 1 / span 6;
-    grid-row: 1 / span 4;
-}
-
-.listening {
-    grid-column: 7 / span 4;
-    grid-row: 1 / span 3;
-}
-
-.stamps {
-    grid-column: 7 / span 4;
-    grid-row: 4 / span 1;
-}
-
-.feed {
-    grid-column: 1 / span 3;
-    grid-row: 5 / span 4;
-}
-
-.links {
-    grid-column: 4 / span 2;
-    grid-row: 5 / span 4;
-}
-
-.collage {
-    grid-column: 6 / span 5;
-    grid-row: 5 / span 4;
-}
-
-.consumption {
-    grid-column: span 4;
-    grid-row: span 2;
-}
-
-.gym {
-    grid-column: span 3;
-    grid-row: span 2;
-}
-
-.favorites {
-    grid-column: span 3;
-    grid-row: span 2;
-}
+.intro { grid-area: intro; }
+.listening { grid-area: listening; }
+.stamps { grid-area: stamps; }
+.feed { grid-area: feed; }
+.links { grid-area: links; }
+.collage { grid-area: collage; }
+.consumption { grid-area: consumption; }
+.gym { grid-area: gym; }
+.favorites { grid-area: favorites; }
 
 .sidebar-cell {
     background-color: var(--bg_primary);
@@ -152,6 +117,17 @@ import Steam from "./Steam.vue";
     gap: 5px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(10, 1fr);
+    grid-template-areas:
+        "intro       intro       intro       intro       intro       intro       listening   listening   listening   listening"
+        "intro       intro       intro       intro       intro       intro       listening   listening   listening   listening"
+        "intro       intro       intro       intro       intro       intro       listening   listening   listening   listening"
+        "intro       intro       intro       intro       intro       intro       stamps      stamps      stamps      stamps"
+        "feed        feed        feed        links       links       collage     collage     collage     collage     collage"
+        "feed        feed        feed        links       links       collage     collage     collage     collage     collage"
+        "feed        feed        feed        links       links       collage     collage     collage     collage     collage"
+        "feed        feed        feed        links       links       collage     collage     collage     collage     collage"
+        "consumption consumption consumption consumption gym         gym         gym         favorites   favorites   favorites"
+        "consumption consumption consumption consumption gym         gym         gym         favorites   favorites   favorites";
 }
 
 .chat-home {
@@ -211,51 +187,29 @@ import Steam from "./Steam.vue";
     .homeGrid {
         border-image: none;
         border-width: 0;
+        grid-template-columns: 1fr 1fr;
         grid-template-rows: repeat(11, 1fr);
         height: 150vh;
-    }
-
-    .intro {
-        grid-column: 1 / -1;
-        grid-row: 1 / span 2;
-    }
-
-    .listening {
-        grid-column: 1 / span 1;
-        grid-row: 3 / span 3;
-    }
-
-    .stamps {
-        grid-column: 2 / -1;
-        grid-row: 3 / span 1;
-    }
-
-    .feed {
-        grid-column: 2 / -1;
-        grid-row: 4 / span 5;
-    }
-
-    .links {
-        grid-column: 1 / span 1;
-        grid-row: 6 / span 3;
+        grid-template-areas:
+            "intro       intro"
+            "intro       intro"
+            "listening   stamps"
+            "listening   feed"
+            "listening   feed"
+            "links       feed"
+            "links       feed"
+            "links       feed"
+            "favorites   consumption"
+            "favorites   consumption"
+            "favorites   consumption";
     }
 
     .collage {
         display: none;
     }
 
-    .consumption {
-        grid-column: 2 / -1;
-        grid-row: 9 / span 3;
-    }
-
     .gym {
         display: none;
-    }
-
-    .favorites {
-        grid-column: 1 / span 1;
-        grid-row: 9 / span 3;
     }
 }
 
