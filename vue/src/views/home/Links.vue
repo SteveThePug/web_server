@@ -20,13 +20,15 @@ const social_links = [
 </script>
 
 <template>
-    <div class="flex flex-col justify-between overflow-auto">
+    <div class="flex flex-col overflow-auto">
         <Header>Links</Header>
-        <div class="flex flex-col gap-1">
-            <RouterTable :linkArr="site_links" />
-        </div>
-        <div class="flex flex-col gap-1">
-            <LinkTable :items="social_links" />
+        <div class="flex flex-col justify-between flex-1">
+            <div class="flex flex-col gap-1">
+                <RouterTable :linkArr="site_links" />
+            </div>
+            <div class="flex flex-col gap-1">
+                <LinkTable :items="social_links" />
+            </div>
         </div>
     </div>
 </template>
