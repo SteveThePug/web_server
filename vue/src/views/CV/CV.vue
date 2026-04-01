@@ -7,13 +7,7 @@ import CVTemp from "./CVTemp.vue";
 
 const CVHospitality = defineAsyncComponent(() => import("./CVHospitality.vue"));
 
-const templates = [
-    { label: "General", component: CVGeneral },
-    { label: "Backend", component: CVBackend },
-    { label: "Frontend", component: CVFrontend },
-    { label: "Hospitality", component: CVHospitality },
-    { label: "Temp", component: CVTemp },
-];
+const templates = [{ label: "General", component: CVGeneral }];
 
 const selected = ref(0);
 const currentComponent = shallowRef(templates[0].component);

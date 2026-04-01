@@ -106,81 +106,105 @@ body {
 }
 
 input {
-    @apply text-secondary border-primary border;
+    color: var(--secondary);
+    border-color: var(--primary);
+    border-width: 1px;
 }
 
 small {
-    @apply text-tertiary;
+    color: var(--tertiary);
 }
 
 code {
-    @apply text-tertiary;
+    color: var(--tertiary);
 }
 
 ul {
-    @apply text-tertiary;
+    color: var(--tertiary);
 }
 
 li {
-    @apply text-tertiary;
+    color: var(--tertiary);
 }
 
 h1,
 h2,
 h3,
 h4 {
-    @apply m-1 font-heading text-primary;
+    margin: 0.25rem;
+    font-family: var(--font_heading);
+    color: var(--primary);
 }
 
 h3,
 h4 {
-    @apply text-lg;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
 }
 
 h1 {
-    @apply text-2xl;
+    font-size: 1.5rem;
+    line-height: 2rem;
 }
 
 h2 {
-    @apply text-xl;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
 }
 
 p {
-    @apply text-secondary;
+    color: var(--secondary);
 }
 
 a {
-    @apply text-primary bg-link text-center font-heading tracking-wide;
+    color: var(--primary);
+    background-color: var(--link);
+    text-align: center;
+    font-family: var(--font_heading);
+    letter-spacing: 0.025em;
 }
 
 input,
 textarea {
-    @apply text-primary border p-2 w-full;
+    color: var(--primary);
+    border-width: 1px;
+    padding: 0.5rem;
+    width: 100%;
 }
 
 input::placeholder,
 textarea::placeholder {
-    @apply text-secondary opacity-50;
+    color: var(--secondary);
+    opacity: 0.5;
 }
 
 table {
-    @apply border-primary border text-primary;
+    border-color: var(--primary);
+    border-width: 1px;
+    color: var(--primary);
 }
 
 td {
-    @apply gap-1;
+    gap: 0.25rem;
 }
 
 tr {
-    @apply border-primary border-b text-primary;
+    border-color: var(--primary);
+    border-bottom-width: 1px;
+    color: var(--primary);
 }
 
 th {
-    @apply pr-3 pl-3 border-r border-dotted border-tertiary;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+    border-right-width: 1px;
+    border-style: dotted;
+    border-color: var(--tertiary);
 }
 
 td {
-    @apply pr-3 pl-3;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
 }
 
 /* END OF ELEMENTS */
@@ -194,47 +218,51 @@ td {
 
 /* BORDERS */
 .bdr-1 {
-    @apply border-30;
+    border-width: 30px;
     border-image: url("/img/borders/border1.gif") 30 round;
 }
 
 .bdr-1-inv {
-    @apply border-30;
+    border-width: 30px;
     border-image: url("/img/borders/border1inv.gif") 30 round;
 }
 
 .bdr-2 {
-    @apply border-5;
+    border-width: 5px;
     border-image: url("/img/borders/border4.gif") 7 round;
 }
 
 .bdr-cv {
-    @apply border-30;
+    border-width: 30px;
     border-image: url("/img/borders/bordercv.png") 30 round;
 }
 
 /* A5 Page */
 .a5page-landscape {
-    @apply m-0 box-content;
+    margin: 0;
+    box-sizing: content-box;
     height: 148mm;
     width: 210mm;
 }
 
 .a5page-portrait {
-    @apply m-0 box-content;
+    margin: 0;
+    box-sizing: content-box;
     width: 148mm;
     height: 210mm;
 }
 
 /* A4 Page */
 .a4page-portrait {
-    @apply m-0 box-content;
+    margin: 0;
+    box-sizing: content-box;
     width: 210mm;
     height: 297mm;
 }
 
 .a4page-landscape {
-    @apply m-0 box-content;
+    margin: 0;
+    box-sizing: content-box;
     height: 210mm;
     width: 297mm;
 }
@@ -279,23 +307,31 @@ td {
 }
 
 .tl {
-    @apply absolute top-0 left-0;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .tr {
-    @apply absolute top-0 right-0;
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
 .bl {
-    @apply absolute bottom-0 left-0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
 }
 
 .br {
-    @apply absolute bottom-0 right-0;
+    position: absolute;
+    bottom: 0;
+    right: 0;
 }
 
 .background {
-    @apply fixed;
+    position: fixed;
 }
 
 .halftone {
