@@ -5,11 +5,11 @@ const config: QuartzConfig = {
   configuration: {
     pageTitle: "Notes",
     pageTitleSuffix: "",
-    enableSPA: true,
-    enablePopovers: true,
+    enableSPA: false,
+    enablePopovers: false,
     analytics: null,
     locale: "en-GB",
-    baseUrl: "www.${DOMAIN}/notes/",
+    baseUrl: "www.${DOMAIN}/notes",
     ignorePatterns: ["private", "templates", ".obsidian"],
     defaultDateType: "modified",
     theme: {
