@@ -31,6 +31,7 @@ services:
             - icecast2
             - gitea
             - hasura
+            - quartz
         networks:
             - app-network
         ports:
@@ -114,6 +115,19 @@ services:
             - ./icecast2/fallback_music:/music:ro
         ports:
             - "${LIQUIDSOAP_HARBOR_PORT:-8001}:${LIQUIDSOAP_HARBOR_PORT:-8001}"
+
+    quartz:
+        build:
+            context: ./quartz
+            dockerfile: Dockerfile
+        container_name: "${QUARTZ_HOST}"
+        restart: always
+        networks:
+            - app-network
+        env_file:
+            - ./.env
+        volumes:
+            - ${OBSIDIAN_DIR}:/quartz/content:ro
 
     gitea-runner:
         image: gitea/act_runner:latest
