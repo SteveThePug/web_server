@@ -127,7 +127,7 @@ services:
         env_file:
             - ./.env
         volumes:
-            - ${OBSIDIAN_DIR}:/quartz/content:ro
+            - ${OBSIDIAN_DIR}:/content:ro
 
     gitea-runner:
         image: gitea/act_runner:latest
