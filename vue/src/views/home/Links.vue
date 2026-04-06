@@ -6,7 +6,7 @@ import Header from "@/components/text/Header.vue";
 const site_links = [
     { name: "CV", link: "/cv" },
     { name: "Bookmarks", link: "/bookmarks" },
-    { name: "Notes", link: "/notes/Index.md" },
+    { name: "Notes", link: "/notes/" },
     { name: "Admin", link: "/admin" },
     // { name: "Shrines", link: "/shrines" },
 ];
