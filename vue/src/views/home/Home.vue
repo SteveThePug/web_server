@@ -201,7 +201,7 @@ import Steam from "./Steam.vue";
     /* } */
 }
 
-@media (max-width: 509px) {
+@media (max-width: 700px) {
     .homeGrid {
         border-image: none;
         border-width: 0;
