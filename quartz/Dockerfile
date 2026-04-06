@@ -12,6 +12,7 @@ RUN git clone --depth 1 --branch ${QUARTZ_VERSION} \
     && npm ci
 
 COPY quartz.config.ts.template /quartz/quartz.config.ts.template
+COPY quartz.layout.ts /quartz/quartz.layout.ts
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
