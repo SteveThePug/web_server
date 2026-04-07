@@ -152,6 +152,7 @@ services:
     gitea:
         image: docker.gitea.com/gitea:1.25.4-rootless
         container_name: "${GITEA_HOST}"
+        entrypoint: ["/usr/bin/dumb-init", "--", "/etc/gitea/entrypoint.sh"]
         networks:
             - app-network
         environment:
@@ -169,6 +170,7 @@ services:
         volumes:
             - ./gitea/data:/var/lib/gitea
             - ./gitea/config:/etc/gitea
+            - ./gitea/entrypoint.sh:/etc/gitea/entrypoint.sh:ro
             - /etc/timezone:/etc/timezone:ro
             - /etc/localtime:/etc/localtime:ro
         ports:
