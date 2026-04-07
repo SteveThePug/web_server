@@ -10,6 +10,8 @@ jobs:
         steps:
             - name: Pull changes
               working-directory: /home/adamf/deploy/web_server
+              env:
+                  GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
               run: |
                   git config --global --add safe.directory /home/adamf/deploy/web_server
                   git pull ssh://git@localhost:2222/adamf/web_server.git main
