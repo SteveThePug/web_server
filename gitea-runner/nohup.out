@@ -1,0 +1,4 @@
+time="2026-02-18T16:33:27Z" level=info msg="Starting runner daemon"
+time="2026-02-18T16:33:27Z" level=info msg="runner: stppi, with version: v0.3.0-1-g0f7efae, with labels: [self-hosted ubuntu-latest ubuntu-24.04 ubuntu-22.04], declare successfully"
+time="2026-02-18T16:33:37Z" level=info msg="runner: stppi shutdown initiated, waiting 0s for running jobs to complete before shutting down"
+time="2026-02-18T16:33:37Z" level=error msg="failed to fetch task" error="canceled: context canceled"
