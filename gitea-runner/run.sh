@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ ! -f ./act_runner ]; then
+    echo "act_runner binary not found. Downloading..." >&2
+    bash "$(dirname "$0")/download.sh"
+fi
+
 echo "Waiting for localhost:3000 to respond..." >&2
 
 while ! curl -sf http://localhost:3000 > /dev/null 2>&1; do
