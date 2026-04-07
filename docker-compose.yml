@@ -146,7 +146,9 @@ services:
             - uptime_kuma_data:/app/data
 
     searxng:
-        image: searxng/searxng:latest
+        build:
+            context: ./searxng
+            dockerfile: Dockerfile
         container_name: "${SEARXNG_HOST}"
         restart: unless-stopped
         networks:
@@ -154,6 +156,7 @@ services:
         environment:
             - BASE_URL=https://www.${DOMAIN}/searxng/
             - INSTANCE_NAME=searxng
+            - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY}
         volumes:
             - searxng_data:/etc/searxng
 

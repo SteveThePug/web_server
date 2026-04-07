@@ -1,5 +1,6 @@
 icecast2/fallback_music/*
 !icecast2/fallback_music/.gitkeep
+searxng/settings.yml
 certbot/conf
 certbot/www
 backend/token/
@@ -7,6 +8,7 @@ backend/token/
 
 gitea/config/app.ini
 gitea/data/*
+
 gitea-runner/data/*
 
 # Rust build artifacts
