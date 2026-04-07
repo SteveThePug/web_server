@@ -10,7 +10,9 @@ jobs:
         steps:
             - name: Pull changes
               working-directory: /home/adamf/deploy/web_server
-              run: git pull gitea main
+              run: |
+                  git config --global --add safe.directory /home/adamf/deploy/web_server
+                  git pull gitea main
 
             - name: Run docker compose up
               working-directory: /home/adamf/deploy/web_server
