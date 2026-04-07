@@ -43,6 +43,7 @@ runner:
   # If it's empty when registering, it will ask for inputting labels.
   # If it's empty when execute `daemon`, will use labels in `.runner` file.
   labels:
+    - "self-hosted:host"
     - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-latest"
     - "ubuntu-22.04:docker://docker.gitea.com/runner-images:ubuntu-22.04"
     - "ubuntu-20.04:docker://docker.gitea.com/runner-images:ubuntu-20.04"
@@ -89,7 +90,8 @@ container:
   # If you want to allow any volume, please use the following configuration:
   # valid_volumes:
   #   - '**'
-  valid_volumes: []
+  valid_volumes:
+    - '**'
   # overrides the docker client host with the specified one.
   # If it's empty, act_runner will find an available docker host automatically.
   # If it's "-", act_runner will find an available docker host automatically, but the docker host won't be mounted to the job containers and service containers.
