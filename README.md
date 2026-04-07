@@ -4,7 +4,13 @@
 
 Welcome to the source code for my website! Please contact me if you would like to collaborate and thank you for visiting.
 
-This website is self-hosted on my Raspberry Pi. Any interference and the killswitch will activate and stop the UK national grid power system so please don't tamper with my domain :).
+This website is self-hosted on my Raspberry Pi. Any interference or hax and the killswitch will activate and stop the UK national grid power system so please don't tamper with my domain :).
+
+## The use of AI
+
+This has been created with a heavy amount of AI. Initially, I began with articles from [medium](https://medium.com/) informing me of how to use Nginx to host static sites and reverse proxy to other services. They were incredible helpful and I wish I were able to give credit them, but sadly they were read too long ago.
+
+After hearing all the hype on LinkedIn and feeling the pressure to keep up a high output without AI, I eventually caved in. There is an immense advantage not having to scan though documentation to find relevant functions, asking how other developers implement their infrastructure and finding what command will achieve your outcome quickly. Sure, it would be good to have that already cached in your own human memory. But my reasoning is that you _will_ have cached it after being reminded by AI enough times, similar to how flashcards work. I may not be an expert in the specific tool, though I've been able to get good enough at it for my own purposes.
 
 ## Architecture
 
@@ -42,9 +48,9 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Real-time chat over WebSockets with image/video uploads
 - Blog with admin panel (CRUD)
 - Activity and rowing session tracking
+- AI image processing integration to extract rowing data from images (will be superseeded by openCV scanning)
 - Fan shrines (GTO, Evangelion, Demoman, Skip Skip Benben)
 - Self-hosted Git (Gitea) with CI/CD and commit feed on homepage
-- Claude AI integration
 - Printable CV with role-specific sections
 - SearXNG meta search engine
 - Hasura GraphQL console
@@ -70,29 +76,33 @@ certbot          ── SSL Certificate Management (disabled in dev)
 **Endpoint:** `POST /api/graphql`
 **Playground:** `GET /api/graphql` (when `GQL_PLAYGROUND=true`)
 
-| Operation | Type | Description |
-| --- | --- | --- |
-| `users` | Query | Get all users |
-| `user(id)` | Query | Get user by ID |
-| `me` | Query | Get authenticated user |
-| `posts` | Query | Get all posts |
-| `post(id)` | Query | Get post by ID |
-| `activities` | Query | Get all activities |
-| `favorites` | Query | Get all favorites |
-| `rowingSessions` | Query | Get all rowing sessions |
-| `messages` | Query | Get all messages |
-| `spotifyListening` | Query | Currently playing track |
-| `spotifyRecent` | Query | Recently played tracks |
-| `giteaFeed` | Query | Latest Gitea activity |
-| `steamStatus` | Query | Steam online status |
-| `login` | Mutation | Authenticate user |
-| `logout` | Mutation | Logout |
-| `refreshToken` | Mutation | Refresh auth token |
-| `createPost` / `updatePost` / `deletePost` | Mutation | Post CRUD (admin) |
-| `createUser` / `deleteUser` | Mutation | User management (admin) |
-| `setUserAdmin` | Mutation | Toggle admin status |
-| `createFavorite` | Mutation | Add favorite (admin) |
-| `createActivity` | Mutation | Add activity (admin) |
+| Operation                                  | Type     | Description             |
+| ------------------------------------------ | -------- | ----------------------- |
+| `users`                                    | Query    | Get all users           |
+| `user(id)`                                 | Query    | Get user by ID          |
+| `me`                                       | Query    | Get authenticated user  |
+| `posts`                                    | Query    | Get all posts           |
+| `post(id)`                                 | Query    | Get post by ID          |
+| `activities`                               | Query    | Get all activities      |
+| `favorites`                                | Query    | Get all favorites       |
+| `rowingSessions`                           | Query    | Get all rowing sessions |
+| `post(id)`                                 | Query    | Get post by ID          |
+| `activities`                               | Query    | Get all activities      |
+| `favorites`                                | Query    | Get all favorites       |
+| `rowingSessions`                           | Query    | Get all rowing sessions |
+| `messages`                                 | Query    | Get all messages        |
+| `spotifyListening`                         | Query    | Currently playing track |
+| `spotifyRecent`                            | Query    | Recently played tracks  |
+| `giteaFeed`                                | Query    | Latest Gitea activity   |
+| `steamStatus`                              | Query    | Steam online status     |
+| `login`                                    | Mutation | Authenticate user       |
+| `logout`                                   | Mutation | Logout                  |
+| `refreshToken`                             | Mutation | Refresh auth token      |
+| `createPost` / `updatePost` / `deletePost` | Mutation | Post CRUD (admin)       |
+| `createUser` / `deleteUser`                | Mutation | User management (admin) |
+| `setUserAdmin`                             | Mutation | Toggle admin status     |
+| `createFavorite`                           | Mutation | Add favorite (admin)    |
+| `createActivity`                           | Mutation | Add activity (admin)    |
 
 ### REST Endpoints
 
@@ -153,15 +163,15 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 ### Nginx Proxy Routes
 
-| Route | Target | Notes |
-| --- | --- | --- |
-| `/api` | backend:8080 | API (rate limited: 30r/s) |
-| `/radio` | icecast:8000 | Audio streaming |
-| `/gitea` | gitea:3000 | Git service |
-| `/hasura` | hasura:8080 | GraphQL console + WebSocket |
-| `/notes` | quartz:8080 | Obsidian notes |
-| `/searxng` | searxng:8080 | Search engine |
-| `/uploads` | local alias | User-uploaded files |
+| Route      | Target       | Notes                       |
+| ---------- | ------------ | --------------------------- |
+| `/api`     | backend:8080 | API (rate limited: 30r/s)   |
+| `/radio`   | icecast:8000 | Audio streaming             |
+| `/gitea`   | gitea:3000   | Git service                 |
+| `/hasura`  | hasura:8080  | GraphQL console + WebSocket |
+| `/notes`   | quartz:8080  | Obsidian notes              |
+| `/searxng` | searxng:8080 | Search engine               |
+| `/uploads` | local alias  | User-uploaded files         |
 
 ### Deprecated Endpoints
 
@@ -173,58 +183,58 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 Create a `.env` file in the project root. All services read from this file.
 
-| Variable | Description |
-| --- | --- |
-| `POSTGRES_USER` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | PostgreSQL password |
-| `POSTGRES_DB` | Main app database name |
-| `POSTGRES_PORT` | PostgreSQL port (typically `5432`) |
-| `POSTGRES_HOST` | PostgreSQL hostname (use `db` for Docker) |
-| `GITEA_HOST` | Gitea hostname (use `gitea` for Docker) |
-| `GITEA_PORT` | Gitea HTTP port (typically `3000`) |
-| `GITEA_INTERNAL_TOKEN` | Gitea internal API token (generate with `gitea generate secret INTERNAL_TOKEN`) |
-| `GITEA_LFS_JWT_SECRET` | Gitea LFS JWT secret (generate with `gitea generate secret LFS_JWT_SECRET`) |
-| `GITEA_OAUTH2_JWT_SECRET` | Gitea OAuth2 JWT secret (generate with `gitea generate secret JWT_SECRET`) |
-| `POSTGRES_GITEA_DB` | Gitea database name |
-| `UPTIMEKUMA_HOST` | Uptime Kuma hostname (planned) |
-| `UPTIMEKUMA_PORT` | Uptime Kuma port (planned) |
-| `SEARXNG_HOST` | SearXNG hostname (use `searxng` for Docker) |
-| `SEARXNG_PORT` | SearXNG port (typically `8080`) |
-| `SEARXNG_SECRET_KEY` | SearXNG secret key (random hex string) |
-| `WALLABAG_HOST` | Wallabag hostname (planned) |
-| `WALLABAG_PORT` | Wallabag port (planned) |
-| `QUARTZ_HOST` | Quartz hostname (use `quartz` for Docker) |
-| `QUARTZ_PORT` | Quartz port (typically `8080`) |
-| `GITEA_RUNNER_HOST` | Gitea runner hostname |
-| `GITEA_RUNNER_NAME` | Gitea runner display name |
-| `GITEA_RUNNER_REGISTRATION_TOKEN` | Token to register Gitea Actions runner |
-| `BACKEND_PORT` | Backend port (typically `8080`) |
-| `BACKEND_HOST` | Backend hostname (use `backend` for Docker) |
-| `BACKEND_SECRET` | JWT signing secret |
-| `BACKEND_ENDPOINT` | API path prefix (typically `/api`) |
-| `OBSIDIAN_DIR` | Absolute path to Obsidian vault on host machine |
-| `SPOTIFY_CLIENT_ID` | Spotify app client ID |
-| `SPOTIFY_CLIENT_SECRET` | Spotify app client secret |
-| `SPOTIFY_REDIRECT_URI` | Spotify OAuth redirect (e.g. `https://www.<DOMAIN>/api/spotify/callback`) |
-| `SPOTIFY_AUTH_STATE` | Arbitrary state string for Spotify OAuth |
-| `ICECAST_SOURCE_PASSWORD` | Icecast source connection password |
-| `ICECAST_RELAY_PASSWORD` | Icecast relay password |
-| `ICECAST_ADMIN_USER` | Icecast admin username |
-| `ICECAST_ADMIN_PASSWORD` | Icecast admin password |
-| `ICECAST_HOST` | Icecast hostname (use `icecast` for Docker) |
-| `ICECAST_PORT` | Icecast port (typically `8000`) |
-| `ICECAST_MOUNT` | Icecast mount point (e.g. `/stream`) |
-| `LIQUIDSOAP_HARBOR_MOUNT` | Liquidsoap live input mount (e.g. `/live`) |
-| `LIQUIDSOAP_HARBOR_PORT` | Liquidsoap harbor port (e.g. `8005`) |
-| `DOMAIN` | Production domain name |
-| `EMAIL` | Email for Let's Encrypt registration |
-| `CLAUDE_API_KEY` | Anthropic Claude API key |
-| `STEAM_API_KEY` | Steam Web API key |
-| `STEAM_ID` | Steam user ID |
-| `HASURA_GRAPHQL_ADMIN_SECRET` | Hasura admin secret |
-| `HASURA_HOST` | Hasura hostname (use `hasura` for Docker) |
-| `HASURA_PORT` | Hasura port (typically `8080`) |
-| `SEED_DB` | Set to `true` to seed test data on startup |
+| Variable                          | Description                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `POSTGRES_USER`                   | PostgreSQL username                                                             |
+| `POSTGRES_PASSWORD`               | PostgreSQL password                                                             |
+| `POSTGRES_DB`                     | Main app database name                                                          |
+| `POSTGRES_PORT`                   | PostgreSQL port (typically `5432`)                                              |
+| `POSTGRES_HOST`                   | PostgreSQL hostname (use `db` for Docker)                                       |
+| `GITEA_HOST`                      | Gitea hostname (use `gitea` for Docker)                                         |
+| `GITEA_PORT`                      | Gitea HTTP port (typically `3000`)                                              |
+| `GITEA_INTERNAL_TOKEN`            | Gitea internal API token (generate with `gitea generate secret INTERNAL_TOKEN`) |
+| `GITEA_LFS_JWT_SECRET`            | Gitea LFS JWT secret (generate with `gitea generate secret LFS_JWT_SECRET`)     |
+| `GITEA_OAUTH2_JWT_SECRET`         | Gitea OAuth2 JWT secret (generate with `gitea generate secret JWT_SECRET`)      |
+| `POSTGRES_GITEA_DB`               | Gitea database name                                                             |
+| `UPTIMEKUMA_HOST`                 | Uptime Kuma hostname (planned)                                                  |
+| `UPTIMEKUMA_PORT`                 | Uptime Kuma port (planned)                                                      |
+| `SEARXNG_HOST`                    | SearXNG hostname (use `searxng` for Docker)                                     |
+| `SEARXNG_PORT`                    | SearXNG port (typically `8080`)                                                 |
+| `SEARXNG_SECRET_KEY`              | SearXNG secret key (random hex string)                                          |
+| `WALLABAG_HOST`                   | Wallabag hostname (planned)                                                     |
+| `WALLABAG_PORT`                   | Wallabag port (planned)                                                         |
+| `QUARTZ_HOST`                     | Quartz hostname (use `quartz` for Docker)                                       |
+| `QUARTZ_PORT`                     | Quartz port (typically `8080`)                                                  |
+| `GITEA_RUNNER_HOST`               | Gitea runner hostname                                                           |
+| `GITEA_RUNNER_NAME`               | Gitea runner display name                                                       |
+| `GITEA_RUNNER_REGISTRATION_TOKEN` | Token to register Gitea Actions runner                                          |
+| `BACKEND_PORT`                    | Backend port (typically `8080`)                                                 |
+| `BACKEND_HOST`                    | Backend hostname (use `backend` for Docker)                                     |
+| `BACKEND_SECRET`                  | JWT signing secret                                                              |
+| `BACKEND_ENDPOINT`                | API path prefix (typically `/api`)                                              |
+| `OBSIDIAN_DIR`                    | Absolute path to Obsidian vault on host machine                                 |
+| `SPOTIFY_CLIENT_ID`               | Spotify app client ID                                                           |
+| `SPOTIFY_CLIENT_SECRET`           | Spotify app client secret                                                       |
+| `SPOTIFY_REDIRECT_URI`            | Spotify OAuth redirect (e.g. `https://www.<DOMAIN>/api/spotify/callback`)       |
+| `SPOTIFY_AUTH_STATE`              | Arbitrary state string for Spotify OAuth                                        |
+| `ICECAST_SOURCE_PASSWORD`         | Icecast source connection password                                              |
+| `ICECAST_RELAY_PASSWORD`          | Icecast relay password                                                          |
+| `ICECAST_ADMIN_USER`              | Icecast admin username                                                          |
+| `ICECAST_ADMIN_PASSWORD`          | Icecast admin password                                                          |
+| `ICECAST_HOST`                    | Icecast hostname (use `icecast` for Docker)                                     |
+| `ICECAST_PORT`                    | Icecast port (typically `8000`)                                                 |
+| `ICECAST_MOUNT`                   | Icecast mount point (e.g. `/stream`)                                            |
+| `LIQUIDSOAP_HARBOR_MOUNT`         | Liquidsoap live input mount (e.g. `/live`)                                      |
+| `LIQUIDSOAP_HARBOR_PORT`          | Liquidsoap harbor port (e.g. `8005`)                                            |
+| `DOMAIN`                          | Production domain name                                                          |
+| `EMAIL`                           | Email for Let's Encrypt registration                                            |
+| `CLAUDE_API_KEY`                  | Anthropic Claude API key                                                        |
+| `STEAM_API_KEY`                   | Steam Web API key                                                               |
+| `STEAM_ID`                        | Steam user ID                                                                   |
+| `HASURA_GRAPHQL_ADMIN_SECRET`     | Hasura admin secret                                                             |
+| `HASURA_HOST`                     | Hasura hostname (use `hasura` for Docker)                                       |
+| `HASURA_PORT`                     | Hasura port (typically `8080`)                                                  |
+| `SEED_DB`                         | Set to `true` to seed test data on startup                                      |
 
 ### Gitea Config
 
@@ -248,9 +258,6 @@ The Docker entrypoint handles environment variable substitution (`${BASE_URL}`, 
 
 ### Spotify Token Setup
 
-1. Create a Spotify app at [developer.spotify.com](https://developer.spotify.com/dashboard) and set the redirect URI to `https://www.<DOMAIN>/api/spotify/callback`
-2. Set `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, and `SPOTIFY_AUTH_STATE` in `.env`
-3. Start the stack, then visit the Spotify auth URL logged by the backend on startup to authorize the app
 4. After authorization, Spotify redirects to the callback endpoint which stores tokens at `/backend/token/spotify_token.json`
 5. Tokens are refreshed automatically; the file persists across container restarts via volume mount
 
@@ -292,6 +299,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 This:
+
 - Uses an HTTP-only Nginx config with all routing (SPA, backend proxy, radio, gitea, etc.)
 - Generates a self-signed certificate for localhost
 - Disables certbot
@@ -313,16 +321,16 @@ Vite dev server proxies `/api` to `localhost:8080`, `/gitea` to `localhost:3000`
 
 These files are git-ignored and must be created manually:
 
-| File | Notes |
-| --- | --- |
-| `.env` | See setup section above |
-| `gitea/config/app.ini` | Copy from `app.ini.template` or let entrypoint generate it |
-| `searxng/settings.yml` | Copy from `settings.yml.template` or let entrypoint generate it |
-| `certbot/conf/`, `certbot/www/` | Created automatically by certbot; use dev mode to skip |
-| `backend/token/` | Created automatically by Docker volume mount |
-| `icecast2/fallback_music/*.mp3` | Place at least one MP3 file |
-| `gitea-runner/act_runner` | Download from Gitea releases |
-| `gitea-runner/.runner` | Generated on first runner startup |
+| File                            | Notes                                                           |
+| ------------------------------- | --------------------------------------------------------------- |
+| `.env`                          | See setup section above                                         |
+| `gitea/config/app.ini`          | Copy from `app.ini.template` or let entrypoint generate it      |
+| `searxng/settings.yml`          | Copy from `settings.yml.template` or let entrypoint generate it |
+| `certbot/conf/`, `certbot/www/` | Created automatically by certbot; use dev mode to skip          |
+| `backend/token/`                | Created automatically by Docker volume mount                    |
+| `icecast2/fallback_music/*.mp3` | Place at least one MP3 file                                     |
+| `gitea-runner/act_runner`       | Download from Gitea releases                                    |
+| `gitea-runner/.runner`          | Generated on first runner startup                               |
 
 ## Future Ideas
 
