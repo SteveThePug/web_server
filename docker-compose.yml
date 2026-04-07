@@ -177,25 +177,6 @@ services:
             - SYMFONY__ENV__DATABASE_USER=${POSTGRES_USER}
             - SYMFONY__ENV__DATABASE_PASSWORD=${POSTGRES_PASSWORD}
 
-    gitea-runner:
-        build:
-            context: ./gitea-runner
-            dockerfile: Dockerfile
-        container_name: "${GITEA_RUNNER_HOST}"
-        environment:
-            GITEA_RUNNER_NAME: ${GITEA_RUNNER_NAME}
-            CONFIG_FILE: /config.yaml
-            GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN}
-            GITEA_INSTANCE_URL: "http://${GITEA_HOST}:3000"
-            GITEA_RUNNER_LABELS: "self-hosted:host"
-        volumes:
-            - ./gitea-runner/config.yaml:/config.yaml
-            - ./gitea-runner/data:/data
-            - /var/run/docker.sock:/var/run/docker.sock # WARNING: Docker socket mount gives container host-level access. Runner is in 'disabled' profile to mitigate risk.
-            - /home/adamf/deploy/web_server:/home/adamf/deploy/web_server # Same path on host and container so docker compose bind mounts resolve correctly
-        restart: unless-stopped
-        networks:
-            - app-network
 
     gitea:
         image: docker.gitea.com/gitea:1.25.4-rootless

@@ -21,7 +21,6 @@ backend (8080)  ── Go API
 db (5432)       ── PostgreSQL 16
 icecast2 (8000) ── Audio Streaming
 gitea (3000)    ── Self-Hosted Git
-gitea-runner    ── CI/CD Runner
 certbot         ── SSL Certificate Management
 ```
 
@@ -107,9 +106,6 @@ GITEA_HOST=
 GITEA_PORT=
 POSTGRES_GITEA_DB=
 
-GITEA_RUNNER_HOST=
-GITEA_RUNNER_NAME=
-GITEA_RUNNER_REGISTRATION_TOKEN=
 
 BACKEND_PORT=
 BACKEND_HOST=

@@ -9,8 +9,6 @@ backend/token/
 gitea/config/app.ini
 gitea/data/*
 
-gitea-runner/data/*
-
 # Rust build artifacts
 **/target/
 
