@@ -7,6 +7,7 @@ backend/token/
 .env
 
 gitea/data/*
+gitea/config/app.ini
 
 # Gitea runner
 gitea-runner/.runner
