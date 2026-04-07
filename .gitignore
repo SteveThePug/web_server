@@ -9,6 +9,11 @@ backend/token/
 gitea/config/app.ini
 gitea/data/*
 
+# Gitea runner
+gitea-runner/.runner
+gitea-runner/act_runner
+gitea-runner/nohup.out
+
 # Rust build artifacts
 **/target/
 

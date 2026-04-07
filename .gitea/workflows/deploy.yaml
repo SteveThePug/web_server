@@ -12,7 +12,7 @@ jobs:
               working-directory: /home/adamf/deploy/web_server
               run: |
                   git config --global --add safe.directory /home/adamf/deploy/web_server
-                  git pull http://gitea:3000/adamf/web_server.git main
+                  git pull ssh://git@gitea:2222/adamf/web_server.git main
 
             - name: Run docker compose up
               working-directory: /home/adamf/deploy/web_server
