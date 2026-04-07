@@ -58,3 +58,4 @@ __screenshots__/
 
 .deploy
 *.xcf
+sync-secrets.sh
