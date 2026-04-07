@@ -6,7 +6,7 @@ volumes:
     dbdata:
     uploads:
     vue_dist:
-    uptime_kuma_data:
+
     searxng_data:
 
 services:
@@ -34,9 +34,7 @@ services:
             - gitea
             - hasura
             - quartz
-            - uptime-kuma
             - searxng
-            - wallabag
         networks:
             - app-network
         ports:
@@ -134,16 +132,6 @@ services:
         volumes:
             - ${OBSIDIAN_DIR}:/quartz/content:ro
 
-    uptime-kuma:
-        image: louislam/uptime-kuma:1
-        container_name: "${UPTIMEKUMA_HOST}"
-        restart: unless-stopped
-        networks:
-            - app-network
-        environment:
-            - UPTIME_KUMA_BASE_PATH=/uptime-kuma
-        volumes:
-            - uptime_kuma_data:/app/data
 
     searxng:
         build:
@@ -159,23 +147,6 @@ services:
             - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY}
         volumes:
             - searxng_data:/etc/searxng
-
-    wallabag:
-        image: wallabag/wallabag:latest
-        container_name: "${WALLABAG_HOST}"
-        restart: unless-stopped
-        networks:
-            - app-network
-        depends_on:
-            - db
-        environment:
-            - SYMFONY__ENV__DOMAIN_NAME=https://www.${DOMAIN}/wallabag
-            - SYMFONY__ENV__DATABASE_DRIVER=pdo_pgsql
-            - SYMFONY__ENV__DATABASE_HOST=${POSTGRES_HOST}
-            - SYMFONY__ENV__DATABASE_PORT=${POSTGRES_PORT}
-            - SYMFONY__ENV__DATABASE_NAME=wallabag
-            - SYMFONY__ENV__DATABASE_USER=${POSTGRES_USER}
-            - SYMFONY__ENV__DATABASE_PASSWORD=${POSTGRES_PASSWORD}
 
 
     gitea:

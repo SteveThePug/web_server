@@ -23,9 +23,7 @@ export default defineConfig({
             "/api": "http://localhost:8080",
             "/gitea": "http://localhost:3000",
             "/radio": "http://localhost:8000",
-            "/uptime-kuma": "http://localhost:3001",
             "/searxng": "http://localhost:8080",
-            "/wallabag": "http://localhost:80",
         },
     },
 });

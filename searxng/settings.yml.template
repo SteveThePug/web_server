@@ -1,5 +1,5 @@
 use_default_settings: true
 
 server:
-  base_url: https://www.adam-french.co.uk/searxng/
+  base_url: ${BASE_URL}
   secret_key: "${SEARXNG_SECRET_KEY}"
