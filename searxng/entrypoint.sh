@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 envsubst < /searxng/settings.yml.template > /etc/searxng/settings.yml
