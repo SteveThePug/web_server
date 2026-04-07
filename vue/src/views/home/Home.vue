@@ -24,7 +24,7 @@ import Steam from "./Steam.vue";
 </script>
 
 <template>
-    <main class="justify-center flex flex-row w-full h-full">
+    <main class="justify-center flex flex-row w-full h-full overflow-x-hidden">
         <div class="outerWrap flex flex-row">
             <div class="sidebar">
                 <Time class="time-sidebar sidebar-cell" />
