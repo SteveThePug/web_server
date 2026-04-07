@@ -1,6 +1,6 @@
 FROM searxng/searxng:latest
 
-RUN apk add --no-cache gettext
+RUN xbps-install -Sy gettext
 
 COPY settings.yml.template /searxng/settings.yml.template
 COPY entrypoint.sh /searxng/entrypoint.sh
