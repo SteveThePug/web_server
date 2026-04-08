@@ -179,12 +179,16 @@ import Steam from "./Steam.vue";
     }
 
     .commits-sidebar,
-    .steam-sidebar,
+    .steam-sidebar {
+        width: 100%;
+        max-height: 300px;
+    }
+
     .chat-sidebar {
         width: 100%;
-        min-height: 250px;
-        max-height: 400px;
-        height: 15vh;
+        min-height: 400px;
+        max-height: 800px;
+        height: 25vh;
     }
 
     .time-sidebar,
