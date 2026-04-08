@@ -175,6 +175,7 @@ import Steam from "./Steam.vue";
         width: 95vw;
         flex-direction: column;
         align-items: center;
+        flex: unset;
         justify-content: space-around;
     }
 
