@@ -28,6 +28,10 @@ func main() {
 	}
 	gin.DefaultWriter = io.MultiWriter(os.Stdout, logFile)
 
+	if os.Getenv("DEV_MODE") != "true" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 
 	err = r.SetTrustedProxies([]string{"172.28.0.0/16"})

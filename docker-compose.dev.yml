@@ -11,6 +11,7 @@ services:
             - SPOTIFY_REDIRECT_URI=https://localhost/api/spotify/callback
             - GQL_PLAYGROUND=true
             - GQL_INTROSPECTION=true
+            - DEV_MODE=true
     nginx:
         environment:
             - DEV_MODE=true
