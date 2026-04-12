@@ -53,13 +53,19 @@ func (store *Store) AdminMiddleware(ctx *gin.Context) {
 func (store *Store) ValidateAdmin(ctx *gin.Context) {
 	accessToken, err := ctx.Cookie("access_token")
 	if err != nil {
-		ctx.Status(http.StatusUnauthorized)
+		// No access token — try refreshing
+		if !store.tryRefreshAndValidateAdmin(ctx) {
+			ctx.Status(http.StatusUnauthorized)
+		}
 		return
 	}
 
 	claims, err := store.Auth.VerifyJWT(accessToken)
 	if err != nil {
-		ctx.Status(http.StatusUnauthorized)
+		// Expired/invalid access token — try refreshing
+		if !store.tryRefreshAndValidateAdmin(ctx) {
+			ctx.Status(http.StatusUnauthorized)
+		}
 		return
 	}
 
@@ -70,6 +76,59 @@ func (store *Store) ValidateAdmin(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusOK)
+}
+
+func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
+	refreshToken, err := ctx.Cookie("refresh_token")
+	if err != nil {
+		return false
+	}
+
+	claims, err := store.Auth.VerifyJWT(refreshToken)
+	if err != nil {
+		return false
+	}
+
+	userIDF, ok := (*claims)["id"].(float64)
+	if !ok {
+		return false
+	}
+
+	user := models.User{ID: uint(userIDF)}
+	if err := store.DB.First(&user).Error; err != nil {
+		return false
+	}
+
+	if !user.Admin {
+		ctx.Status(http.StatusForbidden)
+		return true
+	}
+
+	tokens, err := store.Auth.GenerateJWT(&user)
+	if err != nil {
+		return false
+	}
+
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie(
+		"access_token",
+		tokens.AccessToken,
+		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
+		"/",
+		store.Auth.Config.Domain,
+		true, true,
+	)
+	ctx.SetCookie(
+		"refresh_token",
+		tokens.RefreshToken,
+		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
+		"/",
+		store.Auth.Config.Domain,
+		true, true,
+	)
+
+	ctx.Status(http.StatusOK)
+	return true
 }
 
 func (store *Store) CheckToken(ctx *gin.Context) {
