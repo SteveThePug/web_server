@@ -246,7 +246,7 @@ http {
         }
 
         location @auth_denied {
-            return 302 /;
+            return 302 /admin;
         }
 
         location /searxng {
