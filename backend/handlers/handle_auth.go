@@ -50,6 +50,28 @@ func (store *Store) AdminMiddleware(ctx *gin.Context) {
 	ctx.Next()
 }
 
+func (store *Store) ValidateAdmin(ctx *gin.Context) {
+	accessToken, err := ctx.Cookie("access_token")
+	if err != nil {
+		ctx.Status(http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := store.Auth.VerifyJWT(accessToken)
+	if err != nil {
+		ctx.Status(http.StatusUnauthorized)
+		return
+	}
+
+	admin, ok := (*claims)["admin"].(bool)
+	if !ok || !admin {
+		ctx.Status(http.StatusForbidden)
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 func (store *Store) CheckToken(ctx *gin.Context) {
 	access_token, err := ctx.Cookie("access_token")
 	if err != nil {
@@ -123,7 +145,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 		"access_token",
 		tokens.AccessToken,
 		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -131,7 +153,7 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 		"refresh_token",
 		tokens.RefreshToken,
 		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -169,7 +191,7 @@ func (store *Store) Login(ctx *gin.Context) {
 		"access_token",
 		tokens.AccessToken,
 		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -177,7 +199,7 @@ func (store *Store) Login(ctx *gin.Context) {
 		"refresh_token",
 		tokens.RefreshToken,
 		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -197,7 +219,7 @@ func (store *Store) removeCookies(ctx *gin.Context) {
 		"access_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -205,7 +227,7 @@ func (store *Store) removeCookies(ctx *gin.Context) {
 		"refresh_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)

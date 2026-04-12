@@ -173,7 +173,7 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 		"access_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)
@@ -181,7 +181,7 @@ func (store *Store) DeleteUser(ctx *gin.Context) {
 		"refresh_token",
 		"",
 		-1,
-		store.Auth.Config.Endpoint,
+		"/",
 		store.Auth.Config.Domain,
 		true, true,
 	)

@@ -44,7 +44,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		"access_token",
 		tokens.AccessToken,
 		int(r.Store.Auth.Config.AccessTokenLifetime.Seconds()),
-		r.Store.Auth.Config.Endpoint,
+		"/",
 		r.Store.Auth.Config.Domain,
 		true, true,
 	)
@@ -52,7 +52,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		"refresh_token",
 		tokens.RefreshToken,
 		int(r.Store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		r.Store.Auth.Config.Endpoint,
+		"/",
 		r.Store.Auth.Config.Domain,
 		true, true,
 	)
@@ -112,7 +112,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 		"access_token",
 		tokens.AccessToken,
 		int(r.Store.Auth.Config.AccessTokenLifetime.Seconds()),
-		r.Store.Auth.Config.Endpoint,
+		"/",
 		r.Store.Auth.Config.Domain,
 		true, true,
 	)
@@ -120,7 +120,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 		"refresh_token",
 		tokens.RefreshToken,
 		int(r.Store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		r.Store.Auth.Config.Endpoint,
+		"/",
 		r.Store.Auth.Config.Domain,
 		true, true,
 	)

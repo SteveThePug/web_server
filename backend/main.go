@@ -70,7 +70,7 @@ func main() {
 
 	authSecret := os.Getenv("BACKEND_SECRET")
 	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
-	accessTokenLifetime := 24 * time.Hour
+	accessTokenLifetime := 7 * 24 * time.Hour
 	refreshTokenLifetime := 365 * 24 * time.Hour
 	authConfig := services.AuthConfig{Secret: []byte(authSecret), Domain: domainName, RefreshTokenLifetime: refreshTokenLifetime, AccessTokenLifetime: accessTokenLifetime, Endpoint: backendEndpoint}
 	auth := services.InitAuth(&authConfig)
@@ -122,6 +122,7 @@ func main() {
 	r.POST("/auth/refresh", store.RefreshToken)
 	r.GET("/auth/check", store.CheckToken)
 	r.POST("/auth/logout", store.Logout)
+	r.GET("/auth/validate-admin", store.ValidateAdmin)
 
 	// SPOTIFY
 	r.GET("/spotify/callback", store.CompleteSpotifyAuth)

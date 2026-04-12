@@ -35,7 +35,6 @@ services:
             - backend
             - icecast2
             - gitea
-            - hasura
             - quartz
             - searxng
         networks:
@@ -96,6 +95,8 @@ services:
         image: hasura/graphql-engine:v2.44.0
         container_name: "${HASURA_HOST}"
         restart: always
+        profiles:
+            - disabled
         depends_on:
             - db
         networks:
@@ -135,7 +136,6 @@ services:
         volumes:
             - ${OBSIDIAN_DIR}:/quartz/content:ro
 
-
     searxng:
         build:
             context: ./searxng
@@ -150,7 +150,6 @@ services:
             - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY}
         volumes:
             - searxng_data:/etc/searxng
-
 
     gitea:
         image: docker.gitea.com/gitea:1.25.4-rootless
