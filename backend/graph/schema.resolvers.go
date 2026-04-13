@@ -68,8 +68,8 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	}
 
 	gc.SetSameSite(http.SameSiteLaxMode)
-	gc.SetCookie("access_token", "", -1, "", "", true, true)
-	gc.SetCookie("refresh_token", "", -1, "", "", true, true)
+	gc.SetCookie("access_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
+	gc.SetCookie("refresh_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
 
 	return true, nil
 }
