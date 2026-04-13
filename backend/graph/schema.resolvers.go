@@ -387,6 +387,63 @@ func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bo
 	return true, nil
 }
 
+// CreateJobAppReference is the resolver for the createJobAppReference field.
+func (r *mutationResolver) CreateJobAppReference(ctx context.Context, input model.CreateJobAppReferenceInput) (*models.JobAppReference, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	ref := models.JobAppReference{
+		Category: input.Category,
+		Label:    input.Label,
+		Value:    input.Value,
+	}
+	if input.SortOrder != nil {
+		ref.SortOrder = *input.SortOrder
+	}
+	if err := r.Store.DB.Create(&ref).Error; err != nil {
+		return nil, err
+	}
+	return &ref, nil
+}
+
+// UpdateJobAppReference is the resolver for the updateJobAppReference field.
+func (r *mutationResolver) UpdateJobAppReference(ctx context.Context, id int, input model.UpdateJobAppReferenceInput) (*models.JobAppReference, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var ref models.JobAppReference
+	if err := r.Store.DB.First(&ref, id).Error; err != nil {
+		return nil, err
+	}
+	if input.Category != nil {
+		ref.Category = *input.Category
+	}
+	if input.Label != nil {
+		ref.Label = *input.Label
+	}
+	if input.Value != nil {
+		ref.Value = *input.Value
+	}
+	if input.SortOrder != nil {
+		ref.SortOrder = *input.SortOrder
+	}
+	if err := r.Store.DB.Save(&ref).Error; err != nil {
+		return nil, err
+	}
+	return &ref, nil
+}
+
+// DeleteJobAppReference is the resolver for the deleteJobAppReference field.
+func (r *mutationResolver) DeleteJobAppReference(ctx context.Context, id int) (bool, error) {
+	if !IsAdminFromCtx(ctx) {
+		return false, fmt.Errorf("admin access required")
+	}
+	if err := r.Store.DB.Delete(&models.JobAppReference{}, id).Error; err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
 	var users []models.User
@@ -633,6 +690,18 @@ func (r *queryResolver) JobApplication(ctx context.Context, id int) (*models.Job
 		return nil, err
 	}
 	return &app, nil
+}
+
+// JobAppReferences is the resolver for the jobAppReferences field.
+func (r *queryResolver) JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var refs []*models.JobAppReference
+	if err := r.Store.DB.Order("category ASC, sort_order ASC, created_at ASC").Find(&refs).Error; err != nil {
+		return nil, err
+	}
+	return refs, nil
 }
 
 // Mutation returns MutationResolver implementation.

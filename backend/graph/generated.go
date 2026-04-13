@@ -33,6 +33,7 @@ type ResolverRoot interface {
 	Activity() ActivityResolver
 	Bookmark() BookmarkResolver
 	Favorite() FavoriteResolver
+	JobAppReference() JobAppReferenceResolver
 	JobApplication() JobApplicationResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
@@ -86,6 +87,16 @@ type ComplexityRoot struct {
 		RepoURL       func(childComplexity int) int
 	}
 
+	JobAppReference struct {
+		Category  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Label     func(childComplexity int) int
+		SortOrder func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		Value     func(childComplexity int) int
+	}
+
 	JobApplication struct {
 		AppliedAt func(childComplexity int) int
 		Company   func(childComplexity int) int
@@ -108,22 +119,25 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateActivity       func(childComplexity int, input model.CreateActivityInput) int
-		CreateBookmark       func(childComplexity int, input model.CreateBookmarkInput) int
-		CreateFavorite       func(childComplexity int, input model.CreateFavoriteInput) int
-		CreateJobApplication func(childComplexity int, input model.CreateJobApplicationInput) int
-		CreatePost           func(childComplexity int, input model.CreatePostInput) int
-		CreateUser           func(childComplexity int, input model.CreateUserInput) int
-		DeleteBookmark       func(childComplexity int, id int) int
-		DeleteJobApplication func(childComplexity int, id int) int
-		DeletePost           func(childComplexity int, id int) int
-		DeleteUser           func(childComplexity int, id int) int
-		Login                func(childComplexity int, input model.LoginInput) int
-		Logout               func(childComplexity int) int
-		RefreshToken         func(childComplexity int) int
-		SetUserAdmin         func(childComplexity int, id int, admin bool) int
-		UpdateJobApplication func(childComplexity int, id int, input model.UpdateJobApplicationInput) int
-		UpdatePost           func(childComplexity int, id int, input model.UpdatePostInput) int
+		CreateActivity        func(childComplexity int, input model.CreateActivityInput) int
+		CreateBookmark        func(childComplexity int, input model.CreateBookmarkInput) int
+		CreateFavorite        func(childComplexity int, input model.CreateFavoriteInput) int
+		CreateJobAppReference func(childComplexity int, input model.CreateJobAppReferenceInput) int
+		CreateJobApplication  func(childComplexity int, input model.CreateJobApplicationInput) int
+		CreatePost            func(childComplexity int, input model.CreatePostInput) int
+		CreateUser            func(childComplexity int, input model.CreateUserInput) int
+		DeleteBookmark        func(childComplexity int, id int) int
+		DeleteJobAppReference func(childComplexity int, id int) int
+		DeleteJobApplication  func(childComplexity int, id int) int
+		DeletePost            func(childComplexity int, id int) int
+		DeleteUser            func(childComplexity int, id int) int
+		Login                 func(childComplexity int, input model.LoginInput) int
+		Logout                func(childComplexity int) int
+		RefreshToken          func(childComplexity int) int
+		SetUserAdmin          func(childComplexity int, id int, admin bool) int
+		UpdateJobAppReference func(childComplexity int, id int, input model.UpdateJobAppReferenceInput) int
+		UpdateJobApplication  func(childComplexity int, id int, input model.UpdateJobApplicationInput) int
+		UpdatePost            func(childComplexity int, id int, input model.UpdatePostInput) int
 	}
 
 	Post struct {
@@ -140,6 +154,7 @@ type ComplexityRoot struct {
 		Bookmarks        func(childComplexity int) int
 		Favorites        func(childComplexity int) int
 		GiteaFeed        func(childComplexity int) int
+		JobAppReferences func(childComplexity int) int
 		JobApplication   func(childComplexity int, id int) int
 		JobApplications  func(childComplexity int) int
 		Me               func(childComplexity int) int
@@ -224,6 +239,9 @@ type BookmarkResolver interface {
 type FavoriteResolver interface {
 	ID(ctx context.Context, obj *models.Favorite) (int, error)
 }
+type JobAppReferenceResolver interface {
+	ID(ctx context.Context, obj *models.JobAppReference) (int, error)
+}
 type JobApplicationResolver interface {
 	ID(ctx context.Context, obj *models.JobApplication) (int, error)
 }
@@ -249,6 +267,9 @@ type MutationResolver interface {
 	CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error)
 	DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error)
 	DeleteJobApplication(ctx context.Context, id int) (bool, error)
+	CreateJobAppReference(ctx context.Context, input model.CreateJobAppReferenceInput) (*models.JobAppReference, error)
+	UpdateJobAppReference(ctx context.Context, id int, input model.UpdateJobAppReferenceInput) (*models.JobAppReference, error)
+	DeleteJobAppReference(ctx context.Context, id int) (bool, error)
 }
 type PostResolver interface {
 	ID(ctx context.Context, obj *models.Post) (int, error)
@@ -270,6 +291,7 @@ type QueryResolver interface {
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
 	JobApplications(ctx context.Context) ([]*models.JobApplication, error)
 	JobApplication(ctx context.Context, id int) (*models.JobApplication, error)
+	JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error)
 }
 type RowingResolver interface {
 	ID(ctx context.Context, obj *models.Rowing) (int, error)
@@ -450,6 +472,49 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.GiteaFeedItem.RepoURL(childComplexity), true
 
+	case "JobAppReference.category":
+		if e.ComplexityRoot.JobAppReference.Category == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.Category(childComplexity), true
+	case "JobAppReference.createdAt":
+		if e.ComplexityRoot.JobAppReference.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.CreatedAt(childComplexity), true
+	case "JobAppReference.id":
+		if e.ComplexityRoot.JobAppReference.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.ID(childComplexity), true
+	case "JobAppReference.label":
+		if e.ComplexityRoot.JobAppReference.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.Label(childComplexity), true
+	case "JobAppReference.sortOrder":
+		if e.ComplexityRoot.JobAppReference.SortOrder == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.SortOrder(childComplexity), true
+	case "JobAppReference.updatedAt":
+		if e.ComplexityRoot.JobAppReference.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.UpdatedAt(childComplexity), true
+	case "JobAppReference.value":
+		if e.ComplexityRoot.JobAppReference.Value == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobAppReference.Value(childComplexity), true
+
 	case "JobApplication.appliedAt":
 		if e.ComplexityRoot.JobApplication.AppliedAt == nil {
 			break
@@ -575,6 +640,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateFavorite(childComplexity, args["input"].(model.CreateFavoriteInput)), true
+	case "Mutation.createJobAppReference":
+		if e.ComplexityRoot.Mutation.CreateJobAppReference == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJobAppReference_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateJobAppReference(childComplexity, args["input"].(model.CreateJobAppReferenceInput)), true
 	case "Mutation.createJobApplication":
 		if e.ComplexityRoot.Mutation.CreateJobApplication == nil {
 			break
@@ -619,6 +695,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteBookmark(childComplexity, args["id"].(int)), true
+	case "Mutation.deleteJobAppReference":
+		if e.ComplexityRoot.Mutation.DeleteJobAppReference == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteJobAppReference_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteJobAppReference(childComplexity, args["id"].(int)), true
 	case "Mutation.deleteJobApplication":
 		if e.ComplexityRoot.Mutation.DeleteJobApplication == nil {
 			break
@@ -686,6 +773,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SetUserAdmin(childComplexity, args["id"].(int), args["admin"].(bool)), true
+	case "Mutation.updateJobAppReference":
+		if e.ComplexityRoot.Mutation.UpdateJobAppReference == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateJobAppReference_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateJobAppReference(childComplexity, args["id"].(int), args["input"].(model.UpdateJobAppReferenceInput)), true
 	case "Mutation.updateJobApplication":
 		if e.ComplexityRoot.Mutation.UpdateJobApplication == nil {
 			break
@@ -771,6 +869,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.GiteaFeed(childComplexity), true
 
+	case "Query.jobAppReferences":
+		if e.ComplexityRoot.Query.JobAppReferences == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.JobAppReferences(childComplexity), true
 	case "Query.jobApplication":
 		if e.ComplexityRoot.Query.JobApplication == nil {
 			break
@@ -1060,10 +1164,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateFavoriteInput,
+		ec.unmarshalInputCreateJobAppReferenceInput,
 		ec.unmarshalInputCreateJobApplicationInput,
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputUpdateJobAppReferenceInput,
 		ec.unmarshalInputUpdateJobApplicationInput,
 		ec.unmarshalInputUpdatePostInput,
 	)
@@ -1140,7 +1246,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/job_application.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/job_app_reference.graphql" "schema/job_application.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1157,6 +1263,7 @@ var sources = []*ast.Source{
 	{Name: "schema/bookmark.graphql", Input: sourceData("schema/bookmark.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
+	{Name: "schema/job_app_reference.graphql", Input: sourceData("schema/job_app_reference.graphql"), BuiltIn: false},
 	{Name: "schema/job_application.graphql", Input: sourceData("schema/job_application.graphql"), BuiltIn: false},
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
 	{Name: "schema/post.graphql", Input: sourceData("schema/post.graphql"), BuiltIn: false},
@@ -1205,6 +1312,17 @@ func (ec *executionContext) field_Mutation_createFavorite_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createJobAppReference_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateJobAppReferenceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobAppReferenceInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createJobApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1239,6 +1357,17 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 }
 
 func (ec *executionContext) field_Mutation_deleteBookmark_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteJobAppReference_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
@@ -1306,6 +1435,22 @@ func (ec *executionContext) field_Mutation_setUserAdmin_args(ctx context.Context
 		return nil, err
 	}
 	args["admin"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateJobAppReference_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateJobAppReferenceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobAppReferenceInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -2169,6 +2314,209 @@ func (ec *executionContext) fieldContext_GiteaFeedItem_createdAt(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_id(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_id,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.JobAppReference().ID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_category(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_category,
+		func(ctx context.Context) (any, error) {
+			return obj.Category, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_label(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_label,
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_value(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_value,
+		func(ctx context.Context) (any, error) {
+			return obj.Value, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobAppReference_sortOrder(ctx context.Context, field graphql.CollectedField, obj *models.JobAppReference) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobAppReference_sortOrder,
+		func(ctx context.Context) (any, error) {
+			return obj.SortOrder, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobAppReference_sortOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobAppReference",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3427,6 +3775,161 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobApplication(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateJobAppReference(ctx, fc.Args["input"].(model.CreateJobAppReferenceInput))
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobAppReference(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobAppReferenceInput))
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteJobAppReference(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4319,6 +4822,51 @@ func (ec *executionContext) fieldContext_Query_jobApplication(ctx context.Contex
 	if fc.Args, err = ec.field_Query_jobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobAppReferences(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_jobAppReferences,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobAppReferences(ctx)
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReferenceᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_jobAppReferences(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -6921,6 +7469,57 @@ func (ec *executionContext) unmarshalInputCreateFavoriteInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateJobAppReferenceInput(ctx context.Context, obj any) (model.CreateJobAppReferenceInput, error) {
+	var it model.CreateJobAppReferenceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"category", "label", "value", "sortOrder"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "label":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Label = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		case "sortOrder":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortOrder = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateJobApplicationInput(ctx context.Context, obj any) (model.CreateJobApplicationInput, error) {
 	var it model.CreateJobApplicationInput
 	if obj == nil {
@@ -7099,6 +7698,57 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 				return it, err
 			}
 			it.Password = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateJobAppReferenceInput(ctx context.Context, obj any) (model.UpdateJobAppReferenceInput, error) {
+	var it model.UpdateJobAppReferenceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"category", "label", "value", "sortOrder"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "label":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Label = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		case "sortOrder":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortOrder = data
 		}
 	}
 	return it, nil
@@ -7603,6 +8253,106 @@ func (ec *executionContext) _GiteaFeedItem(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var jobAppReferenceImplementors = []string{"JobAppReference"}
+
+func (ec *executionContext) _JobAppReference(ctx context.Context, sel ast.SelectionSet, obj *models.JobAppReference) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobAppReferenceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobAppReference")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._JobAppReference_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._JobAppReference_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._JobAppReference_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "category":
+			out.Values[i] = ec._JobAppReference_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "label":
+			out.Values[i] = ec._JobAppReference_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "value":
+			out.Values[i] = ec._JobAppReference_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "sortOrder":
+			out.Values[i] = ec._JobAppReference_sortOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var jobApplicationImplementors = []string{"JobApplication"}
 
 func (ec *executionContext) _JobApplication(ctx context.Context, sel ast.SelectionSet, obj *models.JobApplication) graphql.Marshaler {
@@ -7951,6 +8701,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteJobApplication":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJobAppReference(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobAppReference(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJobAppReference(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8408,6 +9179,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_jobApplication(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobAppReferences":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobAppReferences(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -9499,6 +10292,11 @@ func (ec *executionContext) unmarshalNCreateFavoriteInput2adamᚑfrenchᚗcoᚗu
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateJobAppReferenceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobAppReferenceInput(ctx context.Context, v any) (model.CreateJobAppReferenceInput, error) {
+	res, err := ec.unmarshalInputCreateJobAppReferenceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobApplicationInput(ctx context.Context, v any) (model.CreateJobApplicationInput, error) {
 	res, err := ec.unmarshalInputCreateJobApplicationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9590,6 +10388,36 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNJobAppReference2adamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference(ctx context.Context, sel ast.SelectionSet, v models.JobAppReference) graphql.Marshaler {
+	return ec._JobAppReference(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNJobAppReference2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.JobAppReference) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference(ctx context.Context, sel ast.SelectionSet, v *models.JobAppReference) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobAppReference(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNJobApplication2adamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx context.Context, sel ast.SelectionSet, v models.JobApplication) graphql.Marshaler {
@@ -9849,6 +10677,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) unmarshalNUpdateJobAppReferenceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobAppReferenceInput(ctx context.Context, v any) (model.UpdateJobAppReferenceInput, error) {
+	res, err := ec.unmarshalInputUpdateJobAppReferenceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobApplicationInput(ctx context.Context, v any) (model.UpdateJobApplicationInput, error) {
 	res, err := ec.unmarshalInputUpdateJobApplicationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10065,6 +10898,24 @@ func (ec *executionContext) marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋb
 		return graphql.Null
 	}
 	return ec._GiteaFeedItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
+	return res
 }
 
 func (ec *executionContext) marshalOJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx context.Context, sel ast.SelectionSet, v *models.JobApplication) graphql.Marshaler {

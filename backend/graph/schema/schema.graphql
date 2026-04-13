@@ -17,6 +17,7 @@ type Query {
   bookmarks: [Bookmark!]!
   jobApplications: [JobApplication!]!
   jobApplication(id: ID!): JobApplication
+  jobAppReferences: [JobAppReference!]!
 }
 
 type Mutation {
@@ -36,4 +37,7 @@ type Mutation {
   createBookmark(input: CreateBookmarkInput!): Bookmark!
   deleteBookmark(id: ID!): Bookmark!
   deleteJobApplication(id: ID!): Boolean!
+  createJobAppReference(input: CreateJobAppReferenceInput!): JobAppReference!
+  updateJobAppReference(id: ID!, input: UpdateJobAppReferenceInput!): JobAppReference!
+  deleteJobAppReference(id: ID!): Boolean!
 }

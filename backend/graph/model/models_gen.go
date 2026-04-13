@@ -30,6 +30,13 @@ type CreateFavoriteInput struct {
 	Link *string `json:"link,omitempty"`
 }
 
+type CreateJobAppReferenceInput struct {
+	Category  string `json:"category"`
+	Label     string `json:"label"`
+	Value     string `json:"value"`
+	SortOrder *int   `json:"sortOrder,omitempty"`
+}
+
 type CreateJobApplicationInput struct {
 	JobTitle  string     `json:"jobTitle"`
 	Company   string     `json:"company"`
@@ -110,6 +117,13 @@ type SteamGame struct {
 type SteamStatus struct {
 	Online      bool         `json:"online"`
 	RecentGames []*SteamGame `json:"recentGames"`
+}
+
+type UpdateJobAppReferenceInput struct {
+	Category  *string `json:"category,omitempty"`
+	Label     *string `json:"label,omitempty"`
+	Value     *string `json:"value,omitempty"`
+	SortOrder *int    `json:"sortOrder,omitempty"`
 }
 
 type UpdateJobApplicationInput struct {

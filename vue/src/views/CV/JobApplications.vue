@@ -16,6 +16,13 @@ const form = ref({
     appliedAt: "",
 });
 
+const references = ref([]);
+const refForm = ref({ category: "profile", label: "", value: "" });
+const editingRefId = ref(null);
+const editRefForm = ref({});
+const REF_CATEGORIES = ["profile", "experience"];
+const REF_FIELDS = `id category label value sortOrder createdAt`;
+
 const STATUS_OPTIONS = ["Applied", "Screening", "Interview", "Offer", "Rejected", "Withdrawn"];
 
 const APP_FIELDS = `id jobTitle company location url status notes appliedAt createdAt`;
@@ -132,6 +139,87 @@ function exportCsv() {
     URL.revokeObjectURL(url);
 }
 
+async function fetchReferences() {
+    try {
+        const data = await gql(`query { jobAppReferences { ${REF_FIELDS} } }`);
+        references.value = data.jobAppReferences;
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function createReference() {
+    if (!refForm.value.label || !refForm.value.value) return;
+    try {
+        const input = {
+            category: refForm.value.category,
+            label: refForm.value.label,
+            value: refForm.value.value,
+        };
+        const data = await gql(
+            `mutation CreateJobAppReference($input: CreateJobAppReferenceInput!) {
+                createJobAppReference(input: $input) { ${REF_FIELDS} }
+            }`,
+            { input },
+        );
+        references.value.push(data.createJobAppReference);
+        refForm.value = { category: refForm.value.category, label: "", value: "" };
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function startRefEdit(ref) {
+    editingRefId.value = ref.id;
+    editRefForm.value = { category: ref.category, label: ref.label, value: ref.value };
+}
+
+function cancelRefEdit() {
+    editingRefId.value = null;
+    editRefForm.value = {};
+}
+
+async function saveRefEdit(id) {
+    try {
+        const input = {
+            category: editRefForm.value.category || undefined,
+            label: editRefForm.value.label || undefined,
+            value: editRefForm.value.value || undefined,
+        };
+        const data = await gql(
+            `mutation UpdateJobAppReference($id: ID!, $input: UpdateJobAppReferenceInput!) {
+                updateJobAppReference(id: $id, input: $input) { ${REF_FIELDS} }
+            }`,
+            { id, input },
+        );
+        const idx = references.value.findIndex((r) => r.id === id);
+        if (idx !== -1) references.value[idx] = data.updateJobAppReference;
+        editingRefId.value = null;
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function deleteReference(id) {
+    try {
+        await gql(
+            `mutation DeleteJobAppReference($id: ID!) { deleteJobAppReference(id: $id) }`,
+            { id },
+        );
+        references.value = references.value.filter((r) => r.id !== id);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function refsByCategory(category) {
+    return references.value.filter((r) => r.category === category);
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+}
+
 function statusClass(status) {
     const map = {
         Applied: "status-applied",
@@ -144,7 +232,10 @@ function statusClass(status) {
     return map[status] ?? "";
 }
 
-onMounted(fetchApplications);
+onMounted(() => {
+    fetchApplications();
+    fetchReferences();
+});
 </script>
 
 <template>
@@ -155,6 +246,40 @@ onMounted(fetchApplications);
                 <h2 class="ja-heading">Job Applications</h2>
             </div>
             <button class="ja-btn" @click="exportCsv" :disabled="!applications.length">Export CSV</button>
+        </div>
+
+        <div class="ja-ref-section">
+            <h3 class="ja-ref-heading">Quick Reference</h3>
+            <div v-for="cat in REF_CATEGORIES" :key="cat" class="ja-ref-category">
+                <h4 class="ja-ref-cat-label">{{ cat }}</h4>
+                <div v-for="ref in refsByCategory(cat)" :key="ref.id" class="ja-ref-item">
+                    <template v-if="editingRefId !== ref.id">
+                        <span class="ja-ref-label">{{ ref.label }}</span>
+                        <span class="ja-ref-value" :title="ref.value">{{ ref.value }}</span>
+                        <button class="ja-btn ja-btn-sm" @click="copyToClipboard(ref.value)" title="Copy">Copy</button>
+                        <button class="ja-btn ja-btn-sm" @click="startRefEdit(ref)">Edit</button>
+                        <button class="ja-btn ja-btn-sm ja-btn-danger" @click="deleteReference(ref.id)">Delete</button>
+                    </template>
+                    <template v-else>
+                        <select v-model="editRefForm.category" class="ja-input ja-input-sm ja-select">
+                            <option v-for="c in REF_CATEGORIES" :key="c" :value="c">{{ c }}</option>
+                        </select>
+                        <input v-model="editRefForm.label" class="ja-input ja-input-sm" placeholder="Label" />
+                        <input v-model="editRefForm.value" class="ja-input ja-input-sm" placeholder="Value" />
+                        <button class="ja-btn ja-btn-sm ja-btn-primary" @click="saveRefEdit(ref.id)">Save</button>
+                        <button class="ja-btn ja-btn-sm" @click="cancelRefEdit">Cancel</button>
+                    </template>
+                </div>
+                <p v-if="!refsByCategory(cat).length" class="ja-ref-empty">No {{ cat }} items yet.</p>
+            </div>
+            <form class="ja-ref-form" @submit.prevent="createReference">
+                <select v-model="refForm.category" class="ja-input ja-select">
+                    <option v-for="c in REF_CATEGORIES" :key="c" :value="c">{{ c }}</option>
+                </select>
+                <input v-model="refForm.label" class="ja-input" placeholder="Label *" required />
+                <input v-model="refForm.value" class="ja-input" placeholder="Value *" required />
+                <button type="submit" class="ja-btn ja-btn-primary">Add</button>
+            </form>
         </div>
 
         <form class="ja-form" @submit.prevent="createApplication">
@@ -428,5 +553,68 @@ onMounted(fetchApplications);
 .ja-empty {
     color: #888;
     font-size: 0.9rem;
+}
+
+.ja-ref-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.ja-ref-heading {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    color: #333;
+}
+
+.ja-ref-category {
+    margin-bottom: 0.75rem;
+}
+
+.ja-ref-cat-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    text-transform: capitalize;
+    margin: 0 0 0.35rem 0;
+}
+
+.ja-ref-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+}
+
+.ja-ref-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #333;
+    min-width: 80px;
+}
+
+.ja-ref-value {
+    font-size: 0.85rem;
+    color: #555;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ja-ref-empty {
+    font-size: 0.8rem;
+    color: #999;
+    margin: 0.2rem 0;
+}
+
+.ja-ref-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
 }
 </style>

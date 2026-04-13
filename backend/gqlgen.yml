@@ -69,3 +69,9 @@ models:
     fields:
       deletedAt:
         resolver: false
+  JobAppReference:
+    model:
+      - adam-french.co.uk/backend/models.JobAppReference
+    fields:
+      deletedAt:
+        resolver: false

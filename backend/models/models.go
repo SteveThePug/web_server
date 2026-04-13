@@ -77,6 +77,17 @@ type Bookmark struct {
 	Link      string         `gorm:"not null" json:"link"`
 }
 
+type JobAppReference struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Category  string         `gorm:"not null" json:"category"`
+	Label     string         `gorm:"not null" json:"label"`
+	Value     string         `gorm:"not null" json:"value"`
+	SortOrder int            `gorm:"default:0" json:"sortOrder"`
+}
+
 type JobApplication struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"createdAt"`

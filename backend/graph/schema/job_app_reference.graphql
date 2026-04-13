@@ -1,0 +1,23 @@
+type JobAppReference {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  category: String!
+  label: String!
+  value: String!
+  sortOrder: Int!
+}
+
+input CreateJobAppReferenceInput {
+  category: String!
+  label: String!
+  value: String!
+  sortOrder: Int
+}
+
+input UpdateJobAppReferenceInput {
+  category: String
+  label: String
+  value: String
+  sortOrder: Int
+}
