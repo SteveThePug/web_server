@@ -1,5 +1,6 @@
 <script setup>
 import { ref, shallowRef, defineAsyncComponent } from "vue";
+import { RouterLink } from "vue-router";
 import CVGeneral from "./CVGeneral.vue";
 import CVBackend from "./CVBackend.vue";
 import CVFrontend from "./CVFrontend.vue";
@@ -34,6 +35,7 @@ function print() {
                 {{ t.label }}
             </button>
             <button class="cv-btn cv-print-btn" @click="print()">Print</button>
+            <RouterLink to="/cv/jobs" class="cv-btn cv-jobs-btn">Jobs</RouterLink>
         </div>
         <Transition name="cv-fade" mode="out-in">
             <component :is="currentComponent" :key="selected" />
@@ -83,6 +85,11 @@ function print() {
 
 .cv-print-btn {
     margin-left: 1rem;
+}
+
+.cv-jobs-btn {
+    text-decoration: none;
+    margin-left: auto;
 }
 
 .cv-fade-enter-active,
