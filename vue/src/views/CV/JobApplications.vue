@@ -113,6 +113,29 @@ async function deleteApplication(id) {
     }
 }
 
+function exportCsv() {
+    const headers = ["Job Title", "Company", "Status", "Location", "URL", "Applied", "Notes", "Created"];
+    const rows = applications.value.map((a) => [
+        a.jobTitle,
+        a.company,
+        a.status,
+        a.location ?? "",
+        a.url ?? "",
+        a.appliedAt ? a.appliedAt.substring(0, 10) : "",
+        a.notes ?? "",
+        a.createdAt ? a.createdAt.substring(0, 10) : "",
+    ]);
+    const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "job_applications.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 function statusClass(status) {
     const map = {
         Applied: "status-applied",
@@ -136,7 +159,10 @@ onMounted(() => {
 
 <template>
     <div class="no-print ja-root">
-        <h2 class="ja-heading">Job Applications</h2>
+        <div class="ja-header">
+            <h2 class="ja-heading">Job Applications</h2>
+            <button class="ja-btn" @click="exportCsv" :disabled="!applications.length">Export CSV</button>
+        </div>
 
         <form class="ja-form" @submit.prevent="createApplication">
             <div class="ja-form-row">
@@ -226,10 +252,17 @@ onMounted(() => {
     background: #fafafa;
 }
 
+.ja-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
 .ja-heading {
     font-size: 1.1rem;
     font-weight: 600;
-    margin: 0 0 1rem;
+    margin: 0;
     color: #333;
 }
 
