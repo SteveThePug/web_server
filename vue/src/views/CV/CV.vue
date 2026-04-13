@@ -4,6 +4,7 @@ import CVGeneral from "./CVGeneral.vue";
 import CVBackend from "./CVBackend.vue";
 import CVFrontend from "./CVFrontend.vue";
 import CVTemp from "./CVTemp.vue";
+import JobApplications from "./JobApplications.vue";
 
 const CVHospitality = defineAsyncComponent(() => import("./CVHospitality.vue"));
 
@@ -38,6 +39,7 @@ function print() {
         <Transition name="cv-fade" mode="out-in">
             <component :is="currentComponent" :key="selected" />
         </Transition>
+        <JobApplications />
     </div>
 </template>
 

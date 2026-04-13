@@ -57,3 +57,9 @@ models:
     fields:
       deletedAt:
         resolver: false
+  JobApplication:
+    model:
+      - adam-french.co.uk/backend/models.JobApplication
+    fields:
+      deletedAt:
+        resolver: false

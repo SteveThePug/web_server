@@ -1,15 +1,21 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 
 import Button from "@/components/input/Button.vue";
 
 const auth = useAuthStore();
+const router = useRouter();
+const route = useRoute();
 const username = ref("");
 const password = ref("");
 
-function handleLogin() {
-    auth.logIn(username.value, password.value);
+async function handleLogin() {
+    await auth.logIn(username.value, password.value);
+    if (auth.loggedIn && route.query.redirect) {
+        router.push(route.query.redirect);
+    }
 }
 
 function handleLogout() {

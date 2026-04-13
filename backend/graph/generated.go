@@ -32,6 +32,7 @@ type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 type ResolverRoot interface {
 	Activity() ActivityResolver
 	Favorite() FavoriteResolver
+	JobApplication() JobApplicationResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
 	Post() PostResolver
@@ -75,6 +76,19 @@ type ComplexityRoot struct {
 		RepoURL       func(childComplexity int) int
 	}
 
+	JobApplication struct {
+		AppliedAt func(childComplexity int) int
+		Company   func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		JobTitle  func(childComplexity int) int
+		Location  func(childComplexity int) int
+		Notes     func(childComplexity int) int
+		Status    func(childComplexity int) int
+		URL       func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
 	Message struct {
 		AuthorID  func(childComplexity int) int
 		Content   func(childComplexity int) int
@@ -84,17 +98,20 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateActivity func(childComplexity int, input model.CreateActivityInput) int
-		CreateFavorite func(childComplexity int, input model.CreateFavoriteInput) int
-		CreatePost     func(childComplexity int, input model.CreatePostInput) int
-		CreateUser     func(childComplexity int, input model.CreateUserInput) int
-		DeletePost     func(childComplexity int, id int) int
-		DeleteUser     func(childComplexity int, id int) int
-		Login          func(childComplexity int, input model.LoginInput) int
-		Logout         func(childComplexity int) int
-		RefreshToken   func(childComplexity int) int
-		SetUserAdmin   func(childComplexity int, id int, admin bool) int
-		UpdatePost     func(childComplexity int, id int, input model.UpdatePostInput) int
+		CreateActivity       func(childComplexity int, input model.CreateActivityInput) int
+		CreateFavorite       func(childComplexity int, input model.CreateFavoriteInput) int
+		CreateJobApplication func(childComplexity int, input model.CreateJobApplicationInput) int
+		CreatePost           func(childComplexity int, input model.CreatePostInput) int
+		CreateUser           func(childComplexity int, input model.CreateUserInput) int
+		DeleteJobApplication func(childComplexity int, id int) int
+		DeletePost           func(childComplexity int, id int) int
+		DeleteUser           func(childComplexity int, id int) int
+		Login                func(childComplexity int, input model.LoginInput) int
+		Logout               func(childComplexity int) int
+		RefreshToken         func(childComplexity int) int
+		SetUserAdmin         func(childComplexity int, id int, admin bool) int
+		UpdateJobApplication func(childComplexity int, id int, input model.UpdateJobApplicationInput) int
+		UpdatePost           func(childComplexity int, id int, input model.UpdatePostInput) int
 	}
 
 	Post struct {
@@ -110,6 +127,8 @@ type ComplexityRoot struct {
 		Activities       func(childComplexity int) int
 		Favorites        func(childComplexity int) int
 		GiteaFeed        func(childComplexity int) int
+		JobApplication   func(childComplexity int, id int) int
+		JobApplications  func(childComplexity int) int
 		Me               func(childComplexity int) int
 		Messages         func(childComplexity int) int
 		Post             func(childComplexity int, id int) int
@@ -189,6 +208,9 @@ type ActivityResolver interface {
 type FavoriteResolver interface {
 	ID(ctx context.Context, obj *models.Favorite) (int, error)
 }
+type JobApplicationResolver interface {
+	ID(ctx context.Context, obj *models.JobApplication) (int, error)
+}
 type MessageResolver interface {
 	ID(ctx context.Context, obj *models.Message) (int, error)
 
@@ -206,6 +228,9 @@ type MutationResolver interface {
 	SetUserAdmin(ctx context.Context, id int, admin bool) (*models.User, error)
 	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
 	CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error)
+	CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error)
+	UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error)
+	DeleteJobApplication(ctx context.Context, id int) (bool, error)
 }
 type PostResolver interface {
 	ID(ctx context.Context, obj *models.Post) (int, error)
@@ -224,6 +249,8 @@ type QueryResolver interface {
 	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
 	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
 	Me(ctx context.Context) (*models.User, error)
+	JobApplications(ctx context.Context) ([]*models.JobApplication, error)
+	JobApplication(ctx context.Context, id int) (*models.JobApplication, error)
 }
 type RowingResolver interface {
 	ID(ctx context.Context, obj *models.Rowing) (int, error)
@@ -367,6 +394,67 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.GiteaFeedItem.RepoURL(childComplexity), true
 
+	case "JobApplication.appliedAt":
+		if e.ComplexityRoot.JobApplication.AppliedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.AppliedAt(childComplexity), true
+	case "JobApplication.company":
+		if e.ComplexityRoot.JobApplication.Company == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.Company(childComplexity), true
+	case "JobApplication.createdAt":
+		if e.ComplexityRoot.JobApplication.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.CreatedAt(childComplexity), true
+	case "JobApplication.id":
+		if e.ComplexityRoot.JobApplication.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.ID(childComplexity), true
+	case "JobApplication.jobTitle":
+		if e.ComplexityRoot.JobApplication.JobTitle == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.JobTitle(childComplexity), true
+	case "JobApplication.location":
+		if e.ComplexityRoot.JobApplication.Location == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.Location(childComplexity), true
+	case "JobApplication.notes":
+		if e.ComplexityRoot.JobApplication.Notes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.Notes(childComplexity), true
+	case "JobApplication.status":
+		if e.ComplexityRoot.JobApplication.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.Status(childComplexity), true
+	case "JobApplication.url":
+		if e.ComplexityRoot.JobApplication.URL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.URL(childComplexity), true
+	case "JobApplication.updatedAt":
+		if e.ComplexityRoot.JobApplication.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.UpdatedAt(childComplexity), true
+
 	case "Message.authorId":
 		if e.ComplexityRoot.Message.AuthorID == nil {
 			break
@@ -420,6 +508,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateFavorite(childComplexity, args["input"].(model.CreateFavoriteInput)), true
+	case "Mutation.createJobApplication":
+		if e.ComplexityRoot.Mutation.CreateJobApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJobApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateJobApplication(childComplexity, args["input"].(model.CreateJobApplicationInput)), true
 	case "Mutation.createPost":
 		if e.ComplexityRoot.Mutation.CreatePost == nil {
 			break
@@ -442,6 +541,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateUser(childComplexity, args["input"].(model.CreateUserInput)), true
+	case "Mutation.deleteJobApplication":
+		if e.ComplexityRoot.Mutation.DeleteJobApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteJobApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteJobApplication(childComplexity, args["id"].(int)), true
 	case "Mutation.deletePost":
 		if e.ComplexityRoot.Mutation.DeletePost == nil {
 			break
@@ -498,6 +608,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SetUserAdmin(childComplexity, args["id"].(int), args["admin"].(bool)), true
+	case "Mutation.updateJobApplication":
+		if e.ComplexityRoot.Mutation.UpdateJobApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateJobApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateJobApplication(childComplexity, args["id"].(int), args["input"].(model.UpdateJobApplicationInput)), true
 	case "Mutation.updatePost":
 		if e.ComplexityRoot.Mutation.UpdatePost == nil {
 			break
@@ -566,6 +687,23 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.GiteaFeed(childComplexity), true
 
+	case "Query.jobApplication":
+		if e.ComplexityRoot.Query.JobApplication == nil {
+			break
+		}
+
+		args, err := ec.field_Query_jobApplication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.JobApplication(childComplexity, args["id"].(int)), true
+	case "Query.jobApplications":
+		if e.ComplexityRoot.Query.JobApplications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.JobApplications(childComplexity), true
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
 			break
@@ -837,9 +975,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateFavoriteInput,
+		ec.unmarshalInputCreateJobApplicationInput,
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputUpdateJobApplicationInput,
 		ec.unmarshalInputUpdatePostInput,
 	)
 	first := true
@@ -915,7 +1055,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/job_application.graphql" "schema/message.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -931,6 +1071,7 @@ var sources = []*ast.Source{
 	{Name: "schema/auth.graphql", Input: sourceData("schema/auth.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
+	{Name: "schema/job_application.graphql", Input: sourceData("schema/job_application.graphql"), BuiltIn: false},
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
 	{Name: "schema/post.graphql", Input: sourceData("schema/post.graphql"), BuiltIn: false},
 	{Name: "schema/rowing.graphql", Input: sourceData("schema/rowing.graphql"), BuiltIn: false},
@@ -967,6 +1108,17 @@ func (ec *executionContext) field_Mutation_createFavorite_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createJobApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobApplicationInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -986,6 +1138,17 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteJobApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1038,6 +1201,22 @@ func (ec *executionContext) field_Mutation_setUserAdmin_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateJobApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobApplicationInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updatePost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1062,6 +1241,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jobApplication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1692,6 +1882,296 @@ func (ec *executionContext) _GiteaFeedItem_createdAt(ctx context.Context, field 
 func (ec *executionContext) fieldContext_GiteaFeedItem_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "GiteaFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_id(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_id,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.JobApplication().ID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_jobTitle(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_jobTitle,
+		func(ctx context.Context) (any, error) {
+			return obj.JobTitle, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_jobTitle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_company(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_company,
+		func(ctx context.Context) (any, error) {
+			return obj.Company, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_company(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_location(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_location,
+		func(ctx context.Context) (any, error) {
+			return obj.Location, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_location(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_url(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_url,
+		func(ctx context.Context) (any, error) {
+			return obj.URL, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_status(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_notes(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_notes,
+		func(ctx context.Context) (any, error) {
+			return obj.Notes, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JobApplication_appliedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_JobApplication_appliedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.AppliedAt, nil
+		},
+		nil,
+		ec.marshalOTime2ᚖtimeᚐTime,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_JobApplication_appliedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JobApplication",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2382,6 +2862,173 @@ func (ec *executionContext) fieldContext_Mutation_createActivity(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateJobApplication(ctx, fc.Args["input"].(model.CreateJobApplicationInput))
+		},
+		nil,
+		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobApplication(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobApplicationInput))
+		},
+		nil,
+		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteJobApplication(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3123,6 +3770,120 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobApplications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_jobApplications,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobApplications(ctx)
+		},
+		nil,
+		ec.marshalNJobApplication2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplicationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_jobApplications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_jobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().JobApplication(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalOJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_jobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_jobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5681,6 +6442,78 @@ func (ec *executionContext) unmarshalInputCreateFavoriteInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateJobApplicationInput(ctx context.Context, obj any) (model.CreateJobApplicationInput, error) {
+	var it model.CreateJobApplicationInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "jobTitle":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobTitle"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.JobTitle = data
+		case "company":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("company"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Company = data
+		case "location":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Location = data
+		case "url":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URL = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "appliedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appliedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AppliedAt = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreatePostInput(ctx context.Context, obj any) (model.CreatePostInput, error) {
 	var it model.CreatePostInput
 	if obj == nil {
@@ -5787,6 +6620,78 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 				return it, err
 			}
 			it.Password = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateJobApplicationInput(ctx context.Context, obj any) (model.UpdateJobApplicationInput, error) {
+	var it model.UpdateJobApplicationInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "jobTitle":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobTitle"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.JobTitle = data
+		case "company":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("company"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Company = data
+		case "location":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Location = data
+		case "url":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URL = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		case "appliedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appliedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AppliedAt = data
 		}
 	}
 	return it, nil
@@ -6124,6 +7029,109 @@ func (ec *executionContext) _GiteaFeedItem(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var jobApplicationImplementors = []string{"JobApplication"}
+
+func (ec *executionContext) _JobApplication(ctx context.Context, sel ast.SelectionSet, obj *models.JobApplication) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobApplicationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobApplication")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._JobApplication_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._JobApplication_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._JobApplication_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "jobTitle":
+			out.Values[i] = ec._JobApplication_jobTitle(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "company":
+			out.Values[i] = ec._JobApplication_company(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "location":
+			out.Values[i] = ec._JobApplication_location(ctx, field, obj)
+		case "url":
+			out.Values[i] = ec._JobApplication_url(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._JobApplication_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "notes":
+			out.Values[i] = ec._JobApplication_notes(ctx, field, obj)
+		case "appliedAt":
+			out.Values[i] = ec._JobApplication_appliedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *models.Message) graphql.Marshaler {
@@ -6334,6 +7342,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createActivity":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createActivity(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJobApplication(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6728,6 +7757,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_me(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobApplications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobApplications(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobApplication":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobApplication(ctx, field)
 				return res
 			}
 
@@ -7784,6 +8854,11 @@ func (ec *executionContext) unmarshalNCreateFavoriteInput2adamᚑfrenchᚗcoᚗu
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobApplicationInput(ctx context.Context, v any) (model.CreateJobApplicationInput, error) {
+	res, err := ec.unmarshalInputCreateJobApplicationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreatePostInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreatePostInput(ctx context.Context, v any) (model.CreatePostInput, error) {
 	res, err := ec.unmarshalInputCreatePostInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7870,6 +8945,36 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNJobApplication2adamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx context.Context, sel ast.SelectionSet, v models.JobApplication) graphql.Marshaler {
+	return ec._JobApplication(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNJobApplication2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplicationᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.JobApplication) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx context.Context, sel ast.SelectionSet, v *models.JobApplication) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobApplication(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNLoginInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v any) (model.LoginInput, error) {
@@ -8099,6 +9204,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) unmarshalNUpdateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobApplicationInput(ctx context.Context, v any) (model.UpdateJobApplicationInput, error) {
+	res, err := ec.unmarshalInputUpdateJobApplicationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdatePostInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdatePostInput(ctx context.Context, v any) (model.UpdatePostInput, error) {
 	res, err := ec.unmarshalInputUpdatePostInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8312,6 +9422,13 @@ func (ec *executionContext) marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋb
 	return ec._GiteaFeedItem(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication(ctx context.Context, sel ast.SelectionSet, v *models.JobApplication) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._JobApplication(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOPost2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPost(ctx context.Context, sel ast.SelectionSet, v *models.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -8386,6 +9503,24 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalString(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v any) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalTime(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalTime(*v)
 	return res
 }
 

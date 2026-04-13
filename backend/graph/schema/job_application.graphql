@@ -1,0 +1,32 @@
+type JobApplication {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  jobTitle: String!
+  company: String!
+  location: String
+  url: String
+  status: String!
+  notes: String
+  appliedAt: Time
+}
+
+input CreateJobApplicationInput {
+  jobTitle: String!
+  company: String!
+  location: String
+  url: String
+  status: String!
+  notes: String
+  appliedAt: Time
+}
+
+input UpdateJobApplicationInput {
+  jobTitle: String
+  company: String
+  location: String
+  url: String
+  status: String
+  notes: String
+  appliedAt: Time
+}

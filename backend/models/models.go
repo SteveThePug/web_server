@@ -66,3 +66,17 @@ type Rowing struct {
 	TimePer500m float64        `json:"timePer500m"`
 	Calories    float64        `json:"calories"`
 }
+
+type JobApplication struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	JobTitle  string         `gorm:"not null" json:"jobTitle"`
+	Company   string         `gorm:"not null" json:"company"`
+	Location  *string        `json:"location"`
+	URL       *string        `json:"url"`
+	Status    string         `gorm:"not null" json:"status"`
+	Notes     *string        `json:"notes"`
+	AppliedAt *time.Time     `json:"appliedAt"`
+}

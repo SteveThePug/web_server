@@ -14,6 +14,8 @@ type Query {
   giteaFeed: GiteaFeedItem
   steamStatus: SteamStatus
   me: User
+  jobApplications: [JobApplication!]!
+  jobApplication(id: ID!): JobApplication
 }
 
 type Mutation {
@@ -28,4 +30,7 @@ type Mutation {
   setUserAdmin(id: ID!, admin: Boolean!): User!
   createFavorite(input: CreateFavoriteInput!): Favorite!
   createActivity(input: CreateActivityInput!): Activity!
+  createJobApplication(input: CreateJobApplicationInput!): JobApplication!
+  updateJobApplication(id: ID!, input: UpdateJobApplicationInput!): JobApplication!
+  deleteJobApplication(id: ID!): Boolean!
 }
