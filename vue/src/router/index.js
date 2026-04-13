@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { watch } from "vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import CVLayout from "@/layouts/CVLayout.vue";
 import Landing from "@/views/landing/Landing.vue";
@@ -95,7 +96,7 @@ router.beforeEach(async (to) => {
     const homeData = useHomeDataStore();
     if (!homeData.loaded) {
         await new Promise((resolve) => {
-            const stop = homeData.$watch("loaded", (val) => {
+            const stop = watch(() => homeData.loaded, (val) => {
                 if (val) { stop(); resolve(); }
             });
         });
