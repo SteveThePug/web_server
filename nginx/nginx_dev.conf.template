@@ -173,7 +173,7 @@ http {
         }
 
         location @auth_denied {
-            return 302 /;
+            return 302 /admin/login?redirect=$request_uri;
         }
 
         location /searxng {
@@ -329,7 +329,7 @@ http {
         }
 
         location @auth_denied {
-            return 302 /;
+            return 302 /admin/login?redirect=$request_uri;
         }
 
         location /searxng {
