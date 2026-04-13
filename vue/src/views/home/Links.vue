@@ -6,8 +6,8 @@ import Header from "@/components/text/Header.vue";
 const site_links = [
     { name: "CV", link: "/cv" },
     { name: "Bookmarks", link: "/bookmarks" },
+    { name: "Shrines", link: "/shrines" },
     { name: "Admin", link: "/admin" },
-    // { name: "Shrines", link: "/shrines" },
 ];
 
 const social_links = [
