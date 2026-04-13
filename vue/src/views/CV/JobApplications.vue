@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { gql } from "@/graphql";
 
@@ -158,9 +158,12 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="no-print ja-root">
+    <div class="ja-root">
         <div class="ja-header">
-            <h2 class="ja-heading">Job Applications</h2>
+            <div class="ja-header-left">
+                <RouterLink to="/cv" class="ja-back">← CV</RouterLink>
+                <h2 class="ja-heading">Job Applications</h2>
+            </div>
             <button class="ja-btn" @click="exportCsv" :disabled="!applications.length">Export CSV</button>
         </div>
 
@@ -257,6 +260,22 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
+}
+
+.ja-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ja-back {
+    font-size: 0.85rem;
+    color: #555;
+    text-decoration: none;
+}
+
+.ja-back:hover {
+    color: #111;
 }
 
 .ja-heading {

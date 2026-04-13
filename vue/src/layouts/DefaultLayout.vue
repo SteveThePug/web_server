@@ -1,0 +1,32 @@
+<script setup>
+import { RouterView } from "vue-router";
+import Navbar from "@/components/Navbar.vue";
+import Footer from "@/components/Footer.vue";
+</script>
+
+<template>
+    <div class="default-layout halftone">
+        <Navbar class="no-print sticky top-0 z-50" />
+        <main class="default-content">
+            <RouterView v-slot="{ Component }">
+                <Transition name="slide" mode="out-in">
+                    <component :is="Component" :key="$route.path" />
+                </Transition>
+            </RouterView>
+        </main>
+        <Footer class="no-print sticky bottom-0 z-50" />
+    </div>
+</template>
+
+<style scoped>
+.default-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.default-content {
+    flex: 1;
+    overflow-y: auto;
+}
+</style>

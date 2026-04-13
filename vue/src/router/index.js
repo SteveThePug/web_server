@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
+import DefaultLayout from "@/layouts/DefaultLayout.vue";
+import CVLayout from "@/layouts/CVLayout.vue";
 import Landing from "@/views/Landing.vue";
 
 const router = createRouter({
@@ -6,63 +8,80 @@ const router = createRouter({
     routes: [
         {
             path: "/",
-            name: "landing",
-            component: Landing,
-        },
-        {
-            path: "/stp",
-            name: "home",
-            component: () => import("@/views/home/Home.vue"),
+            component: DefaultLayout,
+            children: [
+                {
+                    path: "",
+                    name: "landing",
+                    component: Landing,
+                },
+                {
+                    path: "stp",
+                    name: "home",
+                    component: () => import("@/views/home/Home.vue"),
+                },
+                {
+                    path: "admin",
+                    name: "admin",
+                    component: () => import("@/views/admin/Admin.vue"),
+                },
+                {
+                    path: "bookmarks",
+                    name: "bookmarks",
+                    component: () => import("@/views/Bookmarks.vue"),
+                },
+                {
+                    path: "notes/:path(.*)*",
+                    name: "notes",
+                    component: () => import("@/views/Notes.vue"),
+                },
+                {
+                    path: "shrines",
+                    name: "shrine links",
+                    component: () => import("@/views/Shrines.vue"),
+                },
+                {
+                    path: "shrines/gto",
+                    name: "gto shrine",
+                    component: () => import("@/views/shrines/GTO.vue"),
+                },
+                {
+                    path: "shrines/skipskipbenben",
+                    name: "skipskipbenben shrine",
+                    component: () => import("@/views/shrines/Skipskipbenben.vue"),
+                },
+                {
+                    path: "shrines/evangelion",
+                    name: "evangelion shrine",
+                    component: () => import("@/views/shrines/Evangelion.vue"),
+                },
+                {
+                    path: "shrines/demoman",
+                    name: "demoman shrine",
+                    component: () => import("@/views/shrines/Demoman.vue"),
+                },
+                {
+                    path: ":pathMatch(.*)*",
+                    name: "404",
+                    component: () => import("@/views/404.vue"),
+                },
+            ],
         },
         {
             path: "/cv",
-            name: "cv",
-            component: () => import("../views/CV/CV.vue"),
-        },
-        {
-            path: "/admin",
-            name: "admin",
-            component: () => import("../views/admin/Admin.vue"),
-        },
-        {
-            path: "/bookmarks",
-            name: "bookmarks",
-            component: () => import("../views/Bookmarks.vue"),
-        },
-        {
-            path: "/notes/:path(.*)*",
-            name: "notes",
-            component: () => import("../views/Notes.vue"),
-        },
-        {
-            path: "/shrines",
-            name: "shrine links",
-            component: () => import("../views/Shrines.vue"),
-        },
-        {
-            path: "/shrines/gto",
-            name: "gto shrine",
-            component: () => import("../views/shrines/GTO.vue"),
-        },
-        {
-            path: "/shrines/skipskipbenben",
-            name: "skipskipbenben shrine",
-            component: () => import("../views/shrines/Skipskipbenben.vue"),
-        },
-        {
-            path: "/shrines/evangelion",
-            name: "evangelion shrine",
-            component: () => import("../views/shrines/Evangelion.vue"),
-        },
-        {
-            path: "/shrines/demoman",
-            name: "demoman shrine",
-            component: () => import("../views/shrines/Demoman.vue"),
-        },
-        {
-            path: "/:pathMatch(.*)*",
-            name: "404",
-            component: () => import("../views/404.vue"),
+            component: CVLayout,
+            children: [
+                {
+                    path: "",
+                    name: "cv",
+                    component: () => import("@/views/CV/CV.vue"),
+                },
+                {
+                    path: "jobs",
+                    name: "job-applications",
+                    component: () => import("@/views/CV/JobApplications.vue"),
+                },
+            ],
         },
     ],
 });
