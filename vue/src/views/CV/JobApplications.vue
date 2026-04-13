@@ -1,13 +1,7 @@
 <script setup>
-import { ref, watch } from "vue";
-import { useRouter, RouterLink } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { useHomeDataStore } from "@/stores/homeData";
+import { ref, onMounted } from "vue";
+import { RouterLink } from "vue-router";
 import { gql } from "@/graphql";
-
-const auth = useAuthStore();
-const homeData = useHomeDataStore();
-const router = useRouter();
 
 const applications = ref([]);
 const editingId = ref(null);
@@ -150,18 +144,7 @@ function statusClass(status) {
     return map[status] ?? "";
 }
 
-watch(
-    () => homeData.loaded,
-    (loaded) => {
-        if (!loaded) return;
-        if (!auth.user.admin) {
-            router.push("/admin");
-        } else {
-            fetchApplications();
-        }
-    },
-    { immediate: true },
-);
+onMounted(fetchApplications);
 </script>
 
 <template>

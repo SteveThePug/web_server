@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import CVLayout from "@/layouts/CVLayout.vue";
 import Landing from "@/views/Landing.vue";
+import { useHomeDataStore } from "@/stores/homeData";
+import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,10 +82,24 @@ const router = createRouter({
                     path: "jobs",
                     name: "job-applications",
                     component: () => import("@/views/CV/JobApplications.vue"),
+                    meta: { requiresAdmin: true },
                 },
             ],
         },
     ],
+});
+
+router.beforeEach(async (to) => {
+    if (!to.meta.requiresAdmin) return;
+    const homeData = useHomeDataStore();
+    if (!homeData.loaded) {
+        await new Promise((resolve) => {
+            const stop = homeData.$watch("loaded", (val) => {
+                if (val) { stop(); resolve(); }
+            });
+        });
+    }
+    if (!useAuthStore().user.admin) return "/admin";
 });
 
 export default router;
