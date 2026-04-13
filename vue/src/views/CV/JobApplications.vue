@@ -39,7 +39,7 @@ async function createApplication() {
             location: form.value.location || undefined,
             url: form.value.url || undefined,
             notes: form.value.notes || undefined,
-            appliedAt: form.value.appliedAt || undefined,
+            appliedAt: form.value.appliedAt ? new Date(form.value.appliedAt).toISOString() : undefined,
         };
         const data = await gql(
             `mutation CreateJobApplication($input: CreateJobApplicationInput!) {
@@ -81,7 +81,7 @@ async function saveEdit(id) {
             location: editForm.value.location || undefined,
             url: editForm.value.url || undefined,
             notes: editForm.value.notes || undefined,
-            appliedAt: editForm.value.appliedAt || undefined,
+            appliedAt: editForm.value.appliedAt ? new Date(editForm.value.appliedAt).toISOString() : undefined,
         };
         const data = await gql(
             `mutation UpdateJobApplication($id: ID!, $input: UpdateJobApplicationInput!) {
