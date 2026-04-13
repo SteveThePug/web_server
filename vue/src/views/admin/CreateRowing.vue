@@ -3,6 +3,8 @@ import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import axios from "axios";
 
+const emit = defineEmits(["done", "cancel"]);
+
 const images = ref([]);
 const results = ref([]);
 
@@ -35,6 +37,7 @@ async function submit() {
     );
 
     images.value = [];
+    emit("done");
 }
 </script>
 
@@ -43,6 +46,7 @@ async function submit() {
         <h1>Create Rowing</h1>
         <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple @change="onFileChange" />
         <Button @click="submit">Upload</Button>
+        <Button @click="emit('cancel')">Cancel</Button>
         <div v-for="r in results" :key="r.name">
             <span class="text-primary">{{ r.name }}: </span>
             <span :class="r.ok ? 'text-secondary' : 'text-red-500'">{{ r.status }}</span>

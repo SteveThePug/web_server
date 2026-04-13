@@ -4,6 +4,8 @@ import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { gql } from "@/graphql";
 
+const emit = defineEmits(["done", "cancel"]);
+
 const type = ref("");
 const name = ref("");
 const link = ref("");
@@ -18,6 +20,7 @@ async function post() {
         name.value = "";
         link.value = "";
         console.log(data.createFavorite);
+        emit("done");
     } catch (err) {
         console.error(err);
     }
@@ -31,5 +34,6 @@ async function post() {
         <input type="text" v-model="name" placeholder="Name" @keyup.enter="post" />
         <input type="text" v-model="link" placeholder="Link" @keyup.enter="post" />
         <Button @click="post">Upload</Button>
+        <Button @click="emit('cancel')">Cancel</Button>
     </div>
 </template>

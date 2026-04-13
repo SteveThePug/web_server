@@ -1,11 +1,16 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, defineAsyncComponent } from "vue";
 import Header from "@/components/text/Header.vue";
 import { useHomeDataStore } from "@/stores/homeData";
+import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
 
+const CreateRowing = defineAsyncComponent(() => import("@/views/admin/CreateRowing.vue"));
+
 const store = useHomeDataStore();
+const authStore = useAuthStore();
 const { loaded, error, rowingSessions } = storeToRefs(store);
+const showCreate = ref(false);
 
 const rows = computed(() => rowingSessions.value.slice().reverse());
 const loading = computed(() => !loaded.value);
@@ -109,9 +114,17 @@ function formatValue(key, val) {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <Header>Rowing</Header>
+    <Header>
+      <span class="flex items-center justify-between w-full">
+        {{ showCreate ? "Upload Rowing" : "Rowing" }}
+        <button v-if="authStore.user.admin" class="text-sm px-1" @click="showCreate = !showCreate">
+          {{ showCreate ? "x" : "+" }}
+        </button>
+      </span>
+    </Header>
 
-    <div v-if="loading" class="flex-1 flex items-center justify-center">
+    <CreateRowing v-if="showCreate" class="flex-1 p-1" @done="showCreate = false" @cancel="showCreate = false" />
+    <div v-else-if="loading" class="flex-1 flex items-center justify-center">
       <p>Loading...</p>
     </div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center">

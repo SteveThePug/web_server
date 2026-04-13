@@ -3,6 +3,8 @@ import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { gql } from "@/graphql";
 
+const emit = defineEmits(["done", "cancel"]);
+
 const title = ref("");
 const content = ref("");
 
@@ -15,6 +17,7 @@ async function post() {
         title.value = "";
         content.value = "";
         console.log(data.createPost);
+        emit("done");
     } catch (err) {
         console.error(err);
     }
@@ -31,6 +34,6 @@ async function post() {
             placeholder="Content"
         ></textarea>
         <Button @click="post">Upload</Button>
-        <!-- make textarea take up most the space -->
+        <Button @click="emit('cancel')">Cancel</Button>
     </div>
 </template>

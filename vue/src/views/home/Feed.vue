@@ -3,14 +3,17 @@ import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
 import Header from "@/components/text/Header.vue";
 
-import { ref, computed, onBeforeMount } from "vue";
+import { ref, computed, defineAsyncComponent } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
+
+const CreatePost = defineAsyncComponent(() => import("@/views/admin/CreatePost.vue"));
 
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
 
 const idx = ref(0);
+const showCreate = ref(false);
 
 const leftCap = computed(() => idx.value === 0);
 const rightCap = computed(() => idx.value === postsStore.postsCount - 1);
@@ -39,8 +42,17 @@ function deletePost() {
 
 <template>
     <div class="flex flex-col flex-1 min-h-0">
-        <Header>{{ post.title }}</Header>
+        <Header>
+            <span class="flex items-center justify-between w-full">
+                {{ showCreate ? "Create Post" : post.title }}
+                <button v-if="authStore.user.admin" class="text-sm px-1" @click="showCreate = !showCreate">
+                    {{ showCreate ? "x" : "+" }}
+                </button>
+            </span>
+        </Header>
+        <CreatePost v-if="showCreate" class="flex-1 min-h-0 p-1" @done="showCreate = false" @cancel="showCreate = false" />
         <div
+            v-if="!showCreate"
             class="flex flex-col flex-1 min-h-0 p-1 overflow-auto text-left items-start justify-start"
         >
             <small
