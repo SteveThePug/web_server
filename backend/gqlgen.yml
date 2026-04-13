@@ -57,6 +57,12 @@ models:
     fields:
       deletedAt:
         resolver: false
+  Bookmark:
+    model:
+      - adam-french.co.uk/backend/models.Bookmark
+    fields:
+      deletedAt:
+        resolver: false
   JobApplication:
     model:
       - adam-french.co.uk/backend/models.JobApplication

@@ -349,6 +349,33 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 	return &app, nil
 }
 
+// CreateBookmark is the resolver for the createBookmark field.
+func (r *mutationResolver) CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	bookmark := models.Bookmark{Category: input.Category, Name: input.Name, Link: input.Link}
+	if err := r.Store.DB.Create(&bookmark).Error; err != nil {
+		return nil, err
+	}
+	return &bookmark, nil
+}
+
+// DeleteBookmark is the resolver for the deleteBookmark field.
+func (r *mutationResolver) DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var bookmark models.Bookmark
+	if err := r.Store.DB.First(&bookmark, id).Error; err != nil {
+		return nil, err
+	}
+	if err := r.Store.DB.Delete(&bookmark).Error; err != nil {
+		return nil, err
+	}
+	return &bookmark, nil
+}
+
 // DeleteJobApplication is the resolver for the deleteJobApplication field.
 func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bool, error) {
 	if !IsAdminFromCtx(ctx) {
@@ -569,6 +596,19 @@ func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	}
 
 	return &user, nil
+}
+
+// Bookmarks is the resolver for the bookmarks field.
+func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, error) {
+	var bookmarks []models.Bookmark
+	if err := r.Store.DB.Order("category ASC, created_at ASC").Find(&bookmarks).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Bookmark, len(bookmarks))
+	for i := range bookmarks {
+		result[i] = &bookmarks[i]
+	}
+	return result, nil
 }
 
 // JobApplications is the resolver for the jobApplications field.

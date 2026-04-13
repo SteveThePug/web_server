@@ -18,6 +18,12 @@ type CreateActivityInput struct {
 	Link *string `json:"link,omitempty"`
 }
 
+type CreateBookmarkInput struct {
+	Category string `json:"category"`
+	Name     string `json:"name"`
+	Link     string `json:"link"`
+}
+
 type CreateFavoriteInput struct {
 	Type string  `json:"type"`
 	Name string  `json:"name"`

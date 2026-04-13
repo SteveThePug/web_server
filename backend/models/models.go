@@ -67,6 +67,16 @@ type Rowing struct {
 	Calories    float64        `json:"calories"`
 }
 
+type Bookmark struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Category  string         `gorm:"not null" json:"category"`
+	Name      string         `gorm:"not null" json:"name"`
+	Link      string         `gorm:"not null" json:"link"`
+}
+
 type JobApplication struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"createdAt"`

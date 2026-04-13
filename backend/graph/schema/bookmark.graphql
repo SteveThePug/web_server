@@ -1,0 +1,14 @@
+type Bookmark {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  category: String!
+  name: String!
+  link: String!
+}
+
+input CreateBookmarkInput {
+  category: String!
+  name: String!
+  link: String!
+}

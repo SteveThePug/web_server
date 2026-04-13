@@ -15,6 +15,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
   const rowingSessions = ref([]);
   const gitFeed = ref(null);
   const steamStatus = ref(null);
+  const bookmarks = ref([]);
   const radioLive = ref(false);
 
   async function fetchAll() {
@@ -27,6 +28,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
             activities { id type name link createdAt }
             spotifyRecent { track { name album { name images { url } } artists { name } } playedAt }
             rowingSessions { id date time distance timePer500m calories }
+            bookmarks { id category name link }
             giteaFeed { avatarUrl repoUrl repoName opType commitMessage createdAt }
             steamStatus { online recentGames { appId name playtime2Weeks playtimeForever headerImageUrl } }
             me { id username admin }
@@ -38,6 +40,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
       favorites.value = data.favorites;
       activities.value = data.activities;
       spotifyRecent.value = data.spotifyRecent || [];
+      bookmarks.value = data.bookmarks || [];
       rowingSessions.value = data.rowingSessions;
       gitFeed.value = data.giteaFeed || null;
       steamStatus.value = data.steamStatus || null;
@@ -64,6 +67,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
     loaded,
     error,
     me,
+    bookmarks,
     posts,
     favorites,
     activities,
