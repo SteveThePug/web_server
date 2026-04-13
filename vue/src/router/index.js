@@ -23,9 +23,15 @@ const router = createRouter({
                     component: () => import("@/views/home/Home.vue"),
                 },
                 {
+                    path: "admin/login",
+                    name: "admin-login",
+                    component: () => import("@/views/admin/Login.vue"),
+                },
+                {
                     path: "admin",
                     name: "admin",
                     component: () => import("@/views/admin/Admin.vue"),
+                    meta: { requiresAdmin: true },
                 },
                 {
                     path: "bookmarks",
@@ -94,7 +100,7 @@ router.beforeEach(async (to) => {
             });
         });
     }
-    if (!useAuthStore().user.admin) return "/admin";
+    if (!useAuthStore().user.admin) return { path: "/admin/login", query: { redirect: to.fullPath } };
 });
 
 export default router;
