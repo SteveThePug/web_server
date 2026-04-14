@@ -79,6 +79,23 @@ services:
             - ./logs:/backend/logs
             - uploads:/backend/uploads
             - ./icecast2/fallback_music:/backend/fallback_music
+        healthcheck:
+            test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+
+    autoheal:
+        image: willfarrell/autoheal:latest
+        container_name: autoheal
+        restart: always
+        environment:
+            - AUTOHEAL_CONTAINER_LABEL=all
+            - AUTOHEAL_INTERVAL=30
+            - AUTOHEAL_START_PERIOD=60
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
 
     db:
         image: postgres:16
