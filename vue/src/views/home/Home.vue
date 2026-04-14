@@ -21,7 +21,7 @@ import Favorites from "./Favorites.vue";
 import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
 import Steam from "./Steam.vue";
-import Bookmarks from "./bookmarks/Bookmarks.vue";
+import Bookmarks from "./Bookmarks.vue";
 </script>
 
 <template>
