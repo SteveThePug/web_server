@@ -10,6 +10,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type UserCredentials struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 	access_token, err := ctx.Cookie("access_token")
 	if err != nil {

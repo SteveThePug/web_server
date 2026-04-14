@@ -90,32 +90,9 @@ func main() {
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
 
-	// FAVORITES
-	r.GET("/favorites", store.GetFavorites)
-	admin.POST("/favorites", store.CreateFavorite)
-
 	// ROWING
 	r.GET("/rowing", store.GetRowing)
 	admin.POST("/rowing", store.CreateRowing)
-
-	// ACTIVITIES
-	r.GET("/activity", store.GetActivity)
-	admin.POST("/activity", store.CreateActivity)
-
-	// POSTS
-	r.GET("/posts", store.GetPosts)
-	admin.POST("/posts", store.CreatePost)
-	r.GET("/posts/:id", store.GetPost)
-	admin.PUT("/posts/:id", store.UpdatePost)
-	admin.DELETE("/posts/:id", store.DeletePost)
-
-	// USERS
-	r.GET("/user/:id", store.GetUser)
-	admin.PUT("/user/:id", store.UpdateUser)
-	admin.DELETE("/user/:id", store.DeleteUser)
-	r.GET("/user", store.GetUsers)
-	admin.POST("/user", store.CreateUser)
-	admin.PATCH("/user/:id/admin", store.SetUserAdmin)
 
 	// AUTH
 	r.POST("/auth/login", store.Login)
