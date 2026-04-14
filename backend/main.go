@@ -85,7 +85,9 @@ func main() {
 	steamAPIKey := os.Getenv("STEAM_API_KEY")
 	steamID := os.Getenv("STEAM_ID")
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
+	loginLimiter := services.NewRateLimiter(5, time.Minute)
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
 
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
@@ -119,7 +121,7 @@ func main() {
 	protected.POST("/messages/upload", store.UploadMessageFile)
 
 	// NOTES
-	r.GET("/notes/*path", store.GetNoteFile)
+	admin.GET("/notes/*path", store.GetNoteFile)
 
 	// GRAPHQL
 	gqlSrv := handler.New(graph.NewExecutableSchema(graph.Config{
@@ -127,18 +129,18 @@ func main() {
 	}))
 	gqlSrv.AddTransport(transport.Websocket{KeepAlivePingInterval: 10 * time.Second})
 	gqlSrv.AddTransport(transport.Options{})
-	gqlSrv.AddTransport(transport.GET{})
 	gqlSrv.AddTransport(transport.POST{})
 	gqlSrv.AddTransport(transport.MultipartForm{})
 	gqlSrv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 	gqlSrv.Use(extension.FixedComplexityLimit(200))
-	if os.Getenv("GQL_INTROSPECTION") == "true" {
+	devMode := os.Getenv("DEV_MODE") == "true"
+	if devMode && os.Getenv("GQL_INTROSPECTION") == "true" {
 		gqlSrv.Use(extension.Introspection{})
 	}
 	r.POST("/graphql", graph.AuthContextMiddleware(auth), func(c *gin.Context) {
 		gqlSrv.ServeHTTP(c.Writer, c.Request)
 	})
-	if os.Getenv("GQL_PLAYGROUND") == "true" {
+	if devMode && os.Getenv("GQL_PLAYGROUND") == "true" {
 		r.GET("/graphql", func(c *gin.Context) {
 			playground.Handler("GraphQL Playground", "/graphql").ServeHTTP(c.Writer, c.Request)
 		})

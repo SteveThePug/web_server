@@ -17,6 +17,7 @@ type Store struct {
 	ClaudeClient  *anthropic.Client
 	Auth          *services.Auth
 	Notes         *services.Notes
+	LoginLimiter  *services.RateLimiter
 
 	RecentSongs          *[]spotify.RecentlyPlayedItem
 	RecentSongsFetchedAt time.Time

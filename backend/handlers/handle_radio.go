@@ -37,6 +37,13 @@ func (store *Store) UploadRadioSong(ctx *gin.Context) {
 	filename := filepath.Base(file.Filename)
 	dest := filepath.Join(fallbackMusicDir, filename)
 
+	// Verify the resolved path stays within the music directory
+	absDest, err := filepath.Abs(dest)
+	if err != nil || !strings.HasPrefix(absDest, fallbackMusicDir+string(os.PathSeparator)) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid filename"})
+		return
+	}
+
 	if _, err := os.Stat(dest); err == nil {
 		ctx.JSON(http.StatusConflict, gin.H{"error": "file already exists"})
 		return

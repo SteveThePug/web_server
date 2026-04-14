@@ -2,7 +2,7 @@ package services
 
 import (
 	"net/http"
-	"strings"
+	"net/url"
 	"sync"
 	"time"
 
@@ -24,11 +24,12 @@ var Upgrader = websocket.Upgrader{
 		if origin == "" {
 			return false
 		}
-		origin = strings.TrimPrefix(origin, "https://")
-		origin = strings.TrimPrefix(origin, "http://")
-		// Strip port for localhost comparisons (e.g. "localhost:80")
-		host := strings.Split(origin, ":")[0]
-		return origin == allowedDomain || origin == "www."+allowedDomain || host == "localhost"
+		u, err := url.Parse(origin)
+		if err != nil {
+			return false
+		}
+		host := u.Hostname()
+		return host == allowedDomain || host == "www."+allowedDomain || host == "localhost"
 	},
 }
 

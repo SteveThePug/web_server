@@ -226,6 +226,11 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 }
 
 func (store *Store) Login(ctx *gin.Context) {
+	if !store.LoginLimiter.Allow(ctx.ClientIP()) {
+		ctx.JSON(http.StatusTooManyRequests, gin.H{"error": "too many login attempts, please try again later"})
+		return
+	}
+
 	var input UserCredentials
 	if err := ctx.ShouldBindBodyWithJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})

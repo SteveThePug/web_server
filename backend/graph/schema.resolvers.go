@@ -25,6 +25,10 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, fmt.Errorf("could not get gin context")
 	}
 
+	if !r.Store.LoginLimiter.Allow(gc.ClientIP()) {
+		return nil, fmt.Errorf("too many login attempts, please try again later")
+	}
+
 	var user models.User
 	if err := r.Store.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("invalid credentials")
@@ -446,6 +450,9 @@ func (r *mutationResolver) DeleteJobAppReference(ctx context.Context, id int) (b
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
 	var users []models.User
 	if err := r.Store.DB.Find(&users).Error; err != nil {
 		return nil, err
@@ -459,6 +466,9 @@ func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id int) (*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
 	var user models.User
 	if err := r.Store.DB.First(&user, id).Error; err != nil {
 		return nil, fmt.Errorf("user not found")
