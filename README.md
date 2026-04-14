@@ -25,7 +25,8 @@ icecast2 (8000)  ── Audio Streaming (Icecast2 + Liquidsoap)
 gitea (3000)     ── Self-Hosted Git
 quartz (8080)    ── Obsidian Notes Publisher (Quartz v4.4.0)
 searxng (8080)   ── Meta Search Engine
-hasura (8080)    ── Hasura GraphQL Engine
+hasura (8080)    ── Hasura GraphQL Engine (Docker profile: hasura)
+autoheal         ── Auto-restart unhealthy containers
 certbot          ── SSL Certificate Management (disabled in dev)
 ```
 
@@ -52,22 +53,27 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Fan shrines (GTO, Evangelion, Demoman, Skip Skip Benben)
 - Self-hosted Git (Gitea) with CI/CD and commit feed on homepage
 - Printable CV with role-specific sections
-- SearXNG meta search engine
-- Hasura GraphQL console
+- Job application tracker with status workflow and CSV export (admin-only, `/cv/jobs`)
+- Database-backed bookmarks grouped by category, managed via GraphQL (admin-only)
+- SearXNG meta search engine (admin-only)
+- Hasura GraphQL console (admin-only)
+- Admin-gated routes: `/searxng`, `/notes`, `/hasura` require admin JWT via Nginx `auth_request`
 - Landing page with animated stamps section
 - Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
+- Backend healthcheck with autoheal container for automatic recovery
 
 ## Pages
 
-| Route          | Description                           |
-| -------------- | ------------------------------------- |
-| `/`            | Landing page                          |
-| `/stp`         | Home dashboard with grid layout       |
-| `/admin`       | Admin panel (authenticated)           |
-| `/cv`          | Curriculum Vitae (printable)          |
-| `/bookmarks`   | Bookmarks                             |
-| `/notes/:path` | Obsidian note viewer (via Quartz)     |
-| `/shrines`     | Fan shrine index + individual shrines |
+| Route          | Description                                        |
+| -------------- | -------------------------------------------------- |
+| `/`            | Landing page                                       |
+| `/stp`         | Home dashboard with grid layout                    |
+| `/admin`       | Admin login + panel (authenticated)                |
+| `/cv`          | Curriculum Vitae (printable)                       |
+| `/cv/jobs`     | Job application tracker (admin-only, hidden print) |
+| `/bookmarks`   | Bookmarks (database-backed, grouped by category)   |
+| `/notes/:path` | Obsidian note viewer (via Quartz, admin-only)      |
+| `/shrines`     | Fan shrine index + individual shrines              |
 
 ## API
 
@@ -103,6 +109,10 @@ certbot          ── SSL Certificate Management (disabled in dev)
 | `setUserAdmin`                             | Mutation | Toggle admin status     |
 | `createFavorite`                           | Mutation | Add favorite (admin)    |
 | `createActivity`                           | Mutation | Add activity (admin)    |
+| `bookmarks`                                | Query    | Get all bookmarks       |
+| `createBookmark` / `deleteBookmark`        | Mutation | Bookmark CRUD (admin)   |
+| `jobApplications`                          | Query    | Get all job applications (admin) |
+| `createJobApplication` / `updateJobApplication` / `deleteJobApplication` | Mutation | Job application CRUD (admin) |
 
 ### REST Endpoints
 
@@ -113,6 +123,9 @@ certbot          ── SSL Certificate Management (disabled in dev)
 | POST | `/api/auth/refresh` | Refresh token |
 | GET | `/api/auth/check` | Check token validity |
 | POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/validate-admin` | Validate admin JWT (used by Nginx auth_request) |
+
+Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin` also refreshes the access token if it is within 24 hours of expiry.
 
 **Spotify**
 | Method | Path | Description |
@@ -163,15 +176,17 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 ### Nginx Proxy Routes
 
-| Route      | Target       | Notes                       |
-| ---------- | ------------ | --------------------------- |
-| `/api`     | backend:8080 | API (rate limited: 30r/s)   |
-| `/radio`   | icecast:8000 | Audio streaming             |
-| `/gitea`   | gitea:3000   | Git service                 |
-| `/hasura`  | hasura:8080  | GraphQL console + WebSocket |
-| `/notes`   | quartz:8080  | Obsidian notes              |
-| `/searxng` | searxng:8080 | Search engine               |
-| `/uploads` | local alias  | User-uploaded files         |
+| Route      | Target       | Notes                                      |
+| ---------- | ------------ | ------------------------------------------ |
+| `/api`     | backend:8080 | API (rate limited: 30r/s)                  |
+| `/radio`   | icecast:8000 | Audio streaming                            |
+| `/gitea`   | gitea:3000   | Git service                                |
+| `/hasura`  | hasura:8080  | GraphQL console + WebSocket (admin-only)   |
+| `/notes`   | quartz:8080  | Obsidian notes (admin-only)                |
+| `/searxng` | searxng:8080 | Search engine (admin-only)                 |
+| `/uploads` | local alias  | User-uploaded files                        |
+
+`/hasura`, `/notes`, and `/searxng` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
 
 ### Deprecated Endpoints
 
