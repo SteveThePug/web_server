@@ -35,6 +35,7 @@ services:
             - backend
             - icecast2
             - gitea
+            - hasura
             - quartz
             - searxng
         networks:
@@ -112,8 +113,6 @@ services:
         image: hasura/graphql-engine:v2.44.0
         container_name: "${HASURA_HOST}"
         restart: always
-        profiles:
-            - disabled
         depends_on:
             - db
         networks:

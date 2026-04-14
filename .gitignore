@@ -17,6 +17,9 @@ gitea-runner/nohup.out
 # Rust build artifacts
 **/target/
 
+# Generated WASM output
+vue/src/wasm/
+
 # Logs
 logs
 *.log

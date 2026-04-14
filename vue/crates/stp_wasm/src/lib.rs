@@ -1,6 +1,5 @@
-use wasm_bindgen::prelude::*;
+mod auto_scroll;
+mod headline;
 
-#[wasm_bindgen]
-pub struct BadApplePlayer {
-    is_playing: bool,
-}
+pub use auto_scroll::AutoScroller;
+pub use headline::HeadlineScroller;

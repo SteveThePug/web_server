@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import LinkTable from "@/components/util/LinkTable.vue";
+import Header from "@/components/text/Header.vue";
 import { useHomeDataStore } from "@/stores/homeData";
 
 const homeData = useHomeDataStore();
@@ -16,18 +17,30 @@ const groupedBookmarks = computed(() => {
 </script>
 
 <template>
-    <main class="items-center flex flex-col">
-        <div
-            class="a4page-portrait bdr-1 flex flex-row flex-wrap overflow-x-auto gap-1"
-        >
-            <div class="w-full h-fit">
-                <LinkTable
-                    class="flex flex-col flex-wrap"
-                    v-for="group in groupedBookmarks"
-                    :title="group[0]"
-                    :items="group[1]"
-                />
-            </div>
+    <div class="bookmarks-wrapper">
+        <Header class="text-left">Bookmarks</Header>
+        <div class="bookmarks-scroll">
+            <LinkTable
+                v-for="group in groupedBookmarks"
+                :key="group[0]"
+                :title="group[0]"
+                :items="group[1]"
+            />
         </div>
-    </main>
+    </div>
 </template>
+
+<style scoped>
+.bookmarks-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+
+.bookmarks-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+</style>

@@ -35,11 +35,6 @@ const router = createRouter({
                     meta: { requiresAdmin: true },
                 },
                 {
-                    path: "bookmarks",
-                    name: "bookmarks",
-                    component: () => import("@/views/home/bookmarks/Bookmarks.vue"),
-                },
-                {
                     path: "shrines",
                     name: "shrine links",
                     component: () => import("@/views/home/shrines/Shrines.vue"),

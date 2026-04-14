@@ -4,6 +4,8 @@ import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import vueDevTools from "vite-plugin-vue-devtools";
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -11,6 +13,8 @@ export default defineConfig({
         vue(),
         ...(process.env.NODE_ENV !== "production" ? [vueDevTools()] : []),
         tailwindcss(),
+        wasm(),
+        topLevelAwait(),
     ],
     resolve: {
         alias: {

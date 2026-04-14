@@ -1,55 +1,22 @@
 <script setup>
 import { onMounted, useTemplateRef, onUnmounted } from "vue";
+import { HeadlineScroller } from "@/wasm/stp_wasm.js";
 
 const container = useTemplateRef("container");
 const item1 = useTemplateRef("item1");
 
-let offset = 0;
-let cachedWidth = 0;
-
-let rafId;
-
-const speed = 0.5; // pixels per frame
-
-function measureWidth() {
-    const ctnr = container.value;
-    const it1 = item1.value;
-    if (ctnr && it1) {
-        cachedWidth = Math.max(ctnr.offsetWidth, it1.scrollWidth);
-    }
-}
-
-function animate() {
-    const ctnr = container.value;
-    if (!ctnr || cachedWidth === 0) {
-        rafId = requestAnimationFrame(animate);
-        return;
-    }
-
-    offset -= speed;
-
-    if (offset <= -cachedWidth) {
-        offset += cachedWidth;
-    }
-
-    ctnr.style.transform = `translateX(${offset}px)`;
-
-    rafId = requestAnimationFrame(animate);
-}
-
-let resizeObserver;
+let scroller = null;
 
 onMounted(() => {
-    measureWidth();
-    rafId = requestAnimationFrame(animate);
-
-    resizeObserver = new ResizeObserver(measureWidth);
-    resizeObserver.observe(container.value);
+    if (!container.value || !item1.value) return;
+    scroller = new HeadlineScroller(container.value, item1.value);
+    scroller.start();
 });
 
 onUnmounted(() => {
-    cancelAnimationFrame(rafId);
-    resizeObserver?.disconnect();
+    scroller?.destroy();
+    scroller?.free();
+    scroller = null;
 });
 </script>
 

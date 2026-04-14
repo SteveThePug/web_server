@@ -31,6 +31,7 @@ const handleClick = () => {
             class="pointer-events-none"
             :model-value="props.modelValue"
             @update:model-value="updateValue"
+            @click.stop
             ref="toggleButtonRef"
         />
     </div>

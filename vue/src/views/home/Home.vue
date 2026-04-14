@@ -21,6 +21,7 @@ import Favorites from "./Favorites.vue";
 import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
 import Steam from "./Steam.vue";
+import Bookmarks from "./bookmarks/Bookmarks.vue";
 </script>
 
 <template>
@@ -61,6 +62,7 @@ import Steam from "./Steam.vue";
             </div>
             <div class="sidebar">
                 <Steam class="steam-sidebar sidebar-cell" />
+                <Bookmarks class="bookmarks-sidebar sidebar-cell" />
                 <Chat
                     class="chat-sidebar flex-1 min-h-0 chat-home sidebar-cell"
                 />
@@ -180,7 +182,8 @@ import Steam from "./Steam.vue";
     }
 
     .commits-sidebar,
-    .steam-sidebar {
+    .steam-sidebar,
+    .bookmarks-sidebar {
         width: 100%;
         max-height: 300px;
     }
