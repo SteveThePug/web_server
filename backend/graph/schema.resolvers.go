@@ -9,12 +9,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
-	"adam-french.co.uk/backend/services"
-	spotify "github.com/zmb3/spotify/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -550,105 +547,6 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error)
 	return result, nil
 }
 
-// SpotifyListening is the resolver for the spotifyListening field.
-func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error) {
-	if r.Store.SpotifyClient == nil {
-		return nil, nil
-	}
-
-	playing, err := r.Store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &model.SpotifyPlaying{Playing: playing.Playing}
-	if playing.Item != nil {
-		result.Track = mapSpotifyTrack(playing.Item)
-	}
-
-	return result, nil
-}
-
-// SpotifyRecent is the resolver for the spotifyRecent field.
-func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error) {
-	if r.Store.SpotifyClient == nil {
-		return []*model.SpotifyRecentItem{}, nil
-	}
-
-	if r.Store.RecentSongsFresh() {
-		return mapRecentItems(*r.Store.RecentSongs), nil
-	}
-
-	opts := spotify.RecentlyPlayedOptions{Limit: 3}
-	played, err := r.Store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
-	if err != nil {
-		return nil, err
-	}
-
-	r.Store.RecentSongs = &played
-	r.Store.RecentSongsFetchedAt = time.Now()
-
-	return mapRecentItems(played), nil
-}
-
-// GiteaFeed is the resolver for the giteaFeed field.
-func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error) {
-	if r.Store.GiteaFeedFresh() {
-		return mapGiteaFeed(r.Store.GiteaFeed), nil
-	}
-
-	feed, err := services.FetchLatestFeed(r.Store.GiteaHost, r.Store.GiteaPort)
-	if err != nil {
-		return nil, err
-	}
-	if feed == nil {
-		return nil, nil
-	}
-
-	r.Store.GiteaFeed = feed
-	r.Store.GiteaFeedFetchedAt = time.Now()
-
-	return mapGiteaFeed(feed), nil
-}
-
-// SteamStatus is the resolver for the steamStatus field.
-func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, error) {
-	if r.Store.SteamAPIKey == "" {
-		return nil, nil
-	}
-
-	if r.Store.SteamFresh() {
-		return &model.SteamStatus{
-			Online:      r.Store.SteamOnline,
-			RecentGames: mapSteamGames(r.Store.SteamRecentGames),
-		}, nil
-	}
-
-	games, err := services.FetchRecentlyPlayedGames(r.Store.SteamAPIKey, r.Store.SteamID)
-	if err != nil {
-		return nil, err
-	}
-
-	summary, err := services.FetchPlayerSummary(r.Store.SteamAPIKey, r.Store.SteamID)
-	if err != nil {
-		return nil, err
-	}
-
-	online := false
-	if summary != nil {
-		online = summary.PersonaState > 0
-	}
-
-	r.Store.SteamRecentGames = games
-	r.Store.SteamOnline = online
-	r.Store.SteamFetchedAt = time.Now()
-
-	return &model.SteamStatus{
-		Online:      online,
-		RecentGames: mapSteamGames(games),
-	}, nil
-}
-
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 	userID, ok := UserIDFromCtx(ctx)
@@ -720,5 +618,7 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
+type (
+	mutationResolver struct{ *Resolver }
+	queryResolver    struct{ *Resolver }
+)

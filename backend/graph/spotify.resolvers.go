@@ -1,6 +1,9 @@
 package graph
 
 import (
+	"context"
+	"time"
+
 	"adam-french.co.uk/backend/graph/model"
 	"github.com/zmb3/spotify/v2"
 )
@@ -48,4 +51,45 @@ func mapRecentItems(items []spotify.RecentlyPlayedItem) []*model.SpotifyRecentIt
 		}
 	}
 	return result
+}
+
+// SpotifyListening is the resolver for the spotifyListening field.
+func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error) {
+	if r.Store.SpotifyClient == nil {
+		return nil, nil
+	}
+
+	playing, err := r.Store.SpotifyClient.PlayerCurrentlyPlaying(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &model.SpotifyPlaying{Playing: playing.Playing}
+	if playing.Item != nil {
+		result.Track = mapSpotifyTrack(playing.Item)
+	}
+
+	return result, nil
+}
+
+// SpotifyRecent is the resolver for the spotifyRecent field.
+func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error) {
+	if r.Store.SpotifyClient == nil {
+		return []*model.SpotifyRecentItem{}, nil
+	}
+
+	if r.Store.RecentSongsFresh() {
+		return mapRecentItems(*r.Store.RecentSongs), nil
+	}
+
+	opts := spotify.RecentlyPlayedOptions{Limit: 3}
+	played, err := r.Store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Store.RecentSongs = &played
+	r.Store.RecentSongsFetchedAt = time.Now()
+
+	return mapRecentItems(played), nil
 }
