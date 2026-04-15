@@ -30,3 +30,14 @@ input UpdateJobApplicationInput {
   notes: String
   appliedAt: Time
 }
+
+extend type Query {
+  jobApplications: [JobApplication!]!
+  jobApplication(id: ID!): JobApplication
+}
+
+extend type Mutation {
+  createJobApplication(input: CreateJobApplicationInput!): JobApplication!
+  updateJobApplication(id: ID!, input: UpdateJobApplicationInput!): JobApplication!
+  deleteJobApplication(id: ID!): Boolean!
+}

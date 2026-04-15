@@ -21,3 +21,13 @@ input UpdateJobAppReferenceInput {
   value: String
   sortOrder: Int
 }
+
+extend type Query {
+  jobAppReferences: [JobAppReference!]!
+}
+
+extend type Mutation {
+  createJobAppReference(input: CreateJobAppReferenceInput!): JobAppReference!
+  updateJobAppReference(id: ID!, input: UpdateJobAppReferenceInput!): JobAppReference!
+  deleteJobAppReference(id: ID!): Boolean!
+}

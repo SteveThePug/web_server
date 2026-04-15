@@ -7,13 +7,55 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
 // ID is the resolver for the id field.
 func (r *bookmarkResolver) ID(ctx context.Context, obj *models.Bookmark) (int, error) {
 	return int(obj.ID), nil
+}
+
+// CreateBookmark is the resolver for the createBookmark field.
+func (r *mutationResolver) CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	bookmark := models.Bookmark{Category: input.Category, Name: input.Name, Link: input.Link}
+	if err := r.Store.DB.Create(&bookmark).Error; err != nil {
+		return nil, err
+	}
+	return &bookmark, nil
+}
+
+// DeleteBookmark is the resolver for the deleteBookmark field.
+func (r *mutationResolver) DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var bookmark models.Bookmark
+	if err := r.Store.DB.First(&bookmark, id).Error; err != nil {
+		return nil, err
+	}
+	if err := r.Store.DB.Delete(&bookmark).Error; err != nil {
+		return nil, err
+	}
+	return &bookmark, nil
+}
+
+// Bookmarks is the resolver for the bookmarks field.
+func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, error) {
+	var bookmarks []models.Bookmark
+	if err := r.Store.DB.Order("category ASC, created_at ASC").Find(&bookmarks).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Bookmark, len(bookmarks))
+	for i := range bookmarks {
+		result[i] = &bookmarks[i]
+	}
+	return result, nil
 }
 
 // Bookmark returns BookmarkResolver implementation.

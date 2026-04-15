@@ -10,3 +10,14 @@ input CreateUserInput {
   username: String!
   password: String!
 }
+
+extend type Query {
+  users: [User!]!
+  user(id: ID!): User
+}
+
+extend type Mutation {
+  createUser(input: CreateUserInput!): User!
+  deleteUser(id: ID!): User!
+  setUserAdmin(id: ID!, admin: Boolean!): User!
+}

@@ -5,3 +5,7 @@ type Message {
   fileUrl: String
   createdAt: Time!
 }
+
+extend type Query {
+  messages: [Message!]!
+}

@@ -7,13 +7,42 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
 // ID is the resolver for the id field.
 func (r *favoriteResolver) ID(ctx context.Context, obj *models.Favorite) (int, error) {
 	return int(obj.ID), nil
+}
+
+// CreateFavorite is the resolver for the createFavorite field.
+func (r *mutationResolver) CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	favorite := models.Favorite{Type: input.Type, Name: input.Name, Link: input.Link}
+	if err := r.Store.DB.Create(&favorite).Error; err != nil {
+		return nil, err
+	}
+
+	return &favorite, nil
+}
+
+// Favorites is the resolver for the favorites field.
+func (r *queryResolver) Favorites(ctx context.Context) ([]*models.Favorite, error) {
+	var favorites []models.Favorite
+	if err := r.Store.DB.Order("created_at DESC").Find(&favorites).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Favorite, len(favorites))
+	for i := range favorites {
+		result[i] = &favorites[i]
+	}
+	return result, nil
 }
 
 // Favorite returns FavoriteResolver implementation.

@@ -12,3 +12,11 @@ input CreateFavoriteInput {
   name: String!
   link: String
 }
+
+extend type Query {
+  favorites: [Favorite!]!
+}
+
+extend type Mutation {
+  createFavorite(input: CreateFavoriteInput!): Favorite!
+}

@@ -7,13 +7,42 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
 // ID is the resolver for the id field.
 func (r *activityResolver) ID(ctx context.Context, obj *models.Activity) (int, error) {
 	return int(obj.ID), nil
+}
+
+// CreateActivity is the resolver for the createActivity field.
+func (r *mutationResolver) CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	activity := models.Activity{Type: input.Type, Name: input.Name, Link: input.Link}
+	if err := r.Store.DB.Create(&activity).Error; err != nil {
+		return nil, err
+	}
+
+	return &activity, nil
+}
+
+// Activities is the resolver for the activities field.
+func (r *queryResolver) Activities(ctx context.Context) ([]*models.Activity, error) {
+	var activities []models.Activity
+	if err := r.Store.DB.Order("created_at DESC").Find(&activities).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Activity, len(activities))
+	for i := range activities {
+		result[i] = &activities[i]
+	}
+	return result, nil
 }
 
 // Activity returns ActivityResolver implementation.

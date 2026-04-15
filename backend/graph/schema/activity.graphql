@@ -12,3 +12,11 @@ input CreateActivityInput {
   name: String!
   link: String
 }
+
+extend type Query {
+  activities: [Activity!]!
+}
+
+extend type Mutation {
+  createActivity(input: CreateActivityInput!): Activity!
+}

@@ -7,13 +7,106 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
 // ID is the resolver for the id field.
 func (r *jobApplicationResolver) ID(ctx context.Context, obj *models.JobApplication) (int, error) {
 	return int(obj.ID), nil
+}
+
+// CreateJobApplication is the resolver for the createJobApplication field.
+func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	app := models.JobApplication{
+		JobTitle:  input.JobTitle,
+		Company:   input.Company,
+		Location:  input.Location,
+		URL:       input.URL,
+		Status:    input.Status,
+		Notes:     input.Notes,
+		AppliedAt: input.AppliedAt,
+	}
+	if err := r.Store.DB.Create(&app).Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+// UpdateJobApplication is the resolver for the updateJobApplication field.
+func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var app models.JobApplication
+	if err := r.Store.DB.First(&app, id).Error; err != nil {
+		return nil, err
+	}
+	if input.JobTitle != nil {
+		app.JobTitle = *input.JobTitle
+	}
+	if input.Company != nil {
+		app.Company = *input.Company
+	}
+	if input.Location != nil {
+		app.Location = input.Location
+	}
+	if input.URL != nil {
+		app.URL = input.URL
+	}
+	if input.Status != nil {
+		app.Status = *input.Status
+	}
+	if input.Notes != nil {
+		app.Notes = input.Notes
+	}
+	if input.AppliedAt != nil {
+		app.AppliedAt = input.AppliedAt
+	}
+	if err := r.Store.DB.Save(&app).Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+// DeleteJobApplication is the resolver for the deleteJobApplication field.
+func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bool, error) {
+	if !IsAdminFromCtx(ctx) {
+		return false, fmt.Errorf("admin access required")
+	}
+	if err := r.Store.DB.Delete(&models.JobApplication{}, id).Error; err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// JobApplications is the resolver for the jobApplications field.
+func (r *queryResolver) JobApplications(ctx context.Context) ([]*models.JobApplication, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var apps []*models.JobApplication
+	if err := r.Store.DB.Order("created_at desc").Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	return apps, nil
+}
+
+// JobApplication is the resolver for the jobApplication field.
+func (r *queryResolver) JobApplication(ctx context.Context, id int) (*models.JobApplication, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var app models.JobApplication
+	if err := r.Store.DB.First(&app, id).Error; err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 // JobApplication returns JobApplicationResolver implementation.

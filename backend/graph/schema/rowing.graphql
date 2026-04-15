@@ -7,3 +7,7 @@ type Rowing {
   timePer500m: Float!
   calories: Float!
 }
+
+extend type Query {
+  rowingSessions: [Rowing!]!
+}

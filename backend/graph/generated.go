@@ -251,47 +251,47 @@ type MessageResolver interface {
 	AuthorID(ctx context.Context, obj *models.Message) (int, error)
 }
 type MutationResolver interface {
+	CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error)
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	Logout(ctx context.Context) (bool, error)
 	RefreshToken(ctx context.Context) (*model.AuthPayload, error)
+	CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error)
+	DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error)
+	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
+	CreateJobAppReference(ctx context.Context, input model.CreateJobAppReferenceInput) (*models.JobAppReference, error)
+	UpdateJobAppReference(ctx context.Context, id int, input model.UpdateJobAppReferenceInput) (*models.JobAppReference, error)
+	DeleteJobAppReference(ctx context.Context, id int) (bool, error)
+	CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error)
+	UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error)
+	DeleteJobApplication(ctx context.Context, id int) (bool, error)
 	CreatePost(ctx context.Context, input model.CreatePostInput) (*models.Post, error)
 	UpdatePost(ctx context.Context, id int, input model.UpdatePostInput) (*models.Post, error)
 	DeletePost(ctx context.Context, id int) (*models.Post, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*models.User, error)
 	DeleteUser(ctx context.Context, id int) (*models.User, error)
 	SetUserAdmin(ctx context.Context, id int, admin bool) (*models.User, error)
-	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
-	CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error)
-	CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error)
-	UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error)
-	CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error)
-	DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error)
-	DeleteJobApplication(ctx context.Context, id int) (bool, error)
-	CreateJobAppReference(ctx context.Context, input model.CreateJobAppReferenceInput) (*models.JobAppReference, error)
-	UpdateJobAppReference(ctx context.Context, id int, input model.UpdateJobAppReferenceInput) (*models.JobAppReference, error)
-	DeleteJobAppReference(ctx context.Context, id int) (bool, error)
 }
 type PostResolver interface {
 	ID(ctx context.Context, obj *models.Post) (int, error)
 }
 type QueryResolver interface {
-	Users(ctx context.Context) ([]*models.User, error)
-	User(ctx context.Context, id int) (*models.User, error)
-	Posts(ctx context.Context) ([]*models.Post, error)
-	Post(ctx context.Context, id int) (*models.Post, error)
 	Activities(ctx context.Context) ([]*models.Activity, error)
-	Favorites(ctx context.Context) ([]*models.Favorite, error)
-	RowingSessions(ctx context.Context) ([]*models.Rowing, error)
-	Messages(ctx context.Context) ([]*models.Message, error)
-	SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error)
-	SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error)
-	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
-	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
 	Me(ctx context.Context) (*models.User, error)
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
+	Favorites(ctx context.Context) ([]*models.Favorite, error)
+	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
+	JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error)
 	JobApplications(ctx context.Context) ([]*models.JobApplication, error)
 	JobApplication(ctx context.Context, id int) (*models.JobApplication, error)
-	JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error)
+	Messages(ctx context.Context) ([]*models.Message, error)
+	Posts(ctx context.Context) ([]*models.Post, error)
+	Post(ctx context.Context, id int) (*models.Post, error)
+	RowingSessions(ctx context.Context) ([]*models.Rowing, error)
+	SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error)
+	SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error)
+	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
+	Users(ctx context.Context) ([]*models.User, error)
+	User(ctx context.Context, id int) (*models.User, error)
 }
 type RowingResolver interface {
 	ID(ctx context.Context, obj *models.Rowing) (int, error)
@@ -2957,6 +2957,61 @@ func (ec *executionContext) fieldContext_Message_createdAt(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createActivity,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateActivity(ctx, fc.Args["input"].(model.CreateActivityInput))
+		},
+		nil,
+		ec.marshalNActivity2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐActivity,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Activity_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Activity_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Activity_updatedAt(ctx, field)
+			case "type":
+				return ec.fieldContext_Activity_type(ctx, field)
+			case "name":
+				return ec.fieldContext_Activity_name(ctx, field)
+			case "link":
+				return ec.fieldContext_Activity_link(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Activity", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3060,6 +3115,493 @@ func (ec *executionContext) fieldContext_Mutation_refreshToken(_ context.Context
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AuthPayload", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createBookmark,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateBookmark(ctx, fc.Args["input"].(model.CreateBookmarkInput))
+		},
+		nil,
+		ec.marshalNBookmark2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBookmark,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Bookmark_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Bookmark_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_Bookmark_category(ctx, field)
+			case "name":
+				return ec.fieldContext_Bookmark_name(ctx, field)
+			case "link":
+				return ec.fieldContext_Bookmark_link(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createBookmark_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteBookmark(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteBookmark,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteBookmark(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalNBookmark2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBookmark,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Bookmark_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Bookmark_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_Bookmark_category(ctx, field)
+			case "name":
+				return ec.fieldContext_Bookmark_name(ctx, field)
+			case "link":
+				return ec.fieldContext_Bookmark_link(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteBookmark_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createFavorite(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createFavorite,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateFavorite(ctx, fc.Args["input"].(model.CreateFavoriteInput))
+		},
+		nil,
+		ec.marshalNFavorite2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐFavorite,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createFavorite(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Favorite_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Favorite_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Favorite_updatedAt(ctx, field)
+			case "type":
+				return ec.fieldContext_Favorite_type(ctx, field)
+			case "name":
+				return ec.fieldContext_Favorite_name(ctx, field)
+			case "link":
+				return ec.fieldContext_Favorite_link(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Favorite", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createFavorite_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateJobAppReference(ctx, fc.Args["input"].(model.CreateJobAppReferenceInput))
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobAppReference(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobAppReferenceInput))
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteJobAppReference,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteJobAppReference(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateJobApplication(ctx, fc.Args["input"].(model.CreateJobApplicationInput))
+		},
+		nil,
+		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobApplication(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobApplicationInput))
+		},
+		nil,
+		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobApplication_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobApplication_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
+			case "jobTitle":
+				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
+			case "company":
+				return ec.fieldContext_JobApplication_company(ctx, field)
+			case "location":
+				return ec.fieldContext_JobApplication_location(ctx, field)
+			case "url":
+				return ec.fieldContext_JobApplication_url(ctx, field)
+			case "status":
+				return ec.fieldContext_JobApplication_status(ctx, field)
+			case "notes":
+				return ec.fieldContext_JobApplication_notes(ctx, field)
+			case "appliedAt":
+				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteJobApplication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteJobApplication(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3388,548 +3930,6 @@ func (ec *executionContext) fieldContext_Mutation_setUserAdmin(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_createFavorite(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_createFavorite,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateFavorite(ctx, fc.Args["input"].(model.CreateFavoriteInput))
-		},
-		nil,
-		ec.marshalNFavorite2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐFavorite,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createFavorite(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Favorite_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Favorite_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Favorite_updatedAt(ctx, field)
-			case "type":
-				return ec.fieldContext_Favorite_type(ctx, field)
-			case "name":
-				return ec.fieldContext_Favorite_name(ctx, field)
-			case "link":
-				return ec.fieldContext_Favorite_link(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Favorite", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createFavorite_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_createActivity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_createActivity,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateActivity(ctx, fc.Args["input"].(model.CreateActivityInput))
-		},
-		nil,
-		ec.marshalNActivity2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐActivity,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createActivity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Activity_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Activity_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Activity_updatedAt(ctx, field)
-			case "type":
-				return ec.fieldContext_Activity_type(ctx, field)
-			case "name":
-				return ec.fieldContext_Activity_name(ctx, field)
-			case "link":
-				return ec.fieldContext_Activity_link(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Activity", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createActivity_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_createJobApplication,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateJobApplication(ctx, fc.Args["input"].(model.CreateJobApplicationInput))
-		},
-		nil,
-		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_JobApplication_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_JobApplication_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
-			case "jobTitle":
-				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
-			case "company":
-				return ec.fieldContext_JobApplication_company(ctx, field)
-			case "location":
-				return ec.fieldContext_JobApplication_location(ctx, field)
-			case "url":
-				return ec.fieldContext_JobApplication_url(ctx, field)
-			case "status":
-				return ec.fieldContext_JobApplication_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_JobApplication_notes(ctx, field)
-			case "appliedAt":
-				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_updateJobApplication,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().UpdateJobApplication(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobApplicationInput))
-		},
-		nil,
-		ec.marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobApplication,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_updateJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_JobApplication_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_JobApplication_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_JobApplication_updatedAt(ctx, field)
-			case "jobTitle":
-				return ec.fieldContext_JobApplication_jobTitle(ctx, field)
-			case "company":
-				return ec.fieldContext_JobApplication_company(ctx, field)
-			case "location":
-				return ec.fieldContext_JobApplication_location(ctx, field)
-			case "url":
-				return ec.fieldContext_JobApplication_url(ctx, field)
-			case "status":
-				return ec.fieldContext_JobApplication_status(ctx, field)
-			case "notes":
-				return ec.fieldContext_JobApplication_notes(ctx, field)
-			case "appliedAt":
-				return ec.fieldContext_JobApplication_appliedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_createBookmark,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateBookmark(ctx, fc.Args["input"].(model.CreateBookmarkInput))
-		},
-		nil,
-		ec.marshalNBookmark2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBookmark,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Bookmark_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Bookmark_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
-			case "category":
-				return ec.fieldContext_Bookmark_category(ctx, field)
-			case "name":
-				return ec.fieldContext_Bookmark_name(ctx, field)
-			case "link":
-				return ec.fieldContext_Bookmark_link(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createBookmark_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteBookmark(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_deleteBookmark,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().DeleteBookmark(ctx, fc.Args["id"].(int))
-		},
-		nil,
-		ec.marshalNBookmark2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBookmark,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteBookmark(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Bookmark_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Bookmark_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Bookmark_updatedAt(ctx, field)
-			case "category":
-				return ec.fieldContext_Bookmark_category(ctx, field)
-			case "name":
-				return ec.fieldContext_Bookmark_name(ctx, field)
-			case "link":
-				return ec.fieldContext_Bookmark_link(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteBookmark_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_deleteJobApplication,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().DeleteJobApplication(ctx, fc.Args["id"].(int))
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteJobApplication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteJobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_createJobAppReference,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CreateJobAppReference(ctx, fc.Args["input"].(model.CreateJobAppReferenceInput))
-		},
-		nil,
-		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_JobAppReference_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
-			case "category":
-				return ec.fieldContext_JobAppReference_category(ctx, field)
-			case "label":
-				return ec.fieldContext_JobAppReference_label(ctx, field)
-			case "value":
-				return ec.fieldContext_JobAppReference_value(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_updateJobAppReference,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().UpdateJobAppReference(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobAppReferenceInput))
-		},
-		nil,
-		ec.marshalNJobAppReference2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReference,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_updateJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_JobAppReference_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
-			case "category":
-				return ec.fieldContext_JobAppReference_category(ctx, field)
-			case "label":
-				return ec.fieldContext_JobAppReference_label(ctx, field)
-			case "value":
-				return ec.fieldContext_JobAppReference_value(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_deleteJobAppReference,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().DeleteJobAppReference(ctx, fc.Args["id"].(int))
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_deleteJobAppReference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_deleteJobAppReference_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4116,198 +4116,6 @@ func (ec *executionContext) fieldContext_Post_content(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_users,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Users(ctx)
-		},
-		nil,
-		ec.marshalNUser2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐUserᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_users(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_User_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_User_updatedAt(ctx, field)
-			case "username":
-				return ec.fieldContext_User_username(ctx, field)
-			case "admin":
-				return ec.fieldContext_User_admin(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_user,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().User(ctx, fc.Args["id"].(int))
-		},
-		nil,
-		ec.marshalOUser2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐUser,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_User_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_User_updatedAt(ctx, field)
-			case "username":
-				return ec.fieldContext_User_username(ctx, field)
-			case "admin":
-				return ec.fieldContext_User_admin(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_posts,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Posts(ctx)
-		},
-		nil,
-		ec.marshalNPost2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPostᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Post_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Post_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Post_updatedAt(ctx, field)
-			case "title":
-				return ec.fieldContext_Post_title(ctx, field)
-			case "author":
-				return ec.fieldContext_Post_author(ctx, field)
-			case "content":
-				return ec.fieldContext_Post_content(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_post(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_post,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().Post(ctx, fc.Args["id"].(int))
-		},
-		nil,
-		ec.marshalOPost2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPost,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Post_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Post_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Post_updatedAt(ctx, field)
-			case "title":
-				return ec.fieldContext_Post_title(ctx, field)
-			case "author":
-				return ec.fieldContext_Post_author(ctx, field)
-			case "content":
-				return ec.fieldContext_Post_content(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_post_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_activities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4346,283 +4154,6 @@ func (ec *executionContext) fieldContext_Query_activities(_ context.Context, fie
 				return ec.fieldContext_Activity_link(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Activity", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_favorites(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_favorites,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Favorites(ctx)
-		},
-		nil,
-		ec.marshalNFavorite2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐFavoriteᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_favorites(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Favorite_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Favorite_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Favorite_updatedAt(ctx, field)
-			case "type":
-				return ec.fieldContext_Favorite_type(ctx, field)
-			case "name":
-				return ec.fieldContext_Favorite_name(ctx, field)
-			case "link":
-				return ec.fieldContext_Favorite_link(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Favorite", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_rowingSessions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_rowingSessions,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().RowingSessions(ctx)
-		},
-		nil,
-		ec.marshalNRowing2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐRowingᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_rowingSessions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Rowing_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Rowing_createdAt(ctx, field)
-			case "date":
-				return ec.fieldContext_Rowing_date(ctx, field)
-			case "time":
-				return ec.fieldContext_Rowing_time(ctx, field)
-			case "distance":
-				return ec.fieldContext_Rowing_distance(ctx, field)
-			case "timePer500m":
-				return ec.fieldContext_Rowing_timePer500m(ctx, field)
-			case "calories":
-				return ec.fieldContext_Rowing_calories(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Rowing", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_messages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_messages,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Messages(ctx)
-		},
-		nil,
-		ec.marshalNMessage2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐMessageᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_messages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Message_id(ctx, field)
-			case "content":
-				return ec.fieldContext_Message_content(ctx, field)
-			case "authorId":
-				return ec.fieldContext_Message_authorId(ctx, field)
-			case "fileUrl":
-				return ec.fieldContext_Message_fileUrl(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Message_createdAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_spotifyListening(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_spotifyListening,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().SpotifyListening(ctx)
-		},
-		nil,
-		ec.marshalOSpotifyPlaying2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyPlaying,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_spotifyListening(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "playing":
-				return ec.fieldContext_SpotifyPlaying_playing(ctx, field)
-			case "track":
-				return ec.fieldContext_SpotifyPlaying_track(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type SpotifyPlaying", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_spotifyRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_spotifyRecent,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().SpotifyRecent(ctx)
-		},
-		nil,
-		ec.marshalOSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_spotifyRecent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "track":
-				return ec.fieldContext_SpotifyRecentItem_track(ctx, field)
-			case "playedAt":
-				return ec.fieldContext_SpotifyRecentItem_playedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type SpotifyRecentItem", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_giteaFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_giteaFeed,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().GiteaFeed(ctx)
-		},
-		nil,
-		ec.marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐGiteaFeedItem,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_giteaFeed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "avatarUrl":
-				return ec.fieldContext_GiteaFeedItem_avatarUrl(ctx, field)
-			case "repoUrl":
-				return ec.fieldContext_GiteaFeedItem_repoUrl(ctx, field)
-			case "repoName":
-				return ec.fieldContext_GiteaFeedItem_repoName(ctx, field)
-			case "opType":
-				return ec.fieldContext_GiteaFeedItem_opType(ctx, field)
-			case "commitMessage":
-				return ec.fieldContext_GiteaFeedItem_commitMessage(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_GiteaFeedItem_createdAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type GiteaFeedItem", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_steamStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_steamStatus,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().SteamStatus(ctx)
-		},
-		nil,
-		ec.marshalOSteamStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamStatus,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_steamStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "online":
-				return ec.fieldContext_SteamStatus_online(ctx, field)
-			case "recentGames":
-				return ec.fieldContext_SteamStatus_recentGames(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type SteamStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -4707,6 +4238,137 @@ func (ec *executionContext) fieldContext_Query_bookmarks(_ context.Context, fiel
 				return ec.fieldContext_Bookmark_link(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Bookmark", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_favorites(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_favorites,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Favorites(ctx)
+		},
+		nil,
+		ec.marshalNFavorite2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐFavoriteᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_favorites(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Favorite_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Favorite_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Favorite_updatedAt(ctx, field)
+			case "type":
+				return ec.fieldContext_Favorite_type(ctx, field)
+			case "name":
+				return ec.fieldContext_Favorite_name(ctx, field)
+			case "link":
+				return ec.fieldContext_Favorite_link(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Favorite", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_giteaFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_giteaFeed,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().GiteaFeed(ctx)
+		},
+		nil,
+		ec.marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐGiteaFeedItem,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_giteaFeed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "avatarUrl":
+				return ec.fieldContext_GiteaFeedItem_avatarUrl(ctx, field)
+			case "repoUrl":
+				return ec.fieldContext_GiteaFeedItem_repoUrl(ctx, field)
+			case "repoName":
+				return ec.fieldContext_GiteaFeedItem_repoName(ctx, field)
+			case "opType":
+				return ec.fieldContext_GiteaFeedItem_opType(ctx, field)
+			case "commitMessage":
+				return ec.fieldContext_GiteaFeedItem_commitMessage(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_GiteaFeedItem_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GiteaFeedItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobAppReferences(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_jobAppReferences,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobAppReferences(ctx)
+		},
+		nil,
+		ec.marshalNJobAppReference2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReferenceᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_jobAppReferences(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_JobAppReference_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
+			case "category":
+				return ec.fieldContext_JobAppReference_category(ctx, field)
+			case "label":
+				return ec.fieldContext_JobAppReference_label(ctx, field)
+			case "value":
+				return ec.fieldContext_JobAppReference_value(ctx, field)
+			case "sortOrder":
+				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
 		},
 	}
 	return fc, nil
@@ -4826,23 +4488,23 @@ func (ec *executionContext) fieldContext_Query_jobApplication(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_jobAppReferences(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_messages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_jobAppReferences,
+		ec.fieldContext_Query_messages,
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().JobAppReferences(ctx)
+			return ec.Resolvers.Query().Messages(ctx)
 		},
 		nil,
-		ec.marshalNJobAppReference2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobAppReferenceᚄ,
+		ec.marshalNMessage2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐMessageᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_jobAppReferences(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_messages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -4851,22 +4513,360 @@ func (ec *executionContext) fieldContext_Query_jobAppReferences(_ context.Contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_JobAppReference_id(ctx, field)
+				return ec.fieldContext_Message_id(ctx, field)
+			case "content":
+				return ec.fieldContext_Message_content(ctx, field)
+			case "authorId":
+				return ec.fieldContext_Message_authorId(ctx, field)
+			case "fileUrl":
+				return ec.fieldContext_Message_fileUrl(ctx, field)
 			case "createdAt":
-				return ec.fieldContext_JobAppReference_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_JobAppReference_updatedAt(ctx, field)
-			case "category":
-				return ec.fieldContext_JobAppReference_category(ctx, field)
-			case "label":
-				return ec.fieldContext_JobAppReference_label(ctx, field)
-			case "value":
-				return ec.fieldContext_JobAppReference_value(ctx, field)
-			case "sortOrder":
-				return ec.fieldContext_JobAppReference_sortOrder(ctx, field)
+				return ec.fieldContext_Message_createdAt(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type JobAppReference", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_posts,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Posts(ctx)
+		},
+		nil,
+		ec.marshalNPost2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPostᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Post_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Post_updatedAt(ctx, field)
+			case "title":
+				return ec.fieldContext_Post_title(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_post(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_post,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Post(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalOPost2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPost,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Post_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Post_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Post_updatedAt(ctx, field)
+			case "title":
+				return ec.fieldContext_Post_title(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
+			case "content":
+				return ec.fieldContext_Post_content(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_post_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_rowingSessions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_rowingSessions,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().RowingSessions(ctx)
+		},
+		nil,
+		ec.marshalNRowing2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐRowingᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_rowingSessions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Rowing_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Rowing_createdAt(ctx, field)
+			case "date":
+				return ec.fieldContext_Rowing_date(ctx, field)
+			case "time":
+				return ec.fieldContext_Rowing_time(ctx, field)
+			case "distance":
+				return ec.fieldContext_Rowing_distance(ctx, field)
+			case "timePer500m":
+				return ec.fieldContext_Rowing_timePer500m(ctx, field)
+			case "calories":
+				return ec.fieldContext_Rowing_calories(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Rowing", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_spotifyListening(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_spotifyListening,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SpotifyListening(ctx)
+		},
+		nil,
+		ec.marshalOSpotifyPlaying2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyPlaying,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_spotifyListening(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "playing":
+				return ec.fieldContext_SpotifyPlaying_playing(ctx, field)
+			case "track":
+				return ec.fieldContext_SpotifyPlaying_track(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SpotifyPlaying", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_spotifyRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_spotifyRecent,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SpotifyRecent(ctx)
+		},
+		nil,
+		ec.marshalOSpotifyRecentItem2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSpotifyRecentItemᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_spotifyRecent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "track":
+				return ec.fieldContext_SpotifyRecentItem_track(ctx, field)
+			case "playedAt":
+				return ec.fieldContext_SpotifyRecentItem_playedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SpotifyRecentItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_steamStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_steamStatus,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SteamStatus(ctx)
+		},
+		nil,
+		ec.marshalOSteamStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐSteamStatus,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_steamStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "online":
+				return ec.fieldContext_SteamStatus_online(ctx, field)
+			case "recentGames":
+				return ec.fieldContext_SteamStatus_recentGames(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SteamStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_users,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Users(ctx)
+		},
+		nil,
+		ec.marshalNUser2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐUserᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_users(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "admin":
+				return ec.fieldContext_User_admin(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_user,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().User(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalOUser2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐUser,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "admin":
+				return ec.fieldContext_User_admin(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8593,6 +8593,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createActivity":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createActivity(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "login":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_login(ctx, field)
@@ -8610,6 +8617,69 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "refreshToken":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_refreshToken(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createBookmark":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBookmark(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteBookmark":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteBookmark(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createFavorite":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createFavorite(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJobAppReference(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobAppReference(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJobAppReference":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJobAppReference(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJobApplication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJobApplication(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8652,76 +8722,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "setUserAdmin":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setUserAdmin(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createFavorite":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createFavorite(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createActivity":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createActivity(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createJobApplication":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createJobApplication(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "updateJobApplication":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateJobApplication(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createBookmark":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createBookmark(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteBookmark":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteBookmark(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteJobApplication":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteJobApplication(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createJobAppReference":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createJobAppReference(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "updateJobAppReference":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateJobAppReference(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "deleteJobAppReference":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteJobAppReference(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8860,88 +8860,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "users":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_users(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "user":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_user(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "posts":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_posts(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "post":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_post(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "activities":
 			field := field
 
@@ -8955,148 +8873,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "favorites":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_favorites(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "rowingSessions":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_rowingSessions(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "messages":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_messages(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "spotifyListening":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_spotifyListening(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "spotifyRecent":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_spotifyRecent(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "giteaFeed":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_giteaFeed(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "steamStatus":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_steamStatus(ctx, field)
 				return res
 			}
 
@@ -9135,6 +8911,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_bookmarks(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "favorites":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_favorites(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "giteaFeed":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_giteaFeed(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobAppReferences":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobAppReferences(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9188,7 +9027,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "jobAppReferences":
+		case "messages":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -9197,10 +9036,171 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_jobAppReferences(ctx, field)
+				res = ec._Query_messages(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "posts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_posts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "post":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_post(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "rowingSessions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rowingSessions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "spotifyListening":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_spotifyListening(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "spotifyRecent":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_spotifyRecent(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "steamStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_steamStatus(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "users":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_user(ctx, field)
 				return res
 			}
 

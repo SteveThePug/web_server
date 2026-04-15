@@ -16,3 +16,14 @@ input UpdatePostInput {
   title: String!
   content: String!
 }
+
+extend type Query {
+  posts: [Post!]!
+  post(id: ID!): Post
+}
+
+extend type Mutation {
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Post!
+}

@@ -10,3 +10,7 @@ type SteamStatus {
   online: Boolean!
   recentGames: [SteamGame!]!
 }
+
+extend type Query {
+  steamStatus: SteamStatus
+}

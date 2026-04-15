@@ -6,3 +6,7 @@ type GiteaFeedItem {
   commitMessage: String!
   createdAt: Time!
 }
+
+extend type Query {
+  giteaFeed: GiteaFeedItem
+}

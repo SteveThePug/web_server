@@ -12,3 +12,12 @@ input CreateBookmarkInput {
   name: String!
   link: String!
 }
+
+extend type Query {
+  bookmarks: [Bookmark!]!
+}
+
+extend type Mutation {
+  createBookmark(input: CreateBookmarkInput!): Bookmark!
+  deleteBookmark(id: ID!): Bookmark!
+}

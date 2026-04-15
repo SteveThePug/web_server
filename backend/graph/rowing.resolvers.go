@@ -11,6 +11,19 @@ import (
 	"adam-french.co.uk/backend/models"
 )
 
+// RowingSessions is the resolver for the rowingSessions field.
+func (r *queryResolver) RowingSessions(ctx context.Context) ([]*models.Rowing, error) {
+	var rows []models.Rowing
+	if err := r.Store.DB.Order("created_at DESC").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Rowing, len(rows))
+	for i := range rows {
+		result[i] = &rows[i]
+	}
+	return result, nil
+}
+
 // ID is the resolver for the id field.
 func (r *rowingResolver) ID(ctx context.Context, obj *models.Rowing) (int, error) {
 	return int(obj.ID), nil

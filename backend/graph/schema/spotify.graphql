@@ -26,3 +26,8 @@ type SpotifyRecentItem {
   track: SpotifyTrack!
   playedAt: Time!
 }
+
+extend type Query {
+  spotifyListening: SpotifyPlaying
+  spotifyRecent: [SpotifyRecentItem!]
+}

@@ -6,3 +6,13 @@ input LoginInput {
 type AuthPayload {
   user: User!
 }
+
+extend type Query {
+  me: User
+}
+
+extend type Mutation {
+  login(input: LoginInput!): AuthPayload!
+  logout: Boolean!
+  refreshToken: AuthPayload!
+}

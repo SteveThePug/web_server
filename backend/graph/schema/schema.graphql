@@ -1,43 +1,4 @@
 scalar Time
 
-type Query {
-  users: [User!]!
-  user(id: ID!): User
-  posts: [Post!]!
-  post(id: ID!): Post
-  activities: [Activity!]!
-  favorites: [Favorite!]!
-  rowingSessions: [Rowing!]!
-  messages: [Message!]!
-  spotifyListening: SpotifyPlaying
-  spotifyRecent: [SpotifyRecentItem!]
-  giteaFeed: GiteaFeedItem
-  steamStatus: SteamStatus
-  me: User
-  bookmarks: [Bookmark!]!
-  jobApplications: [JobApplication!]!
-  jobApplication(id: ID!): JobApplication
-  jobAppReferences: [JobAppReference!]!
-}
-
-type Mutation {
-  login(input: LoginInput!): AuthPayload!
-  logout: Boolean!
-  refreshToken: AuthPayload!
-  createPost(input: CreatePostInput!): Post!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
-  deletePost(id: ID!): Post!
-  createUser(input: CreateUserInput!): User!
-  deleteUser(id: ID!): User!
-  setUserAdmin(id: ID!, admin: Boolean!): User!
-  createFavorite(input: CreateFavoriteInput!): Favorite!
-  createActivity(input: CreateActivityInput!): Activity!
-  createJobApplication(input: CreateJobApplicationInput!): JobApplication!
-  updateJobApplication(id: ID!, input: UpdateJobApplicationInput!): JobApplication!
-  createBookmark(input: CreateBookmarkInput!): Bookmark!
-  deleteBookmark(id: ID!): Bookmark!
-  deleteJobApplication(id: ID!): Boolean!
-  createJobAppReference(input: CreateJobAppReferenceInput!): JobAppReference!
-  updateJobAppReference(id: ID!, input: UpdateJobAppReferenceInput!): JobAppReference!
-  deleteJobAppReference(id: ID!): Boolean!
-}
+type Query
+type Mutation

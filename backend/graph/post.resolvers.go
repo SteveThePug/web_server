@@ -7,13 +7,109 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
+
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*models.Post, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	userID, ok := UserIDFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
+	if err := r.Store.DB.Create(&post).Error; err != nil {
+		return nil, err
+	}
+
+	return &post, nil
+}
+
+// UpdatePost is the resolver for the updatePost field.
+func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.UpdatePostInput) (*models.Post, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	userID, ok := UserIDFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	var post models.Post
+	if err := r.Store.DB.First(&post, id).Error; err != nil {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if post.AuthorID != userID {
+		return nil, fmt.Errorf("you can only update your own posts")
+	}
+
+	post.Title = input.Title
+	post.Content = input.Content
+	if err := r.Store.DB.Save(&post).Error; err != nil {
+		return nil, err
+	}
+
+	return &post, nil
+}
+
+// DeletePost is the resolver for the deletePost field.
+func (r *mutationResolver) DeletePost(ctx context.Context, id int) (*models.Post, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	userID, ok := UserIDFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	var post models.Post
+	if err := r.Store.DB.First(&post, id).Error; err != nil {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if post.AuthorID != userID {
+		return nil, fmt.Errorf("you can only delete your own posts")
+	}
+
+	r.Store.DB.Delete(&post)
+	return &post, nil
+}
 
 // ID is the resolver for the id field.
 func (r *postResolver) ID(ctx context.Context, obj *models.Post) (int, error) {
 	return int(obj.ID), nil
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]*models.Post, error) {
+	var posts []models.Post
+	if err := r.Store.DB.Preload("Author").Order("created_at DESC").Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.Post, len(posts))
+	for i := range posts {
+		result[i] = &posts[i]
+	}
+	return result, nil
+}
+
+// Post is the resolver for the post field.
+func (r *queryResolver) Post(ctx context.Context, id int) (*models.Post, error) {
+	var post models.Post
+	if err := r.Store.DB.Preload("Author").First(&post, id).Error; err != nil {
+		return nil, fmt.Errorf("post not found")
+	}
+	return &post, nil
 }
 
 // Post returns PostResolver implementation.

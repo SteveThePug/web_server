@@ -7,9 +7,105 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user := models.User{Username: input.Username, Password: hashedPassword}
+	if err := r.Store.DB.Create(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, id int) (*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	var user models.User
+	if err := r.Store.DB.First(&user, id).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	if err := r.Store.DB.Delete(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// SetUserAdmin is the resolver for the setUserAdmin field.
+func (r *mutationResolver) SetUserAdmin(ctx context.Context, id int, admin bool) (*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+
+	callerID, ok := UserIDFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	if uint(id) == callerID {
+		return nil, fmt.Errorf("cannot change your own admin status")
+	}
+
+	var user models.User
+	if err := r.Store.DB.First(&user, id).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	user.Admin = admin
+	if err := r.Store.DB.Save(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var users []models.User
+	if err := r.Store.DB.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	result := make([]*models.User, len(users))
+	for i := range users {
+		result[i] = &users[i]
+	}
+	return result, nil
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id int) (*models.User, error) {
+	if !IsAdminFromCtx(ctx) {
+		return nil, fmt.Errorf("admin access required")
+	}
+	var user models.User
+	if err := r.Store.DB.First(&user, id).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return &user, nil
+}
 
 // ID is the resolver for the id field.
 func (r *userResolver) ID(ctx context.Context, obj *models.User) (int, error) {
