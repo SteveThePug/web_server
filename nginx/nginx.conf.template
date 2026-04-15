@@ -9,6 +9,8 @@ http {
     server_tokens off;
     charset utf-8;
 
+    resolver 127.0.0.11 valid=10s;
+
     client_max_body_size 50M;
 
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
@@ -71,6 +73,12 @@ http {
 		http2 on;
         server_name www.$DOMAIN;
 
+        set $upstream_backend http://$BACKEND_HOST:$BACKEND_PORT;
+        set $upstream_icecast http://$ICECAST_HOST:$ICECAST_PORT;
+        set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
+        set $upstream_hasura http://$HASURA_HOST:$HASURA_PORT;
+        set $upstream_quartz http://$QUARTZ_HOST:$QUARTZ_PORT;
+        set $upstream_searxng http://$SEARXNG_HOST:$SEARXNG_PORT;
 
         root /etc/nginx/html;
         index index.html;
@@ -139,7 +147,7 @@ http {
 
         location $BACKEND_ENDPOINT/ws {
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_pass $upstream_backend;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
@@ -152,7 +160,7 @@ http {
         location $BACKEND_ENDPOINT/auth/login {
             limit_req zone=login burst=3 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_pass $upstream_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -162,7 +170,7 @@ http {
         location $BACKEND_ENDPOINT/messages/upload {
             limit_req zone=upload burst=3 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_pass $upstream_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -172,7 +180,7 @@ http {
         location $BACKEND_ENDPOINT/graphql {
             limit_req zone=graphql burst=10 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_pass $upstream_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -182,7 +190,7 @@ http {
         location $BACKEND_ENDPOINT/ {
             limit_req zone=api burst=20 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/;
+            proxy_pass $upstream_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -194,7 +202,8 @@ http {
         }
 
         location /radio/ {
-            proxy_pass http://$ICECAST_HOST:$ICECAST_PORT/;
+            rewrite ^/radio/(.*)$ /$1 break;
+            proxy_pass $upstream_icecast;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -206,7 +215,8 @@ http {
         }
 
         location /gitea/ {
-            proxy_pass http://$GITEA_HOST:$GITEA_PORT/;
+            rewrite ^/gitea/(.*)$ /$1 break;
+            proxy_pass $upstream_gitea;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -220,7 +230,8 @@ http {
         location /hasura/ {
             auth_request /internal/auth/admin-validate;
             error_page 401 403 = @auth_denied;
-            proxy_pass http://$HASURA_HOST:$HASURA_PORT/;
+            rewrite ^/hasura/(.*)$ /$1 break;
+            proxy_pass $upstream_hasura;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -237,7 +248,8 @@ http {
         location /notes/ {
             auth_request /internal/auth/admin-validate;
             error_page 401 403 = @auth_denied;
-            proxy_pass http://$QUARTZ_HOST:$QUARTZ_PORT/;
+            rewrite ^/notes/(.*)$ /$1 break;
+            proxy_pass $upstream_quartz;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
@@ -250,7 +262,8 @@ http {
 
         location = /internal/auth/admin-validate {
             internal;
-            proxy_pass http://$BACKEND_HOST:$BACKEND_PORT/auth/validate-admin;
+            rewrite ^ /auth/validate-admin break;
+            proxy_pass $upstream_backend;
             proxy_pass_request_body off;
             proxy_set_header Content-Length "";
             proxy_set_header Cookie $http_cookie;
@@ -267,7 +280,8 @@ http {
         location /searxng/ {
             auth_request /internal/auth/admin-validate;
             error_page 401 403 = @auth_denied;
-            proxy_pass http://$SEARXNG_HOST:$SEARXNG_PORT/;
+            rewrite ^/searxng/(.*)$ /$1 break;
+            proxy_pass $upstream_searxng;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
