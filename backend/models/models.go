@@ -88,6 +88,15 @@ type JobAppReference struct {
 	SortOrder int            `gorm:"default:0" json:"sortOrder"`
 }
 
+type ProcessedEmail struct {
+	ID             uint      `gorm:"primarykey" json:"id"`
+	CreatedAt      time.Time `json:"createdAt"`
+	GraphMessageID string    `gorm:"uniqueIndex;not null" json:"graphMessageId"`
+	Subject        string    `gorm:"not null" json:"subject"`
+	Action         string    `gorm:"not null" json:"action"`
+	JobAppID       *uint     `json:"jobAppId"`
+}
+
 type JobApplication struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"createdAt"`

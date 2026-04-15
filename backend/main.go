@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -85,9 +86,33 @@ func main() {
 	steamAPIKey := os.Getenv("STEAM_API_KEY")
 	steamID := os.Getenv("STEAM_ID")
 
+	// EMAIL SYNC
+	emailSyncInterval := 30 * time.Minute
+	if interval := os.Getenv("EMAIL_SYNC_INTERVAL"); interval != "" {
+		if parsed, err := time.ParseDuration(interval); err == nil {
+			emailSyncInterval = parsed
+		}
+	}
+	emailSyncConfig := services.EmailSyncConfig{
+		Backend:      os.Getenv("EMAIL_BACKEND"),
+		ClientID:     os.Getenv("MSGRAPH_CLIENT_ID"),
+		ClientSecret: os.Getenv("MSGRAPH_CLIENT_SECRET"),
+		TenantID:     os.Getenv("MSGRAPH_TENANT_ID"),
+		RedirectURI:  os.Getenv("MSGRAPH_REDIRECT_URI"),
+		IMAP: &services.IMAPConfig{
+			Host:     os.Getenv("IMAP_HOST"),
+			Port:     os.Getenv("IMAP_PORT"),
+			Email:    os.Getenv("IMAP_EMAIL"),
+			Password: os.Getenv("IMAP_PASSWORD"),
+		},
+		SyncInterval: emailSyncInterval,
+		Enabled:      os.Getenv("EMAIL_SYNC_ENABLED") == "true",
+	}
+	emailSync := services.InitEmailSync(&emailSyncConfig, db, claudeClient)
+
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
 
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
@@ -102,6 +127,10 @@ func main() {
 	r.GET("/auth/check", store.CheckToken)
 	r.POST("/auth/logout", store.Logout)
 	r.GET("/auth/validate-admin", store.ValidateAdmin)
+
+	// EMAIL SYNC
+	r.GET("/email/callback", store.CompleteEmailAuth)
+	admin.POST("/email/sync", store.TriggerEmailSync)
 
 	// SPOTIFY
 	r.GET("/spotify/callback", store.CompleteSpotifyAuth)
@@ -150,6 +179,11 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
+
+	// Launch email sync scheduler
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go store.EmailSync.StartScheduler(ctx)
 
 	port := os.Getenv("BACKEND_PORT")
 	r.Run(fmt.Sprintf(":%s", port))

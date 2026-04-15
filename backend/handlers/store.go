@@ -18,6 +18,7 @@ type Store struct {
 	Auth          *services.Auth
 	Notes         *services.Notes
 	LoginLimiter  *services.RateLimiter
+	EmailSync     *services.EmailSyncService
 
 	RecentSongs          *[]spotify.RecentlyPlayedItem
 	RecentSongsFetchedAt time.Time
