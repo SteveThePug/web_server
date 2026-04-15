@@ -6,8 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/emersion/go-imap/v2"
-	"github.com/emersion/go-imap/v2/imapclient"
+	"github.com/emersion/go-imap"
+	"github.com/emersion/go-imap/client"
+	"github.com/emersion/go-message/mail"
 )
 
 type IMAPConfig struct {
@@ -21,91 +22,86 @@ type IMAPConfig struct {
 func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, error) {
 	addr := fmt.Sprintf("%s:%s", s.Config.IMAP.Host, s.Config.IMAP.Port)
 
-	c, err := imapclient.DialTLS(addr, nil)
+	c, err := client.DialTLS(addr, nil)
 	if err != nil {
 		return nil, fmt.Errorf("IMAP connect: %w", err)
 	}
-	defer c.Close()
+	defer c.Logout()
 
-	if err := c.Login(s.Config.IMAP.Email, s.Config.IMAP.Password).Wait(); err != nil {
+	if err := c.Login(s.Config.IMAP.Email, s.Config.IMAP.Password); err != nil {
 		return nil, fmt.Errorf("IMAP login: %w", err)
 	}
 
-	if _, err := c.Select("INBOX", nil).Wait(); err != nil {
+	_, err = c.Select("INBOX", false)
+	if err != nil {
 		return nil, fmt.Errorf("IMAP select INBOX: %w", err)
 	}
 
 	// Search for emails since the given time
-	sinceDate := since.UTC()
-	searchCriteria := &imap.SearchCriteria{
-		Since: sinceDate,
-	}
-	searchData, err := c.Search(searchCriteria, nil).Wait()
+	criteria := imap.NewSearchCriteria()
+	criteria.Since = since.UTC()
+
+	seqNums, err := c.Search(criteria)
 	if err != nil {
 		return nil, fmt.Errorf("IMAP search: %w", err)
 	}
 
-	if searchData.AllSeqNums() == nil || len(searchData.AllSeqNums()) == 0 {
+	if len(seqNums) == 0 {
 		return nil, nil
 	}
 
-	seqNums := searchData.AllSeqNums()
-	log.Printf("[EmailSync/IMAP] Found %d messages since %s", len(seqNums), sinceDate.Format(time.RFC3339))
+	log.Printf("[EmailSync/IMAP] Found %d messages since %s", len(seqNums), since.UTC().Format(time.RFC3339))
 
-	seqSet := imap.SeqSetNum(seqNums...)
-	fetchOptions := &imap.FetchOptions{
-		Envelope:    true,
-		BodySection: []*imap.FetchItemBodySection{{}},
-	}
+	seqSet := new(imap.SeqSet)
+	seqSet.AddNum(seqNums...)
 
-	fetchCmd := c.Fetch(seqSet, fetchOptions)
-	defer fetchCmd.Close()
+	section := &imap.BodySectionName{}
+	items := []imap.FetchItem{imap.FetchEnvelope, section.FetchItem()}
+
+	msgChan := make(chan *imap.Message, len(seqNums))
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqSet, items, msgChan)
+	}()
 
 	var messages []graphMessage
 
-	for {
-		msg := fetchCmd.Next()
-		if msg == nil {
-			break
-		}
-
-		var envelope *imap.Envelope
-		var bodyContent string
-
-		for {
-			item := msg.Next()
-			if item == nil {
-				break
-			}
-
-			switch data := item.(type) {
-			case imapclient.FetchItemDataEnvelope:
-				envelope = data.Envelope
-			case imapclient.FetchItemDataBodySection:
-				body, err := io.ReadAll(data.Literal)
-				if err != nil {
-					log.Printf("[EmailSync/IMAP] Error reading body: %v", err)
-					continue
-				}
-				bodyContent = string(body)
-			}
-		}
-
-		if envelope == nil {
+	for msg := range msgChan {
+		if msg.Envelope == nil {
 			continue
 		}
 
-		// Convert to graphMessage format for unified processing
 		var fromName, fromAddr string
-		if len(envelope.From) > 0 {
-			fromName = envelope.From[0].Name
-			fromAddr = envelope.From[0].Addr()
+		if len(msg.Envelope.From) > 0 {
+			fromName = msg.Envelope.From[0].PersonalName
+			fromAddr = msg.Envelope.From[0].Address()
+		}
+
+		var bodyContent string
+		bodyReader := msg.GetBody(section)
+		if bodyReader != nil {
+			mr, err := mail.CreateReader(bodyReader)
+			if err == nil {
+				for {
+					p, err := mr.NextPart()
+					if err != nil {
+						break
+					}
+					switch p.Header.(type) {
+					case *mail.InlineHeader:
+						b, err := io.ReadAll(p.Body)
+						if err == nil {
+							bodyContent = string(b)
+						}
+					}
+				}
+			}
 		}
 
 		gm := graphMessage{
-			ID:               envelope.MessageID,
-			Subject:          envelope.Subject,
-			ReceivedDateTime: envelope.Date.Format(time.RFC3339),
+			ID:               msg.Envelope.MessageId,
+			Subject:          msg.Envelope.Subject,
+			ReceivedDateTime: msg.Envelope.Date.Format(time.RFC3339),
 			From: graphFrom{
 				EmailAddress: graphEmailAddress{
 					Name:    fromName,
@@ -121,12 +117,8 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 		messages = append(messages, gm)
 	}
 
-	if err := fetchCmd.Close(); err != nil {
+	if err := <-done; err != nil {
 		return nil, fmt.Errorf("IMAP fetch: %w", err)
-	}
-
-	if err := c.Logout().Wait(); err != nil {
-		log.Printf("[EmailSync/IMAP] Logout error: %v", err)
 	}
 
 	return messages, nil
