@@ -24,9 +24,9 @@ const handleClick = () => {
         class="w-full border-b border-primary cursor-pointer"
         @click="handleClick"
     >
-        <h1 class="pl-2 m-0">
+        <h3 class="pl-2 m-0">
             <slot />
-        </h1>
+        </h3>
         <ToggleButton
             class="pointer-events-none"
             :model-value="props.modelValue"

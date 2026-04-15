@@ -18,7 +18,7 @@ const groupedBookmarks = computed(() => {
 
 <template>
     <div class="bookmarks-wrapper">
-        <h3 class="text-left">Bookmarks</h3>
+        <Header class="text-left">Bookmarks</Header>
         <div class="bookmarks-scroll">
             <LinkTable
                 v-for="group in groupedBookmarks"
