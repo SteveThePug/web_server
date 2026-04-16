@@ -59,7 +59,7 @@ function formatHours(minutes) {
                 <div
                     @click="nextGame"
                     :key="game.appId"
-                    class="flex flex-col items-center"
+                    class="flex flex-col items-center pt-2"
                 >
                     <img
                         :src="game.headerImageUrl"
@@ -85,7 +85,7 @@ function formatHours(minutes) {
 <style scoped>
 .steam-wrapper {
     position: relative;
-    height: 50mm;
+    height: 54mm;
     display: flex;
     flex-direction: column;
 }

@@ -168,7 +168,7 @@ import Bookmarks from "./Bookmarks.vue";
     .homeGrid {
         order: -1;
         width: 95vw;
-        height: 120vh;
+        height: 297mm;
         margin-inline: 0;
         box-sizing: border-box;
     }
