@@ -23,7 +23,7 @@ const show = ref(false);
 
 <template>
     <div v-if="title" class="h-fit w-full">
-        <ToggleHeader v-model="show" class="justify-between flex">
+        <ToggleHeader v-model="show" class="justify-between flex items-center">
             {{ title }}
         </ToggleHeader>
         <template v-if="show">
