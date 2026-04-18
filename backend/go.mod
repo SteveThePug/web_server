@@ -5,8 +5,6 @@ go 1.25
 require (
 	github.com/99designs/gqlgen v0.17.88
 	github.com/anthropics/anthropic-sdk-go v1.26.0
-	github.com/emersion/go-imap v1.2.1
-	github.com/emersion/go-message v0.18.2
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorilla/websocket v1.5.3

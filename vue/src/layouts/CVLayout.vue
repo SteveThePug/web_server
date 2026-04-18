@@ -17,54 +17,27 @@ import { RouterView } from "vue-router";
 </style>
 
 <style>
-/* Reset global element styles within CV layout */
-.cv-layout h1, .cv-layout h2, .cv-layout h3, .cv-layout h4 {
-    color: inherit;
-    font-family: inherit;
-    margin: 0;
+.cv-layout h1, .cv-layout h2, .cv-layout h3, .cv-layout h4,
+.cv-layout p, .cv-layout small, .cv-layout code, .cv-layout ul, .cv-layout li,
+.cv-layout td, .cv-layout tr, .cv-layout table {
+    color: #111;
 }
-.cv-layout p, .cv-layout small, .cv-layout code, .cv-layout ul, .cv-layout li {
-    color: inherit;
-}
+.cv-layout h1, .cv-layout h2, .cv-layout h3, .cv-layout h4 { margin: 0; }
 .cv-layout a {
-    color: inherit;
+    color: #111;
     background-color: transparent !important;
-    font-family: inherit;
-    text-align: inherit;
     letter-spacing: normal;
 }
 .cv-layout input, .cv-layout textarea {
-    color: inherit;
-    border-color: #ccc;
-    border-width: 1px;
+    color: #111;
+    background-color: white;
+    border: 1px solid #ccc;
     padding: 0;
     width: auto;
 }
-.cv-layout input::placeholder, .cv-layout textarea::placeholder {
-    color: #999;
-    opacity: 1;
-}
-.cv-layout table {
-    border-color: transparent;
-    border-width: 0;
-    color: inherit;
-}
-.cv-layout tr {
-    border-color: inherit;
-    color: inherit;
-}
-.cv-layout th {
-    border-right-width: 0;
-    border-style: none;
-    border-color: inherit;
-    padding: 0;
-}
-.cv-layout td {
-    padding: 0;
-    color: inherit;
-}
-.cv-layout textarea {
-    color: inherit;
-    background-color: white;
-}
+.cv-layout input::placeholder, .cv-layout textarea::placeholder { color: #999; opacity: 1; }
+.cv-layout table { border: 0 solid transparent; }
+.cv-layout tr { border-color: transparent; }
+.cv-layout th { border: none; padding: 0; }
+.cv-layout td { padding: 0; }
 </style>
