@@ -25,29 +25,14 @@ import Project from "./Project.vue";
             <section>
                 <h2>Profile</h2>
                 <p>
-                    Motivated applicant seeking to begin a career as an
-                    Installation Electrician through the Level 3 Electrical
-                    Installation apprenticeship. First Class Honours graduate
-                    in Computer Science with Mathematics with a strong
-                    technical foundation, practical problem-solving ability,
-                    and five years of customer-facing work experience.
-                    Genuinely keen to move from software into hands-on
-                    electrical work, committed to safety, and eager to learn
-                    from experienced mentors at Selwood.
-                </p>
-            </section>
-
-            <section>
-                <h2>Why Electrical</h2>
-                <p>
-                    My background is in problem-solving, logical reasoning,
-                    and working carefully with complex systems — skills that
-                    translate directly to electrical installation. I want a
-                    practical, skilled trade where the work is tangible,
-                    safety matters, and every job produces something real.
-                    Pump rental and site-based installation work appeals to
-                    me because no two days are the same and the learning
-                    never stops.
+                    Motivated applicant seeking an electrical apprenticeship.
+                    First Class Honours graduate in Computer Science with
+                    Mathematics, with strong problem-solving skills and five
+                    years of customer-facing experience. Keen to move from
+                    software into a practical, skilled trade where the work
+                    is tangible and safety matters — committed to learning
+                    from experienced mentors and earning my qualifications
+                    on the job.
                 </p>
             </section>
 
@@ -90,12 +75,10 @@ import Project from "./Project.vue";
                         <small>2021–2025</small>
                     </template>
                     <p>
-                        Worked in a busy live-music venue following strict
-                        health, safety and hygiene procedures. Coordinated
-                        with colleagues across bar, kitchen and events to
-                        keep shifts running smoothly. Developed reliability,
-                        punctuality, and the ability to stay calm when
-                        things get busy.
+                        Busy live-music venue. Followed strict health,
+                        safety and hygiene procedures and coordinated
+                        across bar, kitchen and events to keep shifts
+                        running smoothly.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -107,10 +90,9 @@ import Project from "./Project.vue";
                         <small>2020–2021</small>
                     </template>
                     <p>
-                        Front-of-house role at a busy pub. Built rapport
-                        with regulars, adapted quickly to changing
-                        priorities, and took pride in getting every detail
-                        right.
+                        Front-of-house at a busy pub. Adapted quickly to
+                        changing priorities and took pride in getting every
+                        detail right.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -122,9 +104,9 @@ import Project from "./Project.vue";
                         <small>2018–2020</small>
                     </template>
                     <p>
-                        Operated the till and coordinated table service at
-                        a café on London's South Bank. Strong cash-handling
-                        accuracy and confident customer interaction.
+                        Till operation and table service at a South Bank
+                        café. Accurate cash-handling and confident customer
+                        interaction.
                     </p>
                 </Project>
                 <Project>
@@ -137,11 +119,9 @@ import Project from "./Project.vue";
                     </template>
                     <p>
                         Built and self-hosted my own website infrastructure,
-                        including wiring and configuring hardware in my home
-                        (Raspberry Pi, networking, low-voltage DC). Regularly
-                        diagnose, test, and fix faults — the same
-                        methodical approach I'd bring to an electrical
-                        install.
+                        including wiring and configuring hardware at home
+                        (Raspberry Pi, networking, low-voltage DC).
+                        Methodical fault diagnosis and repair.
                     </p>
                 </Project>
             </section>
@@ -179,20 +159,18 @@ import Project from "./Project.vue";
                 <h2>Additional</h2>
                 <ul class="list-disc list-inside">
                     <li>
-                        Full right to work in the UK · based in London,
-                        willing to relocate / travel for the role
+                        Full right to work in the UK · willing to relocate
+                        or travel for the role
                     </li>
                     <li>
                         Happy to undertake a safety-critical medical as
-                        part of the recruitment process
+                        part of recruitment
                     </li>
                     <li>
-                        Committed to college day-release study and the
-                        full Level 3 NVQ programme
+                        Committed to college day-release study and full
+                        NVQ completion
                     </li>
-                    <li>
-                        References available on request
-                    </li>
+                    <li>References available on request</li>
                 </ul>
             </section>
         </div>
