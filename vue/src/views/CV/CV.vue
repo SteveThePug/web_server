@@ -5,10 +5,14 @@ import CVGeneral from "./CVGeneral.vue";
 import CVBackend from "./CVBackend.vue";
 import CVFrontend from "./CVFrontend.vue";
 import CVTemp from "./CVTemp.vue";
+import CVElectrical from "./CVElectrical.vue";
 
 const CVHospitality = defineAsyncComponent(() => import("./CVHospitality.vue"));
 
-const templates = [{ label: "General", component: CVGeneral }];
+const templates = [
+    { label: "General", component: CVGeneral },
+    { label: "Electrical", component: CVElectrical },
+];
 
 const selected = ref(0);
 const currentComponent = shallowRef(templates[0].component);
