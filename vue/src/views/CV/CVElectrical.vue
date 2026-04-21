@@ -25,14 +25,14 @@ import Project from "./Project.vue";
             <section>
                 <h2>Profile</h2>
                 <p>
-                    Motivated applicant seeking an electrical apprenticeship.
-                    First Class Honours graduate in Computer Science with
-                    Mathematics, with strong problem-solving skills and five
-                    years of customer-facing experience. Keen to move from
-                    software into a practical, skilled trade where the work
-                    is tangible and safety matters — committed to learning
-                    from experienced mentors and earning my qualifications
-                    on the job.
+                    Computer Science with Mathematics graduate (First
+                    Class, 81.1%) applying for an electrical
+                    apprenticeship. Five years of bar and waiting work
+                    alongside my degree, and a background of building and
+                    running my own home server setup. After finishing
+                    university I've decided I want to work with my hands
+                    rather than behind a desk, and I'm ready to start at
+                    the bottom and work through the NVQ.
                 </p>
             </section>
 
@@ -41,23 +41,23 @@ import Project from "./Project.vue";
                 <div class="skills-grid">
                     <div>
                         <strong>Technical</strong><br /><small>
-                            Strong numeracy (Maths degree-level), logical
-                            troubleshooting, confident with Excel and the
-                            Microsoft Suite, quick to pick up new tools.
+                            Good with numbers from my Maths degree.
+                            Comfortable with Excel and the Microsoft
+                            Suite. Pick up new tools quickly.
                         </small>
                     </div>
                     <div>
                         <strong>Practical</strong><br /><small>
-                            Methodical, precise, safety-conscious. Comfortable
-                            following procedures exactly and double-checking
-                            work before signing off.
+                            Careful and patient with procedure. Used to
+                            checking my own work before calling it done.
+                            Take safety rules seriously.
                         </small>
                     </div>
                     <div>
-                        <strong>Interpersonal</strong><br /><small>
-                            Clear communicator, reliable team member,
-                            composed under pressure — proven across five
-                            years of hospitality.
+                        <strong>People</strong><br /><small>
+                            Five years of customer-facing work. Reliable
+                            turning up, easy to work with, keep my head
+                            when a shift gets busy.
                         </small>
                     </div>
                 </div>
@@ -75,24 +75,11 @@ import Project from "./Project.vue";
                         <small>2021–2025</small>
                     </template>
                     <p>
-                        Busy live-music venue. Followed strict health,
-                        safety and hygiene procedures and coordinated
-                        across bar, kitchen and events to keep shifts
-                        running smoothly.
-                    </p>
-                </Project>
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>The Crown and Anchor</h4>
-                    </template>
-                    <template #top>
-                        <small>Bartender & Waiter</small>
-                        <small>2020–2021</small>
-                    </template>
-                    <p>
-                        Front-of-house at a busy pub. Adapted quickly to
-                        changing priorities and took pride in getting every
-                        detail right.
+                        Busy live-music venue in Leeds. Worked the bar
+                        and floor across gig nights and event days,
+                        following the usual health, safety and hygiene
+                        procedures. Got on well with the team and could
+                        be trusted to open or close on my own.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -104,9 +91,10 @@ import Project from "./Project.vue";
                         <small>2018–2020</small>
                     </template>
                     <p>
-                        Till operation and table service at a South Bank
-                        café. Accurate cash-handling and confident customer
-                        interaction.
+                        Ran the till and waited tables at a café on the
+                        South Bank. First proper job. Learned how to keep
+                        cash-handling tidy and how to talk to a lot of
+                        different people without getting flustered.
                     </p>
                 </Project>
                 <Project>
@@ -118,10 +106,11 @@ import Project from "./Project.vue";
                         <small>2021–present</small>
                     </template>
                     <p>
-                        Built and self-hosted my own website infrastructure,
-                        including wiring and configuring hardware at home
-                        (Raspberry Pi, networking, low-voltage DC).
-                        Methodical fault diagnosis and repair.
+                        Built my own website and host it at home on a
+                        Raspberry Pi. Set up the networking and low-voltage
+                        DC wiring myself. When something breaks I work
+                        through it until it's fixed, which is the same
+                        mindset I'd bring to a site.
                     </p>
                 </Project>
             </section>
@@ -159,18 +148,18 @@ import Project from "./Project.vue";
                 <h2>Additional</h2>
                 <ul class="list-disc list-inside">
                     <li>
-                        Full right to work in the UK · willing to relocate
-                        or travel for the role
+                        Full right to work in the UK. Happy to relocate or
+                        travel for the right role.
                     </li>
                     <li>
-                        Happy to undertake a safety-critical medical as
-                        part of recruitment
+                        Fine with a safety-critical medical as part of
+                        recruitment.
                     </li>
                     <li>
-                        Committed to college day-release study and full
-                        NVQ completion
+                        Up for college day-release and seeing the NVQ all
+                        the way through.
                     </li>
-                    <li>References available on request</li>
+                    <li>References on request.</li>
                 </ul>
             </section>
         </div>
