@@ -66,6 +66,21 @@ import Project from "./Project.vue";
                         changing priorities during service.
                     </p>
                 </Project>
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>To The Rise Bakery</h4>
+                    </template>
+                    <template #top>
+                        <small>Barista & Front of House</small>
+                        <small>2020–2021</small>
+                    </template>
+                    <p>
+                        Worked at a bakery in Eastbourne, preparing freshly
+                        baked goods for display, operating the coffee machine,
+                        and keeping bakery equipment spotless. Built rapport
+                        with regulars and provided attentive, friendly service.
+                    </p>
+                </Project>
                 <Project>
                     <template #left>
                         <h4>BFI Riverfront Kitchen</h4>
@@ -139,7 +154,6 @@ import Project from "./Project.vue";
                 <h2>Interests</h2>
                 <ul class="list-disc list-inside">
                     <li>Leetcode</li>
-                    <li>Learning Mandarin</li>
                     <li>Rhythm Games</li>
                     <li>Climbing, Gym</li>
                     <li>Board games, Meetup.com</li>
