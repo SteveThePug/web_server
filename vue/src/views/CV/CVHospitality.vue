@@ -66,7 +66,7 @@ import Project from "./Project.vue";
                         changing priorities during service.
                     </p>
                 </Project>
-                <Project class="border-b border-dotted">
+                <Project>
                     <template #left>
                         <h4>BFI Riverfront Kitchen</h4>
                     </template>
@@ -107,45 +107,42 @@ import Project from "./Project.vue";
                 </div>
             </section>
 
-            <section>
-                <h2>Education</h2>
-                <div class="w-full h-fit flex flex-col sm:flex-row gap-5">
-                    <div class="flex-1 sm:border-r border-dotted sm:pr-3">
-                        <h3>
-                            <a
-                                href="https://www.adam-french.co.uk/pdf/transcript.pdf"
-                            >
-                                University of Leeds
-                            </a>
-                        </h3>
-                        <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
+            <div class="w-full flex flex-col sm:flex-row gap-5">
+                <section class="flex-1">
+                    <h2>
+                        <a
+                            href="https://www.adam-french.co.uk/pdf/transcript.pdf"
                         >
-                            <small>First Class Honours (81.1%)</small>
-                            <small>2021–2025</small>
-                        </div>
-                        <small>BSc Computer Science with Mathematics </small>
+                            University of Leeds
+                        </a>
+                    </h2>
+                    <div
+                        class="flex-row flex place-content-between m-auto place-items-center"
+                    >
+                        <small>First Class Honours (81.1%)</small>
+                        <small>2021–2025</small>
                     </div>
-                    <div class="flex-1 sm:pl-3">
-                        <h3>University of Waterloo</h3>
-                        <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
-                        >
-                            <small>Year abroad</small>
-                            <small>2023–2024</small>
-                        </div>
+                    <small>BSc Computer Science with Mathematics </small>
+                </section>
+                <section class="flex-1">
+                    <h2>University of Waterloo</h2>
+                    <div
+                        class="flex-row flex place-content-between m-auto place-items-center"
+                    >
+                        <small>Year abroad</small>
+                        <small>2023–2024</small>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
             <section>
                 <h2>Interests</h2>
                 <ul class="list-disc list-inside">
-                    <li>Leetcode — daily competitive problem solving</li>
+                    <li>Leetcode</li>
                     <li>Learning Mandarin</li>
                     <li>Rhythm Games</li>
-                    <li>Climbing · Gym</li>
-                    <li>Board games · Meetup.com</li>
+                    <li>Climbing, Gym</li>
+                    <li>Board games, Meetup.com</li>
                 </ul>
             </section>
         </div>
