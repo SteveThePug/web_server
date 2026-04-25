@@ -2,6 +2,7 @@
 import { ref, shallowRef } from "vue";
 import { RouterLink } from "vue-router";
 import CVGeneral from "./CVGeneral.vue";
+import CVProgramming from "./CVProgramming.vue";
 import CVBackend from "./CVBackend.vue";
 import CVFrontend from "./CVFrontend.vue";
 import CVTemp from "./CVTemp.vue";
@@ -10,6 +11,7 @@ import CVHospitality from "./CVHospitality.vue";
 
 const templates = [
   { label: "General", component: CVGeneral },
+  { label: "Programming", component: CVProgramming },
   { label: "Backend", component: CVBackend },
   { label: "Frontend", component: CVFrontend },
   { label: "Temp", component: CVTemp },
