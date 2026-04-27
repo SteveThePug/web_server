@@ -3,21 +3,21 @@ import Project from "./Project.vue";
 </script>
 
 <template>
-  <main>
+  <main class="cv-template">
     <div class="no-print w-full h-20"></div>
     <div class="a4page justify-between">
       <section>
         <div class="flex flex-col sm:flex-row sm:justify-between">
           <h1 class="name">Adam French</h1>
-          <div class="contact-details sm:text-right">
+          <div class="contact-details">
             <p>London, United Kingdom</p>
             <p>+447563266931</p>
             <p>adam.a.french@outlook.com</p>
-            <h4>
+            <p>
               <a href="https://www.adam-french.co.uk">
                 www.adam-french.co.uk
               </a>
-            </h4>
+            </p>
           </div>
         </div>
       </section>
@@ -174,150 +174,3 @@ import Project from "./Project.vue";
     <div class="no-print w-full h-20"></div>
   </main>
 </template>
-
-<style scoped>
-/* Fonts */
-@font-face {
-  font-family: "big_noodle_titling";
-  src: url("/fonts/big_noodle_titling.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "CreatoDisplay";
-  src: url("/fonts/CreatoDisplay-Bold.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* Variables */
-* {
-  --primary: black;
-  --secondary: #0000ff;
-  --tertiary: #ff0000;
-  --quaternary: #cccccc;
-  --background: white;
-
-  --font-heading: big_noodle_titling;
-  --font-text: CreatoDisplay;
-  --font-size-name: 2.5em;
-  --font-size-text: 100%;
-  --font-size-small: 0.9em;
-  --font-size-heading: 2.1em;
-  --font-size-subheading: 1.6em;
-  --font-size-subsubheading: 1.3em;
-}
-
-/* A4 Page */
-.a4page {
-  line-height: 1.5;
-  font-family: var(--font-text);
-  width: 210mm;
-  height: 297mm;
-  padding: 8mm;
-  box-sizing: border-box;
-  background-color: var(--background);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--primary);
-  overflow: hidden;
-  margin: auto auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0.4em;
-}
-
-/* Component Styling */
-main {
-  padding: 0px;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
-  background-color: white;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  margin: 0px;
-  border: none;
-  color: var(--primary);
-  font-family: var(--font-heading);
-  text-transform: capitalize;
-}
-
-h1 {
-  font-size: var(--font-size-heading);
-}
-
-h2 {
-  border-bottom: 1px solid var(--primary);
-  font-size: var(--font-size-subheading);
-}
-
-h3,
-h4 {
-  font-size: var(--font-size-subsubheading);
-}
-
-a:hover {
-  color: var(--tertiary);
-}
-a {
-  background-color: transparent;
-  color: var(--secondary);
-}
-
-p {
-  margin-bottom: 0.2em;
-  color: var(--primary);
-  font-size: var(--font-size-text);
-}
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
-}
-
-small {
-  font-size: var(--font-size-small);
-  color: var(--primary);
-}
-
-ul {
-  font-size: var(--font-size-small);
-  margin: 0;
-  padding-left: 1.2em;
-}
-
-li {
-  font-size: var(--font-size-small);
-  color: var(--primary);
-}
-
-.skills-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.3em 1em;
-  margin-bottom: 0.2em;
-}
-
-@media (max-width: 640px) {
-  .a4page {
-    width: 100%;
-    height: auto;
-    overflow: visible;
-    box-shadow: none;
-    border: none;
-  }
-
-  .skills-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
