@@ -9,25 +9,25 @@ import topLevelAwait from "vite-plugin-top-level-await";
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [
-        vue(),
-        ...(process.env.NODE_ENV !== "production" ? [vueDevTools()] : []),
-        tailwindcss(),
-        wasm(),
-        topLevelAwait(),
-    ],
-    resolve: {
-        alias: {
-            "@": fileURLToPath(new URL("./src", import.meta.url)),
-        },
+  plugins: [
+    vue(),
+    ...(process.env.NODE_ENV !== "production" ? [vueDevTools()] : []),
+    tailwindcss(),
+    wasm(),
+    topLevelAwait(),
+  ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
-    server: {
-        host: "0.0.0.0",
-        proxy: {
-            "/api": "http://localhost:8080",
-            "/gitea": "http://localhost:3000",
-            "/radio": "http://localhost:8000",
-            "/searxng": "http://localhost:8080",
-        },
+  },
+  server: {
+    host: "0.0.0.0",
+    proxy: {
+      "/api": "http://localhost:8080",
+      "/gitea": "http://localhost:3000",
+      "/radio": "http://localhost:8000",
+      "/searxng": "http://localhost:8080",
     },
+  },
 });

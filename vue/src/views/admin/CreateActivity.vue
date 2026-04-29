@@ -11,29 +11,35 @@ const name = ref("");
 const link = ref("");
 
 async function post() {
-    try {
-        const data = await gql(
-            `mutation CreateActivity($input: CreateActivityInput!) { createActivity(input: $input) { id } }`,
-            { input: { type: type.value, name: name.value, link: link.value || undefined } },
-        );
-        type.value = "";
-        name.value = "";
-        link.value = "";
-        console.log(data.createActivity);
-        emit("done");
-    } catch (err) {
-        console.error(err);
-    }
+  try {
+    const data = await gql(
+      `mutation CreateActivity($input: CreateActivityInput!) { createActivity(input: $input) { id } }`,
+      {
+        input: {
+          type: type.value,
+          name: name.value,
+          link: link.value || undefined,
+        },
+      },
+    );
+    type.value = "";
+    name.value = "";
+    link.value = "";
+    console.log(data.createActivity);
+    emit("done");
+  } catch (err) {
+    console.error(err);
+  }
 }
 </script>
 
 <template>
-    <div class="flex flex-col">
-        <h1>Create Activity</h1>
-        <input type="text" v-model="type" placeholder="Type" @keyup.enter="post" />
-        <input type="text" v-model="name" placeholder="Name" @keyup.enter="post" />
-        <input type="text" v-model="link" placeholder="Link" @keyup.enter="post" />
-        <Button @click="post">Upload</Button>
-        <Button @click="emit('cancel')">Cancel</Button>
-    </div>
+  <div class="flex flex-col">
+    <h1>Create Activity</h1>
+    <input type="text" v-model="type" placeholder="Type" @keyup.enter="post" />
+    <input type="text" v-model="name" placeholder="Name" @keyup.enter="post" />
+    <input type="text" v-model="link" placeholder="Link" @keyup.enter="post" />
+    <Button @click="post">Upload</Button>
+    <Button @click="emit('cancel')">Cancel</Button>
+  </div>
 </template>

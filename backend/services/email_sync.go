@@ -51,12 +51,12 @@ type graphMessagesResponse struct {
 }
 
 type graphMessage struct {
-	ID               string          `json:"id"`
-	Subject          string          `json:"subject"`
-	ReceivedDateTime string          `json:"receivedDateTime"`
-	From             graphFrom       `json:"from"`
-	Body             graphBody       `json:"body"`
-	BodyPreview      string          `json:"bodyPreview"`
+	ID               string    `json:"id"`
+	Subject          string    `json:"subject"`
+	ReceivedDateTime string    `json:"receivedDateTime"`
+	From             graphFrom `json:"from"`
+	Body             graphBody `json:"body"`
+	BodyPreview      string    `json:"bodyPreview"`
 }
 
 type graphFrom struct {

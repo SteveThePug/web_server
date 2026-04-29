@@ -41,8 +41,8 @@ var (
 )
 
 const (
-	rateLimitWindow   = time.Second
-	rateLimitMaxMsgs  = 10
+	rateLimitWindow  = time.Second
+	rateLimitMaxMsgs = 10
 )
 
 func InitWebSocket(database *gorm.DB, domain string) {
