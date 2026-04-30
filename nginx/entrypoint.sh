@@ -13,13 +13,13 @@ if [ "$DEV_MODE" = "true" ]; then
       -subj "/CN=localhost" 2>/dev/null
   fi
   # In dev mode, so use nginx_dev.conf.template
-  envsubst '${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${UPTIMEKUMA_HOST} ${UPTIMEKUMA_PORT} ${SEARXNG_HOST} ${SEARXNG_PORT} ${WALLABAG_HOST} ${WALLABAG_PORT}' \
+  envsubst '${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${UPTIMEKUMA_HOST} ${UPTIMEKUMA_PORT} ${SEARXNG_HOST} ${SEARXNG_PORT} ${WALLABAG_HOST} ${WALLABAG_PORT} ${OPENWEBUI_HOST} ${OPENWEBUI_PORT}' \
     </etc/nginx/nginx_dev.conf.template \
     >/etc/nginx/nginx.conf
 elif [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
   echo "Certificates found. Using production nginx config."
   # In production with certificates already existing, so use nginx.conf.template
-  envsubst '${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${UPTIMEKUMA_HOST} ${UPTIMEKUMA_PORT} ${SEARXNG_HOST} ${SEARXNG_PORT} ${WALLABAG_HOST} ${WALLABAG_PORT}' \
+  envsubst '${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${UPTIMEKUMA_HOST} ${UPTIMEKUMA_PORT} ${SEARXNG_HOST} ${SEARXNG_PORT} ${WALLABAG_HOST} ${WALLABAG_PORT} ${OPENWEBUI_HOST} ${OPENWEBUI_PORT}' \
     </etc/nginx/nginx.conf.template \
     >/etc/nginx/nginx.conf
 else

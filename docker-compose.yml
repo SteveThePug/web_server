@@ -14,6 +14,8 @@ volumes:
   vue_dist:
   # Searxng data
   searxng_data:
+  # Open-WebUI data
+  openwebui_data:
 
 services:
   vue:
@@ -41,6 +43,7 @@ services:
       - hasura
       - quartz
       - searxng
+      - open-webui
     networks:
       - app-network
     ports:
@@ -169,6 +172,21 @@ services:
       - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY}
     volumes:
       - searxng_data:/etc/searxng
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: "${OPENWEBUI_HOST}"
+    restart: always
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - WEBUI_AUTH=False
+      - WEBUI_URL=https://www.${DOMAIN}/openwebui
+    volumes:
+      - openwebui_data:/app/backend/data
 
   gitea:
     image: docker.gitea.com/gitea:1.25.4-rootless
