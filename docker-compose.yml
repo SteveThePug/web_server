@@ -184,7 +184,7 @@ services:
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
       - WEBUI_AUTH=False
-      - WEBUI_URL=https://www.${DOMAIN}/openwebui
+      - WEBUI_URL=https://chat.${DOMAIN}
     volumes:
       - openwebui_data:/app/backend/data
 

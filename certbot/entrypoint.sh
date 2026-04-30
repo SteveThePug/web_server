@@ -1,7 +1,8 @@
 #!/bin/sh
-if [ ! -d /etc/letsencrypt/live/${DOMAIN} ]; then
-    certbot certonly --webroot -w /var/www/certbot --email ${EMAIL} -d ${DOMAIN} -d www.${DOMAIN} --agree-tos --non-interactive;
-fi;
+certbot certonly --webroot -w /var/www/certbot \
+    --email ${EMAIL} \
+    -d ${DOMAIN} -d www.${DOMAIN} -d chat.${DOMAIN} \
+    --agree-tos --non-interactive --expand;
 
 trap exit TERM;
 
