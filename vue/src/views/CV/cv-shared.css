@@ -131,6 +131,28 @@
   margin-bottom: 0.2em;
 }
 
+.cv-template .grades-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto 1fr);
+  column-gap: 0.5em;
+  row-gap: 0.1em;
+  font-size: var(--cv-text-size);
+  color: var(--primary);
+  margin: 0.15em 0;
+}
+
+.cv-template .grades-grid > span:nth-child(4n + 2),
+.cv-template .grades-grid > span:nth-child(4n) {
+  font-weight: 600;
+  padding-right: 1.5em;
+}
+
+@media (max-width: 640px) {
+  .cv-template .grades-grid {
+    grid-template-columns: auto 1fr;
+  }
+}
+
 .cv-template table {
   color: var(--secondary);
   border-collapse: collapse;

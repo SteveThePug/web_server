@@ -204,6 +204,35 @@ import Project from "./Project.vue";
           </p>
         </Project>
       </section>
+      <section>
+        <h2>University Academy of Engineering Southbank</h2>
+        <div
+          class="flex-row flex place-content-between m-auto place-items-center"
+        >
+          <strong>A Levels</strong>
+          <small>Sep 2019 – Jun 2021</small>
+        </div>
+        <div class="grades-grid">
+          <span>Mathematics</span><span>A*</span>
+          <span>Further Mathematics</span><span>A*</span>
+          <span>Physics</span><span>A*</span>
+        </div>
+        <div
+          class="flex-row flex place-content-between m-auto place-items-center mt-2"
+        >
+          <strong>GCSEs</strong>
+          <small>2019</small>
+        </div>
+        <div class="grades-grid">
+          <span>English Literature</span><span>9</span>
+          <span>Mathematics</span><span>9</span>
+          <span>Physics</span><span>9</span>
+          <span>English Language</span><span>8</span>
+          <span>Biology</span><span>8</span>
+          <span>Chemistry</span><span>8</span>
+          <span>Computer Science</span><span>7</span>
+        </div>
+      </section>
       <div class="w-full flex flex-col sm:flex-row gap-5">
         <section class="flex-1">
           <h2>Soft Skills</h2>
