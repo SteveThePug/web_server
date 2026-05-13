@@ -9,6 +9,7 @@ import CVFrontend from "./CVFrontend.vue";
 import CVTemp from "./CVTemp.vue";
 import CVElectrical from "./CVElectrical.vue";
 import CVHospitality from "./CVHospitality.vue";
+import CVAnalyst from "./CVAnalyst.vue";
 
 const templates = [
   { label: "General", component: CVGeneral },
@@ -19,6 +20,7 @@ const templates = [
   { label: "Temp", component: CVTemp },
   { label: "Electrical", component: CVElectrical },
   { label: "Hospitality", component: CVHospitality },
+  { label: "Analyst", component: CVAnalyst },
 ];
 
 const selected = ref(0);
