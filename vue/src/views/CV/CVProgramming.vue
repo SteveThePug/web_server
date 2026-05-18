@@ -185,6 +185,52 @@ import Project from "./Project.vue";
 
     <div class="a4page gap-10">
       <section>
+        <h2>University Academy of Engineering Southbank</h2>
+        <div
+          class="flex-row flex place-content-between m-auto place-items-center"
+        >
+          <small>Secondary & Sixth Form Education</small>
+          <small>Sep 2014 – Jun 2021</small>
+        </div>
+        <div class="w-full flex flex-col sm:flex-row gap-5">
+          <div class="flex-1">
+            <strong>A-Levels</strong>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr auto;
+                column-gap: 1em;
+              "
+            >
+              <span>Mathematics</span><span>A*</span>
+              <span>Further Mathematics</span><span>A*</span>
+              <span>Physics</span><span>A*</span>
+            </div>
+          </div>
+          <div class="flex-1">
+            <strong>GCSEs</strong>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr auto;
+                column-gap: 1em;
+              "
+            >
+              <span>Mathematics</span><span>9</span>
+              <span>English Literature</span><span>9</span> <span>Physics</span
+              ><span>9</span> <span>English Language</span><span>8</span>
+              <span>Biology</span><span>8</span> <span>Chemistry</span
+              ><span>8</span> <span>Computer Science</span><span>7</span>
+            </div>
+          </div>
+        </div>
+        <small>
+          <strong>Air Cadet Force</strong> — CVQO Level 2 BTEC in Teamwork and
+          Personal Development
+        </small>
+      </section>
+
+      <section>
         <h2>Experience</h2>
         <Project>
           <template #left>
