@@ -38,6 +38,23 @@ import Project from "./Project.vue";
 
         <Project class="border-b border-dotted">
           <template #left>
+            <h4>
+              <a href="https://www.daisygreenfood.com/location-hollandpark">
+                Daisy Green Holland Park
+              </a>
+            </h4>
+          </template>
+          <template #top>
+            <small>Barista & Front of House</small>
+            <small>May 2026 – Present</small>
+          </template>
+          <p>
+            Working at an all-day café in Holland Park, preparing coffee and
+            serving food in a fast-paced environment.
+          </p>
+        </Project>
+        <Project class="border-b border-dotted">
+          <template #left>
             <h4>Belgrave Music Hall</h4>
           </template>
           <template #top>

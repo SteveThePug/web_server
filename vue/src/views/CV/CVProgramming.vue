@@ -232,19 +232,80 @@ import Project from "./Project.vue";
 
       <section>
         <h2>Experience</h2>
-        <Project>
+
+        <Project class="border-b border-dotted">
           <template #left>
-            <h4>Hospitality</h4>
+            <h4>
+              <a href="https://www.daisygreenfood.com/location-hollandpark">
+                Daisy Green Holland Park
+              </a>
+            </h4>
           </template>
           <template #top>
-            <small>Cashier, Bartender, Waiter</small>
-            <small>Jan 2018 – Dec 2023</small>
+            <small>Barista & Front of House</small>
+            <small>May 2026 – Present</small>
           </template>
           <p contenteditable="true">
-            Worked at <strong>Belgrave Music Hall</strong>,
-            <strong>The Crown and Anchor</strong>, and
-            <strong>BFI Riverfront Kitchen</strong>. Developed communication,
-            composure under pressure, and reliability in customer-facing roles.
+            Working at an all-day café in Holland Park, preparing coffee and
+            serving food in a fast-paced environment.
+          </p>
+        </Project>
+        <Project class="border-b border-dotted">
+          <template #left>
+            <h4>Belgrave Music Hall</h4>
+          </template>
+          <template #top>
+            <small>Bartender & Waiter</small>
+            <small>2021–2025</small>
+          </template>
+          <p contenteditable="true">
+            Served food and drinks in a high-volume live-music venue in Leeds.
+            Handled busy weekend shifts, managed multiple tables simultaneously,
+            and maintained a calm, friendly demeanour during peak hours.
+          </p>
+        </Project>
+        <Project class="border-b border-dotted">
+          <template #left>
+            <h4>The Crown and Anchor</h4>
+          </template>
+          <template #top>
+            <small>Bartender & Waiter</small>
+            <small>2020–2021</small>
+          </template>
+          <p contenteditable="true">
+            Worked front-of-house at a busy pub, pulling pints, taking orders,
+            and ensuring a welcoming atmosphere. Built rapport with regulars and
+            adapted quickly to changing priorities during service.
+          </p>
+        </Project>
+        <Project class="border-b border-dotted">
+          <template #left>
+            <h4>To The Rise Bakery</h4>
+          </template>
+          <template #top>
+            <small>Barista & Front of House</small>
+            <small>2020–2021</small>
+          </template>
+          <p contenteditable="true">
+            Worked at a bakery in Eastbourne, preparing freshly baked goods for
+            display, operating the coffee machine, and keeping bakery equipment
+            spotless. Built rapport with regulars and provided attentive,
+            friendly service.
+          </p>
+        </Project>
+        <Project>
+          <template #left>
+            <h4>BFI Riverfront Kitchen</h4>
+          </template>
+          <template #top>
+            <small>Cashier & Waiter</small>
+            <small>2018–2020</small>
+          </template>
+          <p contenteditable="true">
+            Operated the till, served customers, and helped coordinate table
+            service at a café on London's South Bank. Developed strong
+            cash-handling accuracy and customer interaction skills in a
+            fast-paced environment.
           </p>
         </Project>
       </section>
