@@ -224,10 +224,6 @@ import Project from "./Project.vue";
             </div>
           </div>
         </div>
-        <small>
-          <strong>Air Cadet Force</strong> — CVQO Level 2 BTEC in Teamwork and
-          Personal Development
-        </small>
       </section>
 
       <section>
