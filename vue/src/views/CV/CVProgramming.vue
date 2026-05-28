@@ -231,11 +231,7 @@ import Project from "./Project.vue";
 
         <Project class="border-b border-dotted">
           <template #left>
-            <h4>
-              <a href="https://www.daisygreenfood.com/location-hollandpark">
-                Daisy Green Holland Park
-              </a>
-            </h4>
+            <h4>Daisy Green Holland Park</h4>
           </template>
           <template #top>
             <small>Barista & Front of House</small>
