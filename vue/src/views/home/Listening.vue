@@ -30,23 +30,27 @@ onUnmounted(() => {
 
 <template>
   <div class="listening-wrapper">
-    <Transition name="fade">
-      <div
-        @click="nextSong"
-        :key="song.track.name"
-        class="flex flex-col items-center pt-2"
-      >
-        <Header>Listening To</Header>
-        <img
-          :src="song.track.album.images[0].url"
-          :alt="song.track.album.name + ' album art'"
-        />
-        <p class="text-center"><strong>Song:</strong> {{ song.track.name }}</p>
-        <p class="text-center">
-          <strong>Artist:</strong> {{ song.track.artists[0].name }}
-        </p>
-      </div>
-    </Transition>
+    <div class="header-wrapper">
+      <Header>Listening To</Header>
+    </div>
+    <div class="content-scroll">
+      <Transition name="fade">
+        <div
+          @click="nextSong"
+          :key="song.track.name"
+          class="flex flex-col items-center"
+        >
+          <img
+            :src="song.track.album.images[0].url"
+            :alt="song.track.album.name + ' album art'"
+          />
+          <p class="text-center"><strong>Song:</strong> {{ song.track.name }}</p>
+          <p class="text-center">
+            <strong>Artist:</strong> {{ song.track.artists[0].name }}
+          </p>
+        </div>
+      </Transition>
+    </div>
   </div>
 </template>
 
@@ -56,6 +60,21 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+}
+
+.content-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
