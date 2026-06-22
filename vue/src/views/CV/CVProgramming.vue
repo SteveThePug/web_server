@@ -21,8 +21,8 @@ import Project from "./Project.vue";
                     </div>
                 </div>
             </section>
+            <h2>Education</h2>
             <section class="w-full flex flex-col sm:flex-row gap-5">
-                <h2>Profile</h2>
                 <div class="flex-1">
                     <h2>
                         <a
