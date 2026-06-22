@@ -1,0 +1,56 @@
+name: Weekly Maintenance
+
+on:
+    schedule:
+        - cron: "0 1 * * 0"
+    workflow_dispatch:
+
+jobs:
+    maintenance:
+        runs-on: self-hosted
+        steps:
+            - name: Show disk usage before
+              run: df -h /
+
+            - name: Update apt package index
+              run: sudo apt-get update
+
+            - name: Upgrade system packages
+              run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+
+            - name: Autoremove obsolete packages
+              run: sudo apt-get -y autoremove --purge
+
+            - name: Pull latest base images
+              working-directory: /home/adamf/deploy/web_server
+              env:
+                  DOCKER_API_VERSION: "1.41"
+              run: docker compose pull
+
+            - name: Rebuild and restart containers
+              working-directory: /home/adamf/deploy/web_server
+              env:
+                  DOCKER_API_VERSION: "1.41"
+              run: docker compose up -d --build --remove-orphans
+
+            - name: Prune unused Docker images
+              run: docker image prune -af
+
+            - name: Prune unused Docker build cache
+              run: docker builder prune -af
+
+            - name: Show running containers
+              run: docker compose ps
+              working-directory: /home/adamf/deploy/web_server
+
+            - name: Show disk usage after
+              run: df -h /
+
+            - name: Reboot if required
+              run: |
+                  if [ -f /var/run/reboot-required ]; then
+                      echo "Reboot required — scheduling in 1 minute"
+                      sudo shutdown -r +1
+                  else
+                      echo "No reboot needed"
+                  fi
