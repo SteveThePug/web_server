@@ -21,8 +21,9 @@ import Project from "./Project.vue";
                     </div>
                 </div>
             </section>
-            <div class="w-full flex flex-col sm:flex-row gap-5">
-                <section class="flex-1">
+            <section class="w-full flex flex-col sm:flex-row gap-5">
+                <h2>Profile</h2>
+                <div class="flex-1">
                     <h2>
                         <a
                             href="https://www.adam-french.co.uk/pdf/transcript.pdf"
@@ -46,8 +47,8 @@ import Project from "./Project.vue";
                             Machine Learning, Databases, Computer Processors
                         </li>
                     </ul>
-                </section>
-                <section class="flex-1">
+                </div>
+                <div class="flex-1">
                     <h2>University of Waterloo</h2>
                     <div
                         class="flex-row flex place-content-between m-auto place-items-center"
@@ -62,8 +63,8 @@ import Project from "./Project.vue";
                             Introduction to Rings and Fields with Applications
                         </li>
                     </ul>
-                </section>
-            </div>
+                </div>
+            </section>
 
             <section>
                 <h2>Profile</h2>
