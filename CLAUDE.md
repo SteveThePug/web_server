@@ -5,31 +5,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run Commands
 
 ### Full stack (dev mode, HTTP only)
+
 ```
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
 Dev mode seeds the database with test data (`SEED_DB=true`) and disables certbot/SSL. Visit `http://localhost`.
 
 ### Full stack (production, HTTPS)
+
 ```
 docker compose up --build
 ```
 
 ### Frontend only (hot reload)
+
 ```
 cd vue && npm run dev
 ```
+
 Vite dev server proxies `/api` to `localhost:8080`, `/gitea` to `localhost:3000`, `/radio` to `localhost:8000`.
 
 ### Frontend build
+
 ```
 cd vue && npm run build
 ```
 
 ### Regenerate GraphQL (after editing schema files)
+
 ```
 cd backend && go run github.com/99designs/gqlgen generate
 ```
+
 This regenerates `graph/generated.go` and `graph/model/models_gen.go`. Resolver implementations in `*.resolvers.go` files are preserved.
 
 ## Architecture

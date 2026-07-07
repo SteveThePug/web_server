@@ -5,7 +5,7 @@ import Project from "./Project.vue";
 <template>
     <main class="cv-template">
         <div class="no-print w-full h-20"></div>
-        <div class="a4page justify-between">
+        <div class="a4page justify-around">
             <section>
                 <div class="flex flex-col sm:flex-row sm:justify-between">
                     <h1 class="name">Adam French</h1>
@@ -36,7 +36,12 @@ import Project from "./Project.vue";
                             </h3>
                             <p>First Class Honours (81.1%)</p>
                         </div>
-                        <p>BSc Computer Science with Mathematics</p>
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
+                        >
+                            <p>BSc Computer Science with Mathematics</p>
+                            <small>Sep 2021 – Jun 2025</small>
+                        </div>
                         <ul class="list-disc list-inside pt-1">
                             <li>Algorithms & Data Structures I & II</li>
                             <li>Compiler Design and Construction</li>
@@ -57,7 +62,12 @@ import Project from "./Project.vue";
                                 </a>
                             </h3>
                         </div>
-                        <p>Year abroad</p>
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
+                        >
+                            <p>Year abroad</p>
+                            <small>Sep 2023 – Apr 2024</small>
+                        </div>
                         <ul class="list-disc list-inside pt-1">
                             <li>Applied Cryptography</li>
                             <li>Introduction to Computer Graphics</li>
@@ -76,11 +86,11 @@ import Project from "./Project.vue";
                     Full Stack Developer with a First Class Honours degree in
                     Computer Science with Mathematics from the University of
                     Leeds (81.1%) and a year abroad at the University of
-                    Waterloo. Proficient in full-stack development, systems
+                    Waterloo. Applied in full-stack development, systems
                     programming, and CI/CD automation. Strong problem-solving
-                    and organisational skills. Eager to contribute to a
-                    collaborative engineering team, apply strong academic
-                    foundations to real-world problems, and grow through
+                    skills demonstrated through Leetcode, eager to apply to OAs.
+                    Looking to contribute to an engineering team, apply my
+                    academic foundations to real-world problems and grow through
                     hands-on experience.
                 </p>
             </section>
@@ -113,7 +123,7 @@ import Project from "./Project.vue";
                 <h2>Projects</h2>
 
                 <Project class="border-b border-dotted">
-                    <template v-slot:left>
+                    <template #left>
                         <h4>
                             <a
                                 href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
@@ -122,10 +132,10 @@ import Project from "./Project.vue";
                             </a>
                         </h4>
                     </template>
-                    <template v-slot:top>
+                    <template #top>
                         <small>
                             Nginx, Vue, Postgres, Docker, Go, Python, Rust,
-                            Wasm, Git Actions, JWT Auth
+                            Wasm, Gitea Actions, JWT Auth
                         </small>
                         <small>2025</small>
                     </template>
@@ -137,7 +147,7 @@ import Project from "./Project.vue";
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
-                    <template v-slot:left>
+                    <template #left>
                         <h4>
                             <a
                                 href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
@@ -146,7 +156,7 @@ import Project from "./Project.vue";
                             </a>
                         </h4>
                     </template>
-                    <template v-slot:top>
+                    <template #top>
                         <small>Rust</small>
                         <small>2026</small>
                     </template>
@@ -157,7 +167,7 @@ import Project from "./Project.vue";
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
-                    <template v-slot:left>
+                    <template #left>
                         <h4>
                             <a
                                 href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
@@ -166,7 +176,7 @@ import Project from "./Project.vue";
                             </a>
                         </h4>
                     </template>
-                    <template v-slot:top>
+                    <template #top>
                         <small>Rust, Linear Algebra, Multithreading</small>
                         <small>2023</small>
                     </template>
@@ -180,7 +190,6 @@ import Project from "./Project.vue";
                     <template #left>
                         <h4>
                             <a
-                                class="text-center w-full"
                                 href="https://community.wolfram.com/groups/-/m/t/3210947"
                             >
                                 Wolfram Summer School
@@ -203,7 +212,7 @@ import Project from "./Project.vue";
 
         <div class="no-print w-full h-20"></div>
 
-        <div class="a4page gap-10">
+        <div class="a4page justify-around">
             <section>
                 <h2>University Academy of Engineering Southbank</h2>
                 <div
@@ -215,13 +224,7 @@ import Project from "./Project.vue";
                 <div class="w-full flex flex-col sm:flex-row gap-5">
                     <div class="flex-1">
                         <strong>A-Levels</strong>
-                        <div
-                            style="
-                                display: grid;
-                                grid-template-columns: 1fr auto;
-                                column-gap: 1em;
-                            "
-                        >
+                        <div class="grid grid-cols-[1fr_auto] gap-x-4">
                             <span>Mathematics</span><span>A*</span>
                             <span>Further Mathematics</span><span>A*</span>
                             <span>Physics</span><span>A*</span>
@@ -229,13 +232,7 @@ import Project from "./Project.vue";
                     </div>
                     <div class="flex-1">
                         <strong>GCSEs</strong>
-                        <div
-                            style="
-                                display: grid;
-                                grid-template-columns: 1fr auto;
-                                column-gap: 1em;
-                            "
-                        >
+                        <div class="grid grid-cols-[1fr_auto] gap-x-4">
                             <span>Mathematics</span><span>9</span>
                             <span>English Literature</span><span>9</span>
                             <span>Physics</span><span>9</span>
@@ -280,7 +277,7 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
-                        <small>2021–2025</small>
+                        <small>Sep 2021 – Jul 2025</small>
                     </template>
                     <p contenteditable="true">
                         Served food and drinks in a high-volume live-music venue
@@ -299,7 +296,7 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
-                        <small>2020–2021</small>
+                        <small>Jul 2020 – Aug 2021</small>
                     </template>
                     <p contenteditable="true">
                         Worked front-of-house at a busy pub, pulling pints,
@@ -318,7 +315,7 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Barista & Front of House</small>
-                        <small>2020–2021</small>
+                        <small>Jun 2020 – Aug 2021</small>
                     </template>
                     <p contenteditable="true">
                         Worked at a bakery in Eastbourne, preparing freshly
@@ -339,7 +336,7 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Cashier & Waiter</small>
-                        <small>2018–2020</small>
+                        <small>Jun 2018 – Mar 2020</small>
                     </template>
                     <p contenteditable="true">
                         Operated the till, served customers, and helped
