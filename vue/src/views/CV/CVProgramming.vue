@@ -21,48 +21,52 @@ import Project from "./Project.vue";
                     </div>
                 </div>
             </section>
-            <h2>Education</h2>
-            <section class="w-full flex flex-col sm:flex-row gap-5">
-                <div class="flex-1">
-                    <h2>
-                        <a
-                            href="https://www.adam-french.co.uk/pdf/transcript.pdf"
+
+            <section>
+                <h2>Education</h2>
+                <div class="w-full flex flex-col sm:flex-row gap-5">
+                    <div class="flex-1">
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
                         >
-                            University of Leeds
-                        </a>
-                    </h2>
-                    <div
-                        class="flex-row flex place-content-between m-auto place-items-center"
-                    >
-                        <small>First Class Honours (81.1%)</small>
-                        <small>Sep 2021 – Jun 2025</small>
+                            <h3>
+                                <a href="/pdf/transcript.pdf">
+                                    University of Leeds
+                                </a>
+                            </h3>
+                            <p>First Class Honours (81.1%)</p>
+                        </div>
+                        <p>BSc Computer Science with Mathematics</p>
+                        <ul class="list-disc list-inside pt-1">
+                            <li>Algorithms & Data Structures I & II</li>
+                            <li>Compiler Design and Construction</li>
+                            <li>Formal Languages & Finite Automata</li>
+                            <li>Graph Algorithms & Complexity Theory</li>
+                            <li>
+                                Machine Learning, Databases, Computer Processors
+                            </li>
+                        </ul>
                     </div>
-                    <small>BSc Computer Science with Mathematics </small>
-                    <ul class="list-disc list-inside">
-                        <li>Algorithms & Data Structures I & II</li>
-                        <li>Compiler Design and Construction</li>
-                        <li>Formal Languages & Finite Automata</li>
-                        <li>Graph Algorithms & Complexity Theory</li>
-                        <li>
-                            Machine Learning, Databases, Computer Processors
-                        </li>
-                    </ul>
-                </div>
-                <div class="flex-1">
-                    <h2>University of Waterloo</h2>
-                    <div
-                        class="flex-row flex place-content-between m-auto place-items-center"
-                    >
-                        <small>Year abroad</small>
-                        <small>Sep 2023 – Apr 2024</small>
+                    <div class="flex-1">
+                        <div
+                            class="flex-row flex place-content-between m-auto place-items-center"
+                        >
+                            <h3>
+                                <a href="/pdf/transcript2.pdf">
+                                    University of Waterloo
+                                </a>
+                            </h3>
+                        </div>
+                        <p>Year abroad</p>
+                        <ul class="list-disc list-inside pt-1">
+                            <li>Applied Cryptography</li>
+                            <li>Introduction to Computer Graphics</li>
+                            <li>
+                                Introduction to Rings and Fields with
+                                Applications
+                            </li>
+                        </ul>
                     </div>
-                    <ul class="list-disc list-inside">
-                        <li>Applied Cryptography</li>
-                        <li>Introduction to Computer Graphics</li>
-                        <li>
-                            Introduction to Rings and Fields with Applications
-                        </li>
-                    </ul>
                 </div>
             </section>
 
@@ -249,7 +253,13 @@ import Project from "./Project.vue";
 
                 <Project class="border-b border-dotted">
                     <template #left>
-                        <h4>Daisy Green Holland Park</h4>
+                        <h4>
+                            <a
+                                href="https://www.daisygreenfood.com/location-hollandpark"
+                            >
+                                Daisy Green Holland Park
+                            </a>
+                        </h4>
                     </template>
                     <template #top>
                         <small>Barista & Front of House</small>
@@ -262,7 +272,11 @@ import Project from "./Project.vue";
                 </Project>
                 <Project class="border-b border-dotted">
                     <template #left>
-                        <h4>Belgrave Music Hall</h4>
+                        <h4>
+                            <a href="https://www.belgravemusichall.com/">
+                                Belgrave Music Hall
+                            </a>
+                        </h4>
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
@@ -277,7 +291,11 @@ import Project from "./Project.vue";
                 </Project>
                 <Project class="border-b border-dotted">
                     <template #left>
-                        <h4>The Crown and Anchor</h4>
+                        <h4>
+                            <a href="https://crownandanchoreastbourne.co.uk/">
+                                The Crown and Anchor
+                            </a>
+                        </h4>
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
@@ -292,7 +310,11 @@ import Project from "./Project.vue";
                 </Project>
                 <Project class="border-b border-dotted">
                     <template #left>
-                        <h4>To The Rise Bakery</h4>
+                        <h4>
+                            <a href="https://www.totherisebakery.com/">
+                                To The Rise Bakery
+                            </a>
+                        </h4>
                     </template>
                     <template #top>
                         <small>Barista & Front of House</small>
@@ -307,7 +329,13 @@ import Project from "./Project.vue";
                 </Project>
                 <Project>
                     <template #left>
-                        <h4>BFI Riverfront Kitchen</h4>
+                        <h4>
+                            <a
+                                href="https://www.benugo.com/sites/restaurants/bfi-riverfront/"
+                            >
+                                BFI Riverfront Kitchen
+                            </a>
+                        </h4>
                     </template>
                     <template #top>
                         <small>Cashier & Waiter</small>

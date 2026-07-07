@@ -8,191 +8,191 @@
  */
 
 .cv-template {
-  /* Color palette — overrides global :root vars within CV scope */
-  --primary: black;
-  --secondary: #000088;
-  --tertiary: #ff0000;
-  --quaternary: #cccccc;
-  --background: white;
+    /* Color palette — overrides global :root vars within CV scope */
+    --primary: black;
+    --secondary: #000088;
+    --tertiary: #ff0000;
+    --quaternary: #cccccc;
+    --background: white;
 
-  /* Fonts */
-  --font-heading: big_noodle_titling;
-  --font-text: CreatoDisplay;
+    /* Fonts */
+    --font-heading: big_noodle_titling;
+    --font-text: CreatoDisplay;
 
-  /* Variation hooks — defaults match Hospitality/Frontend/Backend/Temp */
-  --cv-page-padding: 8mm;
-  --cv-line-height: 1.4;
-  --cv-page-gap: 0;
-  --cv-name-size: 3.1em;
-  --cv-heading-size: 2.1em;
-  --cv-subheading-size: 1.7em;
-  --cv-subsubheading-size: 1.4em;
-  --cv-text-size: 1em;
-  --cv-small-size: 1em;
-  --cv-list-size: 0.92em;
-  --cv-heading-transform: capitalize;
-  --cv-heading-margin: 0;
+    /* Variation hooks — defaults match Hospitality/Frontend/Backend/Temp */
+    --cv-page-padding: 8mm;
+    --cv-line-height: 1.4;
+    --cv-page-gap: 0;
+    --cv-name-size: 3.1em;
+    --cv-heading-size: 2.1em;
+    --cv-subheading-size: 1.7em;
+    --cv-subsubheading-size: 1.4em;
+    --cv-text-size: 1em;
+    --cv-small-size: 1em;
+    --cv-list-size: 0.92em;
+    --cv-heading-transform: capitalize;
+    --cv-heading-margin: 0;
 }
 
 .cv-template main {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
-  background-color: var(--background);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    background-color: var(--background);
 }
 
 .cv-template .a4page {
-  width: 210mm;
-  height: 297mm;
-  padding: var(--cv-page-padding);
-  line-height: var(--cv-line-height);
-  gap: var(--cv-page-gap);
-  box-sizing: border-box;
-  background-color: var(--background);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--primary);
-  overflow: hidden;
-  margin: auto auto;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-text);
+    width: 210mm;
+    height: 297mm;
+    padding: var(--cv-page-padding);
+    line-height: var(--cv-line-height);
+    gap: var(--cv-page-gap);
+    box-sizing: border-box;
+    background-color: var(--background);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--primary);
+    overflow: hidden;
+    margin: auto auto;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-text);
 }
 
 .cv-template .name {
-  font-size: var(--cv-name-size);
+    font-size: var(--cv-name-size);
 }
 
 .cv-template h1,
 .cv-template h2,
 .cv-template h3,
 .cv-template h4 {
-  margin: var(--cv-heading-margin);
-  border: none;
-  color: var(--primary);
-  font-family: var(--font-heading);
-  text-transform: var(--cv-heading-transform);
+    margin: var(--cv-heading-margin);
+    color: var(--primary);
+    font-family: var(--font-heading);
+    text-transform: var(--cv-heading-transform);
 }
 
 .cv-template h1 {
-  font-size: var(--cv-heading-size);
+    font-size: var(--cv-heading-size);
 }
 
 .cv-template h2 {
-  border-bottom: 1px solid var(--primary);
-  font-size: var(--cv-subheading-size);
+    border-bottom: 1px solid var(--primary);
+    margin-bottom: 2px;
+    font-size: var(--cv-subheading-size);
 }
 
 .cv-template h3 {
-  font-size: var(--cv-subsubheading-size);
+    font-size: var(--cv-subsubheading-size);
 }
 
 .cv-template h4 {
-  font-size: var(--cv-subsubheading-size);
+    font-size: var(--cv-subsubheading-size);
 }
 
 .cv-template p {
-  margin-bottom: 0.2em;
-  color: var(--primary);
-  font-size: var(--cv-text-size);
+    margin-bottom: 0.2em;
+    color: var(--primary);
+    font-size: var(--cv-text-size);
 }
 
 .cv-template a {
-  background-color: transparent;
-  color: var(--secondary);
-  font-family: inherit;
+    background-color: transparent;
+    color: var(--secondary);
+    font-family: inherit;
 }
 
 .cv-template a:hover {
-  color: var(--tertiary);
+    color: var(--tertiary);
 }
 
 .cv-template small {
-  font-size: var(--cv-small-size);
-  color: var(--primary);
+    font-size: var(--cv-small-size);
+    color: var(--primary);
 }
 
 .cv-template ul {
-  font-size: var(--cv-list-size);
-  margin: 0;
-  padding-left: 1.2em;
+    font-size: var(--cv-list-size);
+    margin: 0;
+    padding-left: 1.2em;
 }
 
 .cv-template li {
-  font-size: var(--cv-list-size);
-  color: var(--primary);
-  list-style: disc;
+    font-size: var(--cv-list-size);
+    color: var(--primary);
+    list-style: disc;
 }
 
 .cv-template .skills-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.3em 1em;
-  margin-bottom: 0.2em;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3em 1em;
+    margin-bottom: 0.2em;
 }
 
 .cv-template .grades-grid {
-  display: grid;
-  grid-template-columns: repeat(2, auto 1fr);
-  column-gap: 0.5em;
-  row-gap: 0.1em;
-  font-size: var(--cv-text-size);
-  color: var(--primary);
-  margin: 0.15em 0;
+    display: grid;
+    grid-template-columns: repeat(2, auto 1fr);
+    column-gap: 0.5em;
+    row-gap: 0.1em;
+    font-size: var(--cv-text-size);
+    color: var(--primary);
+    margin: 0.15em 0;
 }
 
 .cv-template .grades-grid > span:nth-child(4n + 2),
 .cv-template .grades-grid > span:nth-child(4n) {
-  font-weight: 600;
-  padding-right: 1.5em;
+    font-weight: 600;
+    padding-right: 1.5em;
 }
 
 @media (max-width: 640px) {
-  .cv-template .grades-grid {
-    grid-template-columns: auto 1fr;
-  }
+    .cv-template .grades-grid {
+        grid-template-columns: auto 1fr;
+    }
 }
 
 .cv-template table {
-  color: var(--secondary);
-  border-collapse: collapse;
-  border: 1px solid black;
+    color: var(--secondary);
+    border-collapse: collapse;
+    border: 1px solid black;
 }
 
 .cv-template td {
-  color: var(--secondary);
-  border-top: 1px solid var(--tertiary);
-  padding: 1px 10px;
-  font-size: var(--cv-text-size);
-  text-align: left;
+    color: var(--secondary);
+    border-top: 1px solid var(--tertiary);
+    padding: 1px 10px;
+    font-size: var(--cv-text-size);
+    text-align: left;
 }
 
 .cv-template th {
-  color: var(--secondary);
-  border: 2px solid var(--tertiary);
-  padding: 1px 0 1px 7px;
-  font-family: var(--font-heading);
-  font-size: var(--cv-subsubheading-size);
-  background-color: var(--quaternary);
-  text-align: left;
+    color: var(--secondary);
+    border: 2px solid var(--tertiary);
+    padding: 1px 0 1px 7px;
+    font-family: var(--font-heading);
+    font-size: var(--cv-subsubheading-size);
+    background-color: var(--quaternary);
+    text-align: left;
 }
 
 @media (max-width: 640px) {
-  .cv-template .a4page {
-    width: 100%;
-    height: auto;
-    overflow: visible;
-    box-shadow: none;
-    border: none;
-  }
+    .cv-template .a4page {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        box-shadow: none;
+        border: none;
+    }
 
-  .cv-template .skills-grid {
-    grid-template-columns: 1fr;
-  }
+    .cv-template .skills-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media print {
-  .cv-template .no-print {
-    display: none !important;
-  }
+    .cv-template .no-print {
+        display: none !important;
+    }
 }

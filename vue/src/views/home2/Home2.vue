@@ -1,7 +1,10 @@
 <template>
-    <div class="container">
-        <div class="menu"></div>
-        <div class="header"></div>
+    <div class="menu">
+        <div class="header">
+            <div class="sort-select"></div>
+            <div class="mix-select"></div>
+            <div class="levelbar"></div>
+        </div>
         <div class="footer">
             <div class="footer-difficulty"></div>
             <div class="footer-controls">
@@ -35,29 +38,50 @@
 </template>
 
 <style scoped>
-.container {
-    width: 100%;
-    height: 100%;
+div {
+    opacity: 80%;
 }
 
 .menu {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+    width: 1920px;
+    height: 1080px;
     background-image: url("/img/ss_c523b1c1311d195e10b1a96c70db1b85c20a8bda.1920x1080.jpg");
-    background-size: cover;
+    background-color: rgba(255, 255, 255, 0.5);
+    background-blend-mode: lighten;
     background-position: center;
     background-repeat: no-repeat;
 }
 
 .header {
+    display: grid;
+    grid-template-areas: "sort sort sort sort sort sort sort sort sort mix mix levelbar levelbar levelbar levelbar";
+    flex-direction: row;
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 10%;
     background-color: rgba(128, 128, 128, 0.5);
+}
+
+.levelbar {
+    grid-area: levelbar;
+    background-color: green;
+    flex: 1;
+}
+
+.mix-select {
+    grid-area: mix;
+    flex: 1;
+    background-color: red;
+}
+
+.sort-select {
+    grid-area: sort;
+    flex: 1;
+    background-color: blue;
 }
 
 .footer {
@@ -72,11 +96,11 @@
 
 .footer-difficulty {
     height: 58%;
-    background-color: rgba(200, 128, 128, 0.5);
+    background-color: red;
 }
 
 .footer-controls {
-    background-color: rgba(200, 0, 128, 0.5);
+    background-color: blue;
     height: 42%;
     display: flex;
     flex-direction: row;
