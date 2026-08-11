@@ -23,22 +23,38 @@ import Project from "./Project.vue";
             </section>
 
             <section>
-                <h2>Education</h2>
+                <h2>Profile</h2>
+                <p>
+                    Aspiring software developer with a First Class degree in Computer Science with Mathematics.
+                    Interested by theory of computing, and is most exposed by my <a href="/pdf/dissertation.pdf">dissertation</a>.
+                    Much of the software I design solves personal, real problems or exercises my creativity. This includes my
+                    self-hosted web server and other projects listed below. 
+                </p>
+                <p>
+                Carefully plan solutions to DSA questions, using USACO and Leetcode. Aside from being application ready,
+                    this is done to practice critical thinking and my focus.
+                </p>
+                <p>
+                    Comfortable with integrating AI into the development pipeline, currently using Claude and Claude Code to implement my ideas.
+                </p>
+                <p>
+                    I'm quick to pick up whatever language or stack a job
+                    needs. Available to start immediately.
+                </p>
+            </section>
+
+            <section>
+                <h2>Education & Modules</h2>
                 <div class="w-full flex flex-col sm:flex-row gap-5">
                     <div class="flex-1">
                         <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
+                            class="flex-col flex place-content-between m-auto place-items-center"
                         >
                             <h3>
                                 <a href="/pdf/transcript.pdf">
                                     University of Leeds
                                 </a>
                             </h3>
-                            <p>First Class Honours (81.1%)</p>
-                        </div>
-                        <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
-                        >
                             <p>BSc Computer Science with Mathematics</p>
                             <small>Sep 2021 – Jun 2025</small>
                         </div>
@@ -54,17 +70,13 @@ import Project from "./Project.vue";
                     </div>
                     <div class="flex-1">
                         <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
+                            class="flex-col flex place-content-between m-auto place-items-center"
                         >
                             <h3>
                                 <a href="/pdf/transcript2.pdf">
                                     University of Waterloo
                                 </a>
                             </h3>
-                        </div>
-                        <div
-                            class="flex-row flex place-content-between m-auto place-items-center"
-                        >
                             <p>Year abroad</p>
                             <small>Sep 2023 – Apr 2024</small>
                         </div>
@@ -76,45 +88,6 @@ import Project from "./Project.vue";
                                 Applications
                             </li>
                         </ul>
-                    </div>
-                </div>
-            </section>
-
-            <section>
-                <h2>Profile</h2>
-                <p contenteditable="true">
-                    Full Stack Developer with a First Class Honours degree in
-                    Computer Science with Mathematics from the University of
-                    Leeds (81.1%) and a year abroad at the University of
-                    Waterloo. Applied in full-stack development, systems
-                    programming, and CI/CD automation. Strong problem-solving
-                    skills demonstrated through Leetcode, eager to apply to OAs.
-                    Looking to contribute to an engineering team, apply my
-                    academic foundations to real-world problems and grow through
-                    hands-on experience.
-                </p>
-            </section>
-
-            <section>
-                <h2>Skills</h2>
-                <div class="skills-grid">
-                    <div>
-                        <strong>Languages</strong><br /><small
-                            >Go, Rust, Python, JavaScript / TypeScript,
-                            SQL</small
-                        >
-                    </div>
-                    <div>
-                        <strong>Frontend / Web Design</strong><br /><small
-                            >Vue, React / Redux, Svelte, Tailwind CSS,
-                            WebAssembly</small
-                        >
-                    </div>
-                    <div>
-                        <strong>Backend / Infra</strong><br /><small
-                            >Nginx, Docker, PostgreSQL, SQLite, JWT Auth, Git
-                            Actions</small
-                        >
                     </div>
                 </div>
             </section>
@@ -133,10 +106,9 @@ import Project from "./Project.vue";
                         </h4>
                     </template>
                     <template #top>
-                        <small>
-                            Nginx, Vue, Postgres, Docker, Go, Python, Rust,
-                            Wasm, Gitea Actions, JWT Auth
-                        </small>
+                        <strong>
+                            Nginx, Vue, Postgres, Docker, Go, Python, Gitea Actions
+                        </Strong>
                         <small>2025</small>
                     </template>
                     <p contenteditable="true">
@@ -146,6 +118,29 @@ import Project from "./Project.vue";
                         Deno.
                     </p>
                 </Project>
+
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/receipt_maker.git"
+                            >
+                                receipt_maker.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Python, Textual, Shell, ESC/POS</strong>
+                        <small>2025</small>
+                    </template>
+                    <p contenteditable="true">
+                        CLI and Textual TUI driving an Epson thermal receipt
+                        printer over the network, printing text notes, QR codes
+                        and images with automatic resizing via python-escpos
+                        and Pillow.
+                    </p>
+                </Project>
+
                 <Project class="border-b border-dotted">
                     <template #left>
                         <h4>
@@ -157,7 +152,7 @@ import Project from "./Project.vue";
                         </h4>
                     </template>
                     <template #top>
-                        <small>Rust</small>
+                        <strong>Rust</strong>
                         <small>2026</small>
                     </template>
                     <p contenteditable="true">
@@ -177,7 +172,7 @@ import Project from "./Project.vue";
                         </h4>
                     </template>
                     <template #top>
-                        <small>Rust, Linear Algebra, Multithreading</small>
+                        <strong>Rust, Linear Algebra, Multithreading</strong>
                         <small>2023</small>
                     </template>
                     <p contenteditable="true">
@@ -197,14 +192,12 @@ import Project from "./Project.vue";
                         </h4>
                     </template>
                     <template #top>
-                        <small>Wolfram Mathematica</small>
+                        <strong>Wolfram Mathematica</strong>
                         <small>2024</small>
                     </template>
                     <p contenteditable="true">
                         Research project on Mobile Automata with data
-                        visualisation and academic presentation. Delivered
-                        within a tight deadline in collaboration with academic
-                        mentors.
+                        visualization and academic presentation. Made with a tight deadline in collaboration with mentors.
                     </p>
                 </Project>
             </section>
