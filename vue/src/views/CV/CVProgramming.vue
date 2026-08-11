@@ -108,7 +108,7 @@ import Project from "./Project.vue";
                     <template #top>
                         <strong>
                             Nginx, Vue, Postgres, Docker, Go, Python, Gitea Actions
-                        </Strong>
+                        </strong>
                         <small>2025</small>
                     </template>
                     <p contenteditable="true">
