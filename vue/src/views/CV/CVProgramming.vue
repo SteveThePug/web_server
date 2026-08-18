@@ -11,7 +11,7 @@ import Project from "./Project.vue";
                     <h1 class="name">Adam French</h1>
                     <div class="contact-details">
                         <p>London, United Kingdom</p>
-                        <p>+447563266931</p>
+                        <p>+44 7563 266931</p>
                         <p>adam.a.french@outlook.com</p>
                         <p>
                             <a href="https://www.adam-french.co.uk">
@@ -25,26 +25,46 @@ import Project from "./Project.vue";
             <section>
                 <h2>Profile</h2>
                 <p>
-                    Aspiring software developer with a First Class degree in Computer Science with Mathematics.
-                    Interested by theory of computing, and is most exposed by my <a href="/pdf/dissertation.pdf">dissertation</a>.
-                    Much of the software I design solves personal, real problems or exercises my creativity. This includes my
-                    self-hosted web server and other projects listed below. 
-                </p>
-                <p>
-                Carefully plan solutions to DSA questions, using USACO and Leetcode. Aside from being application ready,
-                    this is done to practice critical thinking and my focus.
-                </p>
-                <p>
-                    Comfortable with integrating AI into the development pipeline, currently using Claude and Claude Code to implement my ideas.
-                </p>
-                <p>
-                    I'm quick to pick up whatever language or stack a job
-                    needs. Available to start immediately.
+                    Software developer with a First Class BSc in Computer
+                    Science with Mathematics. Designs, builds and operates
+                    full-stack software end to end, from Go APIs and Vue
+                    frontends to the self-hosted infrastructure they run on.
+                    <a href="/pdf/dissertation.pdf">Dissertation</a> proved
+                    <a href="/automata">Mobile Automata</a> are computationally
+                    equivalent to Turing
+                    Machines. Integrates AI tooling (Claude Code) into everyday
+                    development.
                 </p>
             </section>
 
             <section>
-                <h2>Education & Modules</h2>
+                <h2>Technical Skills</h2>
+                <div class="skills-grid">
+                    <div>
+                        <strong>Languages</strong><br />
+                        <small>
+                            Go, Rust, Python, JavaScript / TypeScript, SQL
+                        </small>
+                    </div>
+                    <div>
+                        <strong>Web</strong><br />
+                        <small>
+                            Vue 3, GraphQL, REST APIs, JWT Auth, WebSockets,
+                            Tailwind CSS
+                        </small>
+                    </div>
+                    <div>
+                        <strong>Infrastructure</strong><br />
+                        <small>
+                            Docker, Nginx, PostgreSQL, Linux, Git, CI/CD (Gitea
+                            Actions)
+                        </small>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Education</h2>
                 <div class="w-full flex flex-col sm:flex-row gap-5">
                     <div class="flex-1">
                         <div
@@ -56,7 +76,9 @@ import Project from "./Project.vue";
                                 </a>
                             </h3>
                             <p>BSc Computer Science with Mathematics</p>
-                            <small>Sep 2021 – Jun 2025</small>
+                            <small>
+                                First Class Honours · Sep 2021 – Jun 2025
+                            </small>
                         </div>
                         <ul class="list-disc list-inside pt-1">
                             <li>Algorithms & Data Structures I & II</li>
@@ -77,7 +99,7 @@ import Project from "./Project.vue";
                                     University of Waterloo
                                 </a>
                             </h3>
-                            <p>Year abroad</p>
+                            <p>Study Abroad Year</p>
                             <small>Sep 2023 – Apr 2024</small>
                         </div>
                         <ul class="list-disc list-inside pt-1">
@@ -107,37 +129,18 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <strong>
-                            Nginx, Vue, Postgres, Docker, Go, Python, Gitea Actions
+                            Nginx, Vue, Postgres, Docker, Go, Python, Gitea
+                            Actions
                         </strong>
                         <small>2025</small>
                     </template>
                     <p contenteditable="true">
                         Self-hosted personal website with a fully automated
-                        CI/CD pipeline. Iterated across diverse tech stacks
-                        including Svelte, React/Redux, SQLite, Rust Actix, and
-                        Deno.
-                    </p>
-                </Project>
-
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>
-                            <a
-                                href="https://www.adam-french.co.uk/gitea/adamf/receipt_maker.git"
-                            >
-                                receipt_maker.git
-                            </a>
-                        </h4>
-                    </template>
-                    <template #top>
-                        <strong>Python, Textual, Shell, ESC/POS</strong>
-                        <small>2025</small>
-                    </template>
-                    <p contenteditable="true">
-                        CLI and Textual TUI driving an Epson thermal receipt
-                        printer over the network, printing text notes, QR codes
-                        and images with automatic resizing via python-escpos
-                        and Pillow.
+                        CI/CD pipeline: Go GraphQL (gqlgen) API with JWT
+                        authentication and WebSockets, Vue 3 + Pinia frontend,
+                        and PostgreSQL, containerised behind Nginx on a
+                        Raspberry Pi. Iterated across diverse stacks including
+                        Svelte, React/Redux, SQLite, Rust Actix, and Deno.
                     </p>
                 </Project>
 
@@ -156,9 +159,9 @@ import Project from "./Project.vue";
                         <small>2026</small>
                     </template>
                     <p contenteditable="true">
-                        CLI tool for building and navigating interactive code
-                        tutorials, with version-traversal semantics inspired by
-                        Git.
+                        Rust CLI for building and navigating interactive,
+                        step-by-step code tutorials, with version-traversal
+                        semantics inspired by Git.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -176,8 +179,8 @@ import Project from "./Project.vue";
                         <small>2023</small>
                     </template>
                     <p contenteditable="true">
-                        Parallelised recursive ray tracer for realistic 3D
-                        rendering. Emphasised algorithmic efficiency and
+                        Multithreaded recursive ray tracer for realistic 3D
+                        rendering; emphasised algorithmic efficiency and
                         low-level memory management in Rust.
                     </p>
                 </Project>
@@ -196,8 +199,10 @@ import Project from "./Project.vue";
                         <small>2024</small>
                     </template>
                     <p contenteditable="true">
-                        Research project on Mobile Automata with data
-                        visualization and academic presentation. Made with a tight deadline in collaboration with mentors.
+                        Research project on
+                        <a href="/automata">Mobile Automata</a>: data visualisation
+                        in Mathematica, presented to the Wolfram community.
+                        Groundwork for the dissertation above.
                     </p>
                 </Project>
             </section>
@@ -207,11 +212,11 @@ import Project from "./Project.vue";
 
         <div class="a4page justify-around">
             <section>
-                <h2>University Academy of Engineering Southbank</h2>
+                <h2>Secondary Education</h2>
                 <div
                     class="flex-row flex place-content-between m-auto place-items-center"
                 >
-                    <small>Secondary & Sixth Form Education</small>
+                    <h3>University Academy of Engineering Southbank</h3>
                     <small>Sep 2014 – Jun 2021</small>
                 </div>
                 <div class="w-full flex flex-col sm:flex-row gap-5">
@@ -239,7 +244,7 @@ import Project from "./Project.vue";
             </section>
 
             <section>
-                <h2>Experience</h2>
+                <h2>Work Experience</h2>
 
                 <Project class="border-b border-dotted">
                     <template #left>
@@ -353,7 +358,7 @@ import Project from "./Project.vue";
                 <section class="flex-1">
                     <h2>Interests</h2>
                     <ul class="list-disc list-inside">
-                        <li>Leetcode</li>
+                        <li>Competitive programming (LeetCode, USACO)</li>
                         <li>Learning Mandarin</li>
                         <li>Rhythm Games</li>
                         <li>Climbing, Gym</li>

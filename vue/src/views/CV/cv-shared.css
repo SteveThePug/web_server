@@ -191,8 +191,24 @@
     }
 }
 
+@page {
+    size: A4;
+    margin: 0;
+}
+
 @media print {
     .cv-template .no-print {
         display: none !important;
+    }
+
+    .cv-template .a4page {
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        break-after: page;
+    }
+
+    .cv-template .a4page:last-of-type {
+        break-after: auto;
     }
 }

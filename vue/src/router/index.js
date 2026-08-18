@@ -35,6 +35,12 @@ const router = createRouter({
                     meta: { requiresAdmin: true },
                 },
                 {
+                    path: "automata",
+                    name: "mobile-automata",
+                    component: () =>
+                        import("@/views/automata/MobileAutomata.vue"),
+                },
+                {
                     path: "shrines",
                     name: "shrine links",
                     component: () => import("@/views/home/shrines/Shrines.vue"),

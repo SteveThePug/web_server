@@ -1,7 +1,7 @@
 <script setup>
 import { ref, shallowRef } from "vue";
 import { RouterLink } from "vue-router";
-import CVGeneral from "./CVGeneral.vue";
+// import CVGeneral from "./CVGeneral.vue";
 import CVProgramming from "./CVProgramming.vue";
 // import CVSecurity from "./CVSecurity.vue";
 // import CVBackend from "./CVBackend.vue";
@@ -13,7 +13,7 @@ import CVProgramming from "./CVProgramming.vue";
 
 const templates = [
     { label: "Programming", component: CVProgramming },
-    { label: "General", component: CVGeneral },
+    // { label: "General", component: CVGeneral },
     // { label: "Security", component: CVSecurity },
     // { label: "Backend", component: CVBackend },
     // { label: "Frontend", component: CVFrontend },
