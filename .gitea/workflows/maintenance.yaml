@@ -36,8 +36,8 @@ jobs:
             - name: Prune unused Docker images
               run: docker image prune -af
 
-            - name: Prune unused Docker build cache
-              run: docker builder prune -af
+            - name: Prune old Docker build cache
+              run: docker builder prune -f --filter until=336h
 
             - name: Show running containers
               run: docker compose ps

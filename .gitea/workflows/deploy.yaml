@@ -21,6 +21,7 @@ jobs:
               working-directory: /home/adamf/deploy/web_server
               env:
                   DOCKER_API_VERSION: "1.41"
+                  COMPOSE_BAKE: "false"
               run: docker compose up -d --build --remove-orphans
 
             - name: Prune unused Docker resources

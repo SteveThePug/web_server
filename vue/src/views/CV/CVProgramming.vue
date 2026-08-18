@@ -31,9 +31,8 @@ import Project from "./Project.vue";
                     frontends to the self-hosted infrastructure they run on.
                     <a href="/pdf/dissertation.pdf">Dissertation</a> proved
                     <a href="/automata">Mobile Automata</a> are computationally
-                    equivalent to Turing
-                    Machines. Integrates AI tooling (Claude Code) into everyday
-                    development.
+                    equivalent to Turing Machines. Integrates AI tooling (Claude
+                    Code) into everyday development.
                 </p>
             </section>
 
@@ -109,6 +108,7 @@ import Project from "./Project.vue";
                                 Introduction to Rings and Fields with
                                 Applications
                             </li>
+                            <li>Real Analysis</li>
                         </ul>
                     </div>
                 </div>
@@ -200,9 +200,9 @@ import Project from "./Project.vue";
                     </template>
                     <p contenteditable="true">
                         Research project on
-                        <a href="/automata">Mobile Automata</a>: data visualisation
-                        in Mathematica, presented to the Wolfram community.
-                        Groundwork for the dissertation above.
+                        <a href="/automata">Mobile Automata</a>: data
+                        visualisation in Mathematica, presented to the Wolfram
+                        community. Groundwork for the dissertation above.
                     </p>
                 </Project>
             </section>
