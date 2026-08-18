@@ -3,6 +3,7 @@ import { ref, shallowRef } from "vue";
 import { RouterLink } from "vue-router";
 // import CVGeneral from "./CVGeneral.vue";
 import CVProgramming from "./CVProgramming.vue";
+import CoverLetters from "../unused/CoverLetters.vue";
 // import CVSecurity from "./CVSecurity.vue";
 // import CVBackend from "./CVBackend.vue";
 // import CVFrontend from "./CVFrontend.vue";
@@ -13,6 +14,7 @@ import CVProgramming from "./CVProgramming.vue";
 
 const templates = [
     { label: "Programming", component: CVProgramming },
+    { label: "Cover Letter", component: CoverLetters },
     // { label: "General", component: CVGeneral },
     // { label: "Security", component: CVSecurity },
     // { label: "Backend", component: CVBackend },
