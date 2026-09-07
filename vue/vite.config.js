@@ -27,7 +27,6 @@ export default defineConfig({
       "/api": "http://localhost:8080",
       "/gitea": "http://localhost:3000",
       "/radio": "http://localhost:8000",
-      "/searxng": "http://localhost:8080",
     },
   },
 });

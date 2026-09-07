@@ -1,7 +1,8 @@
 #!/bin/sh
 certbot certonly --webroot -w /var/www/certbot \
     --email ${EMAIL} \
-    -d ${DOMAIN} -d www.${DOMAIN} -d chat.${DOMAIN} \
+    -d ${DOMAIN} -d www.${DOMAIN} \
+    --cert-name ${DOMAIN} \
     --agree-tos --non-interactive --expand;
 
 trap exit TERM;

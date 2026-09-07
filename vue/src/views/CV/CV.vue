@@ -62,7 +62,7 @@ function print() {
 
 <style scoped>
 .cv-root {
-    background: white;
+    background: var(--color-paper);
 }
 
 .cv-selector {
@@ -74,30 +74,8 @@ function print() {
     justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem;
-    background: white;
-    border-bottom: 1px solid #ddd;
-}
-
-.cv-btn {
-    padding: 0.4rem 1rem;
-    border: 1px solid #333;
-    border-radius: 4px;
-    background: white;
-    color: #333;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition:
-        background 0.15s,
-        color 0.15s;
-}
-
-.cv-btn:hover {
-    background: #eee;
-}
-
-.cv-btn.active {
-    background: #333;
-    color: white;
+    background: var(--color-paper);
+    border-bottom: 1px solid var(--color-line);
 }
 
 .cv-print-btn {
@@ -105,7 +83,6 @@ function print() {
 }
 
 .cv-jobs-btn {
-    text-decoration: none;
     margin-left: auto;
 }
 
@@ -124,12 +101,6 @@ function print() {
 .cv-fade-leave-to {
     opacity: 0;
     transform: translateY(-6px);
-}
-
-@media print {
-    .no-print {
-        display: none !important;
-    }
 }
 </style>
 

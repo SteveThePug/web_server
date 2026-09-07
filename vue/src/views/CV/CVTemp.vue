@@ -5,7 +5,7 @@ import Project from "./Project.vue";
 <template>
   <main class="cv-template">
     <div class="no-print w-full h-20"></div>
-    <div class="a4page justify-between">
+    <div class="cv-page justify-between">
       <section class="flex flex-col sm:flex-row sm:justify-between">
         <h1 class="name">Adam French</h1>
         <div class="contact-details">
@@ -147,7 +147,7 @@ import Project from "./Project.vue";
 
     <div class="no-print w-full h-20"></div>
 
-    <div class="a4page gap-10">
+    <div class="cv-page gap-10">
       <div class="w-full flex flex-col sm:flex-row gap-5">
         <section class="flex-1">
           <h2>

@@ -1,214 +1,208 @@
 /*
- * Shared styles for CV templates.
- * Loaded once (unscoped) by CV.vue. Each CV template tags its root <main>
- * with class="cv-template"; per-template variation is done by overriding
- * the CSS variables defined here in the template's own scoped <style>.
+ * Shared styles for the CV templates (src/views/CV/CV*.vue).
  *
- * @font-face declarations live in /src/assets/styles.css.
+ * Loaded once, unscoped, by CV.vue. Each template wraps itself in
+ * <main class="cv-template"> and lays out each sheet as <div class="cv-page">.
+ *
+ * Colours are the site tokens from src/assets/styles.css. CVLayout.vue has
+ * already switched them to ink-on-paper; this file only adds the template's
+ * own accents (blue links, red table rules). Sizes are exposed as --cv-*
+ * variables so a template can tune them from its own scoped <style>.
  */
 
 .cv-template {
-    /* Color palette — overrides global :root vars within CV scope */
-    --primary: black;
-    --secondary: #000088;
-    --tertiary: #ff0000;
-    --quaternary: #cccccc;
-    --background: white;
+  --color-primary: black;
+  --color-secondary: #000088; /* links, table text */
+  --color-tertiary: #ff0000; /* link hover, table rules */
+  --color-quaternary: #cccccc; /* table header background */
+  --color-surface: white;
 
-    /* Fonts */
-    --font-heading: big_noodle_titling;
-    --font-text: CreatoDisplay;
-
-    /* Variation hooks — defaults match Hospitality/Frontend/Backend/Temp */
-    --cv-page-padding: 8mm;
-    --cv-line-height: 1.4;
-    --cv-page-gap: 0;
-    --cv-name-size: 3.1em;
-    --cv-heading-size: 2.1em;
-    --cv-subheading-size: 1.7em;
-    --cv-subsubheading-size: 1.4em;
-    --cv-text-size: 1em;
-    --cv-small-size: 1em;
-    --cv-list-size: 0.92em;
-    --cv-heading-transform: capitalize;
-    --cv-heading-margin: 0;
+  --cv-page-padding: 8mm;
+  --cv-line-height: 1.4;
+  --cv-page-gap: 0;
+  --cv-name-size: 3.1em;
+  --cv-heading-size: 2.1em;
+  --cv-subheading-size: 1.7em;
+  --cv-subsubheading-size: 1.4em;
+  --cv-text-size: 1em;
+  --cv-small-size: 1em;
+  --cv-list-size: 0.92em;
+  --cv-heading-transform: capitalize;
+  --cv-heading-margin: 0;
 }
 
 .cv-template main {
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: fit-content;
-    background-color: var(--background);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  background-color: var(--color-surface);
 }
 
-.cv-template .a4page {
-    width: 210mm;
-    height: 297mm;
-    padding: var(--cv-page-padding);
-    line-height: var(--cv-line-height);
-    gap: var(--cv-page-gap);
-    box-sizing: border-box;
-    background-color: var(--background);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--primary);
-    overflow: hidden;
-    margin: auto auto;
-    display: flex;
-    flex-direction: column;
-    font-family: var(--font-text);
+/* One A4 sheet */
+.cv-template .cv-page {
+  width: 210mm;
+  height: 297mm;
+  padding: var(--cv-page-padding);
+  line-height: var(--cv-line-height);
+  gap: var(--cv-page-gap);
+  box-sizing: border-box;
+  background-color: var(--color-surface);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-primary);
+  overflow: hidden;
+  margin: auto auto;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
 }
 
+/* Typography */
 .cv-template .name {
-    font-size: var(--cv-name-size);
+  font-size: var(--cv-name-size);
 }
 
 .cv-template h1,
 .cv-template h2,
 .cv-template h3,
 .cv-template h4 {
-    margin: var(--cv-heading-margin);
-    color: var(--primary);
-    font-family: var(--font-heading);
-    text-transform: var(--cv-heading-transform);
+  margin: var(--cv-heading-margin);
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  text-transform: var(--cv-heading-transform);
 }
 
 .cv-template h1 {
-    font-size: var(--cv-heading-size);
+  font-size: var(--cv-heading-size);
 }
 
 .cv-template h2 {
-    border-bottom: 1px solid var(--primary);
-    margin-bottom: 2px;
-    font-size: var(--cv-subheading-size);
+  border-bottom: 1px solid var(--color-primary);
+  margin-bottom: 2px;
+  font-size: var(--cv-subheading-size);
 }
 
-.cv-template h3 {
-    font-size: var(--cv-subsubheading-size);
-}
-
+.cv-template h3,
 .cv-template h4 {
-    font-size: var(--cv-subsubheading-size);
+  font-size: var(--cv-subsubheading-size);
 }
 
 .cv-template p {
-    margin-bottom: 0.2em;
-    color: var(--primary);
-    font-size: var(--cv-text-size);
+  margin-bottom: 0.2em;
+  color: var(--color-primary);
+  font-size: var(--cv-text-size);
 }
 
 .cv-template a {
-    background-color: transparent;
-    color: var(--secondary);
-    font-family: inherit;
+  background-color: transparent;
+  color: var(--color-secondary);
+  font-family: inherit;
 }
 
 .cv-template a:hover {
-    color: var(--tertiary);
+  color: var(--color-tertiary);
 }
 
 .cv-template small {
-    font-size: var(--cv-small-size);
-    color: var(--primary);
+  font-size: var(--cv-small-size);
+  color: var(--color-primary);
 }
 
 .cv-template ul {
-    font-size: var(--cv-list-size);
-    margin: 0;
-    padding-left: 1.2em;
+  font-size: var(--cv-list-size);
+  margin: 0;
+  padding-left: 1.2em;
 }
 
 .cv-template li {
-    font-size: var(--cv-list-size);
-    color: var(--primary);
-    list-style: disc;
+  font-size: var(--cv-list-size);
+  color: var(--color-primary);
+  list-style: disc;
 }
 
+/* Grids */
 .cv-template .skills-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.3em 1em;
-    margin-bottom: 0.2em;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.3em 1em;
+  margin-bottom: 0.2em;
 }
 
 .cv-template .grades-grid {
-    display: grid;
-    grid-template-columns: repeat(2, auto 1fr);
-    column-gap: 0.5em;
-    row-gap: 0.1em;
-    font-size: var(--cv-text-size);
-    color: var(--primary);
-    margin: 0.15em 0;
+  display: grid;
+  grid-template-columns: repeat(2, auto 1fr);
+  column-gap: 0.5em;
+  row-gap: 0.1em;
+  font-size: var(--cv-text-size);
+  color: var(--color-primary);
+  margin: 0.15em 0;
 }
 
 .cv-template .grades-grid > span:nth-child(4n + 2),
 .cv-template .grades-grid > span:nth-child(4n) {
-    font-weight: 600;
-    padding-right: 1.5em;
+  font-weight: 600;
+  padding-right: 1.5em;
 }
 
-@media (max-width: 640px) {
-    .cv-template .grades-grid {
-        grid-template-columns: auto 1fr;
-    }
-}
-
+/* Tables */
 .cv-template table {
-    color: var(--secondary);
-    border-collapse: collapse;
-    border: 1px solid black;
+  color: var(--color-secondary);
+  border-collapse: collapse;
+  border: 1px solid black;
 }
 
 .cv-template td {
-    color: var(--secondary);
-    border-top: 1px solid var(--tertiary);
-    padding: 1px 10px;
-    font-size: var(--cv-text-size);
-    text-align: left;
+  color: var(--color-secondary);
+  border-top: 1px solid var(--color-tertiary);
+  padding: 1px 10px;
+  font-size: var(--cv-text-size);
+  text-align: left;
 }
 
 .cv-template th {
-    color: var(--secondary);
-    border: 2px solid var(--tertiary);
-    padding: 1px 0 1px 7px;
-    font-family: var(--font-heading);
-    font-size: var(--cv-subsubheading-size);
-    background-color: var(--quaternary);
-    text-align: left;
+  color: var(--color-secondary);
+  border: 2px solid var(--color-tertiary);
+  padding: 1px 0 1px 7px;
+  font-family: var(--font-heading);
+  font-size: var(--cv-subsubheading-size);
+  background-color: var(--color-quaternary);
+  text-align: left;
 }
 
+/* Phone */
 @media (max-width: 640px) {
-    .cv-template .a4page {
-        width: 100%;
-        height: auto;
-        overflow: visible;
-        box-shadow: none;
-        border: none;
-    }
+  .cv-template .cv-page {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    box-shadow: none;
+    border: none;
+  }
 
-    .cv-template .skills-grid {
-        grid-template-columns: 1fr;
-    }
+  .cv-template .skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cv-template .grades-grid {
+    grid-template-columns: auto 1fr;
+  }
 }
 
+/* Print: one sheet per page */
 @page {
-    size: A4;
-    margin: 0;
+  size: A4;
+  margin: 0;
 }
 
 @media print {
-    .cv-template .no-print {
-        display: none !important;
-    }
+  .cv-template .cv-page {
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    break-after: page;
+  }
 
-    .cv-template .a4page {
-        margin: 0;
-        border: none;
-        box-shadow: none;
-        break-after: page;
-    }
-
-    .cv-template .a4page:last-of-type {
-        break-after: auto;
-    }
+  .cv-template .cv-page:last-of-type {
+    break-after: auto;
+  }
 }

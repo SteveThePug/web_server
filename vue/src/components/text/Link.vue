@@ -33,12 +33,12 @@ const computedRel = computed(() => {
 
 <style scoped>
 .link {
-  color: var(--primary);
+  color: var(--color-primary);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .link:hover {
-  color: var(--tertiary);
+  color: var(--color-tertiary);
 }
 </style>

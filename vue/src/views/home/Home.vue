@@ -2,14 +2,10 @@
 import Timer from "@/components/util/Timer.vue";
 import Time from "@/components/util/Time.vue";
 import Radio from "@/components/util/Radio.vue";
-import Elle from "@/components/elle/Elle.vue";
 import Chat from "@/components/util/Chat.vue";
-import MusicPlayer from "@/components/util/MusicPlayer.vue";
 import CommitHistory from "@/components/util/CommitHistory.vue";
 
-import Intro from "./Intro.vue";
 import Intro2 from "./Intro2.vue";
-import BadApple from "./BadApple.vue";
 import Miku from "./Miku.vue";
 import Stamps from "./Stamps.vue";
 import Listening from "./Listening.vue";
@@ -17,7 +13,6 @@ import Links from "./Links.vue";
 import Feed from "./Feed.vue";
 import Collage from "./Collage.vue";
 import Favorites from "./Favorites.vue";
-// import Gym from "./Gym.vue";
 import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
 import Steam from "./Steam.vue";
@@ -28,13 +23,10 @@ import Bookmarks from "./Bookmarks.vue";
   <main class="justify-center flex flex-row w-full h-full overflow-x-hidden">
     <div class="outerWrap flex flex-row">
       <div class="sidebar">
-        <Time class="time-sidebar sidebar-cell" />
-        <Timer class="timer-sidebar sidebar-cell" />
-        <Radio class="radio-sidebar sidebar-cell" />
-        <CommitHistory class="commits-sidebar flex-1 sidebar-cell" />
-
-        <!-- <Elle class="flex-1" /> -->
-        <!-- <MusicPlayer /> -->
+        <Time class="time-sidebar cell" />
+        <Timer class="timer-sidebar cell" />
+        <Radio class="radio-sidebar cell" />
+        <CommitHistory class="commits-sidebar flex-1 cell" />
         <img
           src="/img/memes/fire-woman.gif"
           alt=""
@@ -44,26 +36,23 @@ import Bookmarks from "./Bookmarks.vue";
           loading="lazy"
         />
       </div>
-      <div class="a4page-portrait homeGrid relative bdr-1 border-quaternary">
-        <!-- <Intro class="intro" /> -->
-        <Intro2 class="intro grid-cell" />
-        <!-- <BadApple class="intro" /> -->
-        <Listening class="listening grid-cell" />
-        <Stamps class="stamps grid-cell" />
-        <Feed class="feed grid-cell" />
-        <Links class="links grid-cell" />
-        <Collage class="collage grid-cell" />
-        <Consumption class="consumption grid-cell" />
-        <Favorites class="favorites grid-cell" />
-        <!-- <Gym class="gym" /> -->
-        <Gym2 class="gym grid-cell" />
+      <div class="page-a4 homeGrid relative bdr-1 border-quaternary">
+        <Intro2 class="intro cell" />
+        <Listening class="listening cell" />
+        <Stamps class="stamps cell" />
+        <Feed class="feed cell" />
+        <Links class="links cell" />
+        <Collage class="collage cell" />
+        <Consumption class="consumption cell" />
+        <Favorites class="favorites cell" />
+        <Gym2 class="gym cell" />
       </div>
       <div class="sidebar">
-        <Steam class="steam-sidebar sidebar-cell" />
-        <Bookmarks class="bookmarks-sidebar sidebar-cell" />
-        <Chat class="chat-sidebar flex-1 min-h-0 chat-home sidebar-cell" />
+        <Steam class="steam-sidebar cell" />
+        <Bookmarks class="bookmarks-sidebar cell" />
+        <Chat class="chat-sidebar flex-1 min-h-0 chat-home cell" />
         <Miku
-          class="sidebar-image miku-image box-border border-tertiary border-2 bg-bg_primary"
+          class="sidebar-image miku-image box-border border-tertiary border-2 bg-surface"
         />
       </div>
     </div>
@@ -71,13 +60,13 @@ import Bookmarks from "./Bookmarks.vue";
 </template>
 
 <style scoped>
-.grid-cell {
-  background-color: var(--bg_primary);
-  border-width: 2px;
-  border-style: solid;
-  border-color: var(--quaternary);
+/* Every widget, in the grid or a sidebar */
+.cell {
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-quaternary);
 }
 
+/* Grid placement — see grid-template-areas in .homeGrid below */
 .intro {
   grid-area: intro;
 }
@@ -106,13 +95,6 @@ import Bookmarks from "./Bookmarks.vue";
   grid-area: favorites;
 }
 
-.sidebar-cell {
-  background-color: var(--bg_primary);
-  border-width: 2px;
-  border-style: solid;
-  border-color: var(--quaternary);
-}
-
 .sidebar {
   margin: 0;
   flex: 1;
@@ -128,6 +110,7 @@ import Bookmarks from "./Bookmarks.vue";
   gap: 10px;
 }
 
+/* Desktop: 10x10 grid on the A4 sheet */
 .homeGrid {
   display: grid;
   gap: 5px;
@@ -154,6 +137,7 @@ import Bookmarks from "./Bookmarks.vue";
   height: 15rem;
 }
 
+/* Tablet: sidebars stack below the sheet */
 @media (max-width: 1360px) {
   .outerWrap {
     flex-direction: column;
@@ -197,14 +181,9 @@ import Bookmarks from "./Bookmarks.vue";
   .timer-sidebar {
     display: none;
   }
-
-  /* .sidebar-image { */
-  /*     max-height: 150px; */
-  /*     max-width: 150px; */
-  /*     object-fit: contain; */
-  /* } */
 }
 
+/* Phone: 3-column grid, collage and gym hidden */
 @media (max-width: 700px) {
   .homeGrid {
     border-image: none;
@@ -233,11 +212,5 @@ import Bookmarks from "./Bookmarks.vue";
   .gym {
     display: none;
   }
-}
-
-.bg-random {
-  background-color: var(--bg_primary);
-  background-image: url("/img/miku/miku2.gif");
-  background-size: 10px 10px;
 }
 </style>

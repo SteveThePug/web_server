@@ -1,7 +1,7 @@
 <template>
   <main class="flex flex-col items-center">
     <div
-      class="a4page-portrait items-center bdr-1 flex flex-col relative overflow-scroll"
+      class="page-a4 items-center bdr-1 flex flex-col relative overflow-scroll"
     >
       <h1>404</h1>
       <RouterLink to="/" class="bdr-2">

@@ -13,7 +13,7 @@ const keys = ["name", "link"];
 
 <template>
   <RouterLink
-    class="bdr-2 bg-bg_primary"
+    class="bdr-2 bg-surface"
     v-for="(row, rowIndex) in linkArr"
     :key="rowIndex"
     :to="row.link"

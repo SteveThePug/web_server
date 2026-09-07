@@ -60,10 +60,9 @@ onMounted(fetchFile);
 
 <template>
   <main class="items-center flex flex-col">
-    <div class="background" />
     <div
       v-if="file"
-      class="a4page-portrait border-primary-1 flex flex-col relative overflow-scroll gap-1 bg-bg_primary"
+      class="page-a4 border-primary-1 flex flex-col relative overflow-scroll gap-1 bg-surface"
     >
       <h1>{{ filename }}</h1>
       <small>{{ last_edited }}</small>

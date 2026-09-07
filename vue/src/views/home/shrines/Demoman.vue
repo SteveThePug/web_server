@@ -14,7 +14,7 @@ const videoSources = [
 <template>
   <main class="items-center flex flex-col">
     <div
-      class="a4page-portrait bdr-1 flex flex-row relative overflow-scroll items-center"
+      class="page-a4 bdr-1 flex flex-row relative overflow-scroll items-center"
     >
       <p>
         <Link href="https://wiki.teamfortress.com/wiki/Demoman">The goat</Link>

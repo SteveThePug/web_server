@@ -2,6 +2,7 @@
 import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
 import Header from "@/components/text/Header.vue";
+import CreateToggle from "@/components/input/CreateToggle.vue";
 
 import { ref, computed, defineAsyncComponent } from "vue";
 import { useAuthStore } from "@/stores/auth";
@@ -45,16 +46,8 @@ function deletePost() {
 <template>
   <div class="flex flex-col flex-1 min-h-0">
     <Header>
-      <span class="flex items-center justify-between w-full">
-        {{ showCreate ? "Create Post" : post.title }}
-        <button
-          v-if="authStore.user.admin"
-          class="text-sm px-1"
-          @click="showCreate = !showCreate"
-        >
-          {{ showCreate ? "x" : "+" }}
-        </button>
-      </span>
+      {{ showCreate ? "Create Post" : post.title }}
+      <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
     <CreatePost
       v-if="showCreate"

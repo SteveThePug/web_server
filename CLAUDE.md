@@ -48,6 +48,8 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 
 **Frontend** (`vue/`): Vue 3 SPA with Vite, Tailwind CSS v4, Pinia stores, Vue Router. Built in a separate container; assets served through Nginx (production) or proxied to Vite dev server (dev mode).
 
+**Python API** (`python/`): FastAPI app served by uvicorn on port 8000. Nginx proxies `/py/` to it and strips the prefix, so routes in `python/app/main.py` are written relative to `/`. Swagger UI at `/py/docs`. Dev mode mounts `python/app` and runs uvicorn with `--reload`.
+
 **Nginx** (`nginx/`): Reverse proxy + SPA server. Config is templated (`nginx.conf.template`) and selected at runtime by `entrypoint.sh` based on `DEV_MODE` and certificate presence. Rate limiting on login (5/min), API (30/sec), uploads (5/min).
 
 ## Backend Structure
@@ -68,6 +70,7 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 - `src/stores/` — Pinia stores for auth, posts, favorites, activities, songs, messages, homeData
 - `src/views/` — page components (Home, Admin, CV, Notes, Bookmarks, shrines)
 - `src/components/` — reusable UI components
+- `src/assets/styles.css` — design tokens (Tailwind `@theme`), base element styles, shared classes and transitions. `layouts/CVLayout.vue` re-points the colour tokens for the light CV theme. See "Styling" in `vue/README.md`.
 
 ## Key Patterns
 

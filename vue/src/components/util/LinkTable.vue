@@ -33,7 +33,7 @@ const show = ref(false);
         :key="i"
         :href="item.link"
       >
-        <p class="bdr-2 bg-bg_tertiary">{{ item.name }}</p>
+        <p class="bdr-2 bg-surface-tint">{{ item.name }}</p>
       </Link>
       <table class="w-full" v-else>
         <tbody>
@@ -51,7 +51,7 @@ const show = ref(false);
   <template v-else>
     <template v-if="variant === 'list'">
       <Link v-for="(item, i) in items" :key="i" :href="item.link">
-        <p class="bdr-2 bg-bg_tertiary">{{ item.name }}</p>
+        <p class="bdr-2 bg-surface-tint">{{ item.name }}</p>
       </Link>
     </template>
     <table class="w-full" v-else>

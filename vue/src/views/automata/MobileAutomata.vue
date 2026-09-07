@@ -730,14 +730,14 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .panel {
-    border: 1px solid var(--quaternary);
+    border: 1px solid var(--color-quaternary);
     background: rgba(4, 8, 15, 0.55);
     padding: 0.9rem;
 }
 
 .panelTitle {
-    color: var(--primary);
-    font-family: var(--font_heading);
+    color: var(--color-primary);
+    font-family: var(--font-heading);
     font-size: 1.4rem;
     margin-bottom: 0.5rem;
 }
@@ -751,11 +751,11 @@ onBeforeUnmount(() => {
 }
 
 .statusChip {
-    font-family: var(--font_heading);
+    font-family: var(--font-heading);
     letter-spacing: 0.05em;
     padding: 0.1rem 0.6rem;
     border: 1px solid currentColor;
-    color: var(--primary);
+    color: var(--color-primary);
 }
 
 .statusChip.paused {
@@ -763,21 +763,21 @@ onBeforeUnmount(() => {
 }
 
 .statusChip.accepted {
-    color: var(--secondary);
+    color: var(--color-secondary);
 }
 
 .statusChip.rejected,
 .statusChip.error {
-    color: var(--tertiary);
+    color: var(--color-tertiary);
 }
 
 .stepCounter {
     font-family: monospace;
-    color: var(--portal_grey);
+    color: var(--color-muted);
 }
 
 .terminalNote {
-    color: var(--portal_grey);
+    color: var(--color-muted);
     font-size: 0.85rem;
 }
 
@@ -791,9 +791,9 @@ onBeforeUnmount(() => {
 
 .btn {
     padding: 0.35rem 1.1rem;
-    border: 1px solid var(--primary);
-    color: var(--primary);
-    font-family: var(--font_heading);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    font-family: var(--font-heading);
     letter-spacing: 0.05em;
     cursor: pointer;
     transition:
@@ -802,8 +802,8 @@ onBeforeUnmount(() => {
 }
 
 .btn:hover:enabled {
-    background: var(--primary);
-    color: var(--bg_secondary);
+    background: var(--color-primary);
+    color: var(--color-surface-deep);
 }
 
 .btn:disabled {
@@ -815,12 +815,12 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    color: var(--portal_grey);
+    color: var(--color-muted);
     font-size: 0.9rem;
 }
 
 .speedLabel input[type="range"] {
-    accent-color: var(--primary);
+    accent-color: var(--color-primary);
     width: 8rem;
 }
 
@@ -831,17 +831,17 @@ onBeforeUnmount(() => {
 
 .presetSelect {
     margin-left: auto;
-    background: var(--bg_secondary);
-    color: var(--primary);
-    border: 1px solid var(--quaternary);
+    background: var(--color-surface-deep);
+    color: var(--color-primary);
+    border: 1px solid var(--color-quaternary);
     padding: 0.3rem 0.5rem;
 }
 
 .errorBox {
     margin-top: 0.75rem;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--tertiary);
-    color: var(--tertiary);
+    border: 1px solid var(--color-tertiary);
+    color: var(--color-tertiary);
     font-family: monospace;
     font-size: 0.9rem;
 }
@@ -865,7 +865,7 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
-    color: var(--portal_grey);
+    color: var(--color-muted);
     font-size: 0.85rem;
 }
 
@@ -876,8 +876,8 @@ onBeforeUnmount(() => {
 .configGrid input,
 .configGrid textarea,
 .derivedGrid input {
-    background: var(--bg_secondary);
-    border: 1px solid var(--quaternary);
+    background: var(--color-surface-deep);
+    border: 1px solid var(--color-quaternary);
     color: #e5f4ee;
     padding: 0.35rem 0.5rem;
     font-family: monospace;
@@ -888,24 +888,24 @@ onBeforeUnmount(() => {
 }
 
 .derivedGrid input {
-    color: var(--portal_grey);
+    color: var(--color-muted);
 }
 
 .configGrid input:focus,
 .configGrid textarea:focus {
-    outline: 1px solid var(--primary);
+    outline: 1px solid var(--color-primary);
 }
 
 .help {
     margin-top: 0.9rem;
-    color: var(--portal_grey);
+    color: var(--color-muted);
     font-size: 0.9rem;
 }
 
 .help summary {
     cursor: pointer;
-    color: var(--primary);
-    font-family: var(--font_heading);
+    color: var(--color-primary);
+    font-family: var(--font-heading);
     letter-spacing: 0.05em;
 }
 

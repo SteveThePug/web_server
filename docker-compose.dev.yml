@@ -24,6 +24,10 @@ services:
         environment:
             HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
             HASURA_GRAPHQL_DEV_MODE: "true"
+    python:
+        command: ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PYTHON_PORT:-8000} --root-path /py --reload"]
+        volumes:
+            - ./python/app:/app/app
     certbot:
         profiles:
             - disabled

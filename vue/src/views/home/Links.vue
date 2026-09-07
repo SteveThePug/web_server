@@ -7,6 +7,7 @@ const site_links = [
   { name: "CV", link: "/cv" },
   { name: "Bookmarks", link: "/bookmarks" },
   { name: "Shrines", link: "/shrines" },
+  { name: "Hotels", link: "/hotels" },
   { name: "Admin", link: "/admin" },
 ];
 

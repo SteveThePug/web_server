@@ -32,7 +32,7 @@ const computedRel = computed(() => {
 
 <style scoped>
 .inline-link {
-  color: var(--primary);
+  color: var(--color-primary);
   font-weight: bold;
   font-style: italic;
   text-decoration: none;
@@ -40,6 +40,6 @@ const computedRel = computed(() => {
 }
 
 .inline-link:hover {
-  color: var(--tertiary);
+  color: var(--color-tertiary);
 }
 </style>

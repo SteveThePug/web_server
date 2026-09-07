@@ -49,13 +49,12 @@ onUnmounted(() => {
 
 <style scoped>
 .slideshow-wrapper {
-  display: grid;
+  position: relative; /* for the global .fade transition */
   width: 100%;
   overflow: hidden;
 }
 
 .image-viewer {
-  grid-area: 1 / 1;
   width: 100%;
   overflow: hidden;
 }
@@ -64,14 +63,5 @@ img {
   width: 100%;
   object-fit: cover;
   display: block;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

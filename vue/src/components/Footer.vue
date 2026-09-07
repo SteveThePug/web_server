@@ -48,8 +48,8 @@ const user = "visitor";
 <style scoped>
 .waybar {
   font-family: "URWGothic-Book", monospace;
-  background-color: var(--bg_primary);
-  color: var(--primary);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -65,10 +65,10 @@ const user = "visitor";
 }
 
 .workspace {
-  background: var(--quaternary);
+  background: var(--color-quaternary);
   border: none;
-  border-bottom: 2px solid var(--secondary);
-  color: var(--secondary);
+  border-bottom: 2px solid var(--color-secondary);
+  color: var(--color-secondary);
   padding: 2px 10px;
   font-family: inherit;
   font-size: 14px;
@@ -81,7 +81,7 @@ const user = "visitor";
 
 .module {
   padding: 2px 12px;
-  border-left: 1px solid var(--tertiary);
+  border-left: 1px solid var(--color-tertiary);
 }
 
 .module:first-child {
@@ -89,25 +89,25 @@ const user = "visitor";
 }
 
 .greeting {
-  color: var(--secondary);
+  color: var(--color-secondary);
 }
 
 .clock {
-  color: var(--tertiary);
+  color: var(--color-tertiary);
 }
 
 .cpu,
 .mem,
 .disk {
-  color: var(--primary);
+  color: var(--color-primary);
 }
 
 .network {
-  color: var(--secondary);
+  color: var(--color-secondary);
 }
 
 .battery {
-  color: var(--primary);
+  color: var(--color-primary);
 }
 
 @media (max-width: 800px) {

@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, defineAsyncComponent } from "vue";
 import Header from "@/components/text/Header.vue";
+import CreateToggle from "@/components/input/CreateToggle.vue";
 import { useHomeDataStore } from "@/stores/homeData";
-import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
 
 const CreateRowing = defineAsyncComponent(
@@ -10,7 +10,6 @@ const CreateRowing = defineAsyncComponent(
 );
 
 const store = useHomeDataStore();
-const authStore = useAuthStore();
 const { loaded, error, rowingSessions } = storeToRefs(store);
 const showCreate = ref(false);
 
@@ -21,9 +20,9 @@ const metric = ref("distance");
 const hovered = ref(null);
 
 const METRICS = [
-  { key: "distance", label: "Distance (m)", color: "#55ffbb" },
-  { key: "timePer500m", label: "Pace /500m", color: "#ff579a" },
-  { key: "calories", label: "Calories", color: "#62ff57" },
+  { key: "distance", label: "Distance (m)", color: "var(--color-primary)" },
+  { key: "timePer500m", label: "Pace /500m", color: "var(--color-tertiary)" },
+  { key: "calories", label: "Calories", color: "var(--color-secondary)" },
 ];
 
 const activeMetric = computed(() =>
@@ -117,16 +116,8 @@ function formatValue(key, val) {
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <Header>
-      <span class="flex items-center justify-between w-full">
-        {{ showCreate ? "Upload Rowing" : "Rowing" }}
-        <button
-          v-if="authStore.user.admin"
-          class="text-sm px-1"
-          @click="showCreate = !showCreate"
-        >
-          {{ showCreate ? "x" : "+" }}
-        </button>
-      </span>
+      {{ showCreate ? "Upload Rowing" : "Rowing" }}
+      <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
 
     <CreateRowing
@@ -150,7 +141,7 @@ function formatValue(key, val) {
           class="metric-btn text-xs px-2 py-0.5 font-heading border"
           :style="{
             borderColor: m.color,
-            color: metric === m.key ? '#1b110e' : m.color,
+            color: metric === m.key ? 'var(--color-surface)' : m.color,
             backgroundColor: metric === m.key ? m.color : 'transparent',
           }"
           @click="metric = m.key"
@@ -176,7 +167,7 @@ function formatValue(key, val) {
             :y1="yl.y"
             :x2="W - PR"
             :y2="yl.y"
-            stroke="var(--quaternary)"
+            stroke="var(--color-quaternary)"
             stroke-width="0.5"
           />
 
@@ -220,8 +211,8 @@ function formatValue(key, val) {
             :y="yl.y + 3"
             text-anchor="end"
             font-size="10"
-            fill="var(--primary)"
-            font-family="var(--font_heading)"
+            fill="var(--color-primary)"
+            font-family="var(--font-heading)"
           >
             {{ yl.label }}
           </text>
@@ -234,8 +225,8 @@ function formatValue(key, val) {
             :y="H - 4"
             text-anchor="middle"
             font-size="10"
-            fill="var(--primary)"
-            font-family="var(--font_heading)"
+            fill="var(--color-primary)"
+            font-family="var(--font-heading)"
           >
             {{ xl.label }}
           </text>
@@ -246,7 +237,7 @@ function formatValue(key, val) {
             :y1="PT"
             :x2="PL"
             :y2="PT + PLOT_H"
-            stroke="var(--primary)"
+            stroke="var(--color-primary)"
             stroke-width="0.5"
           />
           <line
@@ -254,7 +245,7 @@ function formatValue(key, val) {
             :y1="PT + PLOT_H"
             :x2="W - PR"
             :y2="PT + PLOT_H"
-            stroke="var(--primary)"
+            stroke="var(--color-primary)"
             stroke-width="0.5"
           />
 
@@ -265,7 +256,7 @@ function formatValue(key, val) {
               :y="points[hovered].y - 20"
               width="82"
               height="32"
-              fill="var(--bg_primary)"
+              fill="var(--color-surface)"
               :stroke="activeMetric.color"
               stroke-width="0.5"
               rx="1"
@@ -274,8 +265,8 @@ function formatValue(key, val) {
               :x="Math.min(points[hovered].x + 7, W - 82)"
               :y="points[hovered].y - 6"
               font-size="12"
-              fill="var(--secondary)"
-              font-family="var(--font_heading)"
+              fill="var(--color-secondary)"
+              font-family="var(--font-heading)"
             >
               {{
                 points[hovered].date.toLocaleDateString("en-GB", {
@@ -290,7 +281,7 @@ function formatValue(key, val) {
               :y="points[hovered].y + 8"
               font-size="14"
               :fill="activeMetric.color"
-              font-family="var(--font_heading)"
+              font-family="var(--font-heading)"
             >
               {{ formatValue(metric, points[hovered].value) }}
             </text>
@@ -302,7 +293,7 @@ function formatValue(key, val) {
       <div class="flex justify-between text-xs border-t border-quaternary pt-1">
         <div class="flex flex-col items-center">
           <span class="text-primary font-heading">{{ rows.length }}</span>
-          <span class="text-quaternary" style="font-size: 0.6rem"
+          <span class="text-quaternary text-[0.6rem]"
             >sessions</span
           >
         </div>
@@ -312,7 +303,7 @@ function formatValue(key, val) {
               rows.reduce((s, r) => s + r.distance, 0).toLocaleString()
             }}m</span
           >
-          <span class="text-quaternary" style="font-size: 0.6rem"
+          <span class="text-quaternary text-[0.6rem]"
             >total dist</span
           >
         </div>
@@ -322,7 +313,7 @@ function formatValue(key, val) {
               rows.reduce((s, r) => s + r.timePer500m, 0) / (rows.length || 1),
             )
           }}</span>
-          <span class="text-quaternary" style="font-size: 0.6rem"
+          <span class="text-quaternary text-[0.6rem]"
             >avg pace</span
           >
         </div>

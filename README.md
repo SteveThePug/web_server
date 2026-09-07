@@ -24,7 +24,7 @@ db (5432)        ── PostgreSQL 16
 icecast2 (8000)  ── Audio Streaming (Icecast2 + Liquidsoap)
 gitea (3000)     ── Self-Hosted Git
 quartz (8080)    ── Obsidian Notes Publisher (Quartz v4.4.0)
-searxng (8080)   ── Meta Search Engine
+python (8000)    ── Python API (FastAPI)
 hasura (8080)    ── Hasura GraphQL Engine (Docker profile: hasura)
 autoheal         ── Auto-restart unhealthy containers
 certbot          ── SSL Certificate Management (disabled in dev)
@@ -55,9 +55,8 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Printable CV with role-specific sections
 - Job application tracker with status workflow and CSV export (admin-only, `/cv/jobs`)
 - Database-backed bookmarks grouped by category, managed via GraphQL (admin-only)
-- SearXNG meta search engine (admin-only)
 - Hasura GraphQL console (admin-only)
-- Admin-gated routes: `/searxng`, `/notes`, `/hasura` require admin JWT via Nginx `auth_request`
+- Admin-gated routes: `/notes`, `/hasura` require admin JWT via Nginx `auth_request`
 - Landing page with animated stamps section
 - Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
 - Backend healthcheck with autoheal container for automatic recovery
@@ -183,10 +182,10 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | `/gitea`   | gitea:3000   | Git service                                |
 | `/hasura`  | hasura:8080  | GraphQL console + WebSocket (admin-only)   |
 | `/notes`   | quartz:8080  | Obsidian notes (admin-only)                |
-| `/searxng` | searxng:8080 | Search engine (admin-only)                 |
+| `/py`      | python:8000  | Python API (FastAPI; docs at `/py/docs`)   |
 | `/uploads` | local alias  | User-uploaded files                        |
 
-`/hasura`, `/notes`, and `/searxng` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
+`/hasura` and `/notes` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
 
 ### Deprecated Endpoints
 
@@ -213,9 +212,6 @@ Create a `.env` file in the project root. All services read from this file.
 | `POSTGRES_GITEA_DB`               | Gitea database name                                                             |
 | `UPTIMEKUMA_HOST`                 | Uptime Kuma hostname (planned)                                                  |
 | `UPTIMEKUMA_PORT`                 | Uptime Kuma port (planned)                                                      |
-| `SEARXNG_HOST`                    | SearXNG hostname (use `searxng` for Docker)                                     |
-| `SEARXNG_PORT`                    | SearXNG port (typically `8080`)                                                 |
-| `SEARXNG_SECRET_KEY`              | SearXNG secret key (random hex string)                                          |
 | `WALLABAG_HOST`                   | Wallabag hostname (planned)                                                     |
 | `WALLABAG_PORT`                   | Wallabag port (planned)                                                         |
 | `QUARTZ_HOST`                     | Quartz hostname (use `quartz` for Docker)                                       |
@@ -249,6 +245,8 @@ Create a `.env` file in the project root. All services read from this file.
 | `HASURA_GRAPHQL_ADMIN_SECRET`     | Hasura admin secret                                                             |
 | `HASURA_HOST`                     | Hasura hostname (use `hasura` for Docker)                                       |
 | `HASURA_PORT`                     | Hasura port (typically `8080`)                                                  |
+| `PYTHON_HOST`                     | Python API hostname (defaults to `python`)                                      |
+| `PYTHON_PORT`                     | Python API port (defaults to `8000`)                                            |
 | `SEED_DB`                         | Set to `true` to seed test data on startup                                      |
 
 ### Gitea Config
@@ -260,16 +258,6 @@ cp gitea/config/app.ini.template gitea/config/app.ini
 ```
 
 Populate `LFS_JWT_SECRET`, `SECRET_KEY`, `INTERNAL_TOKEN`, `JWT_SECRET`, and the database `PASSWD`. Alternatively, the Gitea entrypoint generates `app.ini` from the template using environment variables.
-
-### SearXNG Config
-
-Copy from the template:
-
-```sh
-cp searxng/settings.yml.template searxng/settings.yml
-```
-
-The Docker entrypoint handles environment variable substitution (`${BASE_URL}`, `${SEARXNG_SECRET_KEY}`) automatically, so manual setup is only needed when running outside Docker.
 
 ### Spotify Token Setup
 
@@ -340,7 +328,6 @@ These files are git-ignored and must be created manually:
 | ------------------------------- | --------------------------------------------------------------- |
 | `.env`                          | See setup section above                                         |
 | `gitea/config/app.ini`          | Copy from `app.ini.template` or let entrypoint generate it      |
-| `searxng/settings.yml`          | Copy from `settings.yml.template` or let entrypoint generate it |
 | `certbot/conf/`, `certbot/www/` | Created automatically by certbot; use dev mode to skip          |
 | `backend/token/`                | Created automatically by Docker volume mount                    |
 | `icecast2/fallback_music/*.mp3` | Place at least one MP3 file                                     |

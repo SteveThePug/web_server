@@ -108,21 +108,6 @@ p {
   margin: 0 auto;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-.fade-leave-active {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
 @media (max-width: 850px) {
   .steam-wrapper {
     height: auto;

@@ -41,8 +41,8 @@ const faces_string = faces.join("      ");
 </script>
 
 <template>
-  <nav class="flex flex-row w-full h-fit border border-primary bg-bg_primary">
-    <RouterLink class="bdr-2 bg-bg_primary" v-if="parentPath" :to="parentPath">
+  <nav class="flex flex-row w-full h-fit border border-primary bg-surface">
+    <RouterLink class="bdr-2 bg-surface" v-if="parentPath" :to="parentPath">
       <span>UP</span>
     </RouterLink>
     <Headline class="border flex-1 max-w-full">
@@ -50,11 +50,3 @@ const faces_string = faces.join("      ");
     </Headline>
   </nav>
 </template>
-
-<style scoped>
-.left {
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-</style>

@@ -12,10 +12,6 @@ volumes:
   uploads:
   # Vue build
   vue_dist:
-  # Searxng data
-  searxng_data:
-  # Open-WebUI data
-  openwebui_data:
 
 services:
   vue:
@@ -42,8 +38,7 @@ services:
       - gitea
       - hasura
       - quartz
-      - searxng
-      - open-webui
+      - python
     networks:
       - app-network
     ports:
@@ -158,35 +153,24 @@ services:
     volumes:
       - ${OBSIDIAN_DIR}:/quartz/content:ro
 
-  searxng:
+  python:
     build:
-      context: ./searxng
+      context: ./python
       dockerfile: Dockerfile
-    container_name: "${SEARXNG_HOST}"
-    restart: unless-stopped
-    networks:
-      - app-network
-    environment:
-      - BASE_URL=https://www.${DOMAIN}/searxng/
-      - INSTANCE_NAME=searxng
-      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY}
-    volumes:
-      - searxng_data:/etc/searxng
-
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: "${OPENWEBUI_HOST}"
+    container_name: "${PYTHON_HOST:-python}"
     restart: always
     networks:
       - app-network
-    env_file:
-      - ./.env
     environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
-      - WEBUI_AUTH=False
-      - WEBUI_URL=https://chat.${DOMAIN}
-    volumes:
-      - openwebui_data:/app/backend/data
+      - PYTHON_PORT=${PYTHON_PORT:-8000}
+      - ROOT_PATH=/py
+      - TFL_APP_KEY=${TFL_APP_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,os; urllib.request.urlopen(f\"http://localhost:{os.environ.get('PYTHON_PORT','8000')}/health\")"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   gitea:
     image: docker.gitea.com/gitea:1.25.4-rootless

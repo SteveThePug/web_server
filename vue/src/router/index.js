@@ -41,6 +41,11 @@ const router = createRouter({
                         import("@/views/automata/MobileAutomata.vue"),
                 },
                 {
+                    path: "hotels",
+                    name: "cheap-hotels",
+                    component: () => import("@/views/hotels/CheapHotels.vue"),
+                },
+                {
                     path: "shrines",
                     name: "shrine links",
                     component: () => import("@/views/home/shrines/Shrines.vue"),

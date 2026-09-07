@@ -254,14 +254,14 @@ function copyToClipboard(text) {
 
 function statusClass(status) {
   const map = {
-    Applied: "status-applied",
-    Screening: "status-screening",
-    Interview: "status-interview",
-    Offer: "status-offer",
-    Rejected: "status-rejected",
-    Withdrawn: "status-withdrawn",
+    Applied: "bg-blue-100 text-blue-800",
+    Screening: "bg-yellow-100 text-yellow-800",
+    Interview: "bg-violet-100 text-violet-800",
+    Offer: "bg-green-100 text-green-800",
+    Rejected: "bg-red-100 text-red-800",
+    Withdrawn: "bg-gray-100 text-gray-500",
   };
-  return map[status] ?? "";
+  return map[status] ?? "bg-gray-200 text-gray-700";
 }
 
 onMounted(() => {
@@ -278,7 +278,7 @@ onMounted(() => {
         <h2 class="ja-heading">Job Applications</h2>
       </div>
       <button
-        class="ja-btn"
+        class="cv-btn"
         @click="exportCsv"
         :disabled="!applications.length"
       >
@@ -299,17 +299,17 @@ onMounted(() => {
             <span class="ja-ref-label">{{ ref.label }}</span>
             <span class="ja-ref-value" :title="ref.value">{{ ref.value }}</span>
             <button
-              class="ja-btn ja-btn-sm"
+              class="cv-btn cv-btn-sm"
               @click="copyToClipboard(ref.value)"
               title="Copy"
             >
               Copy
             </button>
-            <button class="ja-btn ja-btn-sm" @click="startRefEdit(ref)">
+            <button class="cv-btn cv-btn-sm" @click="startRefEdit(ref)">
               Edit
             </button>
             <button
-              class="ja-btn ja-btn-sm ja-btn-danger"
+              class="cv-btn cv-btn-sm cv-btn-danger"
               @click="deleteReference(ref.id)"
             >
               Delete
@@ -335,12 +335,12 @@ onMounted(() => {
               placeholder="Value"
             />
             <button
-              class="ja-btn ja-btn-sm ja-btn-primary"
+              class="cv-btn cv-btn-sm cv-btn-primary"
               @click="saveRefEdit(ref.id)"
             >
               Save
             </button>
-            <button class="ja-btn ja-btn-sm" @click="cancelRefEdit">
+            <button class="cv-btn cv-btn-sm" @click="cancelRefEdit">
               Cancel
             </button>
           </template>
@@ -367,7 +367,7 @@ onMounted(() => {
           placeholder="Value *"
           required
         />
-        <button type="submit" class="ja-btn ja-btn-primary">Add</button>
+        <button type="submit" class="cv-btn cv-btn-primary">Add</button>
       </form>
     </div>
 
@@ -411,7 +411,7 @@ onMounted(() => {
           class="ja-input ja-textarea"
           placeholder="Notes"
         />
-        <button type="submit" class="ja-btn ja-btn-primary">Add</button>
+        <button type="submit" class="cv-btn cv-btn-primary">Add</button>
       </div>
     </form>
 
@@ -451,11 +451,11 @@ onMounted(() => {
             <td>{{ app.appliedAt ? app.appliedAt.substring(0, 10) : "—" }}</td>
             <td class="ja-notes-cell">{{ app.notes ?? "" }}</td>
             <td class="ja-actions">
-              <button class="ja-btn ja-btn-sm" @click="startEdit(app)">
+              <button class="cv-btn cv-btn-sm" @click="startEdit(app)">
                 Edit
               </button>
               <button
-                class="ja-btn ja-btn-sm ja-btn-danger"
+                class="cv-btn cv-btn-sm cv-btn-danger"
                 @click="deleteApplication(app.id)"
               >
                 Delete
@@ -510,12 +510,12 @@ onMounted(() => {
             </td>
             <td class="ja-actions">
               <button
-                class="ja-btn ja-btn-sm ja-btn-primary"
+                class="cv-btn cv-btn-sm cv-btn-primary"
                 @click="saveEdit(app.id)"
               >
                 Save
               </button>
-              <button class="ja-btn ja-btn-sm" @click="cancelEdit">
+              <button class="cv-btn cv-btn-sm" @click="cancelEdit">
                 Cancel
               </button>
             </td>
@@ -528,10 +528,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Colours are the paper palette from CVLayout.vue; buttons are .cv-btn from there too. */
 .ja-root {
   padding: 1.5rem;
-  border-top: 2px solid #333;
-  background: #fafafa;
+  border-top: 2px solid var(--color-ink-soft);
+  background: var(--color-paper-tint);
 }
 
 .ja-header {
@@ -549,21 +550,21 @@ onMounted(() => {
 
 .ja-back {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-ink-muted);
   text-decoration: none;
 }
 
 .ja-back:hover {
-  color: #111;
+  color: var(--color-ink);
 }
 
 .ja-heading {
   font-size: 1.1rem;
   font-weight: 600;
-  margin: 0;
-  color: #333;
+  color: var(--color-ink-soft);
 }
 
+/* Forms */
 .ja-form {
   display: flex;
   flex-direction: column;
@@ -579,17 +580,17 @@ onMounted(() => {
 
 .ja-input {
   padding: 0.35rem 0.6rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-line);
   border-radius: 4px;
   font-size: 0.85rem;
-  background: white;
+  background: var(--color-paper);
   flex: 1;
   min-width: 120px;
 }
 
 .ja-input:focus {
   outline: none;
-  border-color: #555;
+  border-color: var(--color-ink-muted);
 }
 
 .ja-select {
@@ -608,47 +609,7 @@ onMounted(() => {
   min-width: 0;
 }
 
-.ja-btn {
-  padding: 0.35rem 0.8rem;
-  border: 1px solid #333;
-  border-radius: 4px;
-  background: white;
-  color: #333;
-  cursor: pointer;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.ja-btn:hover {
-  background: #eee;
-}
-
-.ja-btn-sm {
-  padding: 0.2rem 0.55rem;
-  font-size: 0.8rem;
-}
-
-.ja-btn-primary {
-  background: #333;
-  color: white;
-}
-
-.ja-btn-primary:hover {
-  background: #555;
-}
-
-.ja-btn-danger {
-  border-color: #c00;
-  color: #c00;
-}
-
-.ja-btn-danger:hover {
-  background: #fee;
-}
-
+/* Applications table */
 .ja-table {
   width: 100%;
   border-collapse: collapse;
@@ -659,18 +620,18 @@ onMounted(() => {
 .ja-table td {
   text-align: left;
   padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-line-soft);
   vertical-align: middle;
 }
 
 .ja-table th {
   font-weight: 600;
-  color: #555;
-  background: #f0f0f0;
+  color: var(--color-ink-muted);
+  background: var(--color-paper-shade);
 }
 
 .ja-table tr:hover td {
-  background: #f5f5f5;
+  background: var(--color-paper-shade);
 }
 
 .ja-edit-row td {
@@ -691,7 +652,7 @@ onMounted(() => {
 }
 
 .ja-link {
-  color: #0066cc;
+  color: var(--color-ink-link);
   text-decoration: none;
 }
 
@@ -699,59 +660,34 @@ onMounted(() => {
   text-decoration: underline;
 }
 
+/* Status pill; colour classes come from statusClass() */
 .ja-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
   font-size: 0.78rem;
   font-weight: 500;
-  background: #e0e0e0;
-  color: #333;
-}
-
-.status-applied {
-  background: #dbeafe;
-  color: #1e40af;
-}
-.status-screening {
-  background: #fef9c3;
-  color: #854d0e;
-}
-.status-interview {
-  background: #ede9fe;
-  color: #5b21b6;
-}
-.status-offer {
-  background: #dcfce7;
-  color: #166534;
-}
-.status-rejected {
-  background: #fee2e2;
-  color: #991b1b;
-}
-.status-withdrawn {
-  background: #f3f4f6;
-  color: #6b7280;
 }
 
 .ja-empty {
-  color: #888;
+  color: var(--color-ink-faint);
   font-size: 0.9rem;
 }
 
+/* Quick-reference box */
 .ja-ref-section {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-line-soft);
   border-radius: 6px;
-  background: #fff;
+  background: var(--color-paper);
 }
 
 .ja-ref-heading {
   font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 0.75rem 0;
-  color: #333;
+  margin-bottom: 0.75rem;
+  color: var(--color-ink-soft);
 }
 
 .ja-ref-category {
@@ -761,9 +697,9 @@ onMounted(() => {
 .ja-ref-cat-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-ink-muted);
   text-transform: capitalize;
-  margin: 0 0 0.35rem 0;
+  margin-bottom: 0.35rem;
 }
 
 .ja-ref-item {
@@ -776,13 +712,13 @@ onMounted(() => {
 .ja-ref-label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #333;
+  color: var(--color-ink-soft);
   min-width: 80px;
 }
 
 .ja-ref-value {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-ink-muted);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -791,7 +727,7 @@ onMounted(() => {
 
 .ja-ref-empty {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--color-ink-faint);
   margin: 0.2rem 0;
 }
 

@@ -1,6 +1,5 @@
 icecast2/fallback_music/*
 !icecast2/fallback_music/.gitkeep
-searxng/settings.yml
 certbot/conf
 certbot/www
 backend/token/
@@ -16,6 +15,10 @@ gitea-runner/nohup.out
 
 # Rust build artifacts
 **/target/
+
+# Python bytecode
+__pycache__/
+*.pyc
 
 # Generated WASM output
 vue/src/wasm/

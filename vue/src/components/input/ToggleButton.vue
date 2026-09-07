@@ -18,7 +18,7 @@ function toggle() {
   <button
     @click="toggle"
     class="box-content border-2 border-primary w-10 h-fit rounded-full cursor-pointer"
-    :class="[props.modelValue ? 'bg-bg_secondary' : 'bg-bg_primary']"
+    :class="[props.modelValue ? 'bg-surface-deep' : 'bg-surface']"
   >
     <svg
       viewBox="0 0 40 40"

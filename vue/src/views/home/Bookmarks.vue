@@ -2,15 +2,14 @@
 import { computed, ref, defineAsyncComponent } from "vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 import Header from "@/components/text/Header.vue";
+import CreateToggle from "@/components/input/CreateToggle.vue";
 import { useHomeDataStore } from "@/stores/homeData";
-import { useAuthStore } from "@/stores/auth";
 
 const CreateBookmark = defineAsyncComponent(
   () => import("@/views/admin/CreateBookmark.vue"),
 );
 
 const homeData = useHomeDataStore();
-const authStore = useAuthStore();
 
 const showCreate = ref(false);
 
@@ -27,16 +26,8 @@ const groupedBookmarks = computed(() => {
 <template>
   <div class="bookmarks-wrapper">
     <Header class="text-left">
-      <span class="flex items-center justify-between w-full">
-        {{ showCreate ? "Create Bookmark" : "Bookmarks" }}
-        <button
-          v-if="authStore.user.admin"
-          class="text-sm px-1"
-          @click="showCreate = !showCreate"
-        >
-          {{ showCreate ? "x" : "+" }}
-        </button>
-      </span>
+      {{ showCreate ? "Create Bookmark" : "Bookmarks" }}
+      <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
     <CreateBookmark
       v-if="showCreate"

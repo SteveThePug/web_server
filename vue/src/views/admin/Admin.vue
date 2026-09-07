@@ -11,13 +11,13 @@ import ManageRadio from "./ManageRadio.vue";
 <template>
   <main class="justify-center flex flex-row w-full h-full">
     <div class="bdr-1 flex flex-col">
-      <CreateUser class="bdr-2 bg-bg_primary" />
-      <CreatePost class="bdr-2 bg-bg_primary" />
-      <CreateFavorite class="bdr-2 bg-bg_primary" />
-      <CreateActivity class="bdr-2 bg-bg_primary" />
-      <CreateRowing class="bdr-2 bg-bg_primary" />
-      <ManageUsers class="bdr-2 bg-bg_primary" />
-      <ManageRadio class="bdr-2 bg-bg_primary" />
+      <CreateUser class="bdr-2 bg-surface" />
+      <CreatePost class="bdr-2 bg-surface" />
+      <CreateFavorite class="bdr-2 bg-surface" />
+      <CreateActivity class="bdr-2 bg-surface" />
+      <CreateRowing class="bdr-2 bg-surface" />
+      <ManageUsers class="bdr-2 bg-surface" />
+      <ManageRadio class="bdr-2 bg-surface" />
     </div>
   </main>
 </template>
