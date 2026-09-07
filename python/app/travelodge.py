@@ -73,8 +73,11 @@ TL_PAGE_SIZE = 10
 TL_PAGE_BATCH = 6
 TL_MAX_START = 500
 
-# TfL: anonymous callers get 50 requests/min, keyed callers 500/min.
-TFL_WORKERS = 8
+# TfL: anonymous callers get 50 requests/min, keyed callers 500/min. A call
+# normally takes 1-5s; the odd one hangs, so time out early and retry.
+TFL_WORKERS = 12
+TFL_HOTEL_WORKERS = 4
+TFL_TIMEOUT_S = 15
 TFL_RATE_ANON = 48
 TFL_RATE_KEYED = 450
 TFL_CACHE_TTL_S = 2 * 60 * 60
@@ -360,11 +363,11 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     limiter = _limiter(app_key)
     journeys = None
     for attempt in range(retries):
-        remaining = 40 if deadline is None else deadline - time.monotonic()
+        remaining = TFL_TIMEOUT_S if deadline is None else deadline - time.monotonic()
         if remaining < 1 or not limiter.acquire(deadline):
             break
         try:
-            r = _session.get(url, params=params, headers=HEADERS, timeout=min(40, max(1, remaining)))
+            r = _session.get(url, params=params, headers=HEADERS, timeout=min(TFL_TIMEOUT_S, max(1, remaining)))
         except requests.RequestException:
             if not sleep_within(2, deadline):
                 break
@@ -444,13 +447,18 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
     return cheapest
 
 
-def cycle_time(origin, hotel, when, app_key, deadline=None):
-    """(minutes, km, source) for cycling to the hotel. TfL routing only with an app key."""
+def cycle_time(origin, hotel, when, app_key, deadline=None, journeys=None):
+    """(minutes, km, source) for cycling to the hotel. TfL routing only with an app key.
+
+    `journeys` may carry an already-fetched TfL cycle response to avoid a second call.
+    """
     dest = (hotel["lat"], hotel["lon"])
     est_min, est_km = estimate_cycle(origin, dest)
     if not app_key:
         return est_min, est_km, "estimate"
-    for j in tfl_journeys(origin, dest, when, CYCLE_QUERY, app_key, deadline=deadline):
+    if journeys is None:
+        journeys = tfl_journeys(origin, dest, when, CYCLE_QUERY, app_key, deadline=deadline)
+    for j in journeys:
         if isinstance(j.get("duration"), int):
             km = sum((l.get("distance") or 0) for l in (j.get("legs") or [])) / 1000
             return j["duration"], round(km, 1) if km else est_km, "tfl"
@@ -566,12 +574,20 @@ def run_search(
 
     priced = 0
     with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
-            ThreadPoolExecutor(max_workers=TFL_WORKERS // 2) as hotel_pool:
+            ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
 
         def price(h):
+            # Kick off the cycle lookup first so it overlaps the fare lookups.
+            cycle_fut = None
+            if app_key:
+                cycle_fut = tfl_pool.submit(
+                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key, deadline=deadline
+                )
             t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
                                deadline=deadline, pool=tfl_pool)
-            cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline) if app_key else None
+            cyc = None
+            if cycle_fut is not None:
+                cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline, journeys=cycle_fut.result())
             return h["code"], t, cyc
 
         # Submit cheapest rooms first so the most useful rows arrive earliest.
