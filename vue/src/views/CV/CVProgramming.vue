@@ -18,6 +18,11 @@ import Project from "./Project.vue";
                                 www.adam-french.co.uk
                             </a>
                         </p>
+                        <p>
+                            <a href="https://github.com/SteveThePug">
+                                github.com/SteveThePug
+                            </a>
+                        </p>
                     </div>
                 </div>
             </section>
@@ -121,7 +126,28 @@ import Project from "./Project.vue";
                     <template #left>
                         <h4>
                             <a
-                                href="https://www.adam-french.co.uk/gitea/adamf/web_server.git"
+                                href="https://github.com/SteveThePug/tour"
+                            >
+                                tour.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Rust</strong>
+                        <small>Aug 2025 – Present</small>
+                    </template>
+                    <p contenteditable="true">
+                        Rust CLI for building and navigating interactive,
+                        step-by-step code tutorials, with version-traversal
+                        semantics inspired by Git.
+                    </p>
+                </Project>
+
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>
+                            <a
+                                href="https://github.com/SteveThePug/web_server"
                             >
                                 web_server.git
                             </a>
@@ -139,36 +165,16 @@ import Project from "./Project.vue";
                         CI/CD pipeline: Go GraphQL (gqlgen) API with JWT
                         authentication and WebSockets, Vue 3 + Pinia frontend,
                         and PostgreSQL, containerised behind Nginx on a
-                        Raspberry Pi. Iterated across diverse stacks including
-                        Svelte, React/Redux, SQLite, Rust Actix, and Deno.
-                    </p>
-                </Project>
-
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>
-                            <a
-                                href="https://www.adam-french.co.uk/gitea/adamf/tour.git"
-                            >
-                                tour.git
-                            </a>
-                        </h4>
-                    </template>
-                    <template #top>
-                        <strong>Rust</strong>
-                        <small>2026</small>
-                    </template>
-                    <p contenteditable="true">
-                        Rust CLI for building and navigating interactive,
-                        step-by-step code tutorials, with version-traversal
-                        semantics inspired by Git.
+                        Raspberry Pi. A git push builds, tests, and releases to
+                        production with no manual steps; the Nginx layer adds
+                        per-route rate limiting and automated TLS renewal.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
                     <template #left>
                         <h4>
                             <a
-                                href="https://www.adam-french.co.uk/gitea/adamf/rust-raytracer.git"
+                                href="https://github.com/SteveThePug/rust-raytracer"
                             >
                                 rust-raytracer.git
                             </a>
