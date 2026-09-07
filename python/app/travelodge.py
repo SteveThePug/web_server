@@ -457,7 +457,7 @@ def cycle_time(origin, hotel, when, app_key, deadline=None, journeys=None):
     if not app_key:
         return est_min, est_km, "estimate"
     if journeys is None:
-        journeys = tfl_journeys(origin, dest, when, CYCLE_QUERY, app_key, deadline=deadline)
+        journeys = tfl_journeys(origin, dest, when, CYCLE_QUERY, app_key, retries=1, deadline=deadline)
     for j in journeys:
         if isinstance(j.get("duration"), int):
             km = sum((l.get("distance") or 0) for l in (j.get("legs") or [])) / 1000
@@ -577,11 +577,14 @@ def run_search(
             ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
 
         def price(h):
-            # Kick off the cycle lookup first so it overlaps the fare lookups.
+            # Kick off the cycle lookup first so it overlaps the fare lookups. One
+            # attempt only: TfL can take 15s+ to say there is no cycle route (e.g.
+            # motorway services), and the distance estimate is a fine fallback.
             cycle_fut = None
             if app_key:
                 cycle_fut = tfl_pool.submit(
-                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key, deadline=deadline
+                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key,
+                    retries=1, deadline=deadline,
                 )
             t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
                                deadline=deadline, pool=tfl_pool)
