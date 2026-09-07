@@ -7,6 +7,13 @@ import InlineLink from "@/components/text/InlineLink.vue";
 const STORAGE_KEY = "cheap-hotels-config";
 const CUSTOM_ORIGIN = "__custom__";
 
+const RANKINGS = [
+    { key: "total", label: "Stay + transport" },
+    { key: "room", label: "Stay only" },
+    { key: "cycle", label: "Cycle time" },
+    { key: "minutes", label: "Travel time" },
+];
+
 // ---------------------------------------------------------------------------
 // Form state
 // ---------------------------------------------------------------------------
@@ -25,9 +32,10 @@ const railcardHolders = ref(1);
 const originKey = ref("clapham junction");
 const customOrigin = ref("");
 const depart = ref("19:30");
-const top = ref(15);
+const top = ref(20);
 const maxMiles = ref("");
 const maxTravelMin = ref(75);
+const rankBy = ref("total");
 
 const origins = ref([]);
 
@@ -36,23 +44,91 @@ const origins = ref([]);
 // ---------------------------------------------------------------------------
 const searching = ref(false);
 const errorMsg = ref("");
-const result = ref(null);
+const summary = ref(null);
+const rows = ref([]);
+const cached = ref(false);
+const done = ref(false);
 const elapsed = ref(0);
 let ticker = null;
+let aborter = null;
 
 const statusText = computed(() => {
     if (errorMsg.value) return "Error";
     if (searching.value) return "Searching";
-    if (result.value) return "Done";
+    if (done.value) return "Done";
     return "Idle";
 });
 
-const bestRow = computed(
-    () => result.value?.rows.find((r) => r.total !== null) ?? null,
+const pricedCount = computed(
+    () => rows.value.filter((r) => r.total !== null || r.route !== "pricing…").length,
 );
 
+const hasResults = computed(() => summary.value !== null);
+
+function byNumber(get, tiebreak) {
+    return (a, b) => {
+        const x = get(a);
+        const y = get(b);
+        const xNull = x === null || x === undefined;
+        const yNull = y === null || y === undefined;
+        if (xNull !== yNull) return xNull ? 1 : -1;
+        if (!xNull && x !== y) return x - y;
+        return tiebreak ? tiebreak(a, b) : 0;
+    };
+}
+
+const byRoom = byNumber((r) => r.room_price);
+const byTotal = byNumber((r) => r.total, byRoom);
+const byCycle = byNumber((r) => r.cycle_minutes, byRoom);
+const byMinutes = byNumber((r) => r.travel_minutes, byTotal);
+
+const sortedRows = computed(() => {
+    const cmp = { total: byTotal, room: byRoom, cycle: byCycle, minutes: byMinutes }[
+        rankBy.value
+    ];
+    return [...rows.value].sort(cmp);
+});
+
+function firstBy(cmp, ok) {
+    const list = rows.value.filter(ok);
+    if (!list.length) return null;
+    return list.reduce((best, r) => (cmp(r, best) < 0 ? r : best));
+}
+
+const picks = computed(() => {
+    const p = [];
+    const best = firstBy(byTotal, (r) => r.total !== null);
+    if (best)
+        p.push({
+            label: "Best value",
+            row: best,
+            maths: `${gbp(best.room_price)} stay + ${gbp(best.transport_total)} travel = ${gbp(best.total)}`,
+            sub: `${best.travel_minutes} min by ${best.route}`,
+        });
+    const room = firstBy(byRoom, (r) => r.room_price !== null);
+    if (room)
+        p.push({
+            label: "Cheapest room",
+            row: room,
+            maths: `${gbp(room.room_price)} for the stay`,
+            sub:
+                room.total !== null
+                    ? `${gbp(room.total)} with transport (${room.travel_minutes} min)`
+                    : "transport not priced yet",
+        });
+    const cycle = firstBy(byCycle, (r) => r.cycle_minutes !== null);
+    if (cycle)
+        p.push({
+            label: "Quickest cycle",
+            row: cycle,
+            maths: `${cycleText(cycle)} ride, ${gbp(cycle.room_price)} stay`,
+            sub: `${cycle.cycle_km} km from ${summary.value?.origin_name ?? "origin"}`,
+        });
+    return p;
+});
+
 const summaryText = computed(() => {
-    const s = result.value?.summary;
+    const s = summary.value;
     if (!s) return "";
     const party =
         `${s.adults} adult${s.adults === 1 ? "" : "s"}` +
@@ -62,10 +138,10 @@ const summaryText = computed(() => {
         ? ` (${s.railcard_holders} with railcard)`
         : "";
     return (
-        `${s.hotels_priced} of ${s.hotels_available} available Travelodges near ` +
+        `Cheapest ${rows.value.length} of ${s.hotels_available} available Travelodges near ` +
         `'${s.location}', ${fmtDate(s.checkin)} → ${fmtDate(s.checkout)} ` +
         `(${s.nights} night${s.nights === 1 ? "" : "s"}, ${party}), ` +
-        `incl. round-trip transport from ${s.origin_name} departing ${fmtTime(s.depart)}${railcard}.`
+        `with round-trip transport from ${s.origin_name} departing ${fmtTime(s.depart)}${railcard}.`
     );
 });
 
@@ -90,6 +166,18 @@ function fmtTime(iso) {
         hour: "2-digit",
         minute: "2-digit",
     });
+}
+
+function cycleText(r) {
+    if (r.cycle_minutes === null || r.cycle_minutes === undefined) return "";
+    return `${r.cycle_source === "estimate" ? "~" : ""}${r.cycle_minutes} min`;
+}
+
+function cycleTitle(r) {
+    if (r.cycle_minutes === null || r.cycle_minutes === undefined) return "";
+    return r.cycle_source === "estimate"
+        ? `about ${r.cycle_km} km; estimated from distance at a gentle pace`
+        : `${r.cycle_km} km on TfL's cycle route`;
 }
 
 function showFaster(r) {
@@ -119,6 +207,7 @@ function saveConfig() {
                 top: top.value,
                 maxMiles: maxMiles.value,
                 maxTravelMin: maxTravelMin.value,
+                rankBy: rankBy.value,
             }),
         );
     } catch {
@@ -138,9 +227,10 @@ function loadConfig() {
         originKey.value = c.originKey ?? originKey.value;
         customOrigin.value = c.customOrigin ?? customOrigin.value;
         depart.value = c.depart ?? depart.value;
-        top.value = c.top ?? top.value;
+        top.value = Math.min(40, c.top ?? top.value);
         maxMiles.value = c.maxMiles ?? maxMiles.value;
         maxTravelMin.value = c.maxTravelMin ?? maxTravelMin.value;
+        if (RANKINGS.some((r) => r.key === c.rankBy)) rankBy.value = c.rankBy;
         // Only restore the date if it is still in the future.
         if (c.checkin && c.checkin >= new Date().toISOString().slice(0, 10))
             checkin.value = c.checkin;
@@ -175,6 +265,8 @@ function buildRequest() {
 function describeError(status, payload) {
     if (status === 429)
         return "Someone else is searching right now, try again shortly.";
+    if (status === 503)
+        return "Too many searches from your address, wait a minute and retry.";
     const detail = payload?.detail;
     if (Array.isArray(detail))
         return detail
@@ -184,33 +276,99 @@ function describeError(status, payload) {
     return `Search failed (${status}).`;
 }
 
+function applyEvent(ev) {
+    switch (ev.event) {
+        case "hotels":
+            summary.value = ev.summary;
+            rows.value = ev.rows;
+            cached.value = !!ev.cached;
+            break;
+        case "transport": {
+            const existing = rows.value.find((r) => r.code === ev.row.code);
+            if (existing) Object.assign(existing, ev.row);
+            else rows.value.push(ev.row);
+            break;
+        }
+        case "done":
+            summary.value = ev.summary;
+            rows.value = ev.rows;
+            cached.value = !!ev.cached;
+            done.value = true;
+            break;
+        case "error":
+            errorMsg.value = ev.detail || "Search failed.";
+            break;
+        default:
+            break;
+    }
+}
+
+async function readStream(res) {
+    const decoder = new TextDecoder();
+    let buffer = "";
+    const handleChunk = (text, final) => {
+        buffer += text;
+        const lines = buffer.split("\n");
+        buffer = final ? "" : lines.pop();
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+                applyEvent(JSON.parse(line));
+            } catch {
+                /* skip a malformed line rather than abort the whole search */
+            }
+        }
+    };
+    if (!res.body?.getReader) {
+        handleChunk(await res.text(), true);
+        return;
+    }
+    const reader = res.body.getReader();
+    for (;;) {
+        const { value, done: finished } = await reader.read();
+        if (finished) break;
+        handleChunk(decoder.decode(value, { stream: true }), false);
+    }
+    handleChunk(decoder.decode(), true);
+}
+
 async function onSearch() {
     if (searching.value) return;
     errorMsg.value = "";
-    result.value = null;
+    summary.value = null;
+    rows.value = [];
+    cached.value = false;
+    done.value = false;
     searching.value = true;
     elapsed.value = 0;
     saveConfig();
     ticker = setInterval(() => elapsed.value++, 1000);
+    aborter = new AbortController();
     try {
-        const res = await fetch("/py/hotels/search", {
+        const res = await fetch("/py/hotels/search/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(buildRequest()),
+            signal: aborter.signal,
         });
-        let payload = null;
-        try {
-            payload = await res.json();
-        } catch {
-            /* non-JSON body (e.g. nginx timeout page) */
+        if (!res.ok) {
+            let payload = null;
+            try {
+                payload = await res.json();
+            } catch {
+                /* non-JSON body (e.g. nginx error page) */
+            }
+            throw new Error(describeError(res.status, payload));
         }
-        if (!res.ok) throw new Error(describeError(res.status, payload));
-        result.value = payload;
+        await readStream(res);
+        if (!done.value && !errorMsg.value)
+            errorMsg.value = "The search ended early; showing what came back.";
     } catch (e) {
-        errorMsg.value = e.message || "Search failed.";
+        if (e.name !== "AbortError") errorMsg.value = e.message || "Search failed.";
     } finally {
         clearInterval(ticker);
         ticker = null;
+        aborter = null;
         searching.value = false;
     }
 }
@@ -237,16 +395,17 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (ticker) clearInterval(ticker);
+    if (aborter) aborter.abort();
 });
 </script>
 
 <template>
     <main class="flex justify-center px-4 py-10">
-        <div class="max-w-4xl w-full flex flex-col gap-6">
+        <div class="max-w-5xl w-full flex flex-col gap-6">
             <section>
                 <Header>Cheap Travelodge Finder</Header>
                 <Paragraph>
-                    Finds the cheapest Travelodge for a stay in London
+                    Ranks the cheapest Travelodges for a stay in London
                     <em>including the cost of getting there and back</em> from
                     a chosen station, so a £45 room forty minutes out can be
                     compared fairly with a £90 room in Zone 1. Room prices come
@@ -255,7 +414,8 @@ onBeforeUnmount(() => {
                         href="https://tfl.gov.uk/plan-a-journey/"
                         target="_blank"
                         >TfL Journey Planner</InlineLink
-                    >.
+                    >. Every hotel also gets a cycling time from the origin, for
+                    when the bike is the cheapest transport of all.
                 </Paragraph>
             </section>
 
@@ -343,10 +503,11 @@ onBeforeUnmount(() => {
                             type="number"
                             v-model.number="top"
                             min="1"
-                            max="25"
+                            max="40"
                         />
                         <span class="hint"
-                            >N cheapest by room rate; fewer is faster</span
+                            >N cheapest by room rate; TfL allows about 24
+                            hotels a minute</span
                         >
                     </label>
                     <label>
@@ -385,8 +546,8 @@ onBeforeUnmount(() => {
                             >{{ elapsed }}s</span
                         >
                         <span class="note">
-                            Takes about a minute: every hotel is priced on TfL
-                            twice.
+                            Hotels appear within a couple of seconds; transport
+                            prices fill in as TfL answers.
                         </span>
                     </div>
                 </form>
@@ -394,93 +555,140 @@ onBeforeUnmount(() => {
                 <p v-if="errorMsg" class="errorBox">{{ errorMsg }}</p>
             </section>
 
-            <section v-if="result" class="panel">
+            <section v-if="hasResults" class="panel">
                 <h2 class="panelTitle">
                     Results
-                    <span v-if="result.cached" class="cachedTag">cached</span>
+                    <span v-if="cached" class="cachedTag">cached</span>
+                    <span v-if="summary.truncated" class="cachedTag warn"
+                        >time limit hit</span
+                    >
                 </h2>
                 <p class="summary">{{ summaryText }}</p>
 
-                <div v-if="bestRow" class="best">
-                    <span class="bestLabel">Best value</span>
-                    <span class="bestName">{{ bestRow.name }}</span>
-                    <span class="bestMaths">
-                        {{ gbp(bestRow.room_price) }} stay +
-                        {{ gbp(bestRow.transport_total) }} travel =
-                        <strong>{{ gbp(bestRow.total) }}</strong>
+                <div class="progress" v-if="rows.length">
+                    <div class="progressBar">
+                        <div
+                            class="progressFill"
+                            :style="{ width: `${(100 * pricedCount) / rows.length}%` }"
+                        ></div>
+                    </div>
+                    <span class="progressText">
+                        {{ pricedCount }} / {{ rows.length }} priced on TfL
                     </span>
-                    <a
-                        class="bookLink"
-                        :href="bestRow.url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        >Book →</a
-                    >
                 </div>
 
-                <p v-if="!result.rows.length" class="note">
+                <div v-if="picks.length" class="picks">
+                    <div v-for="p in picks" :key="p.label" class="pick">
+                        <span class="pickLabel">{{ p.label }}</span>
+                        <a
+                            class="pickName"
+                            :href="p.row.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >{{ p.row.name }}</a
+                        >
+                        <span class="pickMaths">{{ p.maths }}</span>
+                        <span class="pickSub">{{ p.sub }}</span>
+                    </div>
+                </div>
+
+                <p v-if="!rows.length" class="note">
                     No hotels with availability matched that search.
                 </p>
 
-                <div v-else class="tableWrap">
-                    <table class="results">
-                        <thead>
-                            <tr>
-                                <th class="num">#</th>
-                                <th class="num">Total</th>
-                                <th class="num">Stay</th>
-                                <th class="num">Travel</th>
-                                <th class="num">Mins</th>
-                                <th>Hotel</th>
-                                <th>Route (cheapest acceptable)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template v-for="(r, i) in result.rows" :key="r.code">
-                                <tr :class="{ best: r === bestRow, unpriced: r.total === null }">
-                                    <td class="num">{{ i + 1 }}</td>
-                                    <td class="num total">{{ gbp(r.total) }}</td>
-                                    <td class="num">{{ gbp(r.room_price) }}</td>
-                                    <td class="num">{{ gbp(r.transport_total) }}</td>
-                                    <td class="num">{{ r.travel_minutes ?? "" }}</td>
-                                    <td>
-                                        <a
-                                            :href="r.url"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="hotelLink"
-                                            >{{ r.name }}</a
-                                        >
-                                        <span v-if="r.low_availability" class="lowTag"
-                                            >low availability</span
-                                        >
-                                    </td>
-                                    <td class="route">{{ r.route }}</td>
+                <template v-else>
+                    <div class="rankBar">
+                        <span class="rankLabel">Rank by</span>
+                        <button
+                            v-for="r in RANKINGS"
+                            :key="r.key"
+                            type="button"
+                            class="rankBtn"
+                            :class="{ active: rankBy === r.key }"
+                            @click="rankBy = r.key; saveConfig()"
+                        >
+                            {{ r.label }}
+                        </button>
+                    </div>
+
+                    <div class="tableWrap">
+                        <table class="results">
+                            <thead>
+                                <tr>
+                                    <th class="num">#</th>
+                                    <th class="num" :class="{ sorted: rankBy === 'total' }">Total</th>
+                                    <th class="num" :class="{ sorted: rankBy === 'room' }">Stay</th>
+                                    <th class="num">Travel</th>
+                                    <th class="num" :class="{ sorted: rankBy === 'minutes' }">Mins</th>
+                                    <th class="num" :class="{ sorted: rankBy === 'cycle' }">Cycle</th>
+                                    <th>Hotel</th>
+                                    <th>Route (cheapest acceptable)</th>
                                 </tr>
-                                <tr v-if="showFaster(r)" class="fasterRow">
-                                    <td colspan="6"></td>
-                                    <td class="route">
-                                        faster: {{ r.fastest_minutes }} min for
-                                        {{ gbp(r.fastest_total) }} return via
-                                        {{ r.fastest_route }}
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <template v-for="(r, i) in sortedRows" :key="r.code">
+                                    <tr
+                                        :class="{
+                                            best: i === 0,
+                                            unpriced: r.total === null,
+                                        }"
+                                    >
+                                        <td class="num">{{ i + 1 }}</td>
+                                        <td class="num total">{{ gbp(r.total) }}</td>
+                                        <td class="num stay">{{ gbp(r.room_price) }}</td>
+                                        <td class="num">{{ gbp(r.transport_total) }}</td>
+                                        <td class="num">{{ r.travel_minutes ?? "" }}</td>
+                                        <td class="num cycle" :title="cycleTitle(r)">
+                                            {{ cycleText(r) }}
+                                        </td>
+                                        <td>
+                                            <a
+                                                :href="r.url"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="hotelLink"
+                                                >{{ r.name }}</a
+                                            >
+                                            <span v-if="r.low_availability" class="lowTag"
+                                                >low availability</span
+                                            >
+                                        </td>
+                                        <td class="route" :class="{ pending: r.route === 'pricing…' }">
+                                            {{ r.route }}
+                                        </td>
+                                    </tr>
+                                    <tr v-if="showFaster(r)" class="fasterRow">
+                                        <td colspan="7"></td>
+                                        <td class="route">
+                                            faster: {{ r.fastest_minutes }} min for
+                                            {{ gbp(r.fastest_total) }} return via
+                                            {{ r.fastest_route }}
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
 
                 <details class="help">
                     <summary>Notes</summary>
                     <ul>
                         <li>
                             Stay price is Travelodge's cheapest room(s) for the
-                            whole stay and all rooms.
+                            whole stay and all rooms. Rank by "Stay only" to
+                            ignore transport entirely.
                         </li>
                         <li>
                             Transport is the TfL adult pay-as-you-go single each
                             way, multiplied by adults. The return is assumed
                             off-peak (next day).
+                        </li>
+                        <li>
+                            Cycle time is from the origin station on your own
+                            bike. A "~" means it is estimated from the distance
+                            at about 14 km/h; without a tilde it is TfL's cycle
+                            route.
                         </li>
                         <li>
                             Children 10 and under travel free on TfL; 11–15s pay
@@ -526,6 +734,11 @@ onBeforeUnmount(() => {
     border: 1px solid var(--color-quaternary);
     padding: 0 0.4rem;
     letter-spacing: 0.05em;
+}
+
+.cachedTag.warn {
+    color: #ffd166;
+    border-color: currentColor;
 }
 
 .configGrid {
@@ -636,55 +849,123 @@ onBeforeUnmount(() => {
 .summary {
     color: var(--color-muted);
     font-size: 0.9rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
 }
 
-.best {
+.progress {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.75rem;
-    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+}
+
+.progressBar {
+    flex: 1;
+    height: 4px;
+    background: rgba(2, 73, 66, 0.5);
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.3s ease;
+}
+
+.progressText {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+}
+
+.picks {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.pick {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
     border: 1px solid var(--color-primary);
     padding: 0.5rem 0.75rem;
-    margin-bottom: 0.9rem;
     background: rgba(85, 255, 187, 0.06);
+    min-width: 0;
 }
 
-.bestLabel {
+.pickLabel {
     font-family: var(--font-heading);
     letter-spacing: 0.05em;
     color: var(--color-primary);
+    font-size: 0.85rem;
 }
 
-.bestName {
+.pickName {
     color: #e5f4ee;
     font-weight: bold;
+    text-decoration: none;
+    transition: color 0.15s ease;
 }
 
-.bestMaths {
+.pickName:hover {
+    color: var(--color-tertiary);
+}
+
+.pickMaths {
     font-family: monospace;
-    color: var(--color-muted);
-    font-size: 0.9rem;
+    color: var(--color-secondary);
+    font-size: 0.85rem;
 }
 
-.bestMaths strong {
+.pickSub {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+}
+
+.rankBar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+
+.rankLabel {
+    font-family: var(--font-heading);
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    margin-right: 0.2rem;
+}
+
+.rankBtn {
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--color-quaternary);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.rankBtn:hover {
     color: var(--color-primary);
 }
 
-.bookLink,
+.rankBtn.active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
 .hotelLink {
     color: var(--color-primary);
     text-decoration: none;
     transition: color 0.15s ease;
 }
 
-.bookLink {
-    margin-left: auto;
-    font-family: var(--font-heading);
-    letter-spacing: 0.05em;
-}
-
-.bookLink:hover,
 .hotelLink:hover {
     color: var(--color-tertiary);
 }
@@ -711,6 +992,11 @@ onBeforeUnmount(() => {
     white-space: nowrap;
 }
 
+.results th.sorted {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .results td {
     padding: 0.3rem 0.5rem;
     border-bottom: 1px solid rgba(2, 73, 66, 0.4);
@@ -727,16 +1013,26 @@ onBeforeUnmount(() => {
     color: var(--color-secondary);
 }
 
+.results .cycle {
+    color: var(--color-muted);
+}
+
 .results tr.best td {
     background: rgba(85, 255, 187, 0.08);
 }
 
-.results tr.unpriced td {
+.results tr.unpriced td.total,
+.results tr.unpriced td.route {
     opacity: 0.6;
 }
 
 .results .route {
     color: var(--color-muted);
+}
+
+.results .route.pending {
+    font-style: italic;
+    opacity: 0.5;
 }
 
 .fasterRow td {
@@ -782,12 +1078,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-    .configGrid {
+    .configGrid,
+    .picks {
         grid-template-columns: 1fr;
-    }
-
-    .bookLink {
-        margin-left: 0;
     }
 }
 </style>

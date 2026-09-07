@@ -14,13 +14,14 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from . import travelodge
 
 app = FastAPI(
     title="Python API",
-    version="0.2.0",
+    version="0.3.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
 )
@@ -79,7 +80,7 @@ class HotelSearchRequest(BaseModel):
     railcard_holders: int = Field(1, ge=0, le=MAX_ADULTS, description="Adults with a Railcard (1/3 off off-peak rail)")
     origin: str = Field("clapham junction", max_length=60, description="Known station key or 'lat,lon'")
     depart: str = Field("19:30", description="Outbound departure time HH:MM")
-    top: int = Field(15, ge=1, le=25, description="Price transport for the N cheapest stays only")
+    top: int = Field(20, ge=1, le=40, description="Price transport for the N cheapest stays only")
     max_miles: Optional[float] = Field(None, gt=0, le=50, description="Drop hotels further than this from the search")
     max_travel_min: int = Field(75, ge=10, le=240, description="Ignore slower routes than this when picking cheapest")
 
@@ -154,6 +155,9 @@ class HotelRow(BaseModel):
     fastest_total: Optional[float] = None
     fastest_route: Optional[str] = None
     total: Optional[float] = None
+    cycle_minutes: Optional[int] = None
+    cycle_km: Optional[float] = None
+    cycle_source: str = "estimate"
 
 
 class HotelSearchSummary(BaseModel):
@@ -173,6 +177,8 @@ class HotelSearchSummary(BaseModel):
     hotels_found: int
     hotels_available: int
     hotels_priced: int
+    hotels_shortlisted: int = 0
+    tfl_rate_per_min: int = 0
     truncated: bool = False
 
 
@@ -187,31 +193,55 @@ def hotel_origins() -> list[Origin]:
     return [Origin(key=k, name=n, lat=lat, lon=lon) for k, (n, lat, lon) in travelodge.ORIGINS.items()]
 
 
-@app.post(
-    "/hotels/search",
-    response_model=HotelSearchResponse,
-    summary="Rank Travelodges by room price plus TfL transport",
-    description=(
-        "Blocking search: pulls live Travelodge prices, then prices a round trip on TfL for the "
-        "cheapest `top` hotels. Takes roughly a minute. Only one search runs at a time; identical "
-        "searches are cached for ten minutes."
-    ),
-    responses={429: {"description": "Another search is already running"}, 502: {"description": "Upstream API failed"}},
-)
-def hotel_search(req: HotelSearchRequest) -> HotelSearchResponse:
-    key = json.dumps(req.model_dump(mode="json"), sort_keys=True)
-    now = time.monotonic()
+class HotelSearchEvent(BaseModel):
+    """One line of the NDJSON stream from /hotels/search/stream."""
 
+    event: str = Field(..., description='"hotels", "transport", "done" or "error"')
+    summary: Optional[HotelSearchSummary] = None
+    rows: Optional[list[HotelRow]] = None
+    row: Optional[HotelRow] = None
+    cached: bool = False
+    detail: Optional[str] = None
+
+
+def _cache_get(key):
+    now = time.monotonic()
     with _cache_lock:
         hit = _cache.get(key)
         if hit and hit[0] > now:
-            return HotelSearchResponse(**hit[1], cached=True)
+            return hit[1]
+    return None
+
+
+def _cache_put(key, result):
+    now = time.monotonic()
+    with _cache_lock:
+        expired = [k for k, (exp, _) in _cache.items() if exp <= now]
+        for k in expired:
+            del _cache[k]
+        _cache[key] = (now + CACHE_TTL_S, result)
+
+
+def _search_events(req: HotelSearchRequest):
+    """Yield HotelSearchEvent objects for a request, serving from cache when possible.
+
+    Holds the single search slot while live pricing runs. Upstream failures are
+    reported as a final "error" event rather than raised, so a stream that has
+    already started can still tell the client what went wrong.
+    """
+    key = json.dumps(req.model_dump(mode="json"), sort_keys=True)
+    hit = _cache_get(key)
+    if hit:
+        yield HotelSearchEvent(event="hotels", cached=True, **hit)
+        yield HotelSearchEvent(event="done", cached=True, **hit)
+        return
 
     if not _search_slot.acquire(blocking=False):
-        raise HTTPException(status_code=429, detail="A search is already running, try again in a minute.")
+        yield HotelSearchEvent(event="error", detail="A search is already running, try again in a minute.")
+        return
     try:
         origin_name, origin = travelodge.parse_origin(req.origin)
-        result = travelodge.run_search(
+        gen = travelodge.run_search(
             location=req.location,
             checkin=req.checkin,
             checkout=req.checkout,
@@ -224,19 +254,70 @@ def hotel_search(req: HotelSearchRequest) -> HotelSearchResponse:
             max_miles=req.max_miles,
             max_travel_min=req.max_travel_min,
         )
+        for ev in gen:
+            if ev[0] == "transport":
+                yield HotelSearchEvent(event="transport", row=ev[1])
+            else:
+                kind, summary, rows = ev
+                if kind == "done":
+                    _cache_put(key, {"summary": summary, "rows": rows})
+                yield HotelSearchEvent(event=kind, summary=summary, rows=rows)
     except travelodge.UpstreamError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+        yield HotelSearchEvent(event="error", detail=str(e))
     except (KeyError, TypeError) as e:
-        raise HTTPException(status_code=502, detail=f"Unexpected upstream response: {e}") from e
+        yield HotelSearchEvent(event="error", detail=f"Unexpected upstream response: {e}")
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
+        yield HotelSearchEvent(event="error", detail=str(e))
     finally:
         _search_slot.release()
 
-    with _cache_lock:
-        expired = [k for k, (exp, _) in _cache.items() if exp <= now]
-        for k in expired:
-            del _cache[k]
-        _cache[key] = (time.monotonic() + CACHE_TTL_S, result)
 
-    return HotelSearchResponse(**result)
+_SEARCH_DESCRIPTION = (
+    "Pulls live Travelodge prices, then prices a round trip on TfL for the cheapest `top` hotels. "
+    "TfL allows 50 lookups a minute without an app key (two per hotel), so a full run takes up to "
+    "about a minute. Only one live search runs at a time; identical searches are cached for ten minutes."
+)
+
+
+@app.post(
+    "/hotels/search",
+    response_model=HotelSearchResponse,
+    summary="Rank Travelodges by room price plus TfL transport",
+    description="Blocking form of the search: returns once every hotel is priced. " + _SEARCH_DESCRIPTION,
+    responses={429: {"description": "Another search is already running"}, 502: {"description": "Upstream API failed"}},
+)
+def hotel_search(req: HotelSearchRequest) -> HotelSearchResponse:
+    final = None
+    for ev in _search_events(req):
+        if ev.event == "error":
+            status = 429 if "already running" in (ev.detail or "") else 502
+            raise HTTPException(status_code=status, detail=ev.detail)
+        if ev.event == "done":
+            final = ev
+    if final is None:
+        raise HTTPException(status_code=502, detail="Search ended without a result")
+    return HotelSearchResponse(summary=final.summary, rows=final.rows, cached=final.cached)
+
+
+@app.post(
+    "/hotels/search/stream",
+    summary="Streaming form of /hotels/search",
+    description=(
+        "Newline-delimited JSON (`application/x-ndjson`). Each line is a `HotelSearchEvent`: first "
+        '`hotels` (every shortlisted hotel with room price and cycling time), then one `transport` '
+        "line per hotel as TfL fares arrive, then `done` (rows sorted by total). An `error` line "
+        "ends a failed stream. " + _SEARCH_DESCRIPTION
+    ),
+    response_class=StreamingResponse,
+    responses={200: {"content": {"application/x-ndjson": {"schema": HotelSearchEvent.model_json_schema()}}}},
+)
+def hotel_search_stream(req: HotelSearchRequest):
+    def lines():
+        for ev in _search_events(req):
+            yield ev.model_dump_json(exclude_none=True) + "\n"
+
+    return StreamingResponse(
+        lines(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

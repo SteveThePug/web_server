@@ -1,7 +1,14 @@
 """Cheapest Travelodge (room + TfL transport) for a stay in London.
 
 Ported from ~/cheap_hotel/cheap_travelodge.py. The pricing logic is unchanged;
-only the CLI/report/CSV plumbing has been removed.
+the plumbing around it has been rewritten for speed:
+
+  * Travelodge result pages are fetched in parallel batches.
+  * TfL journeys are fetched by a worker pool, throttled to the anonymous API
+    limit (50 requests/min; 500/min with TFL_APP_KEY) and cached for a while
+    so repeat searches don't spend the budget again.
+  * `run_search` is a generator that yields the hotel list first and then one
+    event per priced hotel, so callers can stream progress to a browser.
 
 Data sources
   * Travelodge's own search JSON API -> live room prices for every hotel
@@ -19,11 +26,16 @@ Method
      are never discounted.
   4. Assume the return journey the next morning costs the off-peak equivalent
      of the outbound.
-  5. Rank by room + round-trip transport.
+  5. Rank by room + round-trip transport. Cycling time is reported separately
+     (TfL cycle routing with an app key, otherwise a distance-based estimate).
 """
 
+import math
 import os
+import threading
 import time
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
 
 import requests
@@ -53,7 +65,27 @@ LONDON_BOX = (51.25, 51.75, -0.55, 0.35)  # min lat, max lat, min lon, max lon
 
 # Wall-clock budget for one run_search call. Nginx cuts the connection at
 # 300s, so stop pricing transport well before that and return what we have.
-SEARCH_DEADLINE_S = 240
+SEARCH_DEADLINE_S = 200
+
+# Travelodge returns 10 hotels per page whatever you ask for; fetch pages in
+# parallel batches until a batch comes back with nothing new.
+TL_PAGE_SIZE = 10
+TL_PAGE_BATCH = 6
+TL_MAX_START = 500
+
+# TfL: anonymous callers get 50 requests/min, keyed callers 500/min.
+TFL_WORKERS = 8
+TFL_RATE_ANON = 48
+TFL_RATE_KEYED = 450
+TFL_CACHE_TTL_S = 2 * 60 * 60
+
+# Cycling estimate when TfL cycle routing isn't used: straight-line distance
+# times a road-winding factor, at a relaxed London pace.
+CYCLE_ROUTE_FACTOR = 1.3
+CYCLE_KMH = 14.0
+
+_session = requests.Session()
+_session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=TFL_WORKERS + TL_PAGE_BATCH))
 
 
 class UpstreamError(Exception):
@@ -103,41 +135,61 @@ def parse_origin(spec):
 # --------------------------------------------------------------------------- #
 # Travelodge
 # --------------------------------------------------------------------------- #
-def fetch_hotels(location, checkin, checkout, rooms, page_size=10):
+def _fetch_page(params, start):
+    p = dict(params, start=start)
+    try:
+        r = _session.get(TL_API, params=p, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        return r.json().get("results") or []
+    except (requests.RequestException, ValueError, AttributeError) as e:
+        raise UpstreamError(f"Travelodge search failed: {e}") from e
+
+
+def fetch_hotels(location, checkin, checkout, rooms):
     """Return list of hotel dicts from the Travelodge search API (all pages).
 
     rooms: list of (adults, children) tuples, one per room.
     """
-    hotels, start, seen = [], 0, set()
-    while True:
-        params = {
-            "pagination": "false",
-            "checkIn": checkin.isoformat(),
-            "checkOut": checkout.isoformat(),
-            "q": location,
-            "action": "hotel_amend",
-            "start": start,
-        }
-        for i, (adults, children) in enumerate(rooms):
-            params[f"rooms[{i}][adults]"] = adults
-            params[f"rooms[{i}][children]"] = children
-        try:
-            r = requests.get(TL_API, params=params, headers=HEADERS, timeout=30)
-            r.raise_for_status()
-            results = r.json().get("results") or []
-        except (requests.RequestException, ValueError, AttributeError) as e:
-            raise UpstreamError(f"Travelodge search failed: {e}") from e
-        if not results:
-            break
+    params = {
+        "pagination": "false",
+        "checkIn": checkin.isoformat(),
+        "checkOut": checkout.isoformat(),
+        "q": location,
+        "action": "hotel_amend",
+    }
+    for i, (adults, children) in enumerate(rooms):
+        params[f"rooms[{i}][adults]"] = adults
+        params[f"rooms[{i}][children]"] = children
+
+    hotels, seen = [], set()
+
+    def absorb(results):
         new = [h for h in results if h.get("code") and h.get("code") not in seen]
-        if not new:
-            break
         for h in new:
             seen.add(h["code"])
         hotels.extend(new)
-        start += page_size
-        if start > 500:  # safety
-            break
+        return bool(new)
+
+    # First page alone: tells us whether the search matched anything at all.
+    first = _fetch_page(params, 0)
+    if not absorb(first) or len(first) < TL_PAGE_SIZE:
+        return hotels
+
+    start = TL_PAGE_SIZE
+    with ThreadPoolExecutor(max_workers=TL_PAGE_BATCH) as ex:
+        while start <= TL_MAX_START:
+            starts = [start + i * TL_PAGE_SIZE for i in range(TL_PAGE_BATCH)]
+            pages = list(ex.map(lambda s: _fetch_page(params, s), starts))
+            got_new = False
+            exhausted = False
+            for page in pages:  # keep API order so ranking stays stable
+                if absorb(page):
+                    got_new = True
+                if len(page) < TL_PAGE_SIZE:
+                    exhausted = True
+            if not got_new or exhausted:
+                break
+            start += TL_PAGE_SIZE * TL_PAGE_BATCH
     return hotels
 
 
@@ -155,6 +207,22 @@ def normalise_hotel(h):
         "rating": (h.get("rating") or {}).get("averageRating"),
         "url": TL_SITE + (h.get("hotelUrl") or ""),
     }
+
+
+# --------------------------------------------------------------------------- #
+# Geometry
+# --------------------------------------------------------------------------- #
+def haversine_km(a, b):
+    lat1, lon1 = map(math.radians, a)
+    lat2, lon2 = map(math.radians, b)
+    h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+    return 2 * 6371.0 * math.asin(math.sqrt(h))
+
+
+def estimate_cycle(origin, dest):
+    """(minutes, km) for cycling from origin to dest, from straight-line distance."""
+    km = haversine_km(origin, dest) * CYCLE_ROUTE_FACTOR
+    return max(1, round(km / CYCLE_KMH * 60)), round(km, 1)
 
 
 # --------------------------------------------------------------------------- #
@@ -218,6 +286,47 @@ def price_journey(journey, adults=1, railcard_holders=1):
     return out, ret, " > ".join(parts) if parts else "walk"
 
 
+class RateLimiter:
+    """Sliding-window limiter: at most `per_minute` acquisitions in any 60s."""
+
+    def __init__(self, per_minute):
+        self.per_minute = per_minute
+        self._times = deque()
+        self._lock = threading.Lock()
+
+    def acquire(self, deadline=None):
+        """Block until a slot is free. Returns False if `deadline` would pass first."""
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                while self._times and self._times[0] <= now - 60:
+                    self._times.popleft()
+                if len(self._times) < self.per_minute:
+                    self._times.append(now)
+                    return True
+                wait = self._times[0] + 60 - now
+            if deadline is not None and now + wait > deadline:
+                return False
+            time.sleep(min(wait, 1.0))
+
+
+_limiters = {}
+_limiters_lock = threading.Lock()
+
+
+def _limiter(app_key):
+    rate = TFL_RATE_KEYED if app_key else TFL_RATE_ANON
+    with _limiters_lock:
+        lim = _limiters.get(rate)
+        if lim is None:
+            lim = _limiters[rate] = RateLimiter(rate)
+        return lim
+
+
+_tfl_cache = {}  # key -> (expires_at, journeys)
+_tfl_cache_lock = threading.Lock()
+
+
 def sleep_within(seconds, deadline):
     """Sleep for `seconds` unless that would overrun `deadline` (a time.monotonic()
     value, or None for no limit). Returns False if the sleep was skipped."""
@@ -228,6 +337,7 @@ def sleep_within(seconds, deadline):
 
 
 def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None):
+    """Journeys from TfL for one origin/destination/time/mode, cached and rate limited."""
     params = {
         "date": when.strftime("%Y%m%d"),
         "time": when.strftime("%H%M"),
@@ -236,43 +346,79 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     }
     if extra:
         params.update(extra)
+    key = (round(frm[0], 5), round(frm[1], 5), round(to[0], 5), round(to[1], 5), params["date"], params["time"],
+           tuple(sorted((extra or {}).items())))
+    now = time.monotonic()
+    with _tfl_cache_lock:
+        hit = _tfl_cache.get(key)
+        if hit and hit[0] > now:
+            return hit[1]
+
     if app_key:
         params["app_key"] = app_key
     url = TFL_API.format(frm=f"{frm[0]},{frm[1]}", to=f"{to[0]},{to[1]}")
+    limiter = _limiter(app_key)
+    journeys = None
     for attempt in range(retries):
         remaining = 40 if deadline is None else deadline - time.monotonic()
-        if remaining < 1:
-            return []
+        if remaining < 1 or not limiter.acquire(deadline):
+            break
         try:
-            r = requests.get(url, params=params, headers=HEADERS, timeout=min(40, remaining))
+            r = _session.get(url, params=params, headers=HEADERS, timeout=min(40, max(1, remaining)))
         except requests.RequestException:
             if not sleep_within(2, deadline):
-                return []
+                break
             continue
         if r.status_code == 429:
-            if not sleep_within(10 * (attempt + 1), deadline):
-                return []
+            if not sleep_within(5 * (attempt + 1), deadline):
+                break
             continue
         if r.status_code >= 500:
             if not sleep_within(2, deadline):
-                return []
+                break
             continue
         if r.status_code != 200:
-            return []
+            journeys = []  # e.g. 300 "disambiguation": no usable route
+            break
         try:
-            return r.json().get("journeys") or []
+            journeys = r.json().get("journeys") or []
         except ValueError:
-            return []
-    return []
+            journeys = []
+        break
+
+    if journeys is None:
+        return []  # gave up: don't cache a failure
+    with _tfl_cache_lock:
+        if len(_tfl_cache) > 5000:
+            expired = [k for k, (exp, _) in _tfl_cache.items() if exp <= now]
+            for k in expired:
+                del _tfl_cache[k]
+        _tfl_cache[key] = (time.monotonic() + TFL_CACHE_TTL_S, journeys)
+    return journeys
 
 
-def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, app_key=None, pause=1.2, deadline=None):
-    """Cheapest acceptable round-trip transport to a hotel. Returns dict or None."""
+TRANSPORT_QUERIES = (("fast", None), ("bus", {"mode": "bus,walking"}))
+CYCLE_QUERY = {"mode": "cycle"}
+
+
+def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, app_key=None, deadline=None, pool=None):
+    """Cheapest acceptable round-trip transport to a hotel. Returns dict or None.
+
+    Runs the fast and bus-only TfL queries concurrently on `pool` when given.
+    """
     dest = (hotel["lat"], hotel["lon"])
+
+    def query(q):
+        return tfl_journeys(origin, dest, when, q[1], app_key, deadline=deadline)
+
+    if pool is not None:
+        results = list(pool.map(query, TRANSPORT_QUERIES))
+    else:
+        results = [query(q) for q in TRANSPORT_QUERIES]
+
     options = []
-    queries = (("fast", None), ("bus", {"mode": "bus,walking"}))
-    for i, (label, extra) in enumerate(queries):
-        for j in tfl_journeys(origin, dest, when, extra, app_key, deadline=deadline):
+    for (label, _), journeys in zip(TRANSPORT_QUERIES, results):
+        for j in journeys:
             if not isinstance(j.get("duration"), int):
                 continue
             priced = price_journey(j, adults, railcard_holders)
@@ -287,8 +433,6 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
                 "minutes": j["duration"],
                 "route": desc,
             })
-        if i < len(queries) - 1:  # pause between TfL calls, not after the last
-            sleep_within(pause, deadline)
     if not options:
         return None
     fastest = min(options, key=lambda o: o["minutes"])
@@ -300,9 +444,54 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
     return cheapest
 
 
+def cycle_time(origin, hotel, when, app_key, deadline=None):
+    """(minutes, km, source) for cycling to the hotel. TfL routing only with an app key."""
+    dest = (hotel["lat"], hotel["lon"])
+    est_min, est_km = estimate_cycle(origin, dest)
+    if not app_key:
+        return est_min, est_km, "estimate"
+    for j in tfl_journeys(origin, dest, when, CYCLE_QUERY, app_key, deadline=deadline):
+        if isinstance(j.get("duration"), int):
+            km = sum((l.get("distance") or 0) for l in (j.get("legs") or [])) / 1000
+            return j["duration"], round(km, 1) if km else est_km, "tfl"
+    return est_min, est_km, "estimate"
+
+
 # --------------------------------------------------------------------------- #
 # Search
 # --------------------------------------------------------------------------- #
+_UNPRICED = {
+    "transport_out": None,
+    "transport_return": None,
+    "transport_total": None,
+    "travel_minutes": None,
+    "fastest_minutes": None,
+    "fastest_total": None,
+    "fastest_route": None,
+    "total": None,
+}
+
+
+def _transport_fields(hotel, t):
+    if not t:
+        return dict(_UNPRICED, route="no TfL fare found")
+    return {
+        "transport_out": t["outbound_p"] / 100,
+        "transport_return": t["return_p"] / 100,
+        "transport_total": t["total_p"] / 100,
+        "travel_minutes": t["minutes"],
+        "route": t["route"],
+        "fastest_minutes": t["fastest_minutes"],
+        "fastest_total": t["fastest_total_p"] / 100,
+        "fastest_route": t["fastest_route"],
+        "total": round(hotel["room_price"] + t["total_p"] / 100, 2),
+    }
+
+
+def sort_rows(rows):
+    rows.sort(key=lambda r: (r["total"] is None, r["total"] or 0, r["room_price"]))
+
+
 def run_search(
     *,
     location: str,
@@ -317,7 +506,14 @@ def run_search(
     max_miles,
     max_travel_min: int,
 ):
-    """Everything main() in the original script did between parsing and reporting."""
+    """Generator of progress events for one search.
+
+    Yields, in order:
+      ("hotels", summary, rows)   every shortlisted hotel with room price and
+                                   cycling time but transport still unpriced
+      ("transport", row)          one per hotel as TfL prices come back
+      ("done", summary, rows)     final summary and rows sorted by total
+    """
     nights = (checkout - checkin).days
     adults = sum(a for a, _ in rooms)
     children = sum(c for _, c in rooms)
@@ -329,7 +525,7 @@ def run_search(
 
     raw = fetch_hotels(location, checkin, checkout, rooms)
     hotels = [normalise_hotel(h) for h in raw]
-    avail = [h for h in hotels if h["available"] and h["room_price"]]
+    avail = [h for h in hotels if h["available"] and h["room_price"] and h["lat"] is not None and h["lon"] is not None]
     if max_miles is not None:
         avail = [h for h in avail if (h["distance_from_search_mi"] or 0) <= max_miles]
 
@@ -337,42 +533,13 @@ def run_search(
     shortlist = avail[:top]
 
     rows = []
-    truncated = False
+    by_code = {}
     for h in shortlist:
-        skipped = time.monotonic() >= deadline
-        if skipped:
-            truncated = True
-            t = None
-        else:
-            t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline=deadline)
-        row = dict(h)
-        if t:
-            row.update({
-                "transport_out": t["outbound_p"] / 100,
-                "transport_return": t["return_p"] / 100,
-                "transport_total": t["total_p"] / 100,
-                "travel_minutes": t["minutes"],
-                "route": t["route"],
-                "fastest_minutes": t["fastest_minutes"],
-                "fastest_total": t["fastest_total_p"] / 100,
-                "fastest_route": t["fastest_route"],
-                "total": round(h["room_price"] + t["total_p"] / 100, 2),
-            })
-        else:
-            row.update({
-                "transport_out": None,
-                "transport_return": None,
-                "transport_total": None,
-                "travel_minutes": None,
-                "route": "not priced (time limit)" if skipped else "no TfL fare found",
-                "fastest_minutes": None,
-                "fastest_total": None,
-                "fastest_route": None,
-                "total": None,
-            })
+        row = dict(h, **_UNPRICED, route="pricing…")
+        est_min, est_km = estimate_cycle(origin, (h["lat"], h["lon"]))
+        row.update({"cycle_minutes": est_min, "cycle_km": est_km, "cycle_source": "estimate"})
         rows.append(row)
-
-    rows.sort(key=lambda r: (r["total"] is None, r["total"] or 0, r["room_price"]))
+        by_code[row["code"]] = row
 
     summary = {
         "location": location,
@@ -390,7 +557,42 @@ def run_search(
         "max_travel_min": max_travel_min,
         "hotels_found": len(hotels),
         "hotels_available": len(avail),
-        "hotels_priced": len(rows),
-        "truncated": truncated,
+        "hotels_priced": 0,
+        "hotels_shortlisted": len(rows),
+        "tfl_rate_per_min": TFL_RATE_KEYED if app_key else TFL_RATE_ANON,
+        "truncated": False,
     }
-    return {"summary": summary, "rows": rows}
+    yield "hotels", dict(summary), [dict(r) for r in rows]
+
+    priced = 0
+    with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
+            ThreadPoolExecutor(max_workers=TFL_WORKERS // 2) as hotel_pool:
+
+        def price(h):
+            t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
+                               deadline=deadline, pool=tfl_pool)
+            cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline) if app_key else None
+            return h["code"], t, cyc
+
+        # Submit cheapest rooms first so the most useful rows arrive earliest.
+        futures = [hotel_pool.submit(price, h) for h in shortlist]
+        try:
+            for fut in as_completed(futures):
+                code, t, cyc = fut.result()
+                row = by_code[code]
+                timed_out = t is None and time.monotonic() >= deadline
+                row.update(_transport_fields(row, t))
+                if timed_out:
+                    row["route"] = "not priced (time limit)"
+                    summary["truncated"] = True
+                if cyc:
+                    row["cycle_minutes"], row["cycle_km"], row["cycle_source"] = cyc
+                priced += 1
+                summary["hotels_priced"] = priced
+                yield "transport", dict(row)
+        finally:
+            for f in futures:
+                f.cancel()
+
+    sort_rows(rows)
+    yield "done", dict(summary), [dict(r) for r in rows]

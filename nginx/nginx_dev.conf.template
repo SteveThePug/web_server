@@ -181,11 +181,16 @@ http {
             return 301 /py/;
         }
 
-        location = /py/hotels/search {
-            # Public, minutes-long upstream call with a single search slot: keep it to a few per minute per IP
+        # /py/hotels/search and /py/hotels/search/stream
+        location ^~ /py/hotels/search {
+            # Public, up-to-a-minute upstream call with a single search slot: keep it to a few per minute per IP
             limit_req zone=hotel_search burst=2 nodelay;
             proxy_read_timeout 300s;
             proxy_send_timeout 300s;
+            # The stream variant sends NDJSON progress lines; pass them through as they arrive
+            proxy_buffering off;
+            proxy_cache off;
+            gzip off;
             rewrite ^/py/(.*)$ /$1 break;
             proxy_pass $upstream_python;
             proxy_set_header Host $host;
@@ -363,11 +368,16 @@ http {
             return 301 /py/;
         }
 
-        location = /py/hotels/search {
-            # Public, minutes-long upstream call with a single search slot: keep it to a few per minute per IP
+        # /py/hotels/search and /py/hotels/search/stream
+        location ^~ /py/hotels/search {
+            # Public, up-to-a-minute upstream call with a single search slot: keep it to a few per minute per IP
             limit_req zone=hotel_search burst=2 nodelay;
             proxy_read_timeout 300s;
             proxy_send_timeout 300s;
+            # The stream variant sends NDJSON progress lines; pass them through as they arrive
+            proxy_buffering off;
+            proxy_cache off;
+            gzip off;
             rewrite ^/py/(.*)$ /$1 break;
             proxy_pass $upstream_python;
             proxy_set_header Host $host;
