@@ -27,6 +27,11 @@ export default defineConfig({
       "/api": "http://localhost:8080",
       "/gitea": "http://localhost:3000",
       "/radio": "http://localhost:8000",
+      // Python API: nginx strips the /py prefix in production, so do the same here.
+      "/py": {
+        target: "http://localhost:8000",
+        rewrite: (path) => path.replace(/^\/py/, ""),
+      },
     },
   },
 });

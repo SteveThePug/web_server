@@ -36,7 +36,7 @@ import threading
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import requests
 
@@ -67,6 +67,20 @@ LONDON_BOX = (51.25, 51.75, -0.55, 0.35)  # min lat, max lat, min lon, max lon
 # 300s, so stop pricing transport well before that and return what we have.
 SEARCH_DEADLINE_S = 200
 
+# A date-range scan fetches one Travelodge search per candidate night, then
+# prices TfL once per unique hotel. Stop starting new date fetches after the
+# soft deadline; stop TfL pricing at the hard one and return what we have.
+SCAN_FETCH_DEADLINE_S = 150
+SCAN_DEADLINE_S = 240
+SCAN_DATE_WORKERS = int(os.environ.get("TL_SCAN_WORKERS", "4"))
+SCAN_MAX_DAYS = 91
+
+# Normalised Travelodge results are cached per (location, dates, rooms) so a
+# re-scan with different weekday/transport settings is free on the Travelodge
+# side. Prices may therefore be up to TL_CACHE_TTL_S old.
+TL_CACHE_TTL_S = 30 * 60
+TL_CACHE_MAX = 600
+
 # Travelodge returns 10 hotels per page whatever you ask for; fetch pages in
 # parallel batches until a batch comes back with nothing new.
 TL_PAGE_SIZE = 10
@@ -88,7 +102,10 @@ CYCLE_ROUTE_FACTOR = 1.3
 CYCLE_KMH = 14.0
 
 _session = requests.Session()
-_session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=TFL_WORKERS + TL_PAGE_BATCH))
+_session.mount(
+    "https://",
+    requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=TFL_WORKERS + SCAN_DATE_WORKERS * TL_PAGE_BATCH),
+)
 
 
 class UpstreamError(Exception):
@@ -138,20 +155,24 @@ def parse_origin(spec):
 # --------------------------------------------------------------------------- #
 # Travelodge
 # --------------------------------------------------------------------------- #
-def _fetch_page(params, start):
+def _fetch_page(params, start, deadline=None):
     p = dict(params, start=start)
+    timeout = 30
+    if deadline is not None:
+        timeout = max(1, min(timeout, deadline - time.monotonic()))
     try:
-        r = _session.get(TL_API, params=p, headers=HEADERS, timeout=30)
+        r = _session.get(TL_API, params=p, headers=HEADERS, timeout=timeout)
         r.raise_for_status()
         return r.json().get("results") or []
     except (requests.RequestException, ValueError, AttributeError) as e:
         raise UpstreamError(f"Travelodge search failed: {e}") from e
 
 
-def fetch_hotels(location, checkin, checkout, rooms):
+def fetch_hotels(location, checkin, checkout, rooms, deadline=None):
     """Return list of hotel dicts from the Travelodge search API (all pages).
 
     rooms: list of (adults, children) tuples, one per room.
+    deadline: time.monotonic() value after which page requests are cut short.
     """
     params = {
         "pagination": "false",
@@ -174,7 +195,7 @@ def fetch_hotels(location, checkin, checkout, rooms):
         return bool(new)
 
     # First page alone: tells us whether the search matched anything at all.
-    first = _fetch_page(params, 0)
+    first = _fetch_page(params, 0, deadline)
     if not absorb(first) or len(first) < TL_PAGE_SIZE:
         return hotels
 
@@ -182,7 +203,7 @@ def fetch_hotels(location, checkin, checkout, rooms):
     with ThreadPoolExecutor(max_workers=TL_PAGE_BATCH) as ex:
         while start <= TL_MAX_START:
             starts = [start + i * TL_PAGE_SIZE for i in range(TL_PAGE_BATCH)]
-            pages = list(ex.map(lambda s: _fetch_page(params, s), starts))
+            pages = list(ex.map(lambda s: _fetch_page(params, s, deadline), starts))
             got_new = False
             exhausted = False
             for page in pages:  # keep API order so ranking stays stable
@@ -210,6 +231,35 @@ def normalise_hotel(h):
         "rating": (h.get("rating") or {}).get("averageRating"),
         "url": TL_SITE + (h.get("hotelUrl") or ""),
     }
+
+
+_tl_cache = {}  # (location, checkin, checkout, rooms) -> (expires_at, [normalised hotel dicts])
+_tl_cache_lock = threading.Lock()
+
+
+def hotels_for(location, checkin, checkout, rooms, deadline=None):
+    """Normalised hotel list for a search, cached for TL_CACHE_TTL_S.
+
+    Failures are not cached. Callers must treat the returned dicts as read-only.
+    """
+    key = (location.strip().lower(), checkin, checkout, tuple(rooms))
+    now = time.monotonic()
+    with _tl_cache_lock:
+        hit = _tl_cache.get(key)
+        if hit and hit[0] > now:
+            return hit[1]
+
+    hotels = [normalise_hotel(h) for h in fetch_hotels(location, checkin, checkout, rooms, deadline=deadline)]
+
+    with _tl_cache_lock:
+        now = time.monotonic()
+        expired = [k for k, (exp, _) in _tl_cache.items() if exp <= now]
+        for k in expired:
+            del _tl_cache[k]
+        while len(_tl_cache) >= TL_CACHE_MAX:
+            del _tl_cache[next(iter(_tl_cache))]  # oldest insertion
+        _tl_cache[key] = (now + TL_CACHE_TTL_S, hotels)
+    return hotels
 
 
 # --------------------------------------------------------------------------- #
@@ -479,6 +529,8 @@ _UNPRICED = {
     "total": None,
 }
 
+TIME_LIMIT_ROUTE = "not priced (time limit)"
+
 
 def _transport_fields(hotel, t):
     if not t:
@@ -498,6 +550,79 @@ def _transport_fields(hotel, t):
 
 def sort_rows(rows):
     rows.sort(key=lambda r: (r["total"] is None, r["total"] or 0, r["room_price"]))
+
+
+def _shortlist(hotels, max_miles, top):
+    """(available, shortlist): bookable, priced, geocoded hotels within max_miles
+    sorted by room price, and the cheapest `top` of them."""
+    avail = [h for h in hotels if h["available"] and h["room_price"] and h["lat"] is not None and h["lon"] is not None]
+    if max_miles is not None:
+        avail = [h for h in avail if (h["distance_from_search_mi"] or 0) <= max_miles]
+    avail.sort(key=lambda h: h["room_price"])
+    return avail, avail[:top]
+
+
+def _make_row(h, origin):
+    """Result row for a hotel: unpriced transport plus an estimated cycle time."""
+    row = dict(h, **_UNPRICED, route="pricing…")
+    est_min, est_km = estimate_cycle(origin, (h["lat"], h["lon"]))
+    row.update({"cycle_minutes": est_min, "cycle_km": est_km, "cycle_source": "estimate"})
+    return row
+
+
+def _price_hotels(hotels, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline):
+    """Price TfL transport for each hotel, cheapest rooms first.
+
+    Generator of (code, transport_or_None, cycle_or_None, timed_out) in the order
+    TfL answers. Owns the worker pools; leftover work is cancelled if the
+    consumer stops early.
+    """
+    with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
+            ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
+
+        def price(h):
+            # Kick off the cycle lookup first so it overlaps the fare lookups.
+            cycle_fut = None
+            if app_key:
+                cycle_fut = tfl_pool.submit(
+                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key, deadline=deadline
+                )
+            t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
+                               deadline=deadline, pool=tfl_pool)
+            cyc = None
+            if cycle_fut is not None:
+                cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline, journeys=cycle_fut.result())
+            return h["code"], t, cyc
+
+        futures = [hotel_pool.submit(price, h) for h in hotels]
+        try:
+            for fut in as_completed(futures):
+                code, t, cyc = fut.result()
+                timed_out = t is None and time.monotonic() >= deadline
+                yield code, t, cyc, timed_out
+        finally:
+            for f in futures:
+                f.cancel()
+
+
+def _apply_transport(row, t, cyc, timed_out):
+    row.update(_transport_fields(row, t))
+    if timed_out:
+        row["route"] = TIME_LIMIT_ROUTE
+    if cyc:
+        row["cycle_minutes"], row["cycle_km"], row["cycle_source"] = cyc
+    return row
+
+
+def _party(rooms, railcard_holders):
+    adults = sum(a for a, _ in rooms)
+    children = sum(c for _, c in rooms)
+    return adults, children, max(0, min(adults, railcard_holders))
+
+
+def _depart_dt(day, depart):
+    hh, mm = map(int, depart.split(":"))
+    return datetime(day.year, day.month, day.day, hh, mm)
 
 
 def run_search(
@@ -523,31 +648,16 @@ def run_search(
       ("done", summary, rows)     final summary and rows sorted by total
     """
     nights = (checkout - checkin).days
-    adults = sum(a for a, _ in rooms)
-    children = sum(c for _, c in rooms)
-    railcard_holders = max(0, min(adults, railcard_holders))
-    hh, mm = map(int, depart.split(":"))
-    depart_dt = datetime(checkin.year, checkin.month, checkin.day, hh, mm)
+    adults, children, railcard_holders = _party(rooms, railcard_holders)
+    depart_dt = _depart_dt(checkin, depart)
     app_key = os.environ.get("TFL_APP_KEY") or None
     deadline = time.monotonic() + SEARCH_DEADLINE_S
 
-    raw = fetch_hotels(location, checkin, checkout, rooms)
-    hotels = [normalise_hotel(h) for h in raw]
-    avail = [h for h in hotels if h["available"] and h["room_price"] and h["lat"] is not None and h["lon"] is not None]
-    if max_miles is not None:
-        avail = [h for h in avail if (h["distance_from_search_mi"] or 0) <= max_miles]
+    hotels = hotels_for(location, checkin, checkout, rooms, deadline=deadline)
+    avail, shortlist = _shortlist(hotels, max_miles, top)
 
-    avail.sort(key=lambda h: h["room_price"])
-    shortlist = avail[:top]
-
-    rows = []
-    by_code = {}
-    for h in shortlist:
-        row = dict(h, **_UNPRICED, route="pricing…")
-        est_min, est_km = estimate_cycle(origin, (h["lat"], h["lon"]))
-        row.update({"cycle_minutes": est_min, "cycle_km": est_km, "cycle_source": "estimate"})
-        rows.append(row)
-        by_code[row["code"]] = row
+    rows = [_make_row(h, origin) for h in shortlist]
+    by_code = {row["code"]: row for row in rows}
 
     summary = {
         "location": location,
@@ -572,46 +682,219 @@ def run_search(
     }
     yield "hotels", dict(summary), [dict(r) for r in rows]
 
-    priced = 0
-    with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
-            ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
+    # Submit cheapest rooms first so the most useful rows arrive earliest.
+    for code, t, cyc, timed_out in _price_hotels(
+        shortlist, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline
+    ):
+        row = _apply_transport(by_code[code], t, cyc, timed_out)
+        if timed_out:
+            summary["truncated"] = True
+        summary["hotels_priced"] += 1
+        yield "transport", dict(row)
 
-        def price(h):
-            # Kick off the cycle lookup first so it overlaps the fare lookups. One
-            # attempt only: TfL can take 15s+ to say there is no cycle route (e.g.
-            # motorway services), and the distance estimate is a fine fallback.
-            cycle_fut = None
-            if app_key:
-                cycle_fut = tfl_pool.submit(
-                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key,
-                    retries=1, deadline=deadline,
-                )
-            t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
-                               deadline=deadline, pool=tfl_pool)
-            cyc = None
-            if cycle_fut is not None:
-                cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline, journeys=cycle_fut.result())
-            return h["code"], t, cyc
+    sort_rows(rows)
+    yield "done", dict(summary), [dict(r) for r in rows]
 
-        # Submit cheapest rooms first so the most useful rows arrive earliest.
-        futures = [hotel_pool.submit(price, h) for h in shortlist]
+
+# --------------------------------------------------------------------------- #
+# Date-range scan
+# --------------------------------------------------------------------------- #
+def candidate_checkins(start, end, weekdays, nights):
+    """[(checkin, checkout)] for every day start..end (inclusive) whose weekday
+    (0=Mon) is in `weekdays`, each for a stay of `nights` nights."""
+    out = []
+    day = start
+    while day <= end:
+        if day.weekday() in weekdays:
+            out.append((day, day + timedelta(days=nights)))
+        day += timedelta(days=1)
+    return out
+
+
+def _copy_night(n):
+    return dict(n, hotels=[dict(r) for r in n["hotels"]])
+
+
+def run_scan(
+    *,
+    location: str,
+    start: date,
+    end: date,
+    weekdays,
+    nights: int,
+    per_night: int,
+    rooms: list,
+    railcard_holders: int,
+    origin_name: str,
+    origin: tuple,
+    depart: str,
+    max_miles,
+    max_travel_min: int,
+):
+    """Generator of progress events for a cheapest-night scan.
+
+    Every candidate check-in in start..end (filtered by weekday) is searched on
+    Travelodge and its `per_night` cheapest rooms kept. TfL transport is then
+    priced ONCE per unique hotel, at the first candidate night's departure
+    time, and reused for every night that hotel appears in.
+
+    Yields, in order:
+      ("scan", summary, nights)        every candidate night, status "pending"
+      ("night", summary, night)        one per night as Travelodge answers:
+                                        status ok/failed/skipped, hotels sorted
+                                        by room price, transport unpriced
+      ("transport", summary, fields)   one per unique hotel as TfL answers;
+                                        `fields` has the hotel code plus the
+                                        transport and cycle columns
+      ("done", summary, nights)        totals filled in, hotels sorted by
+                                        total, nights sorted by best total
+    """
+    candidates = candidate_checkins(start, end, weekdays, nights)
+    if not candidates:
+        raise ValueError("no dates in the range match those weekdays")
+    adults, children, railcard_holders = _party(rooms, railcard_holders)
+    depart_dt = _depart_dt(candidates[0][0], depart)
+    app_key = os.environ.get("TFL_APP_KEY") or None
+    t0 = time.monotonic()
+    fetch_deadline = t0 + SCAN_FETCH_DEADLINE_S
+    deadline = t0 + SCAN_DEADLINE_S
+
+    night_list = [
+        {
+            "checkin": ci,
+            "checkout": co,
+            "status": "pending",
+            "detail": None,
+            "hotels_available": 0,
+            "hotels": [],
+            "best_total": None,
+            "best_room": None,
+            "best_code": None,
+        }
+        for ci, co in candidates
+    ]
+    by_checkin = {n["checkin"]: n for n in night_list}
+
+    summary = {
+        "location": location,
+        "start": start,
+        "end": end,
+        "weekdays": sorted(weekdays),
+        "nights": nights,
+        "per_night": per_night,
+        "rooms": len(rooms),
+        "adults": adults,
+        "children": children,
+        "railcard_holders": railcard_holders,
+        "origin_name": origin_name,
+        "origin_lat": origin[0],
+        "origin_lon": origin[1],
+        "depart": depart_dt,
+        "max_travel_min": max_travel_min,
+        "nights_candidate": len(night_list),
+        "nights_fetched": 0,
+        "nights_failed": 0,
+        "nights_skipped": 0,
+        "hotels_unique": 0,
+        "hotels_priced": 0,
+        "tfl_rate_per_min": TFL_RATE_KEYED if app_key else TFL_RATE_ANON,
+        "truncated": False,
+    }
+    yield "scan", dict(summary), [_copy_night(n) for n in night_list]
+
+    # Phase 1: room prices, a few nights at a time. One bad night must not
+    # sink the scan, so upstream failures are recorded on that night only.
+    def fetch_night(ci, co):
+        if time.monotonic() > fetch_deadline:
+            return ci, "skipped", [], 0, "not fetched (time limit)"
+        try:
+            hotels = hotels_for(location, ci, co, rooms, deadline=fetch_deadline + 30)
+        except UpstreamError as e:
+            return ci, "failed", [], 0, str(e)
+        avail, short = _shortlist(hotels, max_miles, per_night)
+        return ci, "ok", short, len(avail), None
+
+    with ThreadPoolExecutor(max_workers=SCAN_DATE_WORKERS) as ex:
+        futures = [ex.submit(fetch_night, ci, co) for ci, co in candidates]
         try:
             for fut in as_completed(futures):
-                code, t, cyc = fut.result()
-                row = by_code[code]
-                timed_out = t is None and time.monotonic() >= deadline
-                row.update(_transport_fields(row, t))
-                if timed_out:
-                    row["route"] = "not priced (time limit)"
+                ci, status, short, n_avail, detail = fut.result()
+                night = by_checkin[ci]
+                night["status"] = status
+                night["detail"] = detail
+                night["hotels_available"] = n_avail
+                if status == "ok":
+                    night["hotels"] = [_make_row(h, origin) for h in short]
+                    if night["hotels"]:
+                        night["best_room"] = night["hotels"][0]["room_price"]
+                    summary["nights_fetched"] += 1
+                elif status == "failed":
+                    summary["nights_failed"] += 1
+                else:
+                    summary["nights_skipped"] += 1
                     summary["truncated"] = True
-                if cyc:
-                    row["cycle_minutes"], row["cycle_km"], row["cycle_source"] = cyc
-                priced += 1
-                summary["hotels_priced"] = priced
-                yield "transport", dict(row)
+                yield "night", dict(summary), _copy_night(night)
         finally:
             for f in futures:
                 f.cancel()
 
-    sort_rows(rows)
-    yield "done", dict(summary), [dict(r) for r in rows]
+    # Phase 2: one TfL price per unique hotel. Hotels that are cheapest on some
+    # night go first, since they are the likely winners if time runs out.
+    index = {}  # code -> ((best rank, min room price), row)
+    for n in night_list:
+        for rank, row in enumerate(n["hotels"]):
+            key = (rank, row["room_price"])
+            cur = index.get(row["code"])
+            if cur is None or key < cur[0]:
+                index[row["code"]] = (key, row)
+    ordered = [row for _, row in sorted(index.values(), key=lambda x: x[0])]
+    summary["hotels_unique"] = len(ordered)
+
+    transport = {}  # code -> transport + cycle fields
+    for code, t, cyc, timed_out in _price_hotels(
+        ordered, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline
+    ):
+        base = index[code][1]
+        fields = _transport_fields({"room_price": 0}, t)
+        fields.pop("total", None)
+        if timed_out:
+            fields["route"] = TIME_LIMIT_ROUTE
+            summary["truncated"] = True
+        if cyc:
+            fields["cycle_minutes"], fields["cycle_km"], fields["cycle_source"] = cyc
+        else:
+            fields.update({k: base[k] for k in ("cycle_minutes", "cycle_km", "cycle_source")})
+        fields["code"] = code
+        transport[code] = fields
+        summary["hotels_priced"] += 1
+        yield "transport", dict(summary), dict(fields)
+
+    # Phase 3: totals per night.
+    for n in night_list:
+        if n["status"] != "ok":
+            continue
+        for row in n["hotels"]:
+            fields = transport.get(row["code"])
+            if fields is None:
+                row["route"] = TIME_LIMIT_ROUTE
+                continue
+            row.update({k: v for k, v in fields.items() if k != "code"})
+            if row["transport_total"] is not None:
+                row["total"] = round(row["room_price"] + row["transport_total"], 2)
+        sort_rows(n["hotels"])
+        if n["hotels"]:
+            best = n["hotels"][0]
+            n["best_total"] = best["total"]
+            n["best_code"] = best["code"]
+            n["best_room"] = min(r["room_price"] for r in n["hotels"])
+
+    night_list.sort(
+        key=lambda n: (
+            n["best_total"] is None,
+            n["best_total"] or 0,
+            n["best_room"] is None,
+            n["best_room"] or 0,
+            n["checkin"],
+        )
+    )
+    yield "done", dict(summary), [_copy_night(n) for n in night_list]

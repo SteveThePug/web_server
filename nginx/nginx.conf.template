@@ -264,8 +264,8 @@ http {
             return 301 /py/;
         }
 
-        # /py/hotels/search and /py/hotels/search/stream
-        location ^~ /py/hotels/search {
+        # /py/hotels/search[/stream] and /py/hotels/scan/stream: long-running NDJSON streams
+        location ~ ^/py/hotels/(search|scan) {
             # Public, up-to-a-minute upstream call with a single search slot: keep it to a few per minute per IP
             limit_req zone=hotel_search burst=2 nodelay;
             proxy_read_timeout 300s;

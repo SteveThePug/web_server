@@ -28,6 +28,7 @@ Everything visual is defined in three places:
 | `src/assets/styles.css` | Fonts, **design tokens**, default element styles (dark theme), reusable classes (`bdr-1`, `bdr-2`, `page-a4`, `halftone`), the `slide` and `fade` transitions, print rules |
 | `src/layouts/CVLayout.vue` | The **light theme** for `/cv` and `/cv/jobs`: re-points the colour tokens to ink-on-paper values and holds the shared `.cv-btn` styles |
 | `src/views/CV/cv-shared.css` | Typography and page layout for the CV templates (`.cv-template`, `.cv-page`, `--cv-*` size variables) |
+| `src/views/hotels/hotels-shared.css` | Panels, forms, tables and tab strip for `/hotels`, shared by the single-stay and cheapest-night panels; every selector is prefixed with the page's `.hotels` root class |
 
 ### Tokens
 
