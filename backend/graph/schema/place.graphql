@@ -1,0 +1,45 @@
+type Place {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  title: String!
+  location: String
+  notes: String
+  imageUrl: String
+  category: String
+  cost: String
+  priority: Int!
+  done: Boolean!
+}
+
+input CreatePlaceInput {
+  title: String!
+  location: String
+  notes: String
+  imageUrl: String
+  category: String
+  cost: String
+  priority: Int
+  done: Boolean
+}
+
+input UpdatePlaceInput {
+  title: String
+  location: String
+  notes: String
+  imageUrl: String
+  category: String
+  cost: String
+  priority: Int
+  done: Boolean
+}
+
+extend type Query {
+  places: [Place!]!
+}
+
+extend type Mutation {
+  createPlace(input: CreatePlaceInput!): Place!
+  updatePlace(id: ID!, input: UpdatePlaceInput!): Place!
+  deletePlace(id: ID!): Place!
+}

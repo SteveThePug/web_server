@@ -97,6 +97,21 @@ type ProcessedEmail struct {
 	JobAppID       *uint     `json:"jobAppId"`
 }
 
+type Place struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Title     string         `gorm:"not null" json:"title"`
+	Location  *string        `json:"location"`
+	Notes     *string        `json:"notes"`
+	ImageURL  *string        `json:"imageUrl"`
+	Category  *string        `json:"category"`
+	Cost      *string        `json:"cost"`
+	Priority  int            `gorm:"default:0" json:"priority"`
+	Done      bool           `gorm:"default:false" json:"done"`
+}
+
 type JobApplication struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"createdAt"`

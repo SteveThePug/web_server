@@ -75,3 +75,9 @@ models:
     fields:
       deletedAt:
         resolver: false
+  Place:
+    model:
+      - adam-french.co.uk/backend/models.Place
+    fields:
+      deletedAt:
+        resolver: false

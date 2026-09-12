@@ -47,6 +47,17 @@ type CreateJobApplicationInput struct {
 	AppliedAt *time.Time `json:"appliedAt,omitempty"`
 }
 
+type CreatePlaceInput struct {
+	Title    string  `json:"title"`
+	Location *string `json:"location,omitempty"`
+	Notes    *string `json:"notes,omitempty"`
+	ImageURL *string `json:"imageUrl,omitempty"`
+	Category *string `json:"category,omitempty"`
+	Cost     *string `json:"cost,omitempty"`
+	Priority *int    `json:"priority,omitempty"`
+	Done     *bool   `json:"done,omitempty"`
+}
+
 type CreatePostInput struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
@@ -134,6 +145,17 @@ type UpdateJobApplicationInput struct {
 	Status    *string    `json:"status,omitempty"`
 	Notes     *string    `json:"notes,omitempty"`
 	AppliedAt *time.Time `json:"appliedAt,omitempty"`
+}
+
+type UpdatePlaceInput struct {
+	Title    *string `json:"title,omitempty"`
+	Location *string `json:"location,omitempty"`
+	Notes    *string `json:"notes,omitempty"`
+	ImageURL *string `json:"imageUrl,omitempty"`
+	Category *string `json:"category,omitempty"`
+	Cost     *string `json:"cost,omitempty"`
+	Priority *int    `json:"priority,omitempty"`
+	Done     *bool   `json:"done,omitempty"`
 }
 
 type UpdatePostInput struct {

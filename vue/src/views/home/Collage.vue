@@ -1,15 +1,137 @@
 <script setup>
+import { ref, computed } from "vue";
 import Slideshow from "@/components/util/Slideshow.vue";
+import PlacesTable from "./PlacesTable.vue";
+import CreatePlace from "@/views/admin/CreatePlace.vue";
+import { useAuthStore } from "@/stores/auth";
 
-const images = [
-  { url: "/img/memes/pidgeon.gif", comment: "鸟" },
-  // { url: "/img/memes/no_slip.png" },
-  // { url: "/img/memes/epic.jpeg" },
-  // { url: "/img/bedroom/img2.png", comment: "办公桌" },
-  // { url: "/img/bedroom/img1.png", comment: "床" },
+const images = [{ url: "/img/memes/pidgeon.gif", comment: "鸟" }];
+
+const tabs = [
+  { id: "collage", label: "鸟" },
+  { id: "places", label: "Places" },
 ];
+
+const activeTab = ref("collage");
+const showAdd = ref(false);
+
+const auth = useAuthStore();
+const isAdmin = computed(() => !!auth.user?.admin);
 </script>
 
 <template>
-  <Slideshow :images="images" />
+  <div class="collage-cell">
+    <div class="tabs">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        class="tab"
+        :class="{ 'is-active': activeTab === tab.id }"
+        @click="activeTab = tab.id"
+      >
+        {{ tab.label }}
+      </button>
+      <div class="tab-spacer" />
+      <button
+        v-if="isAdmin && activeTab === 'places'"
+        class="tab add-btn"
+        title="Add a place / thing to do"
+        @click="showAdd = true"
+      >
+        +
+      </button>
+    </div>
+
+    <div class="tab-body">
+      <Slideshow v-if="activeTab === 'collage'" :images="images" />
+      <PlacesTable v-else />
+    </div>
+
+    <Teleport to="body">
+      <div v-if="showAdd" class="modal-backdrop" @click.self="showAdd = false">
+        <div class="modal bdr-1">
+          <CreatePlace
+            @done="showAdd = false"
+            @cancel="showAdd = false"
+          />
+        </div>
+      </div>
+    </Teleport>
+  </div>
 </template>
+
+<style scoped>
+.collage-cell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px;
+  border-bottom: 1px solid var(--color-quaternary);
+  background-color: var(--color-surface-deep);
+}
+
+.tab {
+  background-color: var(--color-link-bg);
+  color: var(--color-primary);
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+.tab:hover {
+  border-color: var(--color-primary);
+}
+.tab.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-tertiary);
+  background-color: var(--color-surface-tint);
+}
+
+.tab-spacer {
+  flex: 1;
+}
+
+.add-btn {
+  min-width: 24px;
+  padding: 0 6px;
+}
+
+.tab-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 12px;
+}
+
+.modal {
+  background-color: var(--color-surface);
+  padding: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+</style>
