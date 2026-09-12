@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, defineAsyncComponent } from "vue";
 import Header from "@/components/text/Header.vue";
+import Modal from "@/components/util/Modal.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
 import { useHomeDataStore } from "@/stores/homeData";
 import { storeToRefs } from "pinia";
@@ -116,17 +117,14 @@ function formatValue(key, val) {
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <Header>
-      {{ showCreate ? "Upload Rowing" : "Rowing" }}
+      Rowing
       <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
 
-    <CreateRowing
-      v-if="showCreate"
-      class="flex-1 p-1"
-      @done="showCreate = false"
-      @cancel="showCreate = false"
-    />
-    <div v-else-if="loading" class="flex-1 flex items-center justify-center">
+    <Modal v-model="showCreate">
+      <CreateRowing @done="showCreate = false" @cancel="showCreate = false" />
+    </Modal>
+    <div v-if="loading" class="flex-1 flex items-center justify-center">
       <p>Loading...</p>
     </div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center">

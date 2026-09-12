@@ -1,6 +1,7 @@
 <script setup>
 import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
+import Modal from "@/components/util/Modal.vue";
 import Header from "@/components/text/Header.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
 
@@ -46,17 +47,10 @@ function deletePost() {
 <template>
   <div class="flex flex-col flex-1 min-h-0">
     <Header>
-      {{ showCreate ? "Create Post" : post.title }}
+      {{ post.title }}
       <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
-    <CreatePost
-      v-if="showCreate"
-      class="flex-1 min-h-0 p-1"
-      @done="showCreate = false"
-      @cancel="showCreate = false"
-    />
     <div
-      v-if="!showCreate"
       class="flex flex-col flex-1 min-h-0 p-1 overflow-auto text-left items-start justify-start"
     >
       <small>Created at: {{ new Date(post.createdAt).toLocaleString() }}</small>
@@ -74,6 +68,9 @@ function deletePost() {
         >Delete</Button
       >
     </div>
+    <Modal v-model="showCreate" max-width="560px">
+      <CreatePost @done="showCreate = false" @cancel="showCreate = false" />
+    </Modal>
   </div>
 </template>
 

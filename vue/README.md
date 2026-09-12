@@ -54,7 +54,7 @@ Note that Tailwind's spacing unit is set to **3px** (not the default 4px), so `p
 
 - Use Tailwind utilities for layout and one-off tweaks. Reach for a scoped `<style>` only for what utilities can't express: `grid-template-areas`, keyframe animations, media-query-specific layouts.
 - Never hard-code a colour in a component; use a token. The one exception is `<canvas>` drawing (MobileAutomata), which can't read CSS variables.
-- Home widgets: wrap the title in `<Header>`; admin-only create forms use `<CreateToggle v-model="showCreate">` in the header's `#action` slot.
+- Home widgets: wrap the title in `<Header>`; admin-only create forms use `<CreateToggle v-model="showCreate">` in the header's `#action` slot and render the form inside a `<Modal v-model="showCreate">` so it pops up over the page instead of replacing the widget.
 - Crossfading content in place: `<Transition name="fade">` inside a `position: relative` parent. Route changes use `<Transition name="slide">`.
 
 ## Production Build

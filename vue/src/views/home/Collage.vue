@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import Slideshow from "@/components/util/Slideshow.vue";
+import Modal from "@/components/util/Modal.vue";
 import PlacesTable from "./PlacesTable.vue";
 import CreatePlace from "@/views/admin/CreatePlace.vue";
 import { useAuthStore } from "@/stores/auth";
@@ -47,16 +48,9 @@ const isAdmin = computed(() => !!auth.user?.admin);
       <PlacesTable v-else />
     </div>
 
-    <Teleport to="body">
-      <div v-if="showAdd" class="modal-backdrop" @click.self="showAdd = false">
-        <div class="modal bdr-1">
-          <CreatePlace
-            @done="showAdd = false"
-            @cancel="showAdd = false"
-          />
-        </div>
-      </div>
-    </Teleport>
+    <Modal v-model="showAdd">
+      <CreatePlace @done="showAdd = false" @cancel="showAdd = false" />
+    </Modal>
   </div>
 </template>
 
@@ -113,25 +107,5 @@ const isAdmin = computed(() => !!auth.user?.admin);
   min-height: 0;
   position: relative;
   overflow: hidden;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 12px;
-}
-
-.modal {
-  background-color: var(--color-surface);
-  padding: 16px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 </style>

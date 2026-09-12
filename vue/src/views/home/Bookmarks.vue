@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, defineAsyncComponent } from "vue";
 import LinkTable from "@/components/util/LinkTable.vue";
+import Modal from "@/components/util/Modal.vue";
 import Header from "@/components/text/Header.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
 import { useHomeDataStore } from "@/stores/homeData";
@@ -26,16 +27,10 @@ const groupedBookmarks = computed(() => {
 <template>
   <div class="bookmarks-wrapper">
     <Header class="text-left">
-      {{ showCreate ? "Create Bookmark" : "Bookmarks" }}
+      Bookmarks
       <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
-    <CreateBookmark
-      v-if="showCreate"
-      class="flex-1 min-h-0 p-1"
-      @done="showCreate = false"
-      @cancel="showCreate = false"
-    />
-    <div v-if="!showCreate" class="bookmarks-scroll">
+    <div class="bookmarks-scroll">
       <LinkTable
         v-for="group in groupedBookmarks"
         :key="group[0]"
@@ -43,6 +38,12 @@ const groupedBookmarks = computed(() => {
         :items="group[1]"
       />
     </div>
+    <Modal v-model="showCreate">
+      <CreateBookmark
+        @done="showCreate = false"
+        @cancel="showCreate = false"
+      />
+    </Modal>
   </div>
 </template>
 

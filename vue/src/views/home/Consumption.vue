@@ -1,5 +1,6 @@
 <script setup>
 import AutoScroll from "@/components/util/AutoScroll.vue";
+import Modal from "@/components/util/Modal.vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 import Header from "@/components/text/Header.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
@@ -18,21 +19,21 @@ const showCreate = ref(false);
 <template>
   <div class="flex flex-col items-center">
     <Header>
-      {{ showCreate ? "Create Activity" : "Consumption" }}
+      Consumption
       <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
-    <CreateActivity
-      v-if="showCreate"
-      class="flex-1 w-full p-1"
-      @done="showCreate = false"
-      @cancel="showCreate = false"
-    />
-    <AutoScroll v-if="!showCreate" class="flex-1 w-full">
+    <AutoScroll class="flex-1 w-full">
       <LinkTable
         variant="table"
         class="w-full"
         :items="activityStore.activity"
       />
     </AutoScroll>
+    <Modal v-model="showCreate">
+      <CreateActivity
+        @done="showCreate = false"
+        @cancel="showCreate = false"
+      />
+    </Modal>
   </div>
 </template>

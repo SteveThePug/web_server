@@ -3,6 +3,7 @@ import Header from "@/components/text/Header.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 import AutoScroll from "@/components/util/AutoScroll.vue";
+import Modal from "@/components/util/Modal.vue";
 
 import { ref, defineAsyncComponent } from "vue";
 import { useFavoritesStore } from "@/stores/favorites";
@@ -18,21 +19,21 @@ const showCreate = ref(false);
 <template>
   <div class="flex flex-col items-center">
     <Header>
-      {{ showCreate ? "Create Favorite" : "favs" }}
+      favs
       <template #action><CreateToggle v-model="showCreate" /></template>
     </Header>
-    <CreateFavorite
-      v-if="showCreate"
-      class="w-full flex-1 p-1"
-      @done="showCreate = false"
-      @cancel="showCreate = false"
-    />
-    <AutoScroll v-if="!showCreate" class="w-full flex-1">
+    <AutoScroll class="w-full flex-1">
       <LinkTable
         variant="table"
         class="w-full"
         :items="favoritesStore.favorites"
       />
     </AutoScroll>
+    <Modal v-model="showCreate">
+      <CreateFavorite
+        @done="showCreate = false"
+        @cancel="showCreate = false"
+      />
+    </Modal>
   </div>
 </template>
