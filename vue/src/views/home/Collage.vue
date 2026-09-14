@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import Slideshow from "@/components/util/Slideshow.vue";
 import Modal from "@/components/util/Modal.vue";
 import PlacesTable from "./PlacesTable.vue";
@@ -8,16 +8,20 @@ import { useAuthStore } from "@/stores/auth";
 
 const images = [{ url: "/img/memes/pidgeon.gif", comment: "鸟" }];
 
-const tabs = [
+const auth = useAuthStore();
+const loggedIn = computed(() => auth.loggedIn);
+
+const tabs = computed(() => [
   { id: "collage", label: "鸟" },
-  { id: "places", label: "Places" },
-];
+  ...(loggedIn.value ? [{ id: "places", label: "Places" }] : []),
+]);
 
 const activeTab = ref("collage");
 const showAdd = ref(false);
 
-const auth = useAuthStore();
-const isAdmin = computed(() => !!auth.user?.admin);
+watch(loggedIn, (isIn) => {
+  if (!isIn && activeTab.value === "places") activeTab.value = "collage";
+});
 </script>
 
 <template>
@@ -34,7 +38,7 @@ const isAdmin = computed(() => !!auth.user?.admin);
       </button>
       <div class="tab-spacer" />
       <button
-        v-if="isAdmin && activeTab === 'places'"
+        v-if="loggedIn && activeTab === 'places'"
         class="tab add-btn"
         title="Add a place / thing to do"
         @click="showAdd = true"
@@ -45,7 +49,7 @@ const isAdmin = computed(() => !!auth.user?.admin);
 
     <div class="tab-body">
       <Slideshow v-if="activeTab === 'collage'" :images="images" />
-      <PlacesTable v-else />
+      <PlacesTable v-else-if="loggedIn" />
     </div>
 
     <Modal v-model="showAdd">

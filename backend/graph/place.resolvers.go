@@ -15,8 +15,8 @@ import (
 
 // CreatePlace is the resolver for the createPlace field.
 func (r *mutationResolver) CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
+	if _, ok := UserIDFromCtx(ctx); !ok {
+		return nil, fmt.Errorf("authentication required")
 	}
 	place := models.Place{
 		Title:    input.Title,
@@ -40,8 +40,8 @@ func (r *mutationResolver) CreatePlace(ctx context.Context, input model.CreatePl
 
 // UpdatePlace is the resolver for the updatePlace field.
 func (r *mutationResolver) UpdatePlace(ctx context.Context, id int, input model.UpdatePlaceInput) (*models.Place, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
+	if _, ok := UserIDFromCtx(ctx); !ok {
+		return nil, fmt.Errorf("authentication required")
 	}
 	var place models.Place
 	if err := r.Store.DB.First(&place, id).Error; err != nil {
@@ -79,8 +79,8 @@ func (r *mutationResolver) UpdatePlace(ctx context.Context, id int, input model.
 
 // DeletePlace is the resolver for the deletePlace field.
 func (r *mutationResolver) DeletePlace(ctx context.Context, id int) (*models.Place, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
+	if _, ok := UserIDFromCtx(ctx); !ok {
+		return nil, fmt.Errorf("authentication required")
 	}
 	var place models.Place
 	if err := r.Store.DB.First(&place, id).Error; err != nil {
@@ -99,6 +99,9 @@ func (r *placeResolver) ID(ctx context.Context, obj *models.Place) (int, error) 
 
 // Places is the resolver for the places field.
 func (r *queryResolver) Places(ctx context.Context) ([]*models.Place, error) {
+	if _, ok := UserIDFromCtx(ctx); !ok {
+		return nil, fmt.Errorf("authentication required")
+	}
 	var places []models.Place
 	if err := r.Store.DB.Order("done ASC, priority DESC, created_at DESC").Find(&places).Error; err != nil {
 		return nil, err

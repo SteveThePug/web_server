@@ -1,18 +1,22 @@
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { usePlacesStore } from "@/stores/places";
 import { useAuthStore } from "@/stores/auth";
 
 const places = usePlacesStore();
 const auth = useAuthStore();
-const isAdmin = computed(() => !!auth.user?.admin);
+const loggedIn = computed(() => auth.loggedIn);
 
 onMounted(() => {
-  if (!places.loaded && !places.loading) places.fetch();
+  if (loggedIn.value && !places.loaded && !places.loading) places.fetch();
+});
+
+watch(loggedIn, (isIn) => {
+  if (isIn && !places.loaded && !places.loading) places.fetch();
 });
 
 async function toggleDone(place) {
-  if (!isAdmin.value) return;
+  if (!loggedIn.value) return;
   try {
     await places.toggleDone(place);
   } catch (err) {
@@ -21,7 +25,7 @@ async function toggleDone(place) {
 }
 
 async function remove(place) {
-  if (!isAdmin.value) return;
+  if (!loggedIn.value) return;
   if (!confirm(`Delete "${place.title}"?`)) return;
   try {
     await places.remove(place.id);
@@ -49,7 +53,7 @@ async function remove(place) {
           <th class="col-loc">Where</th>
           <th class="col-cat">Type</th>
           <th class="col-cost">Cost</th>
-          <th v-if="isAdmin" class="col-act"></th>
+          <th v-if="loggedIn" class="col-act"></th>
         </tr>
       </thead>
       <tbody>
@@ -61,7 +65,7 @@ async function remove(place) {
           <td>
             <div class="title-cell">
               <button
-                v-if="isAdmin"
+                v-if="loggedIn"
                 class="done-toggle"
                 :title="place.done ? 'Mark as pending' : 'Mark as done'"
                 @click="toggleDone(place)"
@@ -75,7 +79,7 @@ async function remove(place) {
           <td class="col-loc">{{ place.location || "—" }}</td>
           <td class="col-cat">{{ place.category || "—" }}</td>
           <td class="col-cost">{{ place.cost || "—" }}</td>
-          <td v-if="isAdmin" class="col-act">
+          <td v-if="loggedIn" class="col-act">
             <button class="row-action" @click="remove(place)" title="Delete">
               ×
             </button>
