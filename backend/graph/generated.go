@@ -118,6 +118,7 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		FileURL   func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Private   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -641,6 +642,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Message.ID(childComplexity), true
+	case "Message.private":
+		if e.ComplexityRoot.Message.Private == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Message.Private(childComplexity), true
 
 	case "Mutation.createActivity":
 		if e.ComplexityRoot.Mutation.CreateActivity == nil {
@@ -1559,6 +1566,8 @@ func (ec *executionContext) childFields_Message(ctx context.Context, field graph
 		return ec.fieldContext_Message_authorId(ctx, field)
 	case "fileUrl":
 		return ec.fieldContext_Message_fileUrl(ctx, field)
+	case "private":
+		return ec.fieldContext_Message_private(ctx, field)
 	case "createdAt":
 		return ec.fieldContext_Message_createdAt(ctx, field)
 	}
@@ -3348,6 +3357,29 @@ func (ec *executionContext) _Message_fileUrl(ctx context.Context, field graphql.
 }
 func (ec *executionContext) fieldContext_Message_fileUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Message", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Message_private(ctx context.Context, field graphql.CollectedField, obj *models.Message) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Message_private(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Private, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Message_private(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Message", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _Message_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Message) (ret graphql.Marshaler) {
@@ -8593,6 +8625,11 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 		case "fileUrl":
 			out.Values[i] = ec._Message_fileUrl(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "private":
+			out.Values[i] = ec._Message_private(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "createdAt":

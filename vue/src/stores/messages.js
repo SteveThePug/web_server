@@ -34,6 +34,10 @@ export const useMessagesStore = defineStore("messages", () => {
     socket.value.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.action === "delete") {
+          messages.value = messages.value.filter((m) => m.id !== data.id);
+          return;
+        }
         messages.value.push(data);
       } catch {
         messages.value.push({ text: event.data });
@@ -65,23 +69,30 @@ export const useMessagesStore = defineStore("messages", () => {
     isConnected.value = false;
   }
 
-  function sendMessage(text) {
+  function sendMessage(text, isPrivate = false) {
     if (!socket.value || !isConnected.value) return;
-    socket.value.send(JSON.stringify({ text }));
+    socket.value.send(JSON.stringify({ text, private: isPrivate }));
+  }
+
+  function deleteMessage(id) {
+    if (!socket.value || !isConnected.value) return;
+    socket.value.send(JSON.stringify({ action: "delete", id }));
   }
 
   function clearMessages() {
     messages.value = [];
   }
 
-  async function uploadAndSendFile(file) {
+  async function uploadAndSendFile(file, isPrivate = false) {
     try {
       const formData = new FormData();
       formData.append("file", file);
       const res = await axios.post("/api/messages/upload", formData);
       const { url } = res.data;
       if (!socket.value || !isConnected.value) return;
-      socket.value.send(JSON.stringify({ text: "", fileUrl: url }));
+      socket.value.send(
+        JSON.stringify({ text: "", fileUrl: url, private: isPrivate }),
+      );
     } catch (err) {
       lastError.value = err;
     }
@@ -97,6 +108,7 @@ export const useMessagesStore = defineStore("messages", () => {
     connect,
     disconnect,
     sendMessage,
+    deleteMessage,
     clearMessages,
     uploadAndSendFile,
   };

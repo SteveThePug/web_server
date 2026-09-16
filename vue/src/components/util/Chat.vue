@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import Button from "@/components/input/Button.vue";
+import ToggleButton from "@/components/input/ToggleButton.vue";
 import { useMessagesStore } from "@/stores/messages";
 import { useAuthStore } from "@/stores/auth";
 import Header from "@/components/text/Header.vue";
@@ -13,6 +14,8 @@ const messageInput = ref("");
 const messagesContainer = ref(null);
 const messagesInner = ref(null);
 const fileInput = ref(null);
+const isAdmin = computed(() => !!authStore.user.admin);
+const sendPrivate = ref(false);
 
 const isNearBottom = ref(true);
 const SCROLL_THRESHOLD = 100;
@@ -53,15 +56,30 @@ function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
   isNearBottom.value = true;
-  messagesStore.sendMessage(text);
+  messagesStore.sendMessage(text, isAdmin.value && sendPrivate.value);
   messageInput.value = "";
 }
+
+function deleteMessage(id) {
+  messagesStore.deleteMessage(id);
+}
+
+// Admin status is fixed when the socket connects (from the auth cookies), so
+// reconnect after a login/logout to pick up or drop private messages.
+watch(isAdmin, () => {
+  if (!messagesStore.isConnected) return;
+  messagesStore.disconnect();
+  messagesStore.connect();
+});
 
 async function onFileSelected(e) {
   const file = e.target.files[0];
   if (!file) return;
   isNearBottom.value = true;
-  await messagesStore.uploadAndSendFile(file);
+  await messagesStore.uploadAndSendFile(
+    file,
+    isAdmin.value && sendPrivate.value,
+  );
   fileInput.value.value = "";
 }
 
@@ -142,7 +160,25 @@ onUnmounted(() => {
           v-for="message in messages"
           :key="message.id"
           class="break-words min-w-0 w-full"
+          :class="{ 'text-secondary italic': message.private }"
         >
+          <button
+            v-if="isAdmin && message.id"
+            type="button"
+            class="text-tertiary hover:text-primary cursor-pointer mr-1"
+            aria-label="Delete message"
+            title="Delete message"
+            @click="deleteMessage(message.id)"
+          >
+            ×
+          </button>
+          <span
+            v-if="message.private"
+            class="text-tertiary"
+            title="Private: only admins can see this"
+            aria-label="Private message"
+            >🔒</span
+          >
           <span class="text-tertiary">{{ message.authorId }}:</span>
           <template
             v-for="(part, i) in parseMessageParts(message.text || '')"
@@ -197,6 +233,13 @@ onUnmounted(() => {
         class="hidden"
         @change="onFileSelected"
       />
+      <label
+        v-if="isAdmin"
+        class="flex items-center gap-2 py-1 text-sm text-secondary cursor-pointer"
+      >
+        <ToggleButton v-model="sendPrivate" />
+        <span>Private (admins only)</span>
+      </label>
       <div class="flex gap-2">
         <Button class="flex-1" @click="sendMessage">Send</Button>
         <Button

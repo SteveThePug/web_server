@@ -24,7 +24,11 @@ func (r *messageResolver) AuthorID(ctx context.Context, obj *models.Message) (in
 // Messages is the resolver for the messages field.
 func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error) {
 	var messages []models.Message
-	if err := r.Store.DB.Order("created_at DESC").Find(&messages).Error; err != nil {
+	query := r.Store.DB.Order("created_at DESC")
+	if !IsAdminFromCtx(ctx) {
+		query = query.Where("private = ?", false)
+	}
+	if err := query.Find(&messages).Error; err != nil {
 		return nil, err
 	}
 	result := make([]*models.Message, len(messages))
