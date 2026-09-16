@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
@@ -22,6 +21,18 @@ import (
 // restart.
 func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
 	state := ctx.Query("state")
+	// CSRF check: the state must be a nonce this process handed out from
+	// StartSpotifyAuth and has not seen come back yet. Without it, anyone who
+	// could get the site owner's browser to hit this URL with an attacker's
+	// authorisation code would bind the site to the attacker's Spotify
+	// account. The library also compares the state to the value passed below,
+	// but since that value is the one just received, this check is the real
+	// one.
+	if !store.ConsumeSpotifyState(state) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid state"})
+		return
+	}
+
 	// context.Background, not the request context: the client built below
 	// outlives this request and would otherwise be cancelled when it ends.
 	c := context.Background()
@@ -50,6 +61,24 @@ func (store *Store) CompleteSpotifyAuth(ctx *gin.Context) {
 	})
 }
 
+// StartSpotifyAuth backs the admin-only GET /spotify/auth. It returns the
+// Spotify authorisation URL carrying a freshly minted one-shot state nonce,
+// which CompleteSpotifyAuth then verifies and consumes.
+//
+// This exists because the state has to be per-request to be a CSRF defence,
+// and the start of the flow therefore has to be a request rather than a line
+// printed at start-up.
+func (store *Store) StartSpotifyAuth(ctx *gin.Context) {
+	state, err := store.NewSpotifyState()
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"url": store.SpotifyAuth.AuthURL(state)})
+}
+
 // ListeningTo backs GET /spotify/listening with the currently playing track.
 // A nil client means the OAuth flow has never been completed, reported here
 // as a 500.
@@ -71,26 +100,16 @@ func (store *Store) ListeningTo(ctx *gin.Context) {
 	ctx.JSON(200, playing)
 }
 
-// RecentlyPlayed backs GET /spotify/recent.
-//
-// It reads the cache but never writes it: only the GraphQL spotifyRecent
-// resolver populates Store.RecentSongs. So this endpoint serves cached data
-// only when a GraphQL query happened to fill the cache in the last minute,
-// and otherwise calls Spotify every time.
+// RecentlyPlayed backs GET /spotify/recent, serving the shared one-minute
+// cache. Both this endpoint and the GraphQL spotifyRecent resolver go through
+// RecentlyPlayedTracks, so either one can fill the cache for the other.
 func (store *Store) RecentlyPlayed(ctx *gin.Context) {
 	if store.SpotifyClient == nil {
 		ctx.JSON(500, gin.H{"error": "Spotify not authenticated"})
 		return
 	}
 
-	opts := spotify.RecentlyPlayedOptions{Limit: 3}
-
-	if store.RecentSongsFresh() {
-		ctx.JSON(200, *store.RecentSongs)
-		return
-	}
-
-	played, err := store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
+	played, err := store.RecentlyPlayedTracks(ctx)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(500, gin.H{"error": "failed to fetch recently played"})
@@ -100,17 +119,23 @@ func (store *Store) RecentlyPlayed(ctx *gin.Context) {
 	ctx.JSON(200, played)
 }
 
-// RecentSongsFresh reports whether the cached recently-played list is within
-// its one-minute TTL. An empty list counts as stale, so an empty listening
-// history is re-fetched every time.
-func (s *Store) RecentSongsFresh() bool {
-	if s.RecentSongs == nil {
-		return false
+// RecentlyPlayedTracks returns the last few played tracks, from the cache when
+// it is fresh and from Spotify otherwise — populating the cache in that case.
+//
+// This is the single fetch-and-cache path for recently-played data; the caller
+// must have checked SpotifyClient is non-nil.
+func (store *Store) RecentlyPlayedTracks(ctx context.Context) ([]spotify.RecentlyPlayedItem, error) {
+	if cached, ok := store.CachedRecentSongs(); ok {
+		return cached, nil
 	}
 
-	if len(*s.RecentSongs) == 0 {
-		return false
+	opts := spotify.RecentlyPlayedOptions{Limit: 3}
+	played, err := store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
+	if err != nil {
+		return nil, err
 	}
 
-	return time.Since(s.RecentSongsFetchedAt) < time.Minute
+	store.SetRecentSongs(played)
+
+	return played, nil
 }

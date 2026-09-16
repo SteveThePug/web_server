@@ -2,31 +2,21 @@
 /**
  * Admin form: create a blog post. Emits "done" on success and "cancel" when
  * dismissed, so the host (the Feed widget's modal, or Admin.vue) decides what to
- * close or refresh.
+ * close or refresh. The submit plumbing is shared via useCreateForm().
  */
 import Button from "@/components/input/Button.vue";
-import { ref } from "vue";
-import { gql } from "@/graphql";
+import { useCreateForm } from "@/js/useCreateForm";
+
 
 const emit = defineEmits(["done", "cancel"]);
 
-const title = ref("");
-const content = ref("");
-
-async function post() {
-  try {
-    const data = await gql(
-      `mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { id } }`,
-      { input: { title: title.value, content: content.value } },
-    );
-    title.value = "";
-    content.value = "";
-    console.log(data.createPost);
-    emit("done");
-  } catch (err) {
-    console.error(err);
-  }
-}
+const { values, submit: post } = useCreateForm({
+  mutation: `mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { id } }`,
+  fields: ["title", "content"],
+  resultKey: "createPost",
+  emit,
+});
+const { title, content } = values;
 </script>
 
 <template>

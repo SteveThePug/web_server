@@ -19,8 +19,9 @@
 #
 # apt lists are deleted in the SAME RUN layer so they never end up in the image.
 #
-# NO nginx.conf IS COPIED IN. All three templates are, and entrypoint.sh picks
-# one at container start. See nginx/entrypoint.sh for that decision.
+# NO nginx.conf IS COPIED IN. All three templates (plus the dev partial) are,
+# and entrypoint.sh picks one at container start. See nginx/entrypoint.sh for
+# that decision.
 # =============================================================================
 FROM nginx:1.27
 RUN rm -rf /etc/nginx/html/* && \
@@ -29,5 +30,9 @@ RUN rm -rf /etc/nginx/html/* && \
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY nginx_setup.conf.template /etc/nginx/nginx_setup.conf.template
 COPY nginx_dev.conf.template /etc/nginx/nginx_dev.conf.template
+# Shared body of the dev :80 and :443 server blocks. entrypoint.sh renders it
+# (same envsubst allow-list) to /etc/nginx/nginx_dev_common.conf, which is the
+# path both `include` directives in nginx_dev.conf.template point at.
+COPY nginx_dev_common.conf.template /etc/nginx/nginx_dev_common.conf.template
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

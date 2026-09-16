@@ -1,11 +1,11 @@
 <script setup>
 /**
  * Clock and date widget. updateDateTime() runs once immediately and then every
- * minute. Note the interval is module-level and never cleared — harmless because
- * the widget lives for the life of the home page, but it would leak if reused.
+ * minute, with the interval owned by the component lifecycle so it is cleared
+ * on unmount.
  */
 import Header from "@/components/text/Header.vue";
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 
 const time = ref("");
 const weekday = ref("");
@@ -25,7 +25,15 @@ function updateDateTime() {
 
 updateDateTime();
 
-setInterval(updateDateTime, 60000);
+let intervalId;
+
+onMounted(() => {
+  intervalId = setInterval(updateDateTime, 60000);
+});
+
+onUnmounted(() => {
+  clearInterval(intervalId);
+});
 </script>
 
 <template>

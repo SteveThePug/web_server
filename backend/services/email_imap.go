@@ -136,27 +136,35 @@ func (c *imapClient) readLiteral(size int) (string, error) {
 	return string(buf), nil
 }
 
+// fetchPart is one FETCH response line plus the literal payload that followed
+// it, if any. Pairing them in the type removes the need for callers to walk an
+// interleaved slice and manually skip every second entry — the previous shape,
+// where a literal was simply the next element and a caller that forgot to
+// advance would parse message bytes as a protocol line.
+type fetchPart struct {
+	Line string
+	// Literal is the payload that followed Line, valid only when HasLiteral.
+	Literal    string
+	HasLiteral bool
+}
+
 // sendFetch sends a FETCH and collects its response, handling literals.
-//
-// The returned slice interleaves protocol lines with literal payloads: when a
-// line ends in "{N}" the next entry is the N bytes that followed it. The
-// caller (fetchEmailsIMAP) relies on that pairing.
 //
 // The literal is detected with LastIndex("{") plus a "}" suffix rather than a
 // real parse, so a line whose text merely ends in braces could be misread —
 // tolerable because only FETCH responses reach this code.
-func (c *imapClient) sendFetch(cmd string) ([]string, error) {
+func (c *imapClient) sendFetch(cmd string) ([]fetchPart, error) {
 	tag := c.nextTag()
 	_, err := fmt.Fprintf(c.conn, "%s %s\r\n", tag, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	var lines []string
+	var parts []fetchPart
 	for {
 		line, err := c.readLine()
 		if err != nil {
-			return lines, err
+			return parts, err
 		}
 
 		// Check for literal marker {N} at end of line
@@ -166,23 +174,22 @@ func (c *imapClient) sendFetch(cmd string) ([]string, error) {
 			if _, err := fmt.Sscanf(sizeStr, "%d", &size); err == nil && size > 0 {
 				literal, err := c.readLiteral(size)
 				if err != nil {
-					return lines, fmt.Errorf("reading literal of %d bytes: %w", size, err)
+					return parts, fmt.Errorf("reading literal of %d bytes: %w", size, err)
 				}
-				lines = append(lines, line)
-				lines = append(lines, literal)
+				parts = append(parts, fetchPart{Line: line, Literal: literal, HasLiteral: true})
 				continue
 			}
 		}
 
 		if strings.HasPrefix(line, tag+" ") {
 			// Check for OK
-			parts := strings.SplitN(line, " ", 3)
-			if len(parts) >= 2 && parts[1] != "OK" {
-				return lines, fmt.Errorf("FETCH failed: %s", line)
+			fields := strings.SplitN(line, " ", 3)
+			if len(fields) >= 2 && fields[1] != "OK" {
+				return parts, fmt.Errorf("FETCH failed: %s", line)
 			}
-			return lines, nil
+			return parts, nil
 		}
-		lines = append(lines, line)
+		parts = append(parts, fetchPart{Line: line})
 	}
 }
 
@@ -245,33 +252,24 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 	// sequence set, and each full body is held in memory. A mailbox with a
 	// very busy day could make this large — there is no batching.
 	seqSet := strings.Join(seqNums, ",")
-	fetchLines, err := c.sendFetch(fmt.Sprintf("FETCH %s (BODY[])", seqSet))
+	fetchParts, err := c.sendFetch(fmt.Sprintf("FETCH %s (BODY[])", seqSet))
 	if err != nil {
 		return nil, fmt.Errorf("IMAP fetch: %w", err)
 	}
 
-	// Pair each "... BODY[] {N}" header line with the literal that sendFetch
-	// stored immediately after it. A message that fails to parse is logged and
-	// skipped rather than failing the whole sync.
+	// Each body arrives as a "... BODY[] {N}" line carrying its literal, so
+	// the pairing is now part of the value rather than something this loop has
+	// to reconstruct by skipping entries. A message that fails to parse is
+	// logged and skipped rather than failing the whole sync.
 	var messages []graphMessage
-	for i := 0; i < len(fetchLines); i++ {
-		line := fetchLines[i]
-		// Look for a literal following this line
-		if strings.Contains(line, "BODY[]") && strings.HasSuffix(line, "}") {
-			if i+1 < len(fetchLines) {
-				raw := fetchLines[i+1]
-				// Advance past the literal so its contents are never
-				// examined as a protocol line. Note this is a C-style loop
-				// precisely so i can be advanced here; a range loop could
-				// not do it.
-				i++
-				gm, err := parseRawEmail(raw)
-				if err != nil {
-					log.Printf("[EmailSync/IMAP] Error parsing email: %v", err)
-					continue
-				}
-				messages = append(messages, gm)
+	for _, part := range fetchParts {
+		if part.HasLiteral && strings.Contains(part.Line, "BODY[]") {
+			gm, err := parseRawEmail(part.Literal)
+			if err != nil {
+				log.Printf("[EmailSync/IMAP] Error parsing email: %v", err)
+				continue
 			}
+			messages = append(messages, gm)
 		}
 	}
 

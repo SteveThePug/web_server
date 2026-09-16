@@ -3,31 +3,17 @@
  * Admin form: create a categorised bookmark. Emits "done"/"cancel".
  */
 import Button from "@/components/input/Button.vue";
-import { ref } from "vue";
-import { gql } from "@/graphql";
+import { useCreateForm } from "@/js/useCreateForm";
+
 
 const emit = defineEmits(["done", "cancel"]);
 
-const category = ref("");
-const name = ref("");
-const link = ref("");
-
-async function submit() {
-  try {
-    await gql(
-      `mutation CreateBookmark($input: CreateBookmarkInput!) { createBookmark(input: $input) { id } }`,
-      {
-        input: { category: category.value, name: name.value, link: link.value },
-      },
-    );
-    category.value = "";
-    name.value = "";
-    link.value = "";
-    emit("done");
-  } catch (err) {
-    console.error(err);
-  }
-}
+const { values, submit } = useCreateForm({
+  mutation: `mutation CreateBookmark($input: CreateBookmarkInput!) { createBookmark(input: $input) { id } }`,
+  fields: ["category", "name", "link"],
+  emit,
+});
+const { category, name, link } = values;
 </script>
 
 <template>

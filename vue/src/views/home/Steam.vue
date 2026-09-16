@@ -1,42 +1,32 @@
 <script setup>
 /**
  * Steam widget on /stp: online status plus a rotation through recent games
- * (5s rotation, 5-minute re-poll). `loaded` comes from homeData so the widget can
- * tell "not fetched yet" from "fetched, nothing to show".
+ * (5s rotation, 5-minute re-poll, both from useRotation()). `loaded` comes from
+ * homeData so the widget can tell "not fetched yet" from "fetched, nothing to
+ * show".
  */
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useSteamStore } from "@/stores/steam";
 import { useHomeDataStore } from "@/stores/homeData";
 import Header from "@/components/text/Header.vue";
+import { useRotation } from "@/js/useRotation";
+
+const ROTATE_MS = 5000;
+const REFRESH_MS = 5 * 60 * 1000;
 
 const steamStore = useSteamStore();
 const { steamStatus } = storeToRefs(steamStore);
 const homeData = useHomeDataStore();
 const { loaded } = storeToRefs(homeData);
 
-const idx = ref(0);
+const { idx, next: nextGame } = useRotation(
+  () => steamStatus.value.recentGames,
+  ROTATE_MS,
+  { refresh: () => steamStore.fetchSteam(), refreshMs: REFRESH_MS },
+);
+
 const game = computed(() => steamStatus.value.recentGames[idx.value]);
-
-let nextId = null;
-let refreshId = null;
-
-function nextGame() {
-  clearTimeout(nextId);
-  nextId = setTimeout(nextGame, 5000);
-  if (steamStatus.value.recentGames.length) {
-    idx.value = (idx.value + 1) % steamStatus.value.recentGames.length;
-  }
-}
-
-onMounted(() => {
-  nextId = setTimeout(nextGame, 5000);
-  refreshId = setInterval(() => steamStore.fetchSteam(), 5 * 60 * 1000);
-});
-onUnmounted(() => {
-  clearTimeout(nextId);
-  clearInterval(refreshId);
-});
 
 function formatHours(minutes) {
   const hrs = (minutes / 60).toFixed(1);

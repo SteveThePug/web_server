@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/rwcarlsen/goexif/exif"
 
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Rowing log. The interesting endpoint is CreateRowing: rather than a form,
@@ -109,12 +111,20 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 
 	// Duplicate guard: two photos of the same session share an EXIF capture
 	// time to the second. Checked before the Claude call so a re-upload costs
-	// nothing. Note this reads err == nil as "found" — an actual database
-	// error is indistinguishable from "no match" here and lets the insert
-	// proceed.
+	// nothing.
+	//
+	// Fails closed: only gorm.ErrRecordNotFound means "no duplicate". Any
+	// other error is a real database problem, and treating it as "not found"
+	// would both insert a duplicate and spend a paid Claude call to do it.
 	var existing models.Rowing
-	if err := store.DB.Where("date = ?", dateTaken).First(&existing).Error; err == nil {
+	err = store.DB.Where("date = ?", dateTaken).First(&existing).Error
+	switch {
+	case err == nil:
 		ctx.JSON(http.StatusConflict, gin.H{"error": "duplicate entry for this date"})
+		return
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
@@ -158,15 +168,10 @@ No text, no markdown, no explanation. Just the JSON object.`),
 	}
 
 	// Strip a markdown code fence if the model wrapped its JSON in one
-	// despite the prompt. Same defensive dance as in services/email_sync.go.
+	// despite the prompt; shared with the email pipeline, which asks for bare
+	// JSON in the same way and gets fenced output just as often.
 	extractedData := ExtractedRowingData{}
-	raw := message.Content[0].Text
-
-	raw = strings.TrimSpace(raw)
-	raw = strings.TrimPrefix(raw, "```json")
-	raw = strings.TrimPrefix(raw, "```")
-	raw = strings.TrimSuffix(raw, "```")
-	raw = strings.TrimSpace(raw)
+	raw := services.StripMarkdownFence(message.Content[0].Text)
 
 	err = json.Unmarshal([]byte(raw), &extractedData)
 	if err != nil {

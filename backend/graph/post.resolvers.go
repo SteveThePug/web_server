@@ -85,9 +85,13 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (*models.Post
 		return nil, fmt.Errorf("you can only delete your own posts")
 	}
 
-	// Soft delete; the error is dropped, so a failed delete still reports
-	// success to the client.
-	r.Store.DB.Delete(&post)
+	// Soft delete. The error is propagated: reporting success for a delete
+	// that did not happen would leave the client showing the post as gone
+	// until the next reload.
+	if err := r.Store.DB.Delete(&post).Error; err != nil {
+		return nil, err
+	}
+
 	return &post, nil
 }
 
@@ -105,14 +109,7 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*models.Post, error) {
 	if err := r.Store.DB.Preload("Author").Order("created_at DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &posts[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.Post, len(posts))
-	for i := range posts {
-		result[i] = &posts[i]
-	}
-	return result, nil
+	return ptrs(posts), nil
 }
 
 // Post is the resolver for the post field.

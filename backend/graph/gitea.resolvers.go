@@ -7,7 +7,6 @@ package graph
 
 import (
 	"context"
-	"time"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/services"
@@ -17,8 +16,8 @@ import (
 func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error) {
 	// One-minute cache on the Store, shared by every visitor, so a busy home
 	// page does not hammer the Gitea container.
-	if r.Store.GiteaFeedFresh() {
-		return mapGiteaFeed(r.Store.GiteaFeed), nil
+	if cached, ok := r.Store.CachedGiteaFeed(); ok {
+		return mapGiteaFeed(cached), nil
 	}
 
 	feed, err := services.FetchLatestFeed(r.Store.GiteaHost, r.Store.GiteaPort)
@@ -33,8 +32,7 @@ func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, er
 		return nil, nil
 	}
 
-	r.Store.GiteaFeed = feed
-	r.Store.GiteaFeedFetchedAt = time.Now()
+	r.Store.SetGiteaFeed(feed)
 
 	return mapGiteaFeed(feed), nil
 }

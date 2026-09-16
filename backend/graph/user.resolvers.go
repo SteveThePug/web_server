@@ -92,14 +92,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
 	if err := r.Store.DB.Find(&users).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &users[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.User, len(users))
-	for i := range users {
-		result[i] = &users[i]
-	}
-	return result, nil
+	return ptrs(users), nil
 }
 
 // User is the resolver for the user field.

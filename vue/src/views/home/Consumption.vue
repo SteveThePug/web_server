@@ -1,15 +1,11 @@
 <script setup>
 /**
  * "Consumption" widget on /stp (books/films/games logged as activities). Same
- * shape as Favorites.vue: AutoScroll list + admin-only lazy create form.
+ * shape as Favorites.vue — both are ListWidget.vue with a different store.
  */
-import AutoScroll from "@/components/util/AutoScroll.vue";
-import Modal from "@/components/util/Modal.vue";
-import LinkTable from "@/components/util/LinkTable.vue";
-import Header from "@/components/text/Header.vue";
-import CreateToggle from "@/components/input/CreateToggle.vue";
+import ListWidget from "@/views/home/ListWidget.vue";
 
-import { ref, defineAsyncComponent } from "vue";
+import { defineAsyncComponent } from "vue";
 import { useActivityStore } from "@/stores/activity";
 
 const CreateActivity = defineAsyncComponent(
@@ -17,27 +13,12 @@ const CreateActivity = defineAsyncComponent(
 );
 
 const activityStore = useActivityStore();
-const showCreate = ref(false);
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
-    <Header>
-      Consumption
-      <template #action><CreateToggle v-model="showCreate" /></template>
-    </Header>
-    <AutoScroll class="flex-1 w-full">
-      <LinkTable
-        variant="table"
-        class="w-full"
-        :items="activityStore.activity"
-      />
-    </AutoScroll>
-    <Modal v-model="showCreate">
-      <CreateActivity
-        @done="showCreate = false"
-        @cancel="showCreate = false"
-      />
-    </Modal>
-  </div>
+  <ListWidget
+    title="Consumption"
+    :items="activityStore.activity"
+    :create-form="CreateActivity"
+  />
 </template>

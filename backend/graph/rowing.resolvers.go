@@ -17,14 +17,7 @@ func (r *queryResolver) RowingSessions(ctx context.Context) ([]*models.Rowing, e
 	if err := r.Store.DB.Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &rows[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.Rowing, len(rows))
-	for i := range rows {
-		result[i] = &rows[i]
-	}
-	return result, nil
+	return ptrs(rows), nil
 }
 
 // ID is the resolver for the id field.

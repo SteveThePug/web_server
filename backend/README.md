@@ -150,9 +150,16 @@ generated struct rather than the model you expected.
   are benign (at worst a duplicate upstream fetch), but do not add a field
   there that would be unsafe to tear.
 - **Claude output is parsed as JSON** after stripping a possible markdown code
-  fence, in both `handle_rowing.go` and `email_sync.go`.
-- **The email pipeline never retries.** A failed email is recorded with action
-  `"error"` so the next sync skips it.
+  fence — via the shared `services.StripMarkdownFence`, used by both
+  `handle_rowing.go` and `email_sync.go`.
+- **The email pipeline retries a failure up to `maxEmailAttempts` (3) times.**
+  A failed email is recorded with action `"error"` and an attempt counter;
+  while it has attempts left the next sync reprocesses it and updates the same
+  row. Because the fetch window is anchored to *processing* time, which has
+  already moved past the failure, the sync also rewinds the window to the
+  oldest retryable row's `ReceivedAt` — otherwise the email could never be
+  re-fetched. Once the cap is reached the row is terminal, so an email Claude
+  can never parse stops costing API calls.
 - **Authenticating email after start-up does not start the scheduler**, which
   only checks readiness once — restart, or trigger syncs by hand.
 - **Introspection and the playground are off** unless `DEV_MODE=true` *and*

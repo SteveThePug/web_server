@@ -4,7 +4,8 @@ Ported from ~/cheap_hotel/cheap_travelodge.py. The pricing logic is unchanged;
 the plumbing around it has been rewritten for speed:
 
   * Travelodge result pages are fetched in parallel batches.
-  * TfL journeys are fetched by a worker pool, throttled to the anonymous API
+  * TfL journeys are fetched by one flat worker pool (every hotel/query pair is
+    submitted to it and results gathered per hotel), throttled to the anonymous API
     limit (50 requests/min; 500/min with TFL_APP_KEY) and cached for a while
     so repeat searches don't spend the budget again.
   * `run_search` is a generator that yields the hotel list first and then one
@@ -44,7 +45,7 @@ Fragility
 
 Concurrency
   Everything here is thread-based (requests is blocking), not asyncio. Module
-  state - the two response caches, the rate limiters and the shared
+  state - the two :class:`TTLCache` response caches, the rate limiters and the shared
   requests.Session - is process-global and guarded by plain locks, so it is
   shared across concurrent FastAPI requests. main.py additionally allows only
   one live search at a time, which is what keeps the TfL budget spendable by a
@@ -122,7 +123,6 @@ TL_MAX_START = 500
 # TfL: anonymous callers get 50 requests/min, keyed callers 500/min. A call
 # normally takes 1-5s; the odd one hangs, so time out early and retry.
 TFL_WORKERS = 12
-TFL_HOTEL_WORKERS = 4
 TFL_TIMEOUT_S = 15
 TFL_RATE_ANON = 48
 TFL_RATE_KEYED = 450
@@ -147,6 +147,62 @@ _session.mount(
 
 class UpstreamError(Exception):
     """Travelodge or TfL could not be reached or returned garbage."""
+
+
+class TTLCache:
+    """A small thread-safe dict with per-entry expiry, shared by every cache here.
+
+    There used to be three hand-rolled copies of this (Travelodge results, TfL
+    journeys, and main.py's response cache) whose eviction rules genuinely
+    differed, so the differences are constructor parameters rather than being
+    quietly unified:
+
+      * ``ttl_s`` - how long a stored value stays fresh.
+      * ``max_entries`` - hard cap on size, or None for unbounded. Eviction is
+        *insertion order*, not LRU: dicts keep insertion order, so dropping the
+        first key drops the oldest *written* entry regardless of recent reads.
+      * ``sweep_above`` - only walk the whole dict looking for expired entries
+        once it holds more than this many. 0 (the default) means sweep on every
+        write; a large value keeps the common path O(1) for a big cache whose
+        entries are cheap to keep around.
+
+    Expiry is by :func:`time.monotonic`, so a wall-clock change cannot make an
+    entry immortal. Values are returned by reference and callers must treat them
+    as read-only.
+    """
+
+    def __init__(self, ttl_s: float, max_entries: int | None = None, sweep_above: int = 0) -> None:
+        self.ttl_s = ttl_s
+        self.max_entries = max_entries
+        self.sweep_above = sweep_above
+        self._store: dict = {}
+        self._lock = threading.Lock()
+
+    def get(self, key):
+        """Return the value stored for `key`, or None if absent or expired."""
+        now = time.monotonic()
+        with self._lock:
+            hit = self._store.get(key)
+            if hit and hit[0] > now:
+                return hit[1]
+        return None
+
+    def set(self, key, value) -> None:
+        """Store `value` for `key` for ttl_s seconds, evicting as configured."""
+        with self._lock:
+            now = time.monotonic()
+            if len(self._store) > self.sweep_above:
+                for k in [k for k, (exp, _) in self._store.items() if exp <= now]:
+                    del self._store[k]
+            if self.max_entries is not None:
+                # >= because this write is about to add one more entry.
+                while len(self._store) >= self.max_entries and key not in self._store:
+                    del self._store[next(iter(self._store))]
+            self._store[key] = (now + self.ttl_s, value)
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._store)
 
 
 # --------------------------------------------------------------------------- #
@@ -355,8 +411,9 @@ def normalise_hotel(h: dict) -> dict:
     }
 
 
-_tl_cache = {}  # (location, checkin, checkout, rooms) -> (expires_at, [normalised hotel dicts])
-_tl_cache_lock = threading.Lock()
+# (location, checkin, checkout, rooms) -> [normalised hotel dicts]. Bounded by
+# count, and expired entries are swept on every write (the cache is small).
+_tl_cache = TTLCache(TL_CACHE_TTL_S, max_entries=TL_CACHE_MAX)
 
 
 def hotels_for(location, checkin, checkout, rooms, deadline=None):
@@ -368,27 +425,15 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
     # "central london " share one cache entry; rooms must be hashable, hence
     # the tuple.
     key = (location.strip().lower(), checkin, checkout, tuple(rooms))
-    now = time.monotonic()
-    with _tl_cache_lock:
-        hit = _tl_cache.get(key)
-        if hit and hit[0] > now:
-            return hit[1]
+    hit = _tl_cache.get(key)
+    if hit is not None:
+        return hit
 
-    # Deliberately outside the lock: a slow upstream fetch must not block other
-    # threads reading the cache. Two threads racing on the same key both fetch
-    # and the second write wins, which is harmless.
+    # The fetch deliberately happens outside any cache lock: a slow upstream
+    # must not block other threads reading the cache. Two threads racing on the
+    # same key both fetch and the second write wins, which is harmless.
     hotels = [normalise_hotel(h) for h in fetch_hotels(location, checkin, checkout, rooms, deadline=deadline)]
-
-    with _tl_cache_lock:
-        now = time.monotonic()
-        expired = [k for k, (exp, _) in _tl_cache.items() if exp <= now]
-        for k in expired:
-            del _tl_cache[k]
-        # Bounded, not LRU: dicts preserve insertion order, so evicting the
-        # first key drops the oldest *written* entry regardless of recent reads.
-        while len(_tl_cache) >= TL_CACHE_MAX:
-            del _tl_cache[next(iter(_tl_cache))]
-        _tl_cache[key] = (now + TL_CACHE_TTL_S, hotels)
+    _tl_cache.set(key, hotels)
     return hotels
 
 
@@ -574,8 +619,10 @@ def _limiter(app_key: str | None) -> RateLimiter:
         return lim
 
 
-_tfl_cache = {}  # key -> (expires_at, journeys)
-_tfl_cache_lock = threading.Lock()
+# journey key -> journeys. Unbounded on purpose (entries are small and a long
+# scan wants them all), so expired entries are only swept once it is large,
+# keeping the common write O(1).
+_tfl_cache = TTLCache(TFL_CACHE_TTL_S, sweep_above=5000)
 
 
 def sleep_within(seconds, deadline):
@@ -587,8 +634,15 @@ def sleep_within(seconds, deadline):
     return True
 
 
-def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None) -> list[dict]:
-    """Journeys from TfL for one origin/destination/time/mode, cached and rate limited.
+def _tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None) -> tuple[list[dict], bool]:
+    """Journeys from TfL, plus whether the call was abandoned on the deadline.
+
+    Same contract as :func:`tfl_journeys` but returns (journeys, abandoned).
+    `abandoned` is True only when every attempt was given up because the
+    deadline was too close (no slot from the rate limiter, no time left for the
+    request, or a backoff sleep that would overrun it). It is False for a
+    genuine "TfL has no route/fare here" answer, which is what lets the caller
+    tell those two cases apart instead of guessing from the clock.
 
     Args:
         frm, to: (lat, lon) tuples; TfL accepts raw coordinates in the path.
@@ -622,11 +676,9 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     # from the key on purpose: the route and fare do not depend on it.
     key = (round(frm[0], 5), round(frm[1], 5), round(to[0], 5), round(to[1], 5), params["date"], params["time"],
            tuple(sorted((extra or {}).items())))
-    now = time.monotonic()
-    with _tfl_cache_lock:
-        hit = _tfl_cache.get(key)
-        if hit and hit[0] > now:
-            return hit[1]
+    hit = _tfl_cache.get(key)
+    if hit is not None:
+        return hit, False
 
     if app_key:
         params["app_key"] = app_key
@@ -672,17 +724,37 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     # without caching so a later, less rushed call can try again. An empty list
     # from a *successful* response is cached - "no route" is a real answer.
     if journeys is None:
-        return []
-    with _tfl_cache_lock:
-        # Sweep expired entries only once the cache is large, so the common path
-        # stays O(1); TFL_CACHE_TTL_S is long because journey times and fares
-        # for a fixed date/time do not change.
-        if len(_tfl_cache) > 5000:
-            expired = [k for k, (exp, _) in _tfl_cache.items() if exp <= now]
-            for k in expired:
-                del _tfl_cache[k]
-        _tfl_cache[key] = (time.monotonic() + TFL_CACHE_TTL_S, journeys)
-    return journeys
+        return [], True
+    # TFL_CACHE_TTL_S is long because journey times and fares for a fixed
+    # date/time do not change.
+    _tfl_cache.set(key, journeys)
+    return journeys, False
+
+
+def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None) -> list[dict]:
+    """Journeys from TfL for one origin/destination/time/mode, cached and rate limited.
+
+    Args:
+        frm, to: (lat, lon) tuples; TfL accepts raw coordinates in the path.
+        when: naive :class:`datetime` of the intended departure, London local
+            time (TfL interprets it as such; no timezone is sent).
+        extra: additional query parameters, e.g. ``{"mode": "bus,walking"}`` to
+            force a bus-only route or ``{"mode": "cycle"}`` for cycle routing.
+        app_key: TfL API key from the TFL_APP_KEY env var, or None for the
+            anonymous tier.
+        retries: attempts before giving up.
+        deadline: time.monotonic() value bounding the whole call.
+
+    Returns:
+        The ``journeys`` array, or [] on any failure. This function never
+        raises: a missing route and a dead API look the same to the caller, who
+        simply ends up with no priced option for that hotel. That is deliberate
+        - one flaky lookup should not abort a 40-hotel search - but it does mean
+        a total TfL outage shows up in the UI as "no TfL fare found" rather than
+        as an error. Callers that need to tell "no route" from "abandoned on the
+        deadline" apart should call :func:`_tfl_journeys` instead.
+    """
+    return _tfl_journeys(frm, to, when, extra, app_key, retries, deadline)[0]
 
 
 # Two journey queries per hotel, because TfL's default "LeastTime" answer is
@@ -693,23 +765,16 @@ TRANSPORT_QUERIES = (("fast", None), ("bus", {"mode": "bus,walking"}))
 CYCLE_QUERY = {"mode": "cycle"}
 
 
-def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, app_key=None, deadline=None, pool=None):
-    """Cheapest acceptable round-trip transport to a hotel.
+def _score_transport(results, adults, railcard_holders, max_minutes):
+    """Pick the cheapest acceptable option out of already-fetched journeys.
 
     Args:
-        origin: (lat, lon) of the journey start.
-        hotel: normalised hotel dict; only lat/lon are read.
-        when: departure datetime for the outbound leg.
+        results: iterable of (label, journeys) - the "fast" and "bus" answers
+            from TfL, in any order.
         adults, railcard_holders: party makeup, passed to :func:`price_journey`.
-        max_minutes: routes slower than this are rejected - unless *every*
-            route is slower, in which case the fastest is kept so the hotel
-            still gets a price rather than vanishing from the results.
-        app_key: TfL key or None.
-        deadline: time.monotonic() budget.
-        pool: optional executor; the two queries are independent, so running
-            them concurrently halves the latency per hotel. Note this pool is
-            shared with the caller's other work, so it must never be sized 1 or
-            the map below can deadlock behind its own parent task.
+        max_minutes: routes slower than this are rejected - unless *every* route
+            is slower, in which case the fastest is kept so the hotel still gets
+            a price rather than vanishing from the results.
 
     Returns:
         The chosen option as a dict with keys ``kind`` ("fast"/"bus"),
@@ -718,20 +783,11 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
         the UI can show the speed/price trade-off. None if nothing was priceable.
 
     Ties are broken by duration, so two equally cheap routes resolve to the
-    quicker one.
+    quicker one. This is pure - no network, no clock - which is what lets the
+    fetching be reorganised without touching the pricing rules.
     """
-    dest = (hotel["lat"], hotel["lon"])
-
-    def query(q):
-        return tfl_journeys(origin, dest, when, q[1], app_key, deadline=deadline)
-
-    if pool is not None:
-        results = list(pool.map(query, TRANSPORT_QUERIES))
-    else:
-        results = [query(q) for q in TRANSPORT_QUERIES]
-
     options = []
-    for (label, _), journeys in zip(TRANSPORT_QUERIES, results):
+    for label, journeys in results:
         for j in journeys:
             if not isinstance(j.get("duration"), int):
                 continue
@@ -756,6 +812,41 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
     cheapest["fastest_total_p"] = fastest["total_p"]
     cheapest["fastest_route"] = fastest["route"]
     return cheapest
+
+
+def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, app_key=None, deadline=None, pool=None):
+    """Cheapest acceptable round-trip transport to a single hotel.
+
+    Convenience wrapper: fetch both TfL queries for one hotel, then score them
+    with :func:`_score_transport` (see there for the return shape and the
+    selection rules). :func:`_price_hotels` does not use this - it submits every
+    (hotel, query) pair to one flat pool instead - so this is the one-off path.
+
+    Args:
+        origin: (lat, lon) of the journey start.
+        hotel: normalised hotel dict; only lat/lon are read.
+        when: departure datetime for the outbound leg.
+        adults, railcard_holders: party makeup.
+        max_minutes: slowest acceptable route, softened as described above.
+        app_key: TfL key or None.
+        deadline: time.monotonic() budget.
+        pool: optional executor used to run the two independent queries
+            concurrently. Only pass a pool this call is not itself running
+            inside, or the map below can block behind its own parent task.
+    """
+    dest = (hotel["lat"], hotel["lon"])
+
+    def query(q):
+        return tfl_journeys(origin, dest, when, q[1], app_key, deadline=deadline)
+
+    if pool is not None:
+        results = list(pool.map(query, TRANSPORT_QUERIES))
+    else:
+        results = [query(q) for q in TRANSPORT_QUERIES]
+    return _score_transport(
+        [(label, journeys) for (label, _), journeys in zip(TRANSPORT_QUERIES, results)],
+        adults, railcard_holders, max_minutes,
+    )
 
 
 def cycle_time(origin, hotel, when, app_key, deadline=None, journeys=None):
@@ -883,52 +974,81 @@ def _make_row(h: dict, origin: tuple[float, float]) -> dict:
 def _price_hotels(hotels, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline):
     """Price TfL transport for each hotel, cheapest rooms first.
 
-    Generator of (code, transport_or_None, cycle_or_None, timed_out) in the order
-    TfL answers. Owns the worker pools; leftover work is cancelled if the
+    Generator of (code, transport_or_None, cycle_or_None, timed_out) in the
+    order TfL answers. Owns the worker pool; leftover work is cancelled if the
     consumer stops early.
 
-    Two pools, not one: `hotel_pool` runs at most TFL_HOTEL_WORKERS hotels at a
-    time and each of those tasks submits its own sub-queries to the larger
-    `tfl_pool`. Sharing one pool would let the hotel tasks fill every slot and
-    then block waiting for sub-tasks that can never be scheduled - a classic
-    executor deadlock.
+    One flat pool, not nested ones: every (hotel, query) pair - the two fare
+    queries plus, with an app key, the cycle query - is submitted to a single
+    executor and the results are gathered per hotel as they land. An earlier
+    version ran hotels in one pool and their sub-queries in another, which is
+    only deadlock-free while both pools are bigger than one worker and the
+    nesting is exactly two deep; nothing here waits on the pool from inside the
+    pool any more, so that hazard is gone by construction. Submission order is
+    still cheapest room first, so the most useful rows are asked for first, and
+    the shared :class:`RateLimiter` - not the pool size - is what keeps the run
+    inside TfL's per-minute budget.
 
-    `timed_out` distinguishes "TfL has no fare for this hotel" from "we ran out
-    of time before asking", which the caller surfaces as summary["truncated"].
-    Note it is inferred from the clock at completion time rather than reported
-    by the worker, so it can misattribute a genuine no-fare result that happens
-    to land after the deadline.
+    `timed_out` means "we gave up on the deadline before getting an answer", as
+    reported by :func:`_tfl_journeys`, not inferred from the clock: a hotel TfL
+    genuinely cannot price is reported with timed_out False even if its answer
+    happens to arrive after the deadline. It is True when the hotel ended up
+    unpriced and at least one of its queries was abandoned, since in that case
+    we never really finished asking. The caller surfaces it as the
+    "not priced (time limit)" route and summary["truncated"].
 
     The cancel loop in `finally` is best-effort - it only stops tasks that have
-    not started - and the `with` blocks still join running workers, so an
+    not started - and the `with` block still joins running workers, so an
     abandoned stream takes up to one in-flight TfL timeout to unwind.
     """
-    with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
-            ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
-
-        def price(h):
-            # Kick off the cycle lookup first so it overlaps the fare lookups.
-            cycle_fut = None
+    with ThreadPoolExecutor(max_workers=TFL_WORKERS) as pool:
+        pending = {}   # code -> {hotel, fares: {label: (journeys, abandoned)}, left, cycle future}
+        owner = {}     # future -> (code, label)
+        for h in hotels:
+            code = h["code"]
+            if code in pending:  # a hotel is priced once even if it is listed twice
+                continue
+            dest = (h["lat"], h["lon"])
+            entry = {"hotel": h, "fares": {}, "left": len(TRANSPORT_QUERIES), "cycle": None}
+            pending[code] = entry
+            for label, extra in TRANSPORT_QUERIES:
+                fut = pool.submit(_tfl_journeys, origin, dest, depart_dt, extra, app_key, deadline=deadline)
+                owner[fut] = (code, label)
             if app_key:
-                cycle_fut = tfl_pool.submit(
-                    tfl_journeys, origin, (h["lat"], h["lon"]), depart_dt, CYCLE_QUERY, app_key, deadline=deadline
+                # Cycle routing costs a third rate-limited request, so it is
+                # only asked for when a key lifts the anonymous budget.
+                entry["cycle"] = pool.submit(
+                    _tfl_journeys, origin, dest, depart_dt, CYCLE_QUERY, app_key, 1, deadline
                 )
-            t = best_transport(origin, h, depart_dt, adults, railcard_holders, max_travel_min, app_key,
-                               deadline=deadline, pool=tfl_pool)
-            cyc = None
-            if cycle_fut is not None:
-                cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline, journeys=cycle_fut.result())
-            return h["code"], t, cyc
 
-        futures = [hotel_pool.submit(price, h) for h in hotels]
         try:
-            for fut in as_completed(futures):
-                code, t, cyc = fut.result()
-                timed_out = t is None and time.monotonic() >= deadline
-                yield code, t, cyc, timed_out
+            for fut in as_completed(list(owner)):
+                code, label = owner[fut]
+                entry = pending[code]
+                entry["fares"][label] = fut.result()
+                entry["left"] -= 1
+                if entry["left"]:
+                    continue  # this hotel's other query is still outstanding
+                h = entry["hotel"]
+                t = _score_transport(
+                    [(lbl, entry["fares"][lbl][0]) for lbl, _ in TRANSPORT_QUERIES],
+                    adults, railcard_holders, max_travel_min,
+                )
+                abandoned = any(entry["fares"][lbl][1] for lbl, _ in TRANSPORT_QUERIES)
+                cyc = None
+                if entry["cycle"] is not None:
+                    # Already submitted above, so this wait is usually over by
+                    # now; waiting here (in the consumer, never in a worker) is
+                    # safe with a single flat pool.
+                    cyc = cycle_time(origin, h, depart_dt, app_key, deadline=deadline,
+                                     journeys=entry["cycle"].result()[0])
+                yield code, t, cyc, (t is None and abandoned)
         finally:
-            for f in futures:
+            for f in owner:
                 f.cancel()
+            for entry in pending.values():
+                if entry["cycle"] is not None:
+                    entry["cycle"].cancel()
 
 
 def _apply_transport(row: dict, t: dict | None, cyc: tuple | None, timed_out: bool) -> dict:
@@ -1065,6 +1185,167 @@ def _copy_night(n: dict) -> dict:
     return dict(n, hotels=[dict(r) for r in n["hotels"]])
 
 
+def _scan_rooms(*, candidates, by_checkin, summary, location, rooms, max_miles, per_night, origin, fetch_deadline):
+    """Phase 1 of a scan: Travelodge room prices, a few candidate nights at a time.
+
+    Mutates each night dict in `by_checkin` in place and bumps the matching
+    counters on the shared `summary`, yielding ("night", summary snapshot,
+    night copy) as each date answers - in completion order, not date order.
+    One bad night must not sink the scan, so an upstream failure is recorded on
+    that night only, and a night not started before `fetch_deadline` is marked
+    "skipped" and sets summary["truncated"].
+    """
+
+    def fetch_night(ci, co):
+        if time.monotonic() > fetch_deadline:
+            return ci, "skipped", [], 0, "not fetched (time limit)"
+        try:
+            hotels = hotels_for(location, ci, co, rooms, deadline=fetch_deadline + 30)
+        except UpstreamError as e:
+            return ci, "failed", [], 0, str(e)
+        avail, short = _shortlist(hotels, max_miles, per_night)
+        return ci, "ok", short, len(avail), None
+
+    with ThreadPoolExecutor(max_workers=SCAN_DATE_WORKERS) as ex:
+        futures = [ex.submit(fetch_night, ci, co) for ci, co in candidates]
+        try:
+            for fut in as_completed(futures):
+                ci, status, short, n_avail, detail = fut.result()
+                night = by_checkin[ci]
+                night["status"] = status
+                night["detail"] = detail
+                night["hotels_available"] = n_avail
+                if status == "ok":
+                    night["hotels"] = [_make_row(h, origin) for h in short]
+                    if night["hotels"]:
+                        night["best_room"] = night["hotels"][0]["room_price"]
+                    summary["nights_fetched"] += 1
+                elif status == "failed":
+                    summary["nights_failed"] += 1
+                else:
+                    summary["nights_skipped"] += 1
+                    summary["truncated"] = True
+                yield "night", dict(summary), _copy_night(night)
+        finally:
+            for f in futures:
+                f.cancel()
+
+
+def _scan_order(night_list):
+    """Decide the order hotels get their (night-independent) fares priced in.
+
+    A hotel can appear on many nights but is priced once, so this collapses the
+    nights into one entry per hotel code. Its ordering key is its best (lowest)
+    position in any night's list, tiebroken by room price, so hotels that top
+    some night get their fares first and a truncated scan still has the likely
+    winners priced.
+
+    Returns:
+        (ordered, cycle_base) where `ordered` is a list of minimal hotel dicts
+        (code/lat/lon - all :func:`_price_hotels` reads) in pricing order, and
+        `cycle_base` maps code -> the local cycle estimate already computed for
+        that hotel, used when TfL gives no cycle answer. Deliberately *not* the
+        live row objects: the ordering record and the output rows used to be the
+        same mutable dict, which made it far too easy to write a phase-2 field
+        onto one night's row by accident.
+    """
+    best = {}        # code -> (best rank, room price at that rank)
+    coords = {}      # code -> minimal hotel dict for _price_hotels
+    cycle_base = {}  # code -> the local cycle estimate already on the rows
+    for n in night_list:
+        for rank, row in enumerate(n["hotels"]):
+            code = row["code"]
+            key = (rank, row["room_price"])
+            if code not in best or key < best[code]:
+                best[code] = key
+            if code not in coords:
+                coords[code] = {"code": code, "lat": row["lat"], "lon": row["lon"]}
+                # The estimate is a pure function of the coordinates, so any
+                # night's row carries the same values.
+                cycle_base[code] = {k: row[k] for k in ("cycle_minutes", "cycle_km", "cycle_source")}
+    # sorted() is stable and `best` is in first-seen order, matching the old
+    # index-based ordering exactly.
+    ordered = [coords[code] for code in sorted(best, key=lambda c: best[c])]
+    return ordered, cycle_base
+
+
+def _scan_transport(*, ordered, cycle_base, transport, summary, origin, depart_dt, adults, railcard_holders,
+                    max_travel_min, app_key, deadline):
+    """Phase 2 of a scan: one TfL price per unique hotel, filling `transport`.
+
+    `transport` is an out-parameter (code -> transport + cycle fields) that
+    phase 3 then applies to every night containing that code. Yields
+    ("transport", summary snapshot, fields copy) per hotel as TfL answers.
+    """
+    for code, t, cyc, timed_out in _price_hotels(
+        ordered, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline
+    ):
+        # Transport here is night-independent, so there is no room price to add:
+        # a dummy 0 is passed and the resulting "total" discarded. Each night
+        # computes its own total in phase 3.
+        fields = _transport_fields({"room_price": 0}, t)
+        fields.pop("total", None)
+        if timed_out:
+            fields["route"] = TIME_LIMIT_ROUTE
+            summary["truncated"] = True
+        if cyc:
+            fields["cycle_minutes"], fields["cycle_km"], fields["cycle_source"] = cyc
+        else:
+            # No TfL cycle result: keep the local estimate computed when the
+            # rows were built, since these fields are copied wholesale onto
+            # every night's copy of this hotel.
+            fields.update(cycle_base.get(code, {}))
+        fields["code"] = code
+        transport[code] = fields
+        summary["hotels_priced"] += 1
+        yield "transport", dict(summary), dict(fields)
+
+
+def _scan_totals(night_list, transport, summary) -> None:
+    """Phase 3 of a scan: apply transport to every night and order the results.
+
+    Mutates `night_list` in place: fills each row's transport columns and total,
+    sorts each night's hotels, records the night's best total/room/code, and
+    finally sorts the nights themselves. A hotel with no entry in `transport`
+    was never reached before the deadline, which is marked on the row *and* on
+    summary["truncated"] - phase 2 only sets the flag for hotels it actually
+    started, so without this a scan could show unpriced rows while claiming it
+    was complete.
+    """
+    for n in night_list:
+        if n["status"] != "ok":
+            continue
+        for row in n["hotels"]:
+            fields = transport.get(row["code"])
+            # Missing means phase 2 ran out of time before reaching this hotel.
+            if fields is None:
+                row["route"] = TIME_LIMIT_ROUTE
+                summary["truncated"] = True
+                continue
+            row.update({k: v for k, v in fields.items() if k != "code"})
+            if row["transport_total"] is not None:
+                row["total"] = round(row["room_price"] + row["transport_total"], 2)
+        sort_rows(n["hotels"])
+        if n["hotels"]:
+            best = n["hotels"][0]
+            n["best_total"] = best["total"]
+            n["best_code"] = best["code"]
+            n["best_room"] = min(r["room_price"] for r in n["hotels"])
+
+    # Cheapest night first; nights with no total (failed, skipped, or unpriced)
+    # fall to the bottom, ordered by best room price and then by date so the
+    # list is still deterministic.
+    night_list.sort(
+        key=lambda n: (
+            n["best_total"] is None,
+            n["best_total"] or 0,
+            n["best_room"] is None,
+            n["best_room"] or 0,
+            n["checkin"],
+        )
+    )
+
+
 def run_scan(
     *,
     location: str,
@@ -1152,112 +1433,37 @@ def run_scan(
     }
     yield "scan", dict(summary), [_copy_night(n) for n in night_list]
 
-    # Phase 1: room prices, a few nights at a time. One bad night must not
-    # sink the scan, so upstream failures are recorded on that night only.
-    def fetch_night(ci, co):
-        if time.monotonic() > fetch_deadline:
-            return ci, "skipped", [], 0, "not fetched (time limit)"
-        try:
-            hotels = hotels_for(location, ci, co, rooms, deadline=fetch_deadline + 30)
-        except UpstreamError as e:
-            return ci, "failed", [], 0, str(e)
-        avail, short = _shortlist(hotels, max_miles, per_night)
-        return ci, "ok", short, len(avail), None
-
-    with ThreadPoolExecutor(max_workers=SCAN_DATE_WORKERS) as ex:
-        futures = [ex.submit(fetch_night, ci, co) for ci, co in candidates]
-        try:
-            for fut in as_completed(futures):
-                ci, status, short, n_avail, detail = fut.result()
-                night = by_checkin[ci]
-                night["status"] = status
-                night["detail"] = detail
-                night["hotels_available"] = n_avail
-                if status == "ok":
-                    night["hotels"] = [_make_row(h, origin) for h in short]
-                    if night["hotels"]:
-                        night["best_room"] = night["hotels"][0]["room_price"]
-                    summary["nights_fetched"] += 1
-                elif status == "failed":
-                    summary["nights_failed"] += 1
-                else:
-                    summary["nights_skipped"] += 1
-                    summary["truncated"] = True
-                yield "night", dict(summary), _copy_night(night)
-        finally:
-            for f in futures:
-                f.cancel()
-
-    # Phase 2: one TfL price per unique hotel. Hotels that are cheapest on some
-    # night go first, since they are the likely winners if time runs out.
-    # A hotel can appear on many nights; it is priced once. Its ordering key is
-    # its best (lowest) position in any night's list, tiebroken by price, so
-    # hotels that top some night get their fares first and a truncated scan
-    # still has the likely winners priced.
-    index = {}  # code -> ((best rank, min room price), row)
-    for n in night_list:
-        for rank, row in enumerate(n["hotels"]):
-            key = (rank, row["room_price"])
-            cur = index.get(row["code"])
-            if cur is None or key < cur[0]:
-                index[row["code"]] = (key, row)
-    ordered = [row for _, row in sorted(index.values(), key=lambda x: x[0])]
-    summary["hotels_unique"] = len(ordered)
-
-    transport = {}  # code -> transport + cycle fields
-    for code, t, cyc, timed_out in _price_hotels(
-        ordered, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline
-    ):
-        base = index[code][1]
-        # Transport here is night-independent, so there is no room price to add:
-        # a dummy 0 is passed and the resulting "total" discarded. Each night
-        # computes its own total in phase 3.
-        fields = _transport_fields({"room_price": 0}, t)
-        fields.pop("total", None)
-        if timed_out:
-            fields["route"] = TIME_LIMIT_ROUTE
-            summary["truncated"] = True
-        if cyc:
-            fields["cycle_minutes"], fields["cycle_km"], fields["cycle_source"] = cyc
-        else:
-            # No TfL cycle result: keep the local estimate already on the row,
-            # since these fields are copied wholesale onto every night's copy.
-            fields.update({k: base[k] for k in ("cycle_minutes", "cycle_km", "cycle_source")})
-        fields["code"] = code
-        transport[code] = fields
-        summary["hotels_priced"] += 1
-        yield "transport", dict(summary), dict(fields)
-
-    # Phase 3: totals per night.
-    for n in night_list:
-        if n["status"] != "ok":
-            continue
-        for row in n["hotels"]:
-            fields = transport.get(row["code"])
-            # Missing means phase 2 ran out of time before reaching this hotel.
-            if fields is None:
-                row["route"] = TIME_LIMIT_ROUTE
-                continue
-            row.update({k: v for k, v in fields.items() if k != "code"})
-            if row["transport_total"] is not None:
-                row["total"] = round(row["room_price"] + row["transport_total"], 2)
-        sort_rows(n["hotels"])
-        if n["hotels"]:
-            best = n["hotels"][0]
-            n["best_total"] = best["total"]
-            n["best_code"] = best["code"]
-            n["best_room"] = min(r["room_price"] for r in n["hotels"])
-
-    # Cheapest night first; nights with no total (failed, skipped, or unpriced)
-    # fall to the bottom, ordered by best room price and then by date so the
-    # list is still deterministic.
-    night_list.sort(
-        key=lambda n: (
-            n["best_total"] is None,
-            n["best_total"] or 0,
-            n["best_room"] is None,
-            n["best_room"] or 0,
-            n["checkin"],
-        )
+    # Phase 1: room prices per candidate night.
+    yield from _scan_rooms(
+        candidates=candidates,
+        by_checkin=by_checkin,
+        summary=summary,
+        location=location,
+        rooms=rooms,
+        max_miles=max_miles,
+        per_night=per_night,
+        origin=origin,
+        fetch_deadline=fetch_deadline,
     )
+
+    # Phase 2: one TfL price per unique hotel, cheapest-on-some-night first.
+    ordered, cycle_base = _scan_order(night_list)
+    summary["hotels_unique"] = len(ordered)
+    transport = {}  # code -> transport + cycle fields
+    yield from _scan_transport(
+        ordered=ordered,
+        cycle_base=cycle_base,
+        transport=transport,
+        summary=summary,
+        origin=origin,
+        depart_dt=depart_dt,
+        adults=adults,
+        railcard_holders=railcard_holders,
+        max_travel_min=max_travel_min,
+        app_key=app_key,
+        deadline=deadline,
+    )
+
+    # Phase 3: totals per night, then ordering.
+    _scan_totals(night_list, transport, summary)
     yield "done", dict(summary), [_copy_night(n) for n in night_list]

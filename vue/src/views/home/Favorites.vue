@@ -1,15 +1,11 @@
 <script setup>
 /**
- * "Favorites" widget on /stp: a self-scrolling <AutoScroll> list, plus an
- * admin-only create form in a <Modal> (lazily imported).
+ * "Favorites" widget on /stp. All of the markup lives in ListWidget.vue; this
+ * file only binds the favourites store and the (lazily imported) create form.
  */
-import Header from "@/components/text/Header.vue";
-import CreateToggle from "@/components/input/CreateToggle.vue";
-import LinkTable from "@/components/util/LinkTable.vue";
-import AutoScroll from "@/components/util/AutoScroll.vue";
-import Modal from "@/components/util/Modal.vue";
+import ListWidget from "@/views/home/ListWidget.vue";
 
-import { ref, defineAsyncComponent } from "vue";
+import { defineAsyncComponent } from "vue";
 import { useFavoritesStore } from "@/stores/favorites";
 
 const CreateFavorite = defineAsyncComponent(
@@ -17,27 +13,12 @@ const CreateFavorite = defineAsyncComponent(
 );
 
 const favoritesStore = useFavoritesStore();
-const showCreate = ref(false);
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
-    <Header>
-      favs
-      <template #action><CreateToggle v-model="showCreate" /></template>
-    </Header>
-    <AutoScroll class="w-full flex-1">
-      <LinkTable
-        variant="table"
-        class="w-full"
-        :items="favoritesStore.favorites"
-      />
-    </AutoScroll>
-    <Modal v-model="showCreate">
-      <CreateFavorite
-        @done="showCreate = false"
-        @cancel="showCreate = false"
-      />
-    </Modal>
-  </div>
+  <ListWidget
+    title="favs"
+    :items="favoritesStore.favorites"
+    :create-form="CreateFavorite"
+  />
 </template>

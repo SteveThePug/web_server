@@ -7,7 +7,6 @@ package graph
 
 import (
 	"context"
-	"time"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/services"
@@ -21,10 +20,10 @@ func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, er
 
 	// Five-minute cache across both Steam calls, which are made together and
 	// expire together.
-	if r.Store.SteamFresh() {
+	if games, online, ok := r.Store.CachedSteam(); ok {
 		return &model.SteamStatus{
-			Online:      r.Store.SteamOnline,
-			RecentGames: mapSteamGames(r.Store.SteamRecentGames),
+			Online:      online,
+			RecentGames: mapSteamGames(games),
 		}, nil
 	}
 
@@ -45,9 +44,7 @@ func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, er
 		online = summary.PersonaState > 0
 	}
 
-	r.Store.SteamRecentGames = games
-	r.Store.SteamOnline = online
-	r.Store.SteamFetchedAt = time.Now()
+	r.Store.SetSteam(games, online)
 
 	return &model.SteamStatus{
 		Online:      online,

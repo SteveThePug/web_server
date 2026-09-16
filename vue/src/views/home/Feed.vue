@@ -28,8 +28,9 @@ const leftCap = computed(() => idx.value === 0);
 const rightCap = computed(() => idx.value === postsStore.postsCount - 1);
 
 const post = computed(() => postsStore.posts[idx.value]);
+// Guarded: `post` can be a placeholder or a row fetched without an author.
 const userOwnsPost = computed(
-  () => post.value.author.username == authStore.user.username,
+  () => post.value?.author?.username == authStore.user?.username,
 );
 
 function nextPost() {

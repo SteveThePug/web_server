@@ -25,7 +25,7 @@
  */
 import Button from "@/components/input/Button.vue";
 import Header from "@/components/text/Header.vue";
-import { ref, useTemplateRef, onMounted, nextTick } from "vue";
+import { ref, useTemplateRef, onMounted, onUnmounted, nextTick } from "vue";
 import axios from "axios";
 
 const POLL_INTERVAL_MS = 120000; // re-probe the stream every 2 minutes
@@ -54,9 +54,15 @@ async function checkStream() {
   }
 }
 
+let pollId;
+
 onMounted(() => {
   checkStream();
-  setInterval(checkStream, POLL_INTERVAL_MS);
+  pollId = setInterval(checkStream, POLL_INTERVAL_MS);
+});
+
+onUnmounted(() => {
+  clearInterval(pollId);
 });
 </script>
 

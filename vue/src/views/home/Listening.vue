@@ -2,38 +2,28 @@
 /**
  * "Listening" widget on /stp: rotates through recent Spotify plays.
  *
- * Two timers: a 5s rotation (self-rearming setTimeout, so a manual change would
- * reset the full interval) and a 2-minute re-poll of Spotify. Both are cleared on
- * unmount.
+ * Two timers, both owned by useRotation(): a 5s rotation and a 2-minute re-poll
+ * of Spotify.
  */
 import Header from "@/components/text/Header.vue";
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
+import { useRotation } from "@/js/useRotation";
+
+const ROTATE_MS = 5000;
+const REFRESH_MS = 120000;
 
 const songsStore = useSongsStore();
-const idx = ref(0);
+
+const { idx, next: nextSong } = useRotation(() => songsStore.songs, ROTATE_MS, {
+  refresh: () => songsStore.fetchSongs(),
+  refreshMs: REFRESH_MS,
+});
+
 const song = computed(() => songsStore.songs[idx.value]);
-
-let nextId = null;
-let refreshId = null;
-
-// Self-rearming timeout rather than setInterval, so the full 5s is restarted
-// whenever the song changes rather than leaving a short remainder.
-function nextSong() {
-  clearTimeout(nextId);
-  nextId = setTimeout(nextSong, 5000);
-  idx.value = (idx.value + 1) % songsStore.songsCount;
-}
 
 onMounted(() => {
   songsStore.fetchSongs();
-  nextId = setTimeout(nextSong, 5000);
-  refreshId = setInterval(songsStore.fetchSongs, 120000);
-});
-
-onUnmounted(() => {
-  clearTimeout(nextId);
-  clearInterval(refreshId);
 });
 </script>
 

@@ -40,14 +40,7 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error)
 	if err := query.Find(&messages).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &messages[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.Message, len(messages))
-	for i := range messages {
-		result[i] = &messages[i]
-	}
-	return result, nil
+	return ptrs(messages), nil
 }
 
 // Message returns MessageResolver implementation.

@@ -13,12 +13,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// SpotifyConfig holds the OAuth app credentials. AuthState is the fixed
-// `state` value used in the authorisation URL; because the flow is only ever
-// driven by hand by the site owner, it is a constant rather than a
-// per-request nonce.
+// SpotifyConfig holds the OAuth app credentials.
+//
+// There is no state value here any more: the `state` parameter is a one-shot
+// CSRF nonce minted per authorisation request by handlers.Store, so a fixed
+// configured value would defeat the point.
 type SpotifyConfig struct {
-	AuthState    string
 	RedirectURL  string
 	ClientID     string
 	ClientSecret string
@@ -93,10 +93,12 @@ func LoadSpotifyToken(path string) (*oauth2.Token, error) {
 // exists, an authenticated client.
 //
 // Start-up never fails on Spotify problems: when there is no token or the
-// refresh is rejected it prints the authorisation URL to the container log
-// and returns a nil client. Every Spotify handler and resolver therefore has
-// to nil-check Store.SpotifyClient. Visiting that URL sends the browser to
-// /spotify/callback, which fills the client in at runtime.
+// refresh is rejected it logs how to authenticate and returns a nil client.
+// Every Spotify handler and resolver therefore has to nil-check
+// Store.SpotifyClient. The authorisation URL can no longer be printed here
+// because its state nonce is per-request (see handlers.Store.StartSpotifyAuth);
+// following it sends the browser to /spotify/callback, which fills the client
+// in at runtime.
 func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotify.Client) {
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(config.RedirectURL),
@@ -112,16 +114,14 @@ func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotif
 	// check if token exists locally
 	token, err := LoadSpotifyToken(SPOTIFY_TOKEN_JSON_PATH)
 	if err != nil || token == nil {
-		fmt.Println("No token saved. Authenticate Spotify with:")
-		fmt.Println(auth.AuthURL(config.AuthState))
+		fmt.Println("No Spotify token saved. Authenticate by calling GET /api/spotify/auth as an admin and opening the URL it returns.")
 		return auth, nil
 	}
 
 	// refresh token and client
 	client, err := RefreshClient(auth, token)
 	if err != nil {
-		fmt.Println("Failed to refresh token. Authenticate Spotify with:")
-		fmt.Println(auth.AuthURL(config.AuthState))
+		fmt.Println("Failed to refresh Spotify token. Re-authenticate by calling GET /api/spotify/auth as an admin and opening the URL it returns.")
 		return auth, nil
 	}
 

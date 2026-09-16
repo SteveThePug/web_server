@@ -2,23 +2,17 @@
 /**
  * Standard link. Renders a <RouterLink> when given `to`, a plain <a> when given
  * `href`. `bare` drops the styling (used where the parent styles the anchor).
- * External `target="_blank"` links get rel="noopener noreferrer" automatically.
+ * External `target="_blank"` links get rel="noopener noreferrer" automatically
+ * (shared with InlineLink.vue via useLinkAttrs.js).
  */
-import { computed } from "vue";
+import { linkProps, useComputedRel } from "@/components/text/useLinkAttrs";
 
 const props = defineProps({
-  href: { type: String, default: "" },
-  to: { type: String, default: "" },
-  target: { type: String, default: undefined },
-  rel: { type: String, default: undefined },
+  ...linkProps,
   bare: { type: Boolean, default: false },
 });
 
-const computedRel = computed(() => {
-  if (props.rel !== undefined) return props.rel;
-  if (props.target === "_blank") return "noopener noreferrer";
-  return undefined;
-});
+const computedRel = useComputedRel(props);
 </script>
 
 <template>

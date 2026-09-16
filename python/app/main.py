@@ -24,9 +24,9 @@ prefix. Field names in the models below are part of that contract.
 import json
 import re
 import threading
-import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
@@ -81,14 +81,29 @@ MAX_ADULTS = 8
 MAX_CHILDREN = 8
 MAX_SCAN_DAYS = travelodge.SCAN_MAX_DAYS
 CACHE_TTL_S = 10 * 60
+CACHE_MAX = 200
+
+# The service prices London hotels and London transport, so "today" means today
+# in London - not on whatever timezone the server happens to be set to. Using
+# the server's local date refused a check-in that was still today for a user
+# west of it (and, on a UTC server during BST, accepted one an hour late).
+LONDON_TZ = ZoneInfo("Europe/London")
+
+
+def london_today() -> date:
+    """Today's date in London, the reference for "today or later" validation."""
+    return datetime.now(LONDON_TZ).date()
 
 # Only one live search or scan may run at a time, process-wide. A run can spend
 # the entire anonymous TfL budget (50 requests/min), so two concurrent runs
 # would simply starve each other into rate-limit backoff. Callers that find the
 # slot taken get an immediate "try again" rather than queueing.
 _search_slot = threading.Semaphore(1)
-_cache_lock = threading.Lock()
-_cache: dict = {}  # key -> (expires_at, response dict)
+# Finished responses, keyed by the canonical request body. Bounded as well as
+# swept: the one-at-a-time guard makes growth slow, but "slow" is not "never",
+# and a response holds every row of a scan. Eviction is insertion order, so a
+# repeatedly-requested entry still ages out and is refetched.
+_cache = travelodge.TTLCache(CACHE_TTL_S, max_entries=CACHE_MAX)
 
 
 class Origin(BaseModel):
@@ -181,11 +196,11 @@ class HotelSearchRequest(HotelRequestBase):
 
         `checkout` wins when both are given; otherwise it is derived from
         `nights`. Both fields are then written back so downstream code can
-        trust either one. `date.today()` is the server's local date, so a user
-        in another timezone can be refused a checkin that is still valid for
-        them.
+        trust either one. "Today" is London's date (see :func:`london_today`),
+        not the server's, so the answer does not depend on the container's
+        timezone.
         """
-        if self.checkin < date.today():
+        if self.checkin < london_today():
             raise ValueError("checkin must be today or later")
         checkout = self.checkout or self.checkin + timedelta(days=self.nights)
         if checkout <= self.checkin:
@@ -235,7 +250,7 @@ class HotelScanRequest(HotelRequestBase):
         "Mondays only" over a Tuesday-to-Thursday window fails here with a clear
         message instead of producing an empty scan.
         """
-        if self.start < date.today():
+        if self.start < london_today():  # London's date, see london_today()
             raise ValueError("start must be today or later")
         if self.end < self.start:
             raise ValueError("end must be on or after start")
@@ -402,30 +417,6 @@ class HotelScanEvent(BaseModel):
     detail: Optional[str] = None
 
 
-def _cache_get(key: str):
-    """Return a cached response payload for `key`, or None if absent/expired."""
-    now = time.monotonic()
-    with _cache_lock:
-        hit = _cache.get(key)
-        if hit and hit[0] > now:
-            return hit[1]
-    return None
-
-
-def _cache_put(key: str, result: dict) -> None:
-    """Cache a completed response for CACHE_TTL_S, sweeping expired entries.
-
-    The sweep is the only eviction: the cache is unbounded between sweeps, which
-    is fine because the one-at-a-time guard caps how fast entries can be added.
-    """
-    now = time.monotonic()
-    with _cache_lock:
-        expired = [k for k, (exp, _) in _cache.items() if exp <= now]
-        for k in expired:
-            del _cache[k]
-        _cache[key] = (now + CACHE_TTL_S, result)
-
-
 ALREADY_RUNNING = "A search is already running, try again in a minute."
 
 
@@ -451,77 +442,94 @@ def _guarded(run, make_error):
         _search_slot.release()
 
 
-def _search_events(req: HotelSearchRequest):
-    """Yield HotelSearchEvent objects for a request, serving from cache when possible.
+def _run_events(*, req, prefix, model, make_gen, first_event, list_key, row_keys):
+    """Shared body of the two streaming endpoints, differing only in their types.
 
-    A cache hit replays a two-line stream ("hotels" then "done") carrying the
-    finished result, so the client's streaming reader needs no special case; the
-    `cached` flag is the only difference it can observe. The key is the
-    canonical JSON of the whole validated request, which makes it exact but also
-    means a cosmetically different body (a different `top`, say) misses.
+    Searches and scans have the same shape: build a cache key from the request,
+    replay a finished result as two lines if it is cached, otherwise run the
+    travelodge generator under the single-search guard and wrap each upstream
+    event in a Pydantic event model.
+
+    Args:
+        req: the validated request; its canonical JSON is the cache key, which
+            makes the key exact but also means a cosmetically different body (a
+            different `top`, say) misses.
+        prefix: cache-key namespace ("search:"/"scan:") so the two endpoints
+            cannot collide.
+        model: the event model to emit (HotelSearchEvent or HotelScanEvent).
+        make_gen: zero-argument callable returning the travelodge generator.
+            Called inside the guard so that anything it raises while binding
+            its arguments becomes an "error" event rather than a 500.
+        first_event: name of the opening list event ("hotels"/"scan"). A cache
+            hit replays it followed by "done", both carrying the finished
+            result, so the client's streaming reader needs no special case and
+            the `cached` flag is the only difference it can observe.
+        list_key: model field holding the whole list ("rows"/"nights"); only the
+            final "done" event is worth caching.
+        row_keys: kind -> model field for the per-item events, e.g.
+            {"transport": "row"} for a search.
+
+    Upstream events are 3-tuples of (kind, summary, payload) except run_search's
+    "transport", which is a 2-tuple of (kind, row); that one is normalised to a
+    None summary here, and `exclude_none=True` at serialisation time drops the
+    key exactly as before.
     """
-    key = "search:" + json.dumps(req.model_dump(mode="json"), sort_keys=True)
-    hit = _cache_get(key)
+    key = prefix + json.dumps(req.model_dump(mode="json"), sort_keys=True)
+    hit = _cache.get(key)
     if hit:
-        yield HotelSearchEvent(event="hotels", cached=True, **hit)
-        yield HotelSearchEvent(event="done", cached=True, **hit)
+        yield model(event=first_event, cached=True, **hit)
+        yield model(event="done", cached=True, **hit)
         return
 
     def run():
-        # run_search yields 3-tuples except for "transport", which is a 2-tuple
-        # of (kind, row) - hence the shape test before unpacking. Only the final
-        # "done" event is worth caching.
-        gen = travelodge.run_search(
+        for ev in make_gen():
+            kind, summary, payload = (ev[0], None, ev[1]) if len(ev) == 2 else ev
+            if kind in row_keys:
+                yield model(event=kind, summary=summary, **{row_keys[kind]: payload})
+            else:
+                if kind == "done":
+                    _cache.set(key, {"summary": summary, list_key: payload})
+                yield model(event=kind, summary=summary, **{list_key: payload})
+
+    yield from _guarded(run, lambda detail: model(event="error", detail=detail))
+
+
+def _search_events(req: HotelSearchRequest):
+    """Yield HotelSearchEvent objects for a request, serving from cache when possible."""
+    return _run_events(
+        req=req,
+        prefix="search:",
+        model=HotelSearchEvent,
+        make_gen=lambda: travelodge.run_search(
             checkin=req.checkin,
             checkout=req.checkout,
             top=req.top,
             **req.shared_kwargs(),
-        )
-        for ev in gen:
-            if ev[0] == "transport":
-                yield HotelSearchEvent(event="transport", row=ev[1])
-            else:
-                kind, summary, rows = ev
-                if kind == "done":
-                    _cache_put(key, {"summary": summary, "rows": rows})
-                yield HotelSearchEvent(event=kind, summary=summary, rows=rows)
-
-    yield from _guarded(run, lambda detail: HotelSearchEvent(event="error", detail=detail))
+        ),
+        first_event="hotels",
+        list_key="rows",
+        row_keys={"transport": "row"},
+    )
 
 
 def _scan_events(req: HotelScanRequest):
-    """Yield HotelScanEvent objects for a scan, serving from cache when possible.
-
-    As with searches, a cache hit is replayed as a "scan" line followed by
-    "done" so the client parses it exactly like a live stream.
-    """
-    key = "scan:" + json.dumps(req.model_dump(mode="json"), sort_keys=True)
-    hit = _cache_get(key)
-    if hit:
-        yield HotelScanEvent(event="scan", cached=True, **hit)
-        yield HotelScanEvent(event="done", cached=True, **hit)
-        return
-
-    def run():
-        gen = travelodge.run_scan(
+    """Yield HotelScanEvent objects for a scan, serving from cache when possible."""
+    return _run_events(
+        req=req,
+        prefix="scan:",
+        model=HotelScanEvent,
+        make_gen=lambda: travelodge.run_scan(
             start=req.start,
             end=req.end,
             weekdays=set(req.weekdays),
             nights=req.nights,
             per_night=req.per_night,
             **req.shared_kwargs(),
-        )
-        for kind, summary, payload in gen:
-            if kind == "night":
-                yield HotelScanEvent(event=kind, summary=summary, night=payload)
-            elif kind == "transport":
-                yield HotelScanEvent(event=kind, summary=summary, transport=payload)
-            else:
-                if kind == "done":
-                    _cache_put(key, {"summary": summary, "nights": payload})
-                yield HotelScanEvent(event=kind, summary=summary, nights=payload)
-
-    yield from _guarded(run, lambda detail: HotelScanEvent(event="error", detail=detail))
+        ),
+        first_event="scan",
+        list_key="nights",
+        row_keys={"night": "night", "transport": "transport"},
+    )
 
 
 _SEARCH_DESCRIPTION = (

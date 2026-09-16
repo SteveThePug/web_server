@@ -2,18 +2,20 @@
 /**
  * Countdown widget with minute/second sliders and a sound on completion.
  *
- * The four mutually exclusive v-if blocks are a state machine over
- * (finished, paused): set/idle, finished, paused, running.
+ * `state` is an explicit state machine — "idle" (sliders), "running",
+ * "paused" and "finished" — one screen per state. Completion is decided by
+ * comparing total elapsed seconds with the total target, so it does not depend
+ * on the minute and second fields crossing their targets independently.
  */
 import Button from "@/components/input/Button.vue";
 import Header from "@/components/text/Header.vue";
 
-import { ref } from "vue";
+import { ref, onUnmounted } from "vue";
 
 const timer = ref(null);
 
-const finished = ref(true);
-const paused = ref(true);
+/** "idle" | "running" | "paused" | "finished" */
+const state = ref("idle");
 
 const minutesInput = ref(0);
 const secondsInput = ref(0);
@@ -30,40 +32,44 @@ function tick() {
     seconds.value = 0;
   }
 
-  if (minutes.value >= minutesInput.value) {
-    if (seconds.value >= secondsInput.value) {
-      finished.value = true;
-      playFinishedSound();
-      clearInterval(timer.value);
-    }
+  const elapsed = minutes.value * 60 + seconds.value;
+  const target = Number(minutesInput.value) * 60 + Number(secondsInput.value);
+
+  if (elapsed >= target) {
+    state.value = "finished";
+    playFinishedSound();
+    clearInterval(timer.value);
   }
 }
 
 function startTimer() {
-  finished.value = false;
-  paused.value = false;
+  state.value = "running";
   timer.value = setInterval(tick, 1000);
 }
 
 function pauseTimer() {
-  if (finished.value) return;
+  if (state.value === "finished") return;
 
-  if (paused.value) {
+  if (state.value === "paused") {
     timer.value = setInterval(tick, 1000);
-    paused.value = false;
+    state.value = "running";
   } else {
     clearInterval(timer.value);
-    paused.value = true;
+    state.value = "paused";
   }
 }
 
+/** Back to the slider screen, ready to set a new countdown. */
 function resetTimer() {
-  finished.value = true;
-  paused.value = true;
+  state.value = "idle";
   clearInterval(timer.value);
   minutes.value = 0;
   seconds.value = 0;
 }
+
+onUnmounted(() => {
+  clearInterval(timer.value);
+});
 
 function playFinishedSound() {
   audio.play();
@@ -73,7 +79,7 @@ function playFinishedSound() {
 <template>
   <div class="timer-root flex flex-col gap-1 p-1 items-center">
     <Header>Timer</Header>
-    <div v-if="finished && paused" class="flex flex-col">
+    <div v-if="state === 'idle'" class="flex flex-col">
       <div class="flex flex-row p-2 place-content-around">
         <input
           class="w-2/3"
@@ -98,15 +104,15 @@ function playFinishedSound() {
       </div>
       <Button @click="startTimer">Proceed</Button>
     </div>
-    <div v-if="finished && !paused" class="flex flex-col">
+    <div v-if="state === 'finished'" class="flex flex-col">
       <h1>Timer finished!</h1>
       <Button @click="resetTimer">Reset</Button>
     </div>
-    <div v-if="!finished && paused" class="flex flex-col">
+    <div v-if="state === 'paused'" class="flex flex-col">
       <h1>Paused</h1>
       <Button @click="resetTimer">Reset</Button>
     </div>
-    <div v-if="!finished && !paused" class="flex flex-col">
+    <div v-if="state === 'running'" class="flex flex-col">
       <p>
         {{ minutes.toString().padStart(2, "0") }}:{{
           seconds.toString().padStart(2, "0")

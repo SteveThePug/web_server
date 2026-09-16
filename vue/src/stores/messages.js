@@ -136,11 +136,16 @@ export const useMessagesStore = defineStore("messages", () => {
    * POST a file to the REST upload endpoint, then send its returned URL over
    * the socket as a normal message. Two steps because the socket carries JSON
    * text only. Errors surface via `lastError`.
+   *
+   * `private` is sent with the upload as well as with the message: the backend
+   * stores private attachments under /uploads/private/, which nginx gates
+   * behind an admin check.
    */
   async function uploadAndSendFile(file, isPrivate = false) {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("private", isPrivate ? "true" : "false");
       const res = await axios.post("/api/messages/upload", formData);
       const { url } = res.data;
       if (!socket.value || !isConnected.value) return;

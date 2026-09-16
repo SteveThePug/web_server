@@ -189,6 +189,23 @@ http {
             add_header Cache-Control "public";
         }
 
+        # PRIVATE attachments (admin-only). Attachments on *private* chat
+        # messages are written by the backend to /backend/uploads/private/ and
+        # must not be readable by the public, so this subpath is put behind the
+        # same admin `auth_request` used for /hasura/ and /notes/. nginx picks
+        # the LONGEST matching prefix location, so this block wins over the
+        # public /uploads/ block below for /uploads/private/* regardless of
+        # ordering. Same three hardening headers as the public block, because
+        # the bytes are just as attacker-supplied.
+        location /uploads/private/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            alias /uploads/private/;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
+
         # User-uploaded files, served straight off the shared `uploads` volume
         # so the Go process never has to stream them. Because these are
         # attacker-supplied bytes on our own origin, three headers neutralise
@@ -225,11 +242,12 @@ http {
         }
 
         # One-off: this GIF is a "web stamp" other people's sites hot-link, so
-        # it needs an explicit CORS header. Ironically the origin allowed is our
-        # own, which means cross-origin embedders are not actually permitted —
-        # see the proposals in DEPLOYMENT.md before changing it.
+        # it needs an explicit CORS header. It is a public, deliberately
+        # hot-linkable image, so the allowed origin is `*` — it used to be our
+        # own origin, which defeated the point (no cross-origin embedder was
+        # actually permitted). Nothing here is credentialed, so `*` is safe.
         location = /img/stamps/mine.gif {
-            add_header Access-Control-Allow-Origin "https://www.$DOMAIN";
+            add_header Access-Control-Allow-Origin "*";
             expires 7d;
             add_header Cache-Control "public";
         }
@@ -336,6 +354,25 @@ http {
 
         location /radio {
             return 301 /radio/;
+        }
+
+        # The icecast ADMIN UI (/radio/admin/*) is a full station-control
+        # surface — kick sources, change metadata — protected only by the
+        # icecast admin password, and it was reachable from the public
+        # internet through this proxy. Put it behind the same admin
+        # `auth_request` as /hasura/ and /notes/ so an admin session cookie is
+        # required before the request ever reaches icecast. Longest-prefix
+        # matching means this wins over /radio/ below; listener traffic
+        # (/radio/$ICECAST_MOUNT, /radio/status.xsl) is untouched.
+        location /radio/admin/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            rewrite ^/radio/(.*)$ /$1 break;
+            proxy_pass $upstream_icecast;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
         location /radio/ {

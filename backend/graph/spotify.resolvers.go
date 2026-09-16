@@ -7,10 +7,8 @@ package graph
 
 import (
 	"context"
-	"time"
 
 	"adam-french.co.uk/backend/graph/model"
-	spotify "github.com/zmb3/spotify/v2"
 )
 
 // SpotifyListening is the resolver for the spotifyListening field.
@@ -40,20 +38,12 @@ func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRece
 		return []*model.SpotifyRecentItem{}, nil
 	}
 
-	// One-minute cache. This resolver is the only writer of that cache; the
-	// REST /spotify/recent endpoint reads it but never fills it.
-	if r.Store.RecentSongsFresh() {
-		return mapRecentItems(*r.Store.RecentSongs), nil
-	}
-
-	opts := spotify.RecentlyPlayedOptions{Limit: 3}
-	played, err := r.Store.SpotifyClient.PlayerRecentlyPlayedOpt(ctx, &opts)
+	// Shared one-minute cache, filled by whichever of this resolver and the
+	// REST /spotify/recent endpoint misses it first.
+	played, err := r.Store.RecentlyPlayedTracks(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	r.Store.RecentSongs = &played
-	r.Store.RecentSongsFetchedAt = time.Now()
 
 	return mapRecentItems(played), nil
 }

@@ -2,12 +2,13 @@
 /**
  * "Cheapest night" tab of /hotels: scans a date range (capped at MAX_SPAN_DAYS,
  * optionally filtered to particular weekdays) and reports the best hotel per
- * night. Same streaming/abort/ticker mechanics as SingleStayPanel.vue.
+ * night. Shares the streaming/abort/ticker lifecycle with SingleStayPanel.vue
+ * through useHotelSearch(); only the event shapes differ.
  */
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted } from "vue";
 import SharedFields from "./SharedFields.vue";
 import HotelRows from "./HotelRows.vue";
-import { runStream } from "./hotelsStream.js";
+import { useHotelSearch } from "./useHotelSearch.js";
 import { todayIso, addDays, loadFrom, saveTo } from "./useHotelForm.js";
 import {
     gbp,
@@ -53,28 +54,32 @@ function setDays(list) {
 }
 
 // ---------------------------------------------------------------------------
-// Scan state
+// Scan state (searching/errorMsg/summary/done/elapsed come from the
+// composable; the night rows and their transport cache are this panel's own)
 // ---------------------------------------------------------------------------
-const searching = ref(false);
-const errorMsg = ref("");
-const summary = ref(null);
 const nightRows = ref([]);
 const cached = ref(false);
-const done = ref(false);
-const elapsed = ref(0);
 const expanded = ref(new Set());
 let transportByCode = {};
-let ticker = null;
-let aborter = null;
 
-const statusText = computed(() => {
-    if (errorMsg.value) return "Error";
-    if (searching.value) return "Scanning";
-    if (done.value) return "Done";
-    return "Idle";
+const {
+    searching,
+    errorMsg,
+    summary,
+    done,
+    elapsed,
+    statusText,
+    hasResults,
+    run: onScan,
+} = useHotelSearch({
+    url: "/py/hotels/scan/stream",
+    buildRequest,
+    applyEvent,
+    onStart,
+    busyLabel: "Scanning",
+    failMessage: "Scan failed.",
+    earlyMessage: "The scan ended early; showing what came back.",
 });
-
-const hasResults = computed(() => summary.value !== null);
 
 const fetchedCount = computed(() => {
     const s = summary.value;
@@ -306,43 +311,16 @@ function applyEvent(ev) {
     }
 }
 
-async function onScan() {
-    if (searching.value) return;
-    errorMsg.value = "";
-    summary.value = null;
+/** Reset this panel's own result state before a run. */
+function onStart() {
     nightRows.value = [];
     transportByCode = {};
     expanded.value = new Set();
     cached.value = false;
-    done.value = false;
-    searching.value = true;
-    elapsed.value = 0;
     saveConfig();
-    ticker = setInterval(() => elapsed.value++, 1000);
-    aborter = new AbortController();
-    try {
-        await runStream("/py/hotels/scan/stream", buildRequest(), {
-            signal: aborter.signal,
-            onEvent: applyEvent,
-        });
-        if (!done.value && !errorMsg.value)
-            errorMsg.value = "The scan ended early; showing what came back.";
-    } catch (e) {
-        if (e.name !== "AbortError") errorMsg.value = e.message || "Scan failed.";
-    } finally {
-        clearInterval(ticker);
-        ticker = null;
-        aborter = null;
-        searching.value = false;
-    }
 }
 
 onMounted(loadConfig);
-
-onBeforeUnmount(() => {
-    if (ticker) clearInterval(ticker);
-    if (aborter) aborter.abort();
-});
 </script>
 
 <template>

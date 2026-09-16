@@ -32,15 +32,20 @@
 #   it just means the renewal window is checked twice a day rather than once a
 #   month. Certificates are valid 90 days, so a renewal lands ~day 60.
 #
-#   IMPORTANT CAVEAT: there is NO --deploy-hook here, and this container cannot
-#   signal nginx (no docker socket, no shared PID namespace). nginx loads the
-#   certificate files at startup and keeps them in memory, so a freshly renewed
-#   certificate is NOT picked up until nginx is reloaded or restarted. In
-#   practice the site is redeployed often enough (the Gitea Actions deploy
-#   workflow runs `docker compose up -d --build` on every push to main, which
-#   recreates nginx) that this has not bitten — but on a quiet month it could.
-#   See DEPLOYMENT.md "Renew certificates" for the manual reload, and the
-#   proposal to add a reload hook.
+#   nginx loads the certificate files at startup and keeps them in memory, so a
+#   renewed certificate is not served until nginx is reloaded. This container
+#   cannot signal nginx directly (no docker socket, no shared PID namespace),
+#   so --deploy-hook instead TOUCHES A SENTINEL FILE in /etc/letsencrypt, which
+#   is bind-mounted read-write into BOTH containers. A background watcher in
+#   nginx/entrypoint.sh polls for that file, deletes it and runs `nginx -s
+#   reload`. certbot only fires a deploy hook when a certificate was actually
+#   renewed, so the sentinel appears roughly once every 60 days, not twice a
+#   day. --deploy-hook is passed to both `certonly` and `renew`.
+#
+#   The alternative — giving this container the docker socket so the hook could
+#   `docker exec nginx nginx -s reload` — was rejected: the socket is
+#   root-equivalent on the host, and the shared cert directory is a capability
+#   both containers already have.
 #
 # ENV VARS REQUIRED (from ./.env via `env_file`)
 #   DOMAIN  apex domain; both $DOMAIN and www.$DOMAIN go on one certificate,
@@ -61,16 +66,23 @@
 #   Port 80 reachable from the public internet for $DOMAIN and www.$DOMAIN.
 # =============================================================================
 
+# The reload sentinel: a file in the SHARED /etc/letsencrypt mount that nginx's
+# entrypoint polls for. Touching it is the entire "tell nginx to reload" signal
+# — see RELOAD SIGNAL above.
+RELOAD_SENTINEL=/etc/letsencrypt/.nginx-reload
+
 certbot certonly --webroot -w /var/www/certbot \
-    --email ${EMAIL} \
-    -d ${DOMAIN} -d www.${DOMAIN} \
-    --cert-name ${DOMAIN} \
+    --email "${EMAIL}" \
+    -d "${DOMAIN}" -d "www.${DOMAIN}" \
+    --cert-name "${DOMAIN}" \
+    --deploy-hook "touch ${RELOAD_SENTINEL}" \
     --agree-tos --non-interactive --expand;
 
 # Exit promptly on `docker compose stop` instead of sitting out the 12h sleep.
 trap exit TERM;
 
 while :; do
-    certbot renew --webroot -w /var/www/certbot;
+    certbot renew --webroot -w /var/www/certbot \
+        --deploy-hook "touch ${RELOAD_SENTINEL}";
     sleep 12h;
 done

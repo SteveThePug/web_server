@@ -38,6 +38,19 @@ type User struct {
 	// Admin gates almost every mutation. It is copied into the access token,
 	// so a change here only takes effect on the user's next token refresh.
 	Admin bool `json:"admin"`
+	// TokenVersion is the session generation counter. Every issued JWT
+	// carries the value current at the time it was minted, and
+	// services.Auth rejects a token whose value no longer matches, so
+	// incrementing this column revokes every outstanding token for the user
+	// at once (logout, password change). It is the only server-side
+	// revocation mechanism there is.
+	//
+	// Pre-migration rows: AutoMigrate adds the column with DEFAULT 1, but a
+	// row that somehow ends up at 0 is normalised to 1 by
+	// services.tokenVersionOf, as is a token minted before the "tv" claim
+	// existed. So the migration invalidates nobody's existing session, and
+	// the first bump moves a user to 2 and invalidates everything older.
+	TokenVersion uint `gorm:"not null;default:1" json:"-"`
 }
 
 // Post is a blog entry. Author is loaded with Preload("Author") by the post
@@ -158,6 +171,21 @@ type ProcessedEmail struct {
 	// The application this email created or updated, if any. A plain nullable
 	// column, not a GORM association — nothing preloads it.
 	JobAppID *uint `json:"jobAppId"`
+	// Attempts counts how many times processing this email has been tried.
+	// A row with Action "error" and Attempts below the cap is retryable: the
+	// next sync re-processes it instead of skipping it. Once Attempts reaches
+	// the cap the row becomes terminal, so a genuinely unprocessable email
+	// (one Claude can never parse) eventually stops consuming API calls.
+	// Rows written before this column existed default to 1 and so get their
+	// remaining attempts.
+	Attempts int `gorm:"not null;default:1" json:"attempts"`
+	// ReceivedAt is the provider's own timestamp for the email, as distinct
+	// from CreatedAt (when we processed it). It exists so a retryable failure
+	// can pull the fetch window back far enough to actually re-fetch the
+	// email: the window is otherwise anchored to processing time, which would
+	// have already advanced past it. Zero for rows written before this
+	// column existed, and for those the clamp is skipped.
+	ReceivedAt time.Time `json:"receivedAt"`
 }
 
 // Place is an entry on the places-to-go list. Creating or editing one needs

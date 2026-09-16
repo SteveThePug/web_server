@@ -87,6 +87,8 @@ async function onFileSelected(e) {
   const file = e.target.files[0];
   if (!file) return;
   isNearBottom.value = true;
+  // The private flag both routes the upload to /uploads/private/ and marks the
+  // message itself private; the two must agree.
   await messagesStore.uploadAndSendFile(
     file,
     isAdmin.value && sendPrivate.value,
@@ -102,10 +104,19 @@ function isVideoUrl(url) {
   return /\.(mp4|webm|ogg|mov)$/i.test(url);
 }
 
+// Public attachments live under /uploads/; attachments on private messages are
+// written under /uploads/private/, which nginx gates behind an admin check.
+const UPLOAD_PREFIXES = ["/uploads/", "/uploads/private/"];
+
 /** Only render attachments the backend served from its own upload directory —
- *  the fileUrl arrives over the socket and is otherwise attacker-controlled. */
+ *  the fileUrl arrives over the socket and is otherwise attacker-controlled.
+ *  A strict prefix allowlist, so absolute ("https://evil/uploads/x") and
+ *  protocol-relative ("//evil/uploads/x") URLs are rejected; "..", which could
+ *  otherwise escape the directory, is rejected outright. */
 function isSafeFileUrl(url) {
-  return typeof url === "string" && url.startsWith("/uploads/");
+  if (typeof url !== "string") return false;
+  if (url.includes("..")) return false;
+  return UPLOAD_PREFIXES.some((prefix) => url.startsWith(prefix));
 }
 
 // NOTE: a module-level /g regex carries `lastIndex` between calls. It is safe

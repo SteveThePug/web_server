@@ -7,13 +7,13 @@
  * are patched in place by hotel `code` so the table fills in rather than
  * reloading, and PENDING_ROUTE marks the not-yet-priced ones.
  *
- * An AbortController cancels an in-flight stream; a 1s ticker drives the elapsed
- * counter. Both are torn down in the `finally` and on unmount.
+ * The abort/ticker/stream lifecycle lives in useHotelSearch(); this panel only
+ * supplies the request body and how to apply each streamed event.
  */
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted } from "vue";
 import SharedFields from "./SharedFields.vue";
 import HotelRows from "./HotelRows.vue";
-import { runStream } from "./hotelsStream.js";
+import { useHotelSearch } from "./useHotelSearch.js";
 import { nextFriday, todayIso } from "./useHotelForm.js";
 import {
     gbp,
@@ -47,30 +47,34 @@ const top = ref(20);
 const rankBy = ref("total");
 
 // ---------------------------------------------------------------------------
-// Search state
+// Search state (searching/errorMsg/summary/done/elapsed come from the
+// composable; rows and `cached` are this panel's own)
 // ---------------------------------------------------------------------------
-const searching = ref(false);
-const errorMsg = ref("");
-const summary = ref(null);
 const rows = ref([]);
 const cached = ref(false);
-const done = ref(false);
-const elapsed = ref(0);
-let ticker = null;
-let aborter = null;
 
-const statusText = computed(() => {
-    if (errorMsg.value) return "Error";
-    if (searching.value) return "Searching";
-    if (done.value) return "Done";
-    return "Idle";
+const {
+    searching,
+    errorMsg,
+    summary,
+    done,
+    elapsed,
+    statusText,
+    hasResults,
+    run: onSearch,
+} = useHotelSearch({
+    url: "/py/hotels/search/stream",
+    buildRequest,
+    applyEvent,
+    onStart,
+    busyLabel: "Searching",
+    failMessage: "Search failed.",
+    earlyMessage: "The search ended early; showing what came back.",
 });
 
 const pricedCount = computed(
     () => rows.value.filter((r) => r.total != null || r.route !== PENDING_ROUTE).length,
 );
-
-const hasResults = computed(() => summary.value !== null);
 
 const sortedRows = computed(() => {
     const cmp = { total: byTotal, room: byRoom, cycle: byCycle, minutes: byMinutes }[
@@ -204,43 +208,14 @@ function applyEvent(ev) {
     }
 }
 
-async function onSearch() {
-    if (searching.value) return;
-    errorMsg.value = "";
-    summary.value = null;
+/** Reset this panel's own result state before a run. */
+function onStart() {
     rows.value = [];
     cached.value = false;
-    done.value = false;
-    searching.value = true;
-    elapsed.value = 0;
     saveConfig();
-    // 1s elapsed counter plus an AbortController to cancel the stream; both
-    // are torn down in the finally below and on unmount.
-    ticker = setInterval(() => elapsed.value++, 1000);
-    aborter = new AbortController();
-    try {
-        await runStream("/py/hotels/search/stream", buildRequest(), {
-            signal: aborter.signal,
-            onEvent: applyEvent,
-        });
-        if (!done.value && !errorMsg.value)
-            errorMsg.value = "The search ended early; showing what came back.";
-    } catch (e) {
-        if (e.name !== "AbortError") errorMsg.value = e.message || "Search failed.";
-    } finally {
-        clearInterval(ticker);
-        ticker = null;
-        aborter = null;
-        searching.value = false;
-    }
 }
 
 onMounted(loadConfig);
-
-onBeforeUnmount(() => {
-    if (ticker) clearInterval(ticker);
-    if (aborter) aborter.abort();
-});
 </script>
 
 <template>

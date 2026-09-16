@@ -406,6 +406,21 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 		since = latest.CreatedAt
 	}
 
+	// Pull the window back to cover any still-retryable failure. Without this
+	// the clamp above would have advanced past a failed email — the error row
+	// is written now, so the next window starts after it — and the retry
+	// below could never see the email again. Rows predating ReceivedAt have
+	// a zero value and are ignored rather than dragging the window to 0001.
+	var oldestRetryable models.ProcessedEmail
+	if err := s.DB.
+		Where("action = ? AND attempts < ? AND received_at > ?", "error", maxEmailAttempts, time.Time{}).
+		Order("received_at ASC").
+		First(&oldestRetryable).Error; err == nil && oldestRetryable.ReceivedAt.Before(since) {
+		log.Printf("[EmailSync] Rewinding window to %s to retry a previous failure",
+			oldestRetryable.ReceivedAt.Format(time.RFC3339))
+		since = oldestRetryable.ReceivedAt
+	}
+
 	// Fetch emails from Microsoft Graph
 	emails, err := s.fetchEmails(ctx, since)
 	if err != nil {
@@ -421,36 +436,50 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 	var created, updated, skipped, errored int
 
 	for _, email := range filtered {
-		// Dedup check
+		// Dedup check. A row is terminal — and so genuinely skippable — if it
+		// succeeded, or if it failed the maximum number of times. A row that
+		// failed but has attempts left is deliberately NOT skipped: it is
+		// reprocessed below and the same row updated, so a transient Claude
+		// or network outage no longer drops the email permanently.
 		var existing models.ProcessedEmail
-		if err := s.DB.Where("graph_message_id = ?", email.ID).First(&existing).Error; err == nil {
+		found := s.DB.Where("graph_message_id = ?", email.ID).First(&existing).Error == nil
+		if found && !retryableFailure(&existing) {
 			skipped++
 			continue
 		}
-
-		// A failed email is still recorded (with action "error") so the next
-		// sync skips it rather than retrying — and, importantly, so it does
-		// not hold the window open. The trade-off is that a transient Claude
-		// outage permanently drops those emails.
-		action, jobAppID, processErr := s.processEmail(ctx, email)
-		if processErr != nil {
-			log.Printf("[EmailSync] Error processing email %q: %v", email.Subject, processErr)
-			s.DB.Create(&models.ProcessedEmail{
-				GraphMessageID: email.ID,
-				Subject:        truncate(email.Subject, 255),
-				Action:         "error",
-			})
-			errored++
-			continue
+		if found {
+			log.Printf("[EmailSync] Retrying previously failed email %q (attempt %d of %d)",
+				email.Subject, existing.Attempts+1, maxEmailAttempts)
 		}
 
-		// Record as processed
-		s.DB.Create(&models.ProcessedEmail{
+		action, jobAppID, processErr := s.processEmail(ctx, email)
+
+		// The row carries the outcome either way. On failure the attempt
+		// counter advances, so repeated failures walk the row towards the cap
+		// and it eventually stops being retried.
+		record := models.ProcessedEmail{
 			GraphMessageID: email.ID,
 			Subject:        truncate(email.Subject, 255),
 			Action:         action,
 			JobAppID:       jobAppID,
-		})
+			ReceivedAt:     parseReceivedAt(email.ReceivedDateTime),
+			Attempts:       existing.Attempts + 1,
+		}
+
+		if processErr != nil {
+			log.Printf("[EmailSync] Error processing email %q: %v", email.Subject, processErr)
+			record.Action = "error"
+			record.JobAppID = nil
+			if record.Attempts >= maxEmailAttempts {
+				log.Printf("[EmailSync] Email %q has failed %d times; giving up on it",
+					email.Subject, record.Attempts)
+			}
+			s.saveProcessed(found, &existing, &record)
+			errored++
+			continue
+		}
+
+		s.saveProcessed(found, &existing, &record)
 
 		switch action {
 		case "created":
@@ -597,14 +626,8 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 
 	// Only the first content block is read, and the prompt asks for bare JSON,
 	// but models still wrap output in a markdown fence often enough that it is
-	// stripped defensively here. The two TrimPrefix calls are ordered so that
-	// "```json" is removed first and a plain "```" otherwise.
-	raw := message.Content[0].Text
-	raw = strings.TrimSpace(raw)
-	raw = strings.TrimPrefix(raw, "```json")
-	raw = strings.TrimPrefix(raw, "```")
-	raw = strings.TrimSuffix(raw, "```")
-	raw = strings.TrimSpace(raw)
+	// stripped defensively here.
+	raw := StripMarkdownFence(message.Content[0].Text)
 
 	var analysis EmailAnalysis
 	if err := json.Unmarshal([]byte(raw), &analysis); err != nil {
@@ -804,3 +827,78 @@ Return ONLY a JSON object with these exact keys:
 - "notes": string or null - brief summary of what this email communicates (e.g. "Interview scheduled for March 15", "Application confirmed via Greenhouse")
 
 If isJobEmail is false, only include that field. No text, no markdown, no explanation. Just the JSON object.`
+
+// StripMarkdownFence removes a surrounding markdown code fence from a model's
+// response, so text that should have been bare JSON can be unmarshalled
+// whether or not the model wrapped it.
+//
+// The two TrimPrefix calls are ordered so that "```json" is removed first and
+// a plain "```" otherwise. It is deliberately forgiving: unfenced input is
+// returned unchanged apart from surrounding whitespace.
+//
+// Shared with handlers.CreateRowing, which prompts for bare JSON in the same
+// way and gets the same fenced output.
+func StripMarkdownFence(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.TrimPrefix(raw, "```json")
+	raw = strings.TrimPrefix(raw, "```")
+	raw = strings.TrimSuffix(raw, "```")
+
+	return strings.TrimSpace(raw)
+}
+
+// maxEmailAttempts caps how many times a failing email is reprocessed. Each
+// attempt costs a Claude call, so the cap is what stops one permanently
+// unparseable email billing on every sync forever. Three gives a transient
+// outage two further chances across subsequent syncs.
+const maxEmailAttempts = 3
+
+// retryableFailure reports whether a previously recorded email should be
+// processed again. Only failures are retried, and only while they have
+// attempts left; anything that succeeded is terminal.
+func retryableFailure(row *models.ProcessedEmail) bool {
+	return row.Action == "error" && row.Attempts < maxEmailAttempts
+}
+
+// parseReceivedAt converts the provider's timestamp to a time.Time, returning
+// the zero value if it is missing or malformed. A zero value is safe: it only
+// means this row cannot pull the fetch window back, so the email is retried
+// on the next sync that happens to cover it rather than being chased.
+func parseReceivedAt(raw string) time.Time {
+	if raw == "" {
+		return time.Time{}
+	}
+
+	received, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		log.Printf("[EmailSync] Unparseable receivedDateTime %q: %v", raw, err)
+		return time.Time{}
+	}
+
+	return received
+}
+
+// saveProcessed writes the outcome of an attempt: updating the existing row
+// when this was a retry, inserting when it is the first attempt. Update is
+// used rather than Save so the row keeps its original CreatedAt, which the
+// fetch window depends on.
+func (s *EmailSyncService) saveProcessed(found bool, existing, record *models.ProcessedEmail) {
+	var err error
+	if found {
+		err = s.DB.Model(existing).Updates(map[string]any{
+			"action":      record.Action,
+			"job_app_id":  record.JobAppID,
+			"attempts":    record.Attempts,
+			"received_at": record.ReceivedAt,
+		}).Error
+	} else {
+		err = s.DB.Create(record).Error
+	}
+
+	// Logged rather than returned: a bookkeeping failure must not abort the
+	// rest of the batch. It does mean the email is reprocessed next sync,
+	// which the dedup treats as a first attempt.
+	if err != nil {
+		log.Printf("[EmailSync] Failed to record processed email %q: %v", record.Subject, err)
+	}
+}

@@ -76,11 +76,12 @@ func main() {
 	services.InitWebSocket(db, domainName)
 
 	// SPOTIFY
-	spotifyAuthState := os.Getenv("SPOTIFY_AUTH_STATE")
+	// No SPOTIFY_AUTH_STATE: the OAuth `state` is now a one-shot nonce minted
+	// per authorisation request, so there is nothing to configure.
 	spotifyRedirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
 	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	spotifyConfig := services.SpotifyConfig{AuthState: spotifyAuthState, RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
+	spotifyConfig := services.SpotifyConfig{RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
 	spotifyAuth, spotifyClient := services.InitSpotifyAuth(&spotifyConfig)
 
 	// CLAUDE
@@ -163,7 +164,11 @@ func main() {
 	admin.POST("/email/sync", store.TriggerEmailSync)
 
 	// SPOTIFY
+	// The callback must be open — Spotify redirects a logged-out browser to
+	// it — and is protected by the state nonce instead. Starting the flow is
+	// admin-only, since that is what mints the nonce.
 	r.GET("/spotify/callback", store.CompleteSpotifyAuth)
+	admin.GET("/spotify/auth", store.StartSpotifyAuth)
 	r.GET("/spotify/listening", store.ListeningTo)
 	r.GET("/spotify/recent", store.RecentlyPlayed)
 	// r.POST("/spotify", store.SendSong)
@@ -212,7 +217,7 @@ func main() {
 	// AuthContextMiddleware copies the Gin context and any verified claims
 	// into the request context, which is what resolvers read. The closure is
 	// needed because gqlgen speaks net/http, not gin.
-	r.POST("/graphql", graph.AuthContextMiddleware(auth), func(c *gin.Context) {
+	r.POST("/graphql", graph.AuthContextMiddleware(auth, db), func(c *gin.Context) {
 		gqlSrv.ServeHTTP(c.Writer, c.Request)
 	})
 	if devMode && os.Getenv("GQL_PLAYGROUND") == "true" {
@@ -234,7 +239,10 @@ func main() {
 	go store.EmailSync.StartScheduler(ctx)
 
 	port := os.Getenv("BACKEND_PORT")
-	// Blocks forever; its error is not checked, so a failure to bind the port
-	// exits main silently with status 0.
-	r.Run(fmt.Sprintf(":%s", port))
+	// Blocks until the server stops. Any return is a failure — a port clash,
+	// most often — so it must exit non-zero, or Docker sees a clean shutdown
+	// and reports the container as having succeeded.
+	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
+		log.Fatalf("http server stopped: %v", err)
+	}
 }

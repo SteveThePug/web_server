@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -36,7 +37,7 @@ type UserCredentials struct {
 //
 // It deliberately does NOT fall back to the refresh token: an expired access
 // token yields a 401 and the front end is expected to call /auth/refresh and
-// retry.
+// retry. A token whose version has been revoked is also a 401.
 func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 	access_token, err := ctx.Cookie("access_token")
 	if err != nil {
@@ -44,7 +45,10 @@ func (store *Store) AuthMiddlewear(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := store.Auth.VerifyJWT(access_token)
+	// Validated against the database, not just cryptographically: that is
+	// what makes a logged-out or password-changed token stop working here
+	// rather than lingering until it expires.
+	_, claims, err := store.Auth.AuthenticateTokenWithClaims(store.DB, access_token)
 	if err != nil {
 		ctx.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 		return
@@ -105,9 +109,9 @@ func (store *Store) ValidateAdmin(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := store.Auth.VerifyJWT(accessToken)
+	_, claims, err := store.Auth.AuthenticateTokenWithClaims(store.DB, accessToken)
 	if err != nil {
-		// Expired/invalid access token — try refreshing
+		// Expired, invalid or revoked access token — try refreshing
 		if !store.tryRefreshAndValidateAdmin(ctx) {
 			ctx.Status(http.StatusUnauthorized)
 		}
@@ -139,21 +143,10 @@ func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
 		return false
 	}
 
-	claims, err := store.Auth.VerifyJWT(refreshToken)
+	// Any failure at all (bad token, unknown user, revoked version) is
+	// "cannot decide" here, exactly as before: the caller sends 401.
+	user, err := store.Auth.AuthenticateToken(store.DB, refreshToken)
 	if err != nil {
-		return false
-	}
-
-	userIDF, ok := (*claims)["id"].(float64)
-	if !ok {
-		return false
-	}
-
-	// Pre-setting ID and calling First with no explicit condition makes GORM
-	// use the primary key already in the struct as the lookup. Soft-deleted
-	// users are excluded automatically, so a deleted admin fails here.
-	user := models.User{ID: uint(userIDF)}
-	if err := store.DB.First(&user).Error; err != nil {
 		return false
 	}
 
@@ -162,7 +155,7 @@ func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
 		return true
 	}
 
-	tokens, err := store.Auth.GenerateJWT(&user)
+	tokens, err := store.Auth.GenerateJWT(user)
 	if err != nil {
 		return false
 	}
@@ -173,32 +166,11 @@ func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
 	return true
 }
 
-// setAuthCookies writes the access/refresh cookie pair.
-//
-// The two trailing booleans of gin's SetCookie are Secure and HttpOnly, both
-// true here: the cookies are never sent over plain HTTP and are invisible to
-// JavaScript. SameSite=Lax lets them survive a top-level navigation back from
-// an OAuth provider while still blocking cross-site POSTs. Each cookie's
-// max-age mirrors the lifetime baked into the token itself, so the browser
-// drops it at roughly the moment it stops being accepted.
+// setAuthCookies writes the access/refresh cookie pair. The cookie
+// attributes live in services.SetAuthCookies so that REST and GraphQL cannot
+// disagree about them; this method is just the Store-shaped spelling of it.
 func (store *Store) setAuthCookies(ctx *gin.Context, tokens *services.Tokens) {
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie(
-		"access_token",
-		tokens.AccessToken,
-		int(store.Auth.Config.AccessTokenLifetime.Seconds()),
-		"/",
-		store.Auth.Config.Domain,
-		true, true,
-	)
-	ctx.SetCookie(
-		"refresh_token",
-		tokens.RefreshToken,
-		int(store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		"/",
-		store.Auth.Config.Domain,
-		true, true,
-	)
+	services.SetAuthCookies(ctx, store.Auth.Config, tokens)
 }
 
 // CheckToken backs GET /auth/check: it returns the current user for a valid
@@ -212,27 +184,20 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := store.Auth.VerifyJWT(access_token)
+	// Status codes here are unchanged from the hand-rolled version: a bad
+	// token or bad claims are both 401, and only a missing user is 404 with
+	// the cookies cleared. A revoked (out-of-date version) token joins the
+	// 401 case, since from the client's point of view it is simply no longer
+	// a valid token.
+	user, err := store.Auth.AuthenticateToken(store.DB, access_token)
 	if err != nil {
+		if errors.Is(err, services.ErrUserNotFound) {
+			log.Println(err)
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			store.removeCookies(ctx)
+			return
+		}
 		ctx.JSON(401, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	// JWT claims come back through encoding/json, so every number is a
-	// float64 regardless of the Go type it was signed from.
-	userIDF, ok := (*claims)["id"].(float64)
-	if !ok {
-		ctx.JSON(401, gin.H{"error": "unauthorized"})
-		return
-	}
-	userID := uint(userIDF)
-
-	user := models.User{ID: userID}
-	tx := store.DB.First(&user)
-	if tx.Error != nil {
-		log.Println(tx.Error)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-		store.removeCookies(ctx)
 		return
 	}
 
@@ -242,8 +207,8 @@ func (store *Store) CheckToken(ctx *gin.Context) {
 // RefreshToken backs POST /auth/refresh: it exchanges a valid refresh token
 // for a new cookie pair and returns the user.
 //
-// Tokens are not rotated in any revocable sense — the old refresh token stays
-// valid until it expires, because nothing is tracked server-side.
+// The old refresh token is not rotated, but it does die when the user logs out
+// or changes their password, because those bump the token version this checks.
 func (store *Store) RefreshToken(ctx *gin.Context) {
 	refreshToken, err := ctx.Cookie("refresh_token")
 	if err != nil {
@@ -251,29 +216,27 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := store.Auth.VerifyJWT(refreshToken)
+	// The three outcomes below preserve the original status codes exactly:
+	// an unusable token is 401, unreadable claims are 500, and a token for a
+	// user that no longer exists is 404 with the cookies cleared. A revoked
+	// token is treated as an unusable one (401) — the client's correct
+	// response is to log in again.
+	user, err := store.Auth.AuthenticateToken(store.DB, refreshToken)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		switch {
+		case errors.Is(err, services.ErrInvalidClaims):
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid token claims"})
+		case errors.Is(err, services.ErrUserNotFound):
+			log.Println(err)
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			store.removeCookies(ctx)
+		default:
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		}
 		return
 	}
 
-	userIDF, ok := (*claims)["id"].(float64)
-	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid token claims"})
-		return
-	}
-	userID := uint(userIDF)
-
-	user := models.User{ID: userID}
-	tx := store.DB.First(&user)
-	if tx.Error != nil {
-		log.Println(tx.Error)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-		store.removeCookies(ctx)
-		return
-	}
-
-	tokens, err := store.Auth.GenerateJWT(&user)
+	tokens, err := store.Auth.GenerateJWT(user)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -329,34 +292,47 @@ func (store *Store) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, user)
 }
 
-// Logout backs POST /auth/logout. It only clears the browser's cookies —
-// the tokens themselves stay cryptographically valid until they expire, so a
-// copy taken beforehand would still work.
+// Logout backs POST /auth/logout. As well as clearing the browser's cookies
+// it bumps the user's token version, so the tokens it just discarded — and
+// any copy taken beforehand — stop being accepted immediately.
+//
+// It always answers 200: identifying the caller is best effort (the cookies
+// may already be gone or expired), and a client that cannot be identified has
+// nothing to revoke anyway.
 func (store *Store) Logout(ctx *gin.Context) {
+	store.revokeCallerTokens(ctx)
 	store.removeCookies(ctx)
 
 	ctx.Status(http.StatusOK)
 }
 
-// removeCookies expires both auth cookies. The max-age of -1 is what tells
-// the browser to delete them; path, domain and the Secure/HttpOnly flags must
-// match those used when setting them or the browser keeps the originals.
+// revokeCallerTokens bumps the token version of whoever made this request,
+// identified from the access token or, failing that, the refresh token.
+//
+// It deliberately verifies the token rather than just reading the id out of
+// it: without that, anyone could bump an arbitrary user's version by posting a
+// forged cookie, which is a denial-of-service on that account's sessions.
+func (store *Store) revokeCallerTokens(ctx *gin.Context) {
+	for _, name := range []string{"access_token", "refresh_token"} {
+		token, err := ctx.Cookie(name)
+		if err != nil {
+			continue
+		}
+		user, err := store.Auth.AuthenticateToken(store.DB, token)
+		if err != nil {
+			continue
+		}
+		if err := services.BumpTokenVersion(store.DB, user.ID); err != nil {
+			// Logged rather than returned: the cookies are still cleared, but
+			// this means the logout did not actually revoke anything.
+			log.Printf("logout: failed to revoke tokens for user %d: %v", user.ID, err)
+		}
+		return
+	}
+}
+
+// removeCookies expires both auth cookies; see services.ClearAuthCookies for
+// why the attributes have to match those used when setting them.
 func (store *Store) removeCookies(ctx *gin.Context) {
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie(
-		"access_token",
-		"",
-		-1,
-		"/",
-		store.Auth.Config.Domain,
-		true, true,
-	)
-	ctx.SetCookie(
-		"refresh_token",
-		"",
-		-1,
-		"/",
-		store.Auth.Config.Domain,
-		true, true,
-	)
+	services.ClearAuthCookies(ctx, store.Auth.Config)
 }

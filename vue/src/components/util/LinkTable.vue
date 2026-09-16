@@ -3,11 +3,13 @@
  * Renders a list of {name, link, type} either as stacked link buttons
  * (variant="list") or as a two-column table (variant="table").
  *
- * Passing `title` wraps the whole thing in a collapsible <ToggleHeader>.
+ * Passing `title` wraps the whole thing in a collapsible <ToggleHeader> (and a
+ * .h-fit.w-full div); without a title the items are rendered bare. The items
+ * themselves live in LinkTableItems.vue so both branches share one copy.
  * Used by the Bookmarks, Favorites, Consumption and Links widgets.
  */
 import { ref } from "vue";
-import Link from "@/components/text/Link.vue";
+import LinkTableItems from "@/components/util/LinkTableItems.vue";
 import ToggleHeader from "@/components/text/ToggleHeader.vue";
 
 const props = defineProps({
@@ -33,44 +35,7 @@ const show = ref(false);
     <ToggleHeader v-model="show" class="justify-between flex items-center">
       {{ title }}
     </ToggleHeader>
-    <template v-if="show">
-      <Link
-        v-if="variant === 'list'"
-        v-for="(item, i) in items"
-        :key="i"
-        :href="item.link"
-      >
-        <p class="bdr-2 bg-surface-tint">{{ item.name }}</p>
-      </Link>
-      <table class="w-full" v-else>
-        <tbody>
-          <tr v-for="item in items" :key="item.id">
-            <th>{{ item.type }}</th>
-            <td v-if="item.link">
-              <Link :href="item.link">{{ item.name }}</Link>
-            </td>
-            <td v-else>{{ item.name }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </template>
+    <LinkTableItems v-if="show" :items="items" :variant="variant" />
   </div>
-  <template v-else>
-    <template v-if="variant === 'list'">
-      <Link v-for="(item, i) in items" :key="i" :href="item.link">
-        <p class="bdr-2 bg-surface-tint">{{ item.name }}</p>
-      </Link>
-    </template>
-    <table class="w-full" v-else>
-      <tbody>
-        <tr v-for="item in items" :key="item.id">
-          <th>{{ item.type }}</th>
-          <td v-if="item.link">
-            <Link :href="item.link">{{ item.name }}</Link>
-          </td>
-          <td v-else>{{ item.name }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </template>
+  <LinkTableItems v-else :items="items" :variant="variant" />
 </template>

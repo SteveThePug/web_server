@@ -10,11 +10,17 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// Attachment upload for the chat. Files land in a directory that nginx serves
-// directly at /uploads/, so anything written here is publicly reachable by
-// URL — which is why the extension and content checks below matter.
+// Attachment upload for the chat.
+//
+// Files land in one of two directories. /backend/uploads/ is served by nginx
+// at /uploads/ with no authentication, so anything written there is publicly
+// reachable by URL — which is why the extension and content checks below
+// matter. /backend/uploads/private/ holds attachments for private (admin-only)
+// messages and is served at /uploads/private/ behind an nginx auth_request
+// gate; only an admin may upload there.
 
 // allowedExtensions is the upload allow-list, keyed by lower-cased extension.
 var allowedExtensions = map[string]bool{
@@ -36,10 +42,28 @@ var extensionToMIMEPrefix = map[string]string{
 	".pdf": "application/pdf", ".txt": "text/",
 }
 
+// publicUploadDir and privateUploadDir are the two destinations; the private
+// one is created on demand because nothing else guarantees it exists.
+const (
+	publicUploadDir  = "/backend/uploads/"
+	privateUploadDir = "/backend/uploads/private/"
+)
+
 // UploadMessageFile backs POST /messages/upload (login required) and returns
-// the public URL of the stored file, which the client then sends over the
-// WebSocket as a message's fileUrl.
+// the URL of the stored file, which the client then sends over the WebSocket
+// as a message's fileUrl.
+//
+// The multipart form takes an optional "private" field: "true" stores the file
+// under /uploads/private/ for use as a private message's attachment. That is
+// admin-only, because private messages themselves are — an attachment URL
+// leaking out is the same disclosure as the message leaking out.
 func (store *Store) UploadMessageFile(ctx *gin.Context) {
+	private := ctx.PostForm("private") == "true"
+	if private && !requestIsAdmin(ctx) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+		return
+	}
+
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
@@ -94,7 +118,18 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	}
 	filename := hex.EncodeToString(b) + ext
 
-	uploadDir := "/backend/uploads/"
+	uploadDir := publicUploadDir
+	urlPrefix := "/uploads/"
+	if private {
+		uploadDir = privateUploadDir
+		urlPrefix = "/uploads/private/"
+		// 0755 so nginx (a different user) can traverse the directory to
+		// serve the files once its auth_request gate has approved.
+		if err := os.MkdirAll(uploadDir, 0755); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+			return
+		}
+	}
 	dest := filepath.Join(uploadDir, filename)
 
 	// Reopened rather than rewound: the earlier handle was closed after
@@ -119,5 +154,25 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"url": "/uploads/" + filename})
+	ctx.JSON(http.StatusOK, gin.H{"url": urlPrefix + filename})
+}
+
+// requestIsAdmin reports whether the caller's access token carries admin=true.
+//
+// This route sits in the `protected` group, which runs AuthMiddlewear but not
+// AdminMiddleware — the endpoint has to stay usable by any signed-in user for
+// public attachments — so the admin check is made here from the same
+// "userClaims" value AdminMiddleware would have read.
+func requestIsAdmin(ctx *gin.Context) bool {
+	claims, exists := ctx.Get("userClaims")
+	if !exists {
+		return false
+	}
+	mapClaims, ok := claims.(*jwt.MapClaims)
+	if !ok {
+		return false
+	}
+	admin, ok := (*mapClaims)["admin"].(bool)
+
+	return ok && admin
 }

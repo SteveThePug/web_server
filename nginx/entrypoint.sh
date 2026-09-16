@@ -1,11 +1,15 @@
 #!/bin/sh
 # =============================================================================
-# nginx entrypoint — picks one of three nginx configs at container start.
+# nginx entrypoint — picks one of three nginx configs at container start, then
+# watches for certificate changes and reloads nginx in place.
 #
 # WHAT IT DOES
 #   nginx.conf is not shipped in the image. Instead three *templates* are baked
 #   in (see nginx/Dockerfile) and this script renders exactly one of them to
-#   /etc/nginx/nginx.conf before starting nginx in the foreground.
+#   /etc/nginx/nginx.conf before starting nginx in the foreground. In dev it
+#   also renders the shared server-block partial the dev template includes.
+#   After nginx starts, a background watcher handles certificates appearing or
+#   being renewed — see CERTIFICATE WATCHER at the bottom of this file.
 #
 # WHEN IT RUNS
 #   Every time the `nginx` container starts (ENTRYPOINT). It is therefore also
@@ -37,10 +41,11 @@
 #     a. nginx starts with nginx_setup.conf (port 80, ACME webroot only).
 #     b. certbot container runs `certbot certonly --webroot`, writes the cert
 #        into the shared ./certbot/conf volume.
-#     c. nginx is restarted (manually, or by a redeploy) — this script re-runs,
-#        now finds the cert, and renders the production config.
-#   Step (c) is NOT automatic. A first deploy on a new domain needs one manual
-#   `docker compose restart nginx` after certbot succeeds.
+#     c. the background certificate watcher in this script notices the cert
+#        file appear (within CERT_WATCH_INTERVAL, default 60s), re-renders the
+#        production config, validates it and reloads nginx in place.
+#   Step (c) IS automatic now. A first deploy on a new domain no longer needs a
+#   manual `docker compose restart nginx`; a restart remains a valid fallback.
 #
 # THE envsubst TEMPLATING PATTERN
 #   The templates are plain nginx configs containing $VARIABLES. Two different
@@ -65,10 +70,9 @@
 #   HASURA_HOST / HASURA_PORT      Hasura console upstream
 #   QUARTZ_HOST / QUARTZ_PORT      notes site upstream
 #   PYTHON_HOST / PYTHON_PORT      FastAPI upstream (defaulted below)
-#   UPTIMEKUMA_* / WALLABAG_*      substituted but not currently referenced by
-#                                  any template; kept so adding those services
-#                                  back needs no entrypoint change.
 #   DEV_MODE                       "true" only via docker-compose.dev.yml
+#   CERT_WATCH_INTERVAL            optional, seconds between certificate-watch
+#                                  polls (default 60). Production only.
 #
 # ASSUMES EXISTS
 #   /etc/letsencrypt  (bind mount of ./certbot/conf, shared with certbot)
@@ -86,7 +90,7 @@ export PYTHON_PORT="${PYTHON_PORT:-8000}"
 # The envsubst allow-list, defined once and reused by both full-config branches
 # so the two lists cannot drift apart. It MUST stay single-quoted here and be
 # passed as "$ENVSUBST_VARS" (one argument) below.
-ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${UPTIMEKUMA_HOST} ${UPTIMEKUMA_PORT} ${WALLABAG_HOST} ${WALLABAG_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
+ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
 
 # Check if DEV_MODE
 if [ "$DEV_MODE" = "true" ]; then
@@ -101,21 +105,29 @@ if [ "$DEV_MODE" = "true" ]; then
       -out "$CERT_DIR/fullchain.pem" \
       -subj "/CN=localhost" 2>/dev/null
   fi
-  # In dev mode, so use nginx_dev.conf.template
+  # In dev mode, so use nginx_dev.conf.template. Its two server blocks both
+  # `include /etc/nginx/nginx_dev_common.conf`, so the shared partial has to be
+  # rendered through the SAME allow-list, into exactly that path, first.
+  envsubst "$ENVSUBST_VARS" \
+    </etc/nginx/nginx_dev_common.conf.template \
+    >/etc/nginx/nginx_dev_common.conf
   envsubst "$ENVSUBST_VARS" \
     </etc/nginx/nginx_dev.conf.template \
     >/etc/nginx/nginx.conf
+  CONFIG_MODE=dev
 elif [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
   echo "Certificates found. Using production nginx config."
   # In production with certificates already existing, so use nginx.conf.template
   envsubst "$ENVSUBST_VARS" \
     </etc/nginx/nginx.conf.template \
     >/etc/nginx/nginx.conf
+  CONFIG_MODE=prod
 else
   echo "Certificates NOT found. Using setup nginx config."
   # In production with no certificates, so use nginx_setup.conf.template and will need restart after generation
   # Only ${DOMAIN} is substituted: the setup config has no upstreams at all.
   envsubst '${DOMAIN}' </etc/nginx/nginx_setup.conf.template >/etc/nginx/nginx.conf
+  CONFIG_MODE=setup
 fi
 
 # Ensure upload directory is traversable by nginx worker.
@@ -146,6 +158,84 @@ if [ "$DEV_MODE" != "true" ]; then
   else
     echo "Vue assets ready."
   fi
+fi
+
+# =============================================================================
+# CERTIFICATE WATCHER (production only)
+#
+# Solves two long-standing manual steps:
+#   1. FIRST ISSUANCE. If we booted with the bootstrap config (CONFIG_MODE=
+#      setup) because no certificate existed yet, the watcher notices the
+#      certificate appearing, re-renders the production template and reloads
+#      nginx in place. No `docker compose restart nginx` is needed any more.
+#   2. RENEWAL. nginx reads the certificate files once at startup and keeps
+#      them in memory, so a renewed cert is not served until a reload.
+#      certbot/entrypoint.sh passes --deploy-hook, which touches a sentinel
+#      file in the SHARED /etc/letsencrypt mount on every successful renewal.
+#      The watcher sees the sentinel, deletes it, and reloads.
+#
+# WHY A SENTINEL FILE AND NOT THE DOCKER SOCKET
+#   The obvious alternative is to mount /var/run/docker.sock into certbot and
+#   have the deploy hook run `docker exec nginx nginx -s reload`. That works,
+#   but the docker socket is root-equivalent on the host, and it would hand
+#   that to a container whose whole job is talking to the public internet.
+#   Both containers ALREADY share ./certbot/conf read-write, so a touched file
+#   in that directory is a capability they already have and grants nothing new.
+#   Cost: a reload lands up to $CERT_WATCH_INTERVAL late (default 60s), which
+#   is irrelevant for a cert renewed 30 days before expiry.
+#
+# FAIL-SAFE DESIGN
+#   The watcher NEVER overwrites a working /etc/nginx/nginx.conf with an
+#   untested one: it renders to a temp file, runs `nginx -t -c` on it, and only
+#   installs + reloads if that passes. A reload that would fail is skipped, and
+#   the currently-running nginx keeps serving. `set +e` inside the watcher so a
+#   transient failure cannot kill the loop (and the loop is a background job,
+#   so it can never take nginx down with it).
+# =============================================================================
+RELOAD_SENTINEL=/etc/letsencrypt/.nginx-reload
+CERT_WATCH_INTERVAL="${CERT_WATCH_INTERVAL:-60}"
+
+# Render the production template to a temp file, validate it, and only then
+# install it. Returns non-zero (installing nothing) if either step fails.
+render_prod_config() {
+  _candidate=/tmp/nginx.conf.candidate
+  envsubst "$ENVSUBST_VARS" </etc/nginx/nginx.conf.template >"$_candidate" 2>/dev/null || return 1
+  nginx -t -c "$_candidate" >/dev/null 2>&1 || return 1
+  cat "$_candidate" >/etc/nginx/nginx.conf || return 1
+  return 0
+}
+
+cert_watcher() {
+  set +e
+  while :; do
+    sleep "$CERT_WATCH_INTERVAL"
+    if [ "$CONFIG_MODE" = "setup" ]; then
+      # B2: bootstrap -> production, once certbot's first issuance lands.
+      if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && \
+         [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+        echo "Certificate for $DOMAIN appeared. Switching to production config."
+        if render_prod_config && nginx -s reload; then
+          CONFIG_MODE=prod
+          rm -f "$RELOAD_SENTINEL"
+          echo "Production nginx config live."
+        else
+          echo "WARNING: could not switch to production config; staying on setup config and retrying."
+        fi
+      fi
+    elif [ -f "$RELOAD_SENTINEL" ]; then
+      # B1: certbot renewed the certificate and touched the sentinel.
+      rm -f "$RELOAD_SENTINEL"
+      echo "Certificate renewal detected. Reloading nginx."
+      nginx -t >/dev/null 2>&1 && nginx -s reload
+    fi
+  done
+}
+
+if [ "$DEV_MODE" != "true" ]; then
+  # Drop any sentinel left over from a previous run: we have just loaded the
+  # certificate files from disk, so there is by definition nothing to reload.
+  rm -f "$RELOAD_SENTINEL" 2>/dev/null || true
+  cert_watcher &
 fi
 
 # Start nginx in the foreground so it is PID 1 and docker can signal/restart it.

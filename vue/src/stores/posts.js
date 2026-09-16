@@ -1,15 +1,15 @@
 /**
- * Blog posts for the Feed widget. A view over homeData.posts.
+ * Blog posts for the Feed widget. A view over homeData.posts, built by
+ * createMirrorStore(); see stores/createMirrorStore.js for the
+ * placeholder-then-overwrite pattern.
  *
  * `post_template` is placeholder content rendered before (or instead of) a
- * successful fetch — the watch only overwrites `posts` when the fetch returned a
- * non-empty list, so the widget never flashes empty.
+ * successful fetch, so the widget never flashes empty.
  */
 
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
 import { gql } from "@/graphql";
-import { useHomeDataStore } from "@/stores/homeData";
+import { createMirrorStore } from "@/stores/createMirrorStore";
 
 const post_template = {
   title: "Can't fetch from the db yo",
@@ -22,29 +22,10 @@ const post_template = {
 };
 
 export const usePostsStore = defineStore("posts", () => {
-  const posts = ref([post_template]);
-
-  const postsCount = computed(() => posts.value.length);
-
-  const homeData = useHomeDataStore();
-  // Mirror the shared home query. `immediate` matters: homeData may already
-  // have loaded by the time this store is first used, and a plain watch would
-  // never fire for that existing value. The `length > 0` test keeps the
-  // placeholder on screen when the backend returns nothing.
-  watch(
-    () => homeData.posts,
-    (newPosts) => {
-      if (newPosts.length > 0) {
-        posts.value = newPosts;
-      }
-    },
-    { immediate: true },
-  );
-
-  /** Refresh by re-running the whole home query; the watch above applies it. */
-  async function fetchPosts() {
-    await homeData.fetchAll();
-  }
+  const { items, count, fetch, homeData } = createMirrorStore({
+    slice: "posts",
+    template: post_template,
+  });
 
   /** Soft-delete a post, then refetch so every widget sees the new list. */
   async function deletePost(post) {
@@ -61,11 +42,11 @@ export const usePostsStore = defineStore("posts", () => {
   }
 
   return {
-    posts,
+    posts: items,
 
-    postsCount,
+    postsCount: count,
 
-    fetchPosts,
+    fetchPosts: fetch,
     deletePost,
   };
 });

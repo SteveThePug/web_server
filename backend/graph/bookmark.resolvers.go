@@ -54,14 +54,7 @@ func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, erro
 	if err := r.Store.DB.Order("category ASC, created_at ASC").Find(&bookmarks).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &bookmarks[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.Bookmark, len(bookmarks))
-	for i := range bookmarks {
-		result[i] = &bookmarks[i]
-	}
-	return result, nil
+	return ptrs(bookmarks), nil
 }
 
 // Bookmark returns BookmarkResolver implementation.

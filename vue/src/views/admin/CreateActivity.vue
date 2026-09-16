@@ -3,37 +3,19 @@
  * Admin form: log a consumed book/film/game. Emits "done"/"cancel".
  */
 import Button from "@/components/input/Button.vue";
+import { useCreateForm } from "@/js/useCreateForm";
 
-import { ref } from "vue";
-import { gql } from "@/graphql";
 
 const emit = defineEmits(["done", "cancel"]);
 
-const type = ref("");
-const name = ref("");
-const link = ref("");
-
-async function post() {
-  try {
-    const data = await gql(
-      `mutation CreateActivity($input: CreateActivityInput!) { createActivity(input: $input) { id } }`,
-      {
-        input: {
-          type: type.value,
-          name: name.value,
-          link: link.value || undefined,
-        },
-      },
-    );
-    type.value = "";
-    name.value = "";
-    link.value = "";
-    console.log(data.createActivity);
-    emit("done");
-  } catch (err) {
-    console.error(err);
-  }
-}
+const { values, submit: post } = useCreateForm({
+  mutation: `mutation CreateActivity($input: CreateActivityInput!) { createActivity(input: $input) { id } }`,
+  fields: ["type", "name", "link"],
+  optional: ["link"],
+  resultKey: "createActivity",
+  emit,
+});
+const { type, name, link } = values;
 </script>
 
 <template>

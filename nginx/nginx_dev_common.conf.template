@@ -1,0 +1,239 @@
+# =============================================================================
+# nginx_dev.conf.template — SHARED BODY of the dev :80 and :443 server blocks.
+#
+# WHY THIS FILE EXISTS
+#   In dev the :80 and :443 server blocks are byte-for-byte identical apart
+#   from `listen` and the self-signed `ssl_certificate` pair. They used to be
+#   ~190 duplicated lines, so every routing fix had to be made twice and could
+#   silently drift. Both blocks now `include` this partial instead.
+#
+# HOW IT IS RENDERED
+#   nginx/entrypoint.sh runs the SAME envsubst allow-list over this file as
+#   over nginx_dev.conf.template, writing the result to
+#   /etc/nginx/nginx_dev_common.conf — which is exactly the path the two
+#   `include` directives in the rendered nginx.conf point at. If you add
+#   a new substituted variable here, it must also be added to ENVSUBST_VARS in
+#   the entrypoint, or it will reach nginx unsubstituted.
+#
+# WHAT BELONGS HERE
+#   Everything inside a `server { ... }` block: the `set $upstream_*` vars and
+#   every `location`. NOT `listen`, `server_name` or the ssl_certificate lines
+#   (those differ between the two blocks), and NOT the enclosing braces — this
+#   file must be brace-balanced on its own.
+#
+# This is the DEV file only. Production uses a single :443 server block in
+# nginx.conf.template and needs no partial.
+# =============================================================================
+        set $upstream_backend http://$BACKEND_HOST:$BACKEND_PORT;
+        set $upstream_icecast http://$ICECAST_HOST:$ICECAST_PORT;
+        set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
+        set $upstream_hasura http://$HASURA_HOST:$HASURA_PORT;
+        set $upstream_quartz http://$QUARTZ_HOST:$QUARTZ_PORT;
+        set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
+
+        # PRIVATE attachments (admin-only). Attachments on *private* chat
+        # messages are written by the backend to /backend/uploads/private/ and
+        # must not be readable by the public, so this subpath is put behind the
+        # same admin `auth_request` used for /hasura/ and /notes/. nginx picks
+        # the LONGEST matching prefix location, so this block wins over the
+        # public /uploads/ block below for /uploads/private/* regardless of
+        # ordering. Same three hardening headers as the public block, because
+        # the bytes are just as attacker-supplied.
+        location /uploads/private/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            alias /uploads/private/;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
+
+        location /uploads/ {
+            alias /uploads/;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
+
+        location / {
+            proxy_pass http://vue:5173;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+        }
+
+        location $BACKEND_ENDPOINT {
+            return 301 $BACKEND_ENDPOINT/;
+        }
+
+        location $BACKEND_ENDPOINT/ws {
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass $upstream_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location $BACKEND_ENDPOINT/auth/login {
+            limit_req zone=login burst=3 nodelay;
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass $upstream_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location $BACKEND_ENDPOINT/messages/upload {
+            limit_req zone=upload burst=3 nodelay;
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass $upstream_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location $BACKEND_ENDPOINT/ {
+            limit_req zone=api burst=20 nodelay;
+            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
+            proxy_pass $upstream_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /radio {
+            return 301 /radio/;
+        }
+
+        # The icecast ADMIN UI (/radio/admin/*) is a full station-control
+        # surface — kick sources, change metadata — protected only by the
+        # icecast admin password, and it was reachable from the public
+        # internet through this proxy. Put it behind the same admin
+        # `auth_request` as /hasura/ and /notes/ so an admin session cookie is
+        # required before the request ever reaches icecast. Longest-prefix
+        # matching means this wins over /radio/ below; listener traffic
+        # (/radio/$ICECAST_MOUNT, /radio/status.xsl) is untouched.
+        location /radio/admin/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            rewrite ^/radio/(.*)$ /$1 break;
+            proxy_pass $upstream_icecast;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /radio/ {
+            rewrite ^/radio/(.*)$ /$1 break;
+            proxy_pass $upstream_icecast;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /gitea {
+            return 301 /gitea/;
+        }
+
+        location /gitea/ {
+            rewrite ^/gitea/(.*)$ /$1 break;
+            proxy_pass $upstream_gitea;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /hasura {
+            return 301 /hasura/;
+        }
+
+        location /hasura/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            rewrite ^/hasura/(.*)$ /$1 break;
+            proxy_pass $upstream_hasura;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+
+        location /notes {
+            return 301 /notes/;
+        }
+
+        location /notes/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            rewrite ^/notes/(.*)$ /$1 break;
+            proxy_pass $upstream_quartz;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /py {
+            return 301 /py/;
+        }
+
+        # /py/hotels/search[/stream] and /py/hotels/scan/stream: long-running NDJSON streams
+        location ~ ^/py/hotels/(search|scan) {
+            # Public, up-to-a-minute upstream call with a single search slot: keep it to a few per minute per IP
+            limit_req zone=hotel_search burst=2 nodelay;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 300s;
+            # The stream variant sends NDJSON progress lines; pass them through as they arrive
+            proxy_buffering off;
+            proxy_cache off;
+            gzip off;
+            rewrite ^/py/(.*)$ /$1 break;
+            proxy_pass $upstream_python;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /py/ {
+            limit_req zone=api burst=20 nodelay;
+            # Hotel search blocks for up to a few minutes while it calls Travelodge and TfL
+            proxy_read_timeout 300s;
+            proxy_send_timeout 300s;
+            rewrite ^/py/(.*)$ /$1 break;
+            proxy_pass $upstream_python;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /internal/auth/admin-validate {
+            internal;
+            rewrite ^ /auth/validate-admin break;
+            proxy_pass $upstream_backend;
+            proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
+            proxy_set_header Cookie $http_cookie;
+        }
+
+        location @auth_denied {
+            return 302 /admin/login?redirect=$request_uri;
+        }

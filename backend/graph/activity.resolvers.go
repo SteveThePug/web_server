@@ -39,14 +39,7 @@ func (r *queryResolver) Activities(ctx context.Context) ([]*models.Activity, err
 	if err := r.Store.DB.Order("created_at DESC").Find(&activities).Error; err != nil {
 		return nil, err
 	}
-	// Copy to a slice of pointers because the schema returns a list of
-	// nullable objects. Taking &activities[i] is safe: the slice is never
-	// appended to after this point, so the backing array cannot move.
-	result := make([]*models.Activity, len(activities))
-	for i := range activities {
-		result[i] = &activities[i]
-	}
-	return result, nil
+	return ptrs(activities), nil
 }
 
 // Activity returns ActivityResolver implementation.

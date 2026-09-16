@@ -21,10 +21,7 @@ const resolvedColumns = computed(() => {
     Object.keys(obj).forEach((key) => keys.add(key));
   }
 
-  return Array.from(keys).map((key) => ({
-    key,
-    label: key,
-  }));
+  return Array.from(keys);
 });
 </script>
 
@@ -32,16 +29,16 @@ const resolvedColumns = computed(() => {
   <table>
     <thead>
       <tr>
-        <th v-for="col in resolvedColumns" :key="col.key">
-          {{ col.label }}
+        <th v-for="col in resolvedColumns" :key="col">
+          {{ col }}
         </th>
       </tr>
     </thead>
 
     <tbody>
       <tr v-for="(row, rowIndex) in objArr" :key="rowIndex">
-        <td v-for="col in resolvedColumns" :key="col.key">
-          {{ row[col.key] ?? "" }}
+        <td v-for="col in resolvedColumns" :key="col">
+          {{ row[col] ?? "" }}
         </td>
       </tr>
     </tbody>

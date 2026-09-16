@@ -1,11 +1,6 @@
 <script setup>
 /**
  * Decorative animated colour bars. STATUS: not imported anywhere.
- *
- * Two known problems if it is ever revived: the call
- * `generateOffsets((150, 15, 10))` uses the comma operator, so it passes a single
- * argument 10 as `width` and the other two defaults apply; and animate() logs to
- * the console on every frame.
  */
 import { ref, onMounted, useTemplateRef, onUnmounted } from "vue";
 import { getRandomColor } from "@/js/utils";
@@ -20,7 +15,7 @@ function generateOffsets(width = 100, step = 10, n = 20) {
     color: getRandomColor(),
   }));
 }
-const offsets = ref(generateOffsets((150, 15, 10)));
+const offsets = ref(generateOffsets(150, 15, 10));
 let rafId;
 
 const speed = 0.5; // pixels per frame
@@ -29,8 +24,6 @@ function animate() {
   const ctnr = container.value;
   for (const item of offsets.value) {
     const width = Math.max(ctnr.offsetWidth, item.width);
-
-    console.log(ctnr.offsetWidth);
 
     item.offset -= speed;
     if (item.offset <= -width) {

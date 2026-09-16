@@ -154,8 +154,17 @@ services:
       dockerfile: Dockerfile
     container_name: "${BACKEND_HOST}"
     restart: always
+    # MAP form, not the list form used elsewhere: this waits for db's
+    # healthcheck to pass, not merely for its container to start. Without it
+    # the Go process raced Postgres on every boot, failed its first connection,
+    # died, and relied on `restart: always` to try again — noisy log churn and
+    # a slower cold start in practice.
+    # `restart: always` is deliberately KEPT as the backstop: if db's health
+    # probe were ever to stall past compose's patience, or the DB dropped out
+    # later, the restart policy still recovers the backend.
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     env_file:
@@ -191,10 +200,17 @@ services:
   # AUTOHEAL_CONTAINER_LABEL=all means "watch every container that defines a
   # healthcheck" (i.e. backend and python) rather than only labelled ones.
   # It mounts the docker socket, which is effectively root on the host — that
-  # is the price of the feature; keep the image pinned-ish and trusted.
+  # is the price of the feature. Because of that the image is pinned BY DIGEST,
+  # not by a floating tag: `:latest` meant any future push to Docker Hub would
+  # silently gain root on the Pi at the next `docker compose pull`/`up`. The
+  # digest below is a multi-arch index (it includes linux/arm64, which is what
+  # the Pi pulls) and was the content of `willfarrell/autoheal:latest` at the
+  # time of pinning. To bump it: pull the new tag, `docker image inspect
+  # willfarrell/autoheal:<tag> --format '{{index .RepoDigests 0}}'`, and paste
+  # the digest here — never go back to a bare tag.
   # Deliberately NOT on app-network: it talks only to the socket.
   autoheal:
-    image: willfarrell/autoheal:latest
+    image: willfarrell/autoheal@sha256:4ce976e9033b41426d44633295d6a08f9bc5929b27866352d91b31d4f6b26447
     container_name: autoheal
     restart: always
     environment:
@@ -220,6 +236,26 @@ services:
       - app-network
     volumes:
       - dbdata:/var/lib/postgresql/data
+    # Postgres is the one dependency the backend genuinely cannot start
+    # without, so `backend` gates on this healthcheck (condition:
+    # service_healthy) instead of on mere container start.
+    # TUNED FOR SLOW ARM HARDWARE: on a Raspberry Pi with a cold page cache a
+    # first-boot Postgres can take well over a minute to finish initdb/recovery
+    # and accept connections. start_period is the grace window during which a
+    # failing probe does NOT count against `retries` and does NOT mark the
+    # container unhealthy, so 90s costs nothing on a warm boot and prevents a
+    # false "unhealthy" on a cold one. After that, 10 retries at 10s gives
+    # another ~100s before anything gives up. `pg_isready -U $POSTGRES_USER`
+    # is the cheapest real readiness probe (it does a protocol-level connect,
+    # not just a TCP open). Note $$POSTGRES_USER: the doubled $ escapes
+    # compose's own interpolation so the variable is expanded by the shell
+    # INSIDE the container, from env_file, at probe time.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
 
   # Admin-only DB browser, reached at /hasura/. Console and dev mode are OFF in
   # production (turned on by the dev override). It is additionally gated in

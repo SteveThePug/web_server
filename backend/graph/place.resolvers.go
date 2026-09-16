@@ -111,11 +111,7 @@ func (r *queryResolver) Places(ctx context.Context) ([]*models.Place, error) {
 	if err := r.Store.DB.Order("done ASC, priority DESC, created_at DESC").Find(&places).Error; err != nil {
 		return nil, err
 	}
-	result := make([]*models.Place, len(places))
-	for i := range places {
-		result[i] = &places[i]
-	}
-	return result, nil
+	return ptrs(places), nil
 }
 
 // Place returns PlaceResolver implementation.

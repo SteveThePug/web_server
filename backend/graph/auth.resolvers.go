@@ -7,11 +7,13 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
+	"log"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -48,7 +50,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, fmt.Errorf("failed to generate tokens")
 	}
 
-	setAuthCookies(gc, r.Store.Auth.Config, tokens)
+	services.SetAuthCookies(gc, r.Store.Auth.Config, tokens)
 
 	// The payload carries no token: the tokens only ever travel as HttpOnly
 	// cookies, so client JavaScript never sees them.
@@ -62,12 +64,18 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("could not get gin context")
 	}
 
-	// Max-age -1 tells the browser to drop the cookies. Nothing is
-	// invalidated server-side, so a token captured beforehand still works
-	// until it expires.
-	gc.SetSameSite(http.SameSiteLaxMode)
-	gc.SetCookie("access_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
-	gc.SetCookie("refresh_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
+	// Bumping the token version is what actually revokes the tokens; clearing
+	// the cookies only stops the browser presenting them. Both are best
+	// effort and logout always reports success, matching the REST endpoint.
+	if userID, ok := UserIDFromCtx(ctx); ok {
+		// The context only carries claims from a token that already
+		// verified, so this cannot be used to revoke someone else's sessions.
+		if err := services.BumpTokenVersion(r.Store.DB, userID); err != nil {
+			log.Printf("logout: failed to revoke tokens for user %d: %v", userID, err)
+		}
+	}
+
+	services.ClearAuthCookies(gc, r.Store.Auth.Config)
 
 	return true, nil
 }
@@ -84,33 +92,31 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 		return nil, fmt.Errorf("unauthorized")
 	}
 
-	claims, err := r.Store.Auth.VerifyJWT(refreshToken)
+	// Shared with the REST refresh endpoint, but the messages below are the
+	// ones this resolver already returned, so the GraphQL error strings are
+	// unchanged. Admin status and the token version are both re-read from the
+	// database here, which is what lets a revoked admin flag or a logout take
+	// effect on refresh.
+	user, err := r.Store.Auth.AuthenticateToken(r.Store.DB, refreshToken)
 	if err != nil {
-		return nil, fmt.Errorf("unauthorized")
+		switch {
+		case errors.Is(err, services.ErrInvalidClaims):
+			return nil, fmt.Errorf("invalid token claims")
+		case errors.Is(err, services.ErrUserNotFound):
+			return nil, fmt.Errorf("user not found")
+		default:
+			return nil, fmt.Errorf("unauthorized")
+		}
 	}
 
-	userIDF, ok := (*claims)["id"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("invalid token claims")
-	}
-
-	// Setting the primary key and calling First with no condition makes GORM
-	// look the row up by that key. Admin status is re-read from the database
-	// here, which is what lets a revoked admin flag take effect on refresh.
-	var user models.User
-	user.ID = uint(userIDF)
-	if err := r.Store.DB.First(&user).Error; err != nil {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	tokens, err := r.Store.Auth.GenerateJWT(&user)
+	tokens, err := r.Store.Auth.GenerateJWT(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tokens")
 	}
 
-	setAuthCookies(gc, r.Store.Auth.Config, tokens)
+	services.SetAuthCookies(gc, r.Store.Auth.Config, tokens)
 
-	return &model.AuthPayload{User: &user}, nil
+	return &model.AuthPayload{User: user}, nil
 }
 
 // Me is the resolver for the me field.

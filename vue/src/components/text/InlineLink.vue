@@ -1,22 +1,14 @@
 <script setup>
 /**
  * Link styled to sit inside running prose (bold italic, no underline). Same
- * `to` vs `href` and auto-`rel` behaviour as Link.vue.
+ * `to` vs `href` and auto-`rel` behaviour as Link.vue, shared through
+ * useLinkAttrs.js.
  */
-import { computed } from "vue";
+import { linkProps, useComputedRel } from "@/components/text/useLinkAttrs";
 
-const props = defineProps({
-  href: { type: String, default: "" },
-  to: { type: String, default: "" },
-  target: { type: String, default: undefined },
-  rel: { type: String, default: undefined },
-});
+const props = defineProps({ ...linkProps });
 
-const computedRel = computed(() => {
-  if (props.rel !== undefined) return props.rel;
-  if (props.target === "_blank") return "noopener noreferrer";
-  return undefined;
-});
+const computedRel = useComputedRel(props);
 </script>
 
 <template>
