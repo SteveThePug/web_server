@@ -19,36 +19,53 @@ export const useMessagesStore = defineStore("messages", () => {
   const messagesCount = computed(() => messages.value.length);
 
   function connect() {
-    if (socket.value && isConnected.value) return;
+    if (socket.value) return;
     intentionalClose = false;
+    clearTimeout(reconnectTimer);
 
-    socket.value = new WebSocket(getWebSocketURL());
+    // Every handler checks it still belongs to the current socket. A socket
+    // closed by disconnect() can fire onclose after connect() has already
+    // opened a replacement; without this guard it would null the new socket
+    // and schedule a second reconnect, leaving two live sockets that each
+    // push every broadcast (duplicate messages).
+    const ws = new WebSocket(getWebSocketURL());
+    socket.value = ws;
 
-    socket.value.onopen = () => {
+    ws.onopen = () => {
+      if (socket.value !== ws) return;
       isConnected.value = true;
       lastError.value = null;
       reconnectDelay = 1000;
-      messages.value = [];
     };
 
-    socket.value.onmessage = (event) => {
+    ws.onmessage = (event) => {
+      if (socket.value !== ws) return;
       try {
         const data = JSON.parse(event.data);
+        if (data.action === "history") {
+          // Replace in one go so keyed rows (and their images) are patched in
+          // place rather than unmounted and recreated.
+          messages.value = data.messages || [];
+          return;
+        }
         if (data.action === "delete") {
           messages.value = messages.value.filter((m) => m.id !== data.id);
           return;
         }
+        if (data.id && messages.value.some((m) => m.id === data.id)) return;
         messages.value.push(data);
       } catch {
         messages.value.push({ text: event.data });
       }
     };
 
-    socket.value.onerror = (error) => {
+    ws.onerror = (error) => {
+      if (socket.value !== ws) return;
       lastError.value = error;
     };
 
-    socket.value.onclose = () => {
+    ws.onclose = () => {
+      if (socket.value !== ws) return;
       isConnected.value = false;
       socket.value = null;
       if (!intentionalClose) {
@@ -64,9 +81,10 @@ export const useMessagesStore = defineStore("messages", () => {
     intentionalClose = true;
     clearTimeout(reconnectTimer);
     if (!socket.value) return;
-    socket.value.close();
+    const ws = socket.value;
     socket.value = null;
     isConnected.value = false;
+    ws.close();
   }
 
   function sendMessage(text, isPrivate = false) {

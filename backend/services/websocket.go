@@ -62,6 +62,14 @@ type wsDeleteEvent struct {
 	ID     uint   `json:"id"`
 }
 
+// wsHistoryEvent is sent once on connect with the recent messages the client
+// may see. Sending it as a single batch lets the client replace its list
+// atomically, so a reconnect does not blank the chat and reload every image.
+type wsHistoryEvent struct {
+	Action   string           `json:"action"`
+	Messages []models.Message `json:"messages"`
+}
+
 func InitWebSocket(database *gorm.DB, domain string) {
 	wsDB = database
 	allowedDomain = domain
@@ -77,18 +85,17 @@ func HandleWebSocket(conn *websocket.Conn, isAdmin bool) {
 	nextAuthorID++
 	authorID := nextAuthorID
 
-	var history []models.Message
+	history := make([]models.Message, 0, maxMessages)
 	historyQuery := wsDB.Order("created_at ASC").Limit(maxMessages)
 	if !isAdmin {
 		historyQuery = historyQuery.Where("private = ?", false)
 	}
 	historyQuery.Find(&history)
 
-	for _, msg := range history {
-		if err := conn.WriteJSON(msg); err != nil {
-			mu.Unlock()
-			return
-		}
+	if err := conn.WriteJSON(wsHistoryEvent{Action: "history", Messages: history}); err != nil {
+		delete(clients, conn)
+		mu.Unlock()
+		return
 	}
 	mu.Unlock()
 
