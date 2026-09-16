@@ -1,3 +1,7 @@
+<!--
+  Layout wrapper used inside every CV template: a left gutter (#left slot, e.g.
+  dates), a heading row (#top slot) and the default slot for the body.
+-->
 <script setup></script>
 
 <template>

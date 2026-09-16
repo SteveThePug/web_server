@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Bookmarks sidebar widget on /stp. Groups homeData.bookmarks by category into
+ * [category, items] pairs, one collapsible <LinkTable> each.
+ */
 import { computed, ref, defineAsyncComponent } from "vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 import Modal from "@/components/util/Modal.vue";

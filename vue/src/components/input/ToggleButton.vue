@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Sliding on/off switch. v-model via the explicit modelValue prop +
+ * update:modelValue emit pair (rather than defineModel) because ToggleHeader
+ * needs to pass the value down and intercept the event.
+ */
 import { ref } from "vue";
 
 const props = defineProps({

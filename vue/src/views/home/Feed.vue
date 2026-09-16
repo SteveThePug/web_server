@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Blog-post widget on /stp. Shows one post at a time with prev/next paging
+ * (`idx`), rendered through <Markdown>. Delete is offered only when the signed-in
+ * user is the post's author; the admin create form is lazily imported.
+ */
 import Button from "@/components/input/Button.vue";
 import Markdown from "@/components/util/Markdown.vue";
 import Modal from "@/components/util/Modal.vue";

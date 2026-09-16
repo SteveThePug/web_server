@@ -1,3 +1,19 @@
+# Root of the GraphQL schema.
+#
+# Query and Mutation are declared here with no fields; every other file in this
+# directory adds to them with `extend type Query` / `extend type Mutation`.
+# That is what lets the schema be split one file per domain, matching the
+# one-file-per-domain resolver layout (gqlgen.yml uses layout: follow-schema).
+#
+# Time is mapped to Go's time.Time by gqlgen's default scalar handling and is
+# serialised as RFC 3339.
+#
+# These files are the source of truth: after editing one, run
+#   go run github.com/99designs/gqlgen generate
+# from backend/ to regenerate graph/generated.go and graph/model/models_gen.go.
+# Note that `#` comments like this one are invisible to clients; a `"""` block
+# would become a schema description and show up in introspection.
+
 scalar Time
 
 type Query

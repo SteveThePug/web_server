@@ -20,6 +20,8 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 		return nil, fmt.Errorf("admin access required")
 	}
 
+	// Only an existing admin can create accounts — there is no public
+	// sign-up. New users are created non-admin; setUserAdmin promotes them.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -62,6 +64,8 @@ func (r *mutationResolver) SetUserAdmin(ctx context.Context, id int, admin bool)
 		return nil, fmt.Errorf("unauthorized")
 	}
 
+	// Guards against the last admin demoting themselves and locking everyone
+	// out of the admin UI.
 	if uint(id) == callerID {
 		return nil, fmt.Errorf("cannot change your own admin status")
 	}
@@ -88,6 +92,9 @@ func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
 	if err := r.Store.DB.Find(&users).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &users[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.User, len(users))
 	for i := range users {
 		result[i] = &users[i]

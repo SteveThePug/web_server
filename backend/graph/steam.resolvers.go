@@ -19,6 +19,8 @@ func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, er
 		return nil, nil
 	}
 
+	// Five-minute cache across both Steam calls, which are made together and
+	// expire together.
 	if r.Store.SteamFresh() {
 		return &model.SteamStatus{
 			Online:      r.Store.SteamOnline,
@@ -36,6 +38,8 @@ func (r *queryResolver) SteamStatus(ctx context.Context) (*model.SteamStatus, er
 		return nil, err
 	}
 
+	// PersonaState 0 is offline; every higher value is some flavour of
+	// online. A nil summary (private profile) reads as offline.
 	online := false
 	if summary != nil {
 		online = summary.PersonaState > 0

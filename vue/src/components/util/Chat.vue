@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * The chat widget: message list, composer, file attach, admin delete and an
+ * admins-only "private" mode. Drives stores/messages.js and is mounted in the
+ * right-hand sidebar of views/home/Home.vue.
+ *
+ * Owns the socket lifecycle — connect() on mount, disconnect() on unmount — so
+ * the socket exists only while the widget is on screen.
+ */
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import Button from "@/components/input/Button.vue";
 import ToggleButton from "@/components/input/ToggleButton.vue";
@@ -17,6 +25,8 @@ const fileInput = ref(null);
 const isAdmin = computed(() => !!authStore.user.admin);
 const sendPrivate = ref(false);
 
+// Autoscroll only when the reader is already at the bottom: scrolling up to
+// read history must not be yanked back down by an incoming message.
 const isNearBottom = ref(true);
 const SCROLL_THRESHOLD = 100;
 let resizeObserver = null;
@@ -45,6 +55,7 @@ function goToBottom() {
   scrollToBottom();
 }
 
+// nextTick: scrollHeight is only correct once Vue has patched the new row in.
 watch(
   () => messages.value.length,
   () => {
@@ -91,12 +102,20 @@ function isVideoUrl(url) {
   return /\.(mp4|webm|ogg|mov)$/i.test(url);
 }
 
+/** Only render attachments the backend served from its own upload directory —
+ *  the fileUrl arrives over the socket and is otherwise attacker-controlled. */
 function isSafeFileUrl(url) {
   return typeof url === "string" && url.startsWith("/uploads/");
 }
 
+// NOTE: a module-level /g regex carries `lastIndex` between calls. It is safe
+// here only because parseMessageParts() below always runs exec() to completion
+// (exec returns null, resetting lastIndex) before returning. An early return
+// from that loop would make the next message parse from the wrong offset.
 const urlRegex = /(https?:\/\/[^\s<]+)/g;
 
+/** Split message text into alternating {type:'text'|'link', value} parts so
+ *  URLs can be rendered as anchors without using v-html. */
 function parseMessageParts(text) {
   const parts = [];
   let lastIndex = 0;
@@ -126,6 +145,9 @@ onMounted(() => {
     });
   }
 
+  // Images and videos load after their row is inserted and change its height,
+  // which the length watcher above has already missed. Observing the inner
+  // wrapper catches those late reflows.
   if (messagesInner.value) {
     resizeObserver = new ResizeObserver(scrollToBottomIfNear);
     resizeObserver.observe(messagesInner.value);

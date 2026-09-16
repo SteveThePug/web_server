@@ -1,3 +1,6 @@
+# Latest activity from the self-hosted Gitea instance, proxied and cached for
+# one minute by the backend. Resolves to null when the feed is empty.
+
 type GiteaFeedItem {
   avatarUrl: String!
   repoUrl: String!

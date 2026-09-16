@@ -35,6 +35,9 @@ func (r *mutationResolver) DeleteBookmark(ctx context.Context, id int) (*models.
 	if !IsAdminFromCtx(ctx) {
 		return nil, fmt.Errorf("admin access required")
 	}
+	// Loaded first so the deleted record can be returned to the client, and
+	// so a missing id is a clean "not found" rather than a silent no-op.
+	// Delete is a soft delete: deleted_at is set and the row stays.
 	var bookmark models.Bookmark
 	if err := r.Store.DB.First(&bookmark, id).Error; err != nil {
 		return nil, err
@@ -51,6 +54,9 @@ func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, erro
 	if err := r.Store.DB.Order("category ASC, created_at ASC").Find(&bookmarks).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &bookmarks[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.Bookmark, len(bookmarks))
 	for i := range bookmarks {
 		result[i] = &bookmarks[i]

@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Admin form: create a favourite. Emits "done"/"cancel" (see CreatePost.vue).
+ */
 import Button from "@/components/input/Button.vue";
 
 import { ref } from "vue";

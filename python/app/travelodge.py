@@ -28,6 +28,33 @@ Method
      of the outbound.
   5. Rank by room + round-trip transport. Cycling time is reported separately
      (TfL cycle routing with an app key, otherwise a distance-based estimate).
+
+Fragility
+  Neither API is a documented public contract for this use. Travelodge's
+  /api/v2/hotel endpoint is the JSON feed its own search page calls; the query
+  parameter names ("q", "checkIn", "rooms[0][adults]", the undocumented
+  "action=hotel_amend") and the response field names consumed in
+  `normalise_hotel` are whatever the site happens to send today. If Travelodge
+  reshapes its search page, every price here silently becomes None rather than
+  raising. Same for TfL's fare JSON: `price_journey` reads `fare.fares[].cost`
+  / `peak` / `offPeak` / `chargeLevel`, and falls back to "no fare found" if the
+  shape changes. There is no HTML parsing anywhere in this module - both
+  upstreams are JSON - so there are no CSS/XPath selectors to break, but the
+  key names play the same role.
+
+Concurrency
+  Everything here is thread-based (requests is blocking), not asyncio. Module
+  state - the two response caches, the rate limiters and the shared
+  requests.Session - is process-global and guarded by plain locks, so it is
+  shared across concurrent FastAPI requests. main.py additionally allows only
+  one live search at a time, which is what keeps the TfL budget spendable by a
+  single run.
+
+Time budgets
+  Every network path takes an optional `deadline` (a time.monotonic() value).
+  Passing it down instead of using a wall-clock timeout lets a long run degrade
+  gracefully: work already done is returned with summary["truncated"] = True
+  instead of the whole request dying at the nginx 300s proxy timeout.
 """
 
 import math
@@ -43,6 +70,11 @@ import requests
 TL_API = "https://www.travelodge.co.uk/api/v2/hotel"
 TL_SITE = "https://www.travelodge.co.uk"
 TFL_API = "https://api.tfl.gov.uk/Journey/JourneyResults/{frm}/to/{to}"
+# A browser User-Agent is sent because Travelodge's edge rejects or throttles
+# obviously-scripted clients (python-requests/x.y). The Chrome version is
+# arbitrary and is never checked for freshness; if requests start coming back
+# as 403 or as a challenge page, this is the first thing to bump. The same
+# headers are reused for TfL, where they are harmless.
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
     "Accept": "application/json",
@@ -101,6 +133,11 @@ TFL_CACHE_TTL_S = 2 * 60 * 60
 CYCLE_ROUTE_FACTOR = 1.3
 CYCLE_KMH = 14.0
 
+# One process-wide Session so TLS handshakes and any cookies the upstreams set
+# are reused across requests (a fresh Session per call roughly doubles latency).
+# pool_maxsize must cover the widest possible fan-out - TfL workers plus every
+# scan date worker running its own batch of Travelodge page fetches - otherwise
+# urllib3 starts discarding connections and logging pool-full warnings.
 _session = requests.Session()
 _session.mount(
     "https://",
@@ -115,8 +152,23 @@ class UpstreamError(Exception):
 # --------------------------------------------------------------------------- #
 # Input parsing
 # --------------------------------------------------------------------------- #
-def parse_guests(spec):
-    """'2,2+1' -> [(2, 0), (2, 1)]  (list of (adults, children) per room)."""
+def parse_guests(spec: str) -> list[tuple[int, int]]:
+    """Parse the compact guests string into per-room occupancy.
+
+    Comma separates rooms, "+" separates adults from children within a room,
+    so '2,2+1' -> [(2, 0), (2, 1)]: two rooms, the second with one child.
+
+    Args:
+        spec: user-supplied guests string, e.g. "1", "2+1", "2,2+2".
+
+    Returns:
+        One (adults, children) tuple per room, in the order given. The index of
+        each tuple becomes the ``rooms[i][...]`` index in the Travelodge query.
+
+    Raises:
+        ValueError: empty spec, non-numeric part, a room with no adult, or a
+            negative child count.
+    """
     rooms = []
     for part in spec.split(","):
         part = part.strip()
@@ -134,8 +186,25 @@ def parse_guests(spec):
     return rooms
 
 
-def parse_origin(spec):
-    """Return (name, (lat, lon)) for an ORIGINS key or a 'lat,lon' string."""
+def parse_origin(spec: str) -> tuple[str, tuple[float, float]]:
+    """Resolve an origin to a display name and coordinates.
+
+    Args:
+        spec: either a key of :data:`ORIGINS` (case-insensitive) or a raw
+            "lat,lon" pair.
+
+    Returns:
+        (display name, (lat, lon)). For raw coordinates the display name is the
+        coordinates re-formatted to 4 decimal places (~11m), which is both the
+        label shown to the user and a stable cache-key component.
+
+    Raises:
+        ValueError: unknown station, unparseable coordinates, or coordinates
+            outside :data:`LONDON_BOX`. The box check exists because TfL's
+            journey planner will happily route from anywhere in the country and
+            burn the rate-limit budget on journeys this tool cannot price
+            sensibly.
+    """
     key = spec.strip().lower()
     if key in ORIGINS:
         name, lat, lon = ORIGINS[key]
@@ -155,7 +224,24 @@ def parse_origin(spec):
 # --------------------------------------------------------------------------- #
 # Travelodge
 # --------------------------------------------------------------------------- #
-def _fetch_page(params, start, deadline=None):
+def _fetch_page(params: dict, start: int, deadline: float | None = None) -> list[dict]:
+    """Fetch one page of Travelodge search results.
+
+    Args:
+        params: the shared query parameters built by :func:`fetch_hotels`.
+        start: zero-based offset of the first result wanted; the API paginates
+            by offset, not page number, in steps of :data:`TL_PAGE_SIZE`.
+        deadline: time.monotonic() value; the socket timeout is shortened so a
+            hung page cannot outlive the caller's budget.
+
+    Returns:
+        The raw ``results`` array, or [] when the key is missing - an empty page
+        is the only signal the API gives that pagination is exhausted.
+
+    Raises:
+        UpstreamError: transport failure, non-2xx status, or a body that is not
+            JSON (which in practice means a challenge/error HTML page).
+    """
     p = dict(params, start=start)
     timeout = 30
     if deadline is not None:
@@ -165,14 +251,33 @@ def _fetch_page(params, start, deadline=None):
         r.raise_for_status()
         return r.json().get("results") or []
     except (requests.RequestException, ValueError, AttributeError) as e:
+        # ValueError covers r.json() on a non-JSON body; AttributeError covers a
+        # JSON body that is a list or scalar rather than an object (no .get).
         raise UpstreamError(f"Travelodge search failed: {e}") from e
 
 
-def fetch_hotels(location, checkin, checkout, rooms, deadline=None):
-    """Return list of hotel dicts from the Travelodge search API (all pages).
+def fetch_hotels(location, checkin, checkout, rooms, deadline=None) -> list[dict]:
+    """Return the raw hotel dicts for a search, following pagination.
 
-    rooms: list of (adults, children) tuples, one per room.
-    deadline: time.monotonic() value after which page requests are cut short.
+    Args:
+        location: free-text search string, passed straight through as ``q``.
+        checkin, checkout: :class:`datetime.date`; the API wants ISO dates.
+        rooms: list of (adults, children) tuples from :func:`parse_guests`.
+        deadline: time.monotonic() value limiting each page request.
+
+    Returns:
+        Hotel dicts in API order, de-duplicated by ``code``. Order matters: it
+        is the site's own relevance ranking and later sorts are stable, so ties
+        on price keep the site's ordering.
+
+    Raises:
+        UpstreamError: propagated from :func:`_fetch_page`.
+
+    Note:
+        ``action=hotel_amend`` is an undocumented parameter copied from the
+        site's own XHR; without it the endpoint answers differently. Likewise
+        ``pagination=false`` does *not* disable paging - it only suppresses the
+        pagination metadata block - which is why the offset loop below exists.
     """
     params = {
         "pagination": "false",
@@ -185,9 +290,11 @@ def fetch_hotels(location, checkin, checkout, rooms, deadline=None):
         params[f"rooms[{i}][adults]"] = adults
         params[f"rooms[{i}][children]"] = children
 
-    hotels, seen = [], set()
+    hotels: list[dict] = []
+    seen: set[str] = set()
 
-    def absorb(results):
+    def absorb(results: list[dict]) -> bool:
+        """Append hotels not seen before; return True if any were new."""
         new = [h for h in results if h.get("code") and h.get("code") not in seen]
         for h in new:
             seen.add(h["code"])
@@ -199,6 +306,11 @@ def fetch_hotels(location, checkin, checkout, rooms, deadline=None):
     if not absorb(first) or len(first) < TL_PAGE_SIZE:
         return hotels
 
+    # Fetch TL_PAGE_BATCH pages at a time and stop on the first batch that is
+    # either short (a page with fewer than TL_PAGE_SIZE results is the last one)
+    # or wholly duplicate. Requesting speculatively overshoots by up to a batch,
+    # but a strictly sequential walk of ~50 pages would blow the time budget.
+    # TL_MAX_START is a hard stop in case the API ever pages forever.
     start = TL_PAGE_SIZE
     with ThreadPoolExecutor(max_workers=TL_PAGE_BATCH) as ex:
         while start <= TL_MAX_START:
@@ -217,7 +329,17 @@ def fetch_hotels(location, checkin, checkout, rooms, deadline=None):
     return hotels
 
 
-def normalise_hotel(h):
+def normalise_hotel(h: dict) -> dict:
+    """Map one raw Travelodge hotel dict onto this service's stable field names.
+
+    This is the single place where upstream key names are read, so it is the
+    only file location that needs changing when Travelodge renames a field.
+    Every lookup is tolerant: a renamed or missing key yields None (or False)
+    rather than an exception, so a shape change degrades into "no price"
+    instead of a 502. ``minPrice`` is the cheapest bookable room for the whole
+    stay in pounds (already a number, no currency string to parse), and
+    ``hotelUrl`` is site-relative so :data:`TL_SITE` is prefixed here.
+    """
     return {
         "code": h.get("code"),
         "name": h.get("title"),
@@ -242,6 +364,9 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
 
     Failures are not cached. Callers must treat the returned dicts as read-only.
     """
+    # Case/whitespace-insensitive location so "Central London" and
+    # "central london " share one cache entry; rooms must be hashable, hence
+    # the tuple.
     key = (location.strip().lower(), checkin, checkout, tuple(rooms))
     now = time.monotonic()
     with _tl_cache_lock:
@@ -249,6 +374,9 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
         if hit and hit[0] > now:
             return hit[1]
 
+    # Deliberately outside the lock: a slow upstream fetch must not block other
+    # threads reading the cache. Two threads racing on the same key both fetch
+    # and the second write wins, which is harmless.
     hotels = [normalise_hotel(h) for h in fetch_hotels(location, checkin, checkout, rooms, deadline=deadline)]
 
     with _tl_cache_lock:
@@ -256,8 +384,10 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
         expired = [k for k, (exp, _) in _tl_cache.items() if exp <= now]
         for k in expired:
             del _tl_cache[k]
+        # Bounded, not LRU: dicts preserve insertion order, so evicting the
+        # first key drops the oldest *written* entry regardless of recent reads.
         while len(_tl_cache) >= TL_CACHE_MAX:
-            del _tl_cache[next(iter(_tl_cache))]  # oldest insertion
+            del _tl_cache[next(iter(_tl_cache))]
         _tl_cache[key] = (now + TL_CACHE_TTL_S, hotels)
     return hotels
 
@@ -265,15 +395,27 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
 # --------------------------------------------------------------------------- #
 # Geometry
 # --------------------------------------------------------------------------- #
-def haversine_km(a, b):
+def haversine_km(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Great-circle distance in km between two (lat, lon) points in degrees.
+
+    6371.0 km is the mean Earth radius; at London scale the error from assuming
+    a sphere is far smaller than the road-winding fudge applied on top.
+    """
     lat1, lon1 = map(math.radians, a)
     lat2, lon2 = map(math.radians, b)
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
     return 2 * 6371.0 * math.asin(math.sqrt(h))
 
 
-def estimate_cycle(origin, dest):
-    """(minutes, km) for cycling from origin to dest, from straight-line distance."""
+def estimate_cycle(origin: tuple[float, float], dest: tuple[float, float]) -> tuple[int, float]:
+    """Estimate (minutes, km) for a cycle journey without calling TfL.
+
+    Straight-line distance is inflated by :data:`CYCLE_ROUTE_FACTOR` (roads do
+    not go in straight lines) and divided by :data:`CYCLE_KMH`, a relaxed urban
+    pace that absorbs traffic lights. Both constants are hand-tuned guesses, not
+    measurements; they are only used when no TFL_APP_KEY is configured. Minutes
+    are clamped to at least 1 so a hotel next to the origin never reads "0 min".
+    """
     km = haversine_km(origin, dest) * CYCLE_ROUTE_FACTOR
     return max(1, round(km / CYCLE_KMH * 60)), round(km, 1)
 
@@ -281,7 +423,14 @@ def estimate_cycle(origin, dest):
 # --------------------------------------------------------------------------- #
 # TfL
 # --------------------------------------------------------------------------- #
-def round_5p(pence):
+def round_5p(pence: float) -> int:
+    """Round a pence amount to the nearest 5p.
+
+    TfL quotes every discounted fare in whole 5p steps, so a raw 1/3-off
+    multiplication has to be snapped back onto that grid to match what the
+    passenger is actually charged. Python's banker's rounding applies at exact
+    half-steps (2.5p), which is a sub-penny discrepancy and ignored.
+    """
     return int(5 * round(pence / 5.0))
 
 
@@ -292,6 +441,18 @@ def price_journey(journey, adults=1, railcard_holders=1):
 
     adults: number of fare-paying adults.  railcard_holders: how many of them
     get 1/3 off off-peak rail fares (0 = nobody has a railcard).
+
+    All money is integer pence, straight from TfL - no currency strings are
+    parsed and no floats are introduced until the final division by 100 in
+    :func:`_transport_fields`, which keeps the arithmetic exact.
+
+    Children are not counted: the caller passes adults only, on the assumption
+    that under-11s travel free on TfL.
+
+    The return leg is modelled, not fetched. It is assumed to be the same route
+    made the next morning at an off-peak time, so it is priced at the outbound
+    fare's ``offPeak`` value. That is optimistic for an early-morning return
+    into zone 1, which is a real peak fare.
     """
     railcard_holders = max(0, min(adults, railcard_holders))
     full_fare = adults - railcard_holders
@@ -304,6 +465,9 @@ def price_journey(journey, adults=1, railcard_holders=1):
     if not non_walk:  # walking only
         return 0, 0, "walk"
 
+    # TfL omits the fare block entirely for some journeys (e.g. ones involving
+    # a mode it cannot price). Returning None makes the caller drop this option
+    # rather than treat it as free.
     if not fare or not fare.get("fares"):
         return None
 
@@ -311,6 +475,11 @@ def price_journey(journey, adults=1, railcard_holders=1):
     for f in fare["fares"]:
         cost = f.get("cost") or 0
         peak, offpeak = f.get("peak") or 0, f.get("offPeak") or 0
+        # Two independent bus tests, because TfL is inconsistent about which
+        # it provides: a fare with neither a peak nor an off-peak price is a
+        # flat bus fare by construction, and otherwise the tap records name the
+        # mode outright. Getting this wrong would apply a Railcard discount to
+        # a bus fare, which does not exist.
         is_bus = (peak == 0 and offpeak == 0) or any(
             (t.get("tapDetails") or {}).get("modeType") == "Bus" for t in (f.get("taps") or [])
         )
@@ -319,6 +488,13 @@ def price_journey(journey, adults=1, railcard_holders=1):
             out += cost * adults
             ret += cost * adults
         else:
+            # Railcards give 1/3 off *off-peak* rail/tube fares only, so the
+            # outbound is discounted only when this fare is off-peak. That is
+            # detected two ways because chargeLevel is free text that has
+            # historically read "Off Peak", "Off-peak" or been absent: a
+            # substring match on "off", or the cost simply equalling the
+            # off-peak price. The return is always treated as off-peak (see the
+            # docstring), so it is always discounted for railcard holders.
             level = (f.get("chargeLevel") or "").lower()
             out_full = cost
             ret_full = offpeak or cost  # next-day return assumed off-peak
@@ -327,7 +503,9 @@ def price_journey(journey, adults=1, railcard_holders=1):
             out += out_full * full_fare + out_disc * railcard_holders
             ret += ret_full * full_fare + ret_disc * railcard_holders
 
-    # short human summary of the route
+    # Short human summary of the route, e.g. "rail > tube Victoria". Walking
+    # legs are dropped as noise, and "national-rail" is shortened purely to fit
+    # the column in the UI.
     parts = []
     for l in legs:
         m = (l.get("mode") or {}).get("id")
@@ -342,13 +520,28 @@ def price_journey(journey, adults=1, railcard_holders=1):
 class RateLimiter:
     """Sliding-window limiter: at most `per_minute` acquisitions in any 60s."""
 
-    def __init__(self, per_minute):
+    def __init__(self, per_minute: int) -> None:
+        """Args: per_minute: maximum acquisitions allowed in any 60s window."""
         self.per_minute = per_minute
         self._times = deque()
         self._lock = threading.Lock()
 
-    def acquire(self, deadline=None):
-        """Block until a slot is free. Returns False if `deadline` would pass first."""
+    def acquire(self, deadline: float | None = None) -> bool:
+        """Block until a slot is free.
+
+        Args:
+            deadline: time.monotonic() value; if the wait would run past it,
+                give up immediately instead of sleeping.
+
+        Returns:
+            True when a slot was taken, False when the deadline would pass
+            first (the caller should then abandon the request).
+
+        The sleep is capped at 1s per iteration rather than sleeping the full
+        computed wait, so that a slot freed by another thread finishing early is
+        picked up promptly, and so the deadline is re-checked often. The lock is
+        released before sleeping - holding it would serialise every waiter.
+        """
         while True:
             with self._lock:
                 now = time.monotonic()
@@ -367,7 +560,12 @@ _limiters = {}
 _limiters_lock = threading.Lock()
 
 
-def _limiter(app_key):
+def _limiter(app_key: str | None) -> RateLimiter:
+    """Return the shared limiter for the rate that `app_key` unlocks.
+
+    Limiters are keyed by rate, not by key, so every caller at a given tier
+    shares one 60s window - which is the point, since TfL counts per source IP.
+    """
     rate = TFL_RATE_KEYED if app_key else TFL_RATE_ANON
     with _limiters_lock:
         lim = _limiters.get(rate)
@@ -389,8 +587,28 @@ def sleep_within(seconds, deadline):
     return True
 
 
-def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None):
-    """Journeys from TfL for one origin/destination/time/mode, cached and rate limited."""
+def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=None) -> list[dict]:
+    """Journeys from TfL for one origin/destination/time/mode, cached and rate limited.
+
+    Args:
+        frm, to: (lat, lon) tuples; TfL accepts raw coordinates in the path.
+        when: naive :class:`datetime` of the intended departure, London local
+            time (TfL interprets it as such; no timezone is sent).
+        extra: additional query parameters, e.g. ``{"mode": "bus,walking"}`` to
+            force a bus-only route or ``{"mode": "cycle"}`` for cycle routing.
+        app_key: TfL API key from the TFL_APP_KEY env var, or None for the
+            anonymous tier.
+        retries: attempts before giving up.
+        deadline: time.monotonic() value bounding the whole call.
+
+    Returns:
+        The ``journeys`` array, or [] on any failure. This function never
+        raises: a missing route and a dead API look the same to the caller, who
+        simply ends up with no priced option for that hotel. That is deliberate
+        - one flaky lookup should not abort a 40-hotel search - but it does mean
+        a total TfL outage shows up in the UI as "no TfL fare found" rather than
+        as an error.
+    """
     params = {
         "date": when.strftime("%Y%m%d"),
         "time": when.strftime("%H%M"),
@@ -399,6 +617,9 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     }
     if extra:
         params.update(extra)
+    # Coordinates are rounded to 5dp (~1m) so that floating-point noise in
+    # otherwise identical requests still hits the cache. app_key is excluded
+    # from the key on purpose: the route and fare do not depend on it.
     key = (round(frm[0], 5), round(frm[1], 5), round(to[0], 5), round(to[1], 5), params["date"], params["time"],
            tuple(sorted((extra or {}).items())))
     now = time.monotonic()
@@ -412,6 +633,14 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     url = TFL_API.format(frm=f"{frm[0]},{frm[1]}", to=f"{to[0]},{to[1]}")
     limiter = _limiter(app_key)
     journeys = None
+    # Retry policy, all deadline-aware (a skipped sleep means the deadline is
+    # too close, so stop rather than hammer):
+    #   network error -> wait 2s
+    #   429 rate limited -> linear backoff, 5s then 10s then 15s
+    #   5xx -> wait 2s
+    #   any other non-200 (notably 300 "disambiguation", meaning TfL wants the
+    #     caller to pick between candidate locations) -> treat as "no route",
+    #     do not retry, and cache the empty result
     for attempt in range(retries):
         remaining = TFL_TIMEOUT_S if deadline is None else deadline - time.monotonic()
         if remaining < 1 or not limiter.acquire(deadline):
@@ -439,9 +668,15 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
             journeys = []
         break
 
+    # journeys is still None only if every attempt was abandoned; return empty
+    # without caching so a later, less rushed call can try again. An empty list
+    # from a *successful* response is cached - "no route" is a real answer.
     if journeys is None:
-        return []  # gave up: don't cache a failure
+        return []
     with _tfl_cache_lock:
+        # Sweep expired entries only once the cache is large, so the common path
+        # stays O(1); TFL_CACHE_TTL_S is long because journey times and fares
+        # for a fixed date/time do not change.
         if len(_tfl_cache) > 5000:
             expired = [k for k, (exp, _) in _tfl_cache.items() if exp <= now]
             for k in expired:
@@ -450,14 +685,40 @@ def tfl_journeys(frm, to, when, extra=None, app_key=None, retries=3, deadline=No
     return journeys
 
 
+# Two journey queries per hotel, because TfL's default "LeastTime" answer is
+# usually a tube fare and the cheapest option is very often a slower bus. The
+# bus query has to name "walking" alongside "bus" or TfL refuses routes that
+# need a walk to the stop.
 TRANSPORT_QUERIES = (("fast", None), ("bus", {"mode": "bus,walking"}))
 CYCLE_QUERY = {"mode": "cycle"}
 
 
 def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, app_key=None, deadline=None, pool=None):
-    """Cheapest acceptable round-trip transport to a hotel. Returns dict or None.
+    """Cheapest acceptable round-trip transport to a hotel.
 
-    Runs the fast and bus-only TfL queries concurrently on `pool` when given.
+    Args:
+        origin: (lat, lon) of the journey start.
+        hotel: normalised hotel dict; only lat/lon are read.
+        when: departure datetime for the outbound leg.
+        adults, railcard_holders: party makeup, passed to :func:`price_journey`.
+        max_minutes: routes slower than this are rejected - unless *every*
+            route is slower, in which case the fastest is kept so the hotel
+            still gets a price rather than vanishing from the results.
+        app_key: TfL key or None.
+        deadline: time.monotonic() budget.
+        pool: optional executor; the two queries are independent, so running
+            them concurrently halves the latency per hotel. Note this pool is
+            shared with the caller's other work, so it must never be sized 1 or
+            the map below can deadlock behind its own parent task.
+
+    Returns:
+        The chosen option as a dict with keys ``kind`` ("fast"/"bus"),
+        ``outbound_p``, ``return_p``, ``total_p`` (integer pence), ``minutes``,
+        ``route``, plus ``fastest_*`` fields describing the quickest option so
+        the UI can show the speed/price trade-off. None if nothing was priceable.
+
+    Ties are broken by duration, so two equally cheap routes resolve to the
+    quicker one.
     """
     dest = (hotel["lat"], hotel["lon"])
 
@@ -498,9 +759,23 @@ def best_transport(origin, hotel, when, adults, railcard_holders, max_minutes, a
 
 
 def cycle_time(origin, hotel, when, app_key, deadline=None, journeys=None):
-    """(minutes, km, source) for cycling to the hotel. TfL routing only with an app key.
+    """(minutes, km, source) for cycling to the hotel.
 
-    `journeys` may carry an already-fetched TfL cycle response to avoid a second call.
+    Real TfL cycle routing is used only when an app key is configured, because
+    it costs a third rate-limited request per hotel and the anonymous 50/min
+    budget is already spent on fares; without a key this falls straight back to
+    :func:`estimate_cycle`. ``source`` is "tfl" or "estimate" so the UI can say
+    which it is showing.
+
+    Args:
+        journeys: an already-fetched cycle response, so the caller can start the
+            request early and overlap it with the fare lookups.
+
+    Returns:
+        (minutes, km, source). The km comes from summing per-leg ``distance``
+        values, which TfL reports in metres; if that sum is zero (the field is
+        sometimes absent) the straight-line estimate is used for distance while
+        keeping TfL's duration.
     """
     dest = (hotel["lat"], hotel["lon"])
     est_min, est_km = estimate_cycle(origin, dest)
@@ -518,6 +793,9 @@ def cycle_time(origin, hotel, when, app_key, deadline=None, journeys=None):
 # --------------------------------------------------------------------------- #
 # Search
 # --------------------------------------------------------------------------- #
+# Every transport column blanked out. Splatted into a row to reset it, so
+# adding a transport field means adding it here too or it will leak a stale
+# value from a previous night when rows are reused in a scan.
 _UNPRICED = {
     "transport_out": None,
     "transport_return": None,
@@ -532,7 +810,14 @@ _UNPRICED = {
 TIME_LIMIT_ROUTE = "not priced (time limit)"
 
 
-def _transport_fields(hotel, t):
+def _transport_fields(hotel: dict, t: dict | None) -> dict:
+    """Convert a :func:`best_transport` result into the row's output columns.
+
+    Pence become pounds here (the only place), and ``total`` is room price plus
+    round-trip transport, rounded to 2dp for display. When `t` is None every
+    transport column is None and ``route`` carries the reason, which is what the
+    UI renders in place of a price.
+    """
     if not t:
         return dict(_UNPRICED, route="no TfL fare found")
     return {
@@ -548,13 +833,31 @@ def _transport_fields(hotel, t):
     }
 
 
-def sort_rows(rows):
+def sort_rows(rows: list[dict]) -> None:
+    """Sort rows in place by total cost, unpriced rows last.
+
+    ``r["total"] is None`` sorts False(0) before True(1), so priced rows come
+    first; ``or 0`` then keeps the comparison from hitting None. Room price is
+    the tiebreak.
+    """
     rows.sort(key=lambda r: (r["total"] is None, r["total"] or 0, r["room_price"]))
 
 
-def _shortlist(hotels, max_miles, top):
-    """(available, shortlist): bookable, priced, geocoded hotels within max_miles
-    sorted by room price, and the cheapest `top` of them."""
+def _shortlist(hotels: list[dict], max_miles: float | None, top: int) -> tuple[list[dict], list[dict]]:
+    """Filter and rank hotels, then take the cheapest `top`.
+
+    Hotels are dropped unless they are bookable, have a price, and have
+    coordinates - the last because a hotel without lat/lon cannot be routed and
+    would crash the TfL step. ``distance_from_search_mi`` is Travelodge's own
+    distance from the searched location (miles, not from the travel origin),
+    and a missing value is treated as 0 so it survives the filter rather than
+    being silently excluded.
+
+    Returns:
+        (all qualifying hotels sorted by room price, the cheapest `top` of them).
+        Only the shortlist gets transport priced, which is what bounds the
+        number of TfL calls.
+    """
     avail = [h for h in hotels if h["available"] and h["room_price"] and h["lat"] is not None and h["lon"] is not None]
     if max_miles is not None:
         avail = [h for h in avail if (h["distance_from_search_mi"] or 0) <= max_miles]
@@ -562,8 +865,15 @@ def _shortlist(hotels, max_miles, top):
     return avail, avail[:top]
 
 
-def _make_row(h, origin):
-    """Result row for a hotel: unpriced transport plus an estimated cycle time."""
+def _make_row(h: dict, origin: tuple[float, float]) -> dict:
+    """Build the initial result row for a hotel.
+
+    Transport columns start blank with route "pricing…" - the stream emits these
+    rows immediately so the UI can render the hotel list while TfL is still
+    being queried, then patches each row in place when its "transport" event
+    arrives. The cycle estimate is cheap and local, so it is filled in up front
+    and only overwritten later if TfL cycle routing is available.
+    """
     row = dict(h, **_UNPRICED, route="pricing…")
     est_min, est_km = estimate_cycle(origin, (h["lat"], h["lon"]))
     row.update({"cycle_minutes": est_min, "cycle_km": est_km, "cycle_source": "estimate"})
@@ -576,6 +886,22 @@ def _price_hotels(hotels, origin, depart_dt, adults, railcard_holders, max_trave
     Generator of (code, transport_or_None, cycle_or_None, timed_out) in the order
     TfL answers. Owns the worker pools; leftover work is cancelled if the
     consumer stops early.
+
+    Two pools, not one: `hotel_pool` runs at most TFL_HOTEL_WORKERS hotels at a
+    time and each of those tasks submits its own sub-queries to the larger
+    `tfl_pool`. Sharing one pool would let the hotel tasks fill every slot and
+    then block waiting for sub-tasks that can never be scheduled - a classic
+    executor deadlock.
+
+    `timed_out` distinguishes "TfL has no fare for this hotel" from "we ran out
+    of time before asking", which the caller surfaces as summary["truncated"].
+    Note it is inferred from the clock at completion time rather than reported
+    by the worker, so it can misattribute a genuine no-fare result that happens
+    to land after the deadline.
+
+    The cancel loop in `finally` is best-effort - it only stops tasks that have
+    not started - and the `with` blocks still join running workers, so an
+    abandoned stream takes up to one in-flight TfL timeout to unwind.
     """
     with ThreadPoolExecutor(max_workers=TFL_WORKERS) as tfl_pool, \
             ThreadPoolExecutor(max_workers=TFL_HOTEL_WORKERS) as hotel_pool:
@@ -605,7 +931,8 @@ def _price_hotels(hotels, origin, depart_dt, adults, railcard_holders, max_trave
                 f.cancel()
 
 
-def _apply_transport(row, t, cyc, timed_out):
+def _apply_transport(row: dict, t: dict | None, cyc: tuple | None, timed_out: bool) -> dict:
+    """Merge one hotel's transport and cycle results into its row, in place."""
     row.update(_transport_fields(row, t))
     if timed_out:
         row["route"] = TIME_LIMIT_ROUTE
@@ -614,13 +941,24 @@ def _apply_transport(row, t, cyc, timed_out):
     return row
 
 
-def _party(rooms, railcard_holders):
+def _party(rooms: list[tuple[int, int]], railcard_holders: int) -> tuple[int, int, int]:
+    """Totals for the booking: (adults, children, railcard holders).
+
+    Railcard holders are clamped to the number of adults so an over-stated
+    value cannot discount more fares than there are payers.
+    """
     adults = sum(a for a, _ in rooms)
     children = sum(c for _, c in rooms)
     return adults, children, max(0, min(adults, railcard_holders))
 
 
-def _depart_dt(day, depart):
+def _depart_dt(day: date, depart: str) -> datetime:
+    """Combine a check-in date with an "HH:MM" string into a naive datetime.
+
+    Naive on purpose: TfL reads the date/time as London local time, so
+    attaching a timezone here would only invite a double conversion. The format
+    is already validated by the Pydantic model in main.py.
+    """
     hh, mm = map(int, depart.split(":"))
     return datetime(day.year, day.month, day.day, hh, mm)
 
@@ -699,9 +1037,15 @@ def run_search(
 # --------------------------------------------------------------------------- #
 # Date-range scan
 # --------------------------------------------------------------------------- #
-def candidate_checkins(start, end, weekdays, nights):
-    """[(checkin, checkout)] for every day start..end (inclusive) whose weekday
-    (0=Mon) is in `weekdays`, each for a stay of `nights` nights."""
+def candidate_checkins(start: date, end: date, weekdays, nights: int) -> list[tuple[date, date]]:
+    """Enumerate candidate (checkin, checkout) pairs for a date-range scan.
+
+    Every day from `start` to `end` inclusive whose weekday (0=Mon, matching
+    :meth:`date.weekday`) is in `weekdays` becomes a check-in, with check-out
+    `nights` days later. Note the checkout may fall past `end` - `end` bounds
+    the check-in date, not the stay. main.py also calls this during validation
+    purely to reject a range that matches no weekday.
+    """
     out = []
     day = start
     while day <= end:
@@ -711,7 +1055,13 @@ def candidate_checkins(start, end, weekdays, nights):
     return out
 
 
-def _copy_night(n):
+def _copy_night(n: dict) -> dict:
+    """Two-level copy of a night before yielding it.
+
+    The generator keeps mutating `night_list` after each event, so both the
+    night dict and its hotel rows must be copied or the caller's already-emitted
+    JSON would change underneath it.
+    """
     return dict(n, hotels=[dict(r) for r in n["hotels"]])
 
 
@@ -840,6 +1190,10 @@ def run_scan(
 
     # Phase 2: one TfL price per unique hotel. Hotels that are cheapest on some
     # night go first, since they are the likely winners if time runs out.
+    # A hotel can appear on many nights; it is priced once. Its ordering key is
+    # its best (lowest) position in any night's list, tiebroken by price, so
+    # hotels that top some night get their fares first and a truncated scan
+    # still has the likely winners priced.
     index = {}  # code -> ((best rank, min room price), row)
     for n in night_list:
         for rank, row in enumerate(n["hotels"]):
@@ -855,6 +1209,9 @@ def run_scan(
         ordered, origin, depart_dt, adults, railcard_holders, max_travel_min, app_key, deadline
     ):
         base = index[code][1]
+        # Transport here is night-independent, so there is no room price to add:
+        # a dummy 0 is passed and the resulting "total" discarded. Each night
+        # computes its own total in phase 3.
         fields = _transport_fields({"room_price": 0}, t)
         fields.pop("total", None)
         if timed_out:
@@ -863,6 +1220,8 @@ def run_scan(
         if cyc:
             fields["cycle_minutes"], fields["cycle_km"], fields["cycle_source"] = cyc
         else:
+            # No TfL cycle result: keep the local estimate already on the row,
+            # since these fields are copied wholesale onto every night's copy.
             fields.update({k: base[k] for k in ("cycle_minutes", "cycle_km", "cycle_source")})
         fields["code"] = code
         transport[code] = fields
@@ -875,6 +1234,7 @@ def run_scan(
             continue
         for row in n["hotels"]:
             fields = transport.get(row["code"])
+            # Missing means phase 2 ran out of time before reaching this hotel.
             if fields is None:
                 row["route"] = TIME_LIMIT_ROUTE
                 continue
@@ -888,6 +1248,9 @@ def run_scan(
             n["best_code"] = best["code"]
             n["best_room"] = min(r["room_price"] for r in n["hotels"])
 
+    # Cheapest night first; nights with no total (failed, skipped, or unpriced)
+    # fall to the bottom, ordered by best room price and then by date so the
+    # list is still deterministic.
     night_list.sort(
         key=lambda n: (
             n["best_total"] is None,

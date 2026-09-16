@@ -15,15 +15,28 @@
 </template>
 
 <script setup>
+/**
+ * Icecast radio widget. Probes /radio/stream with a HEAD request on mount and
+ * every 2 minutes, and only mounts the <audio> element once the stream answers.
+ *
+ * The nextTick() before load() matters: the <audio> only exists after `streamLive`
+ * flips and Vue has re-rendered, so calling load() any earlier would hit null.
+ * Volume is knocked down to 20% because the stream is loud.
+ */
 import Button from "@/components/input/Button.vue";
 import Header from "@/components/text/Header.vue";
 import { ref, useTemplateRef, onMounted, nextTick } from "vue";
 import axios from "axios";
 
+const POLL_INTERVAL_MS = 120000; // re-probe the stream every 2 minutes
+const INITIAL_VOLUME = 0.2; // the stream is loud
+
 const streamUrl = ref("");
 const streamLive = ref(false);
 const audio = useTemplateRef("audio");
 
+/** HEAD the stream; on the first success mount and prime the <audio>.
+ *  A rejected request just means the station is off air. */
 async function checkStream() {
   try {
     await axios.head("/radio/stream");
@@ -33,7 +46,7 @@ async function checkStream() {
       await nextTick();
       if (audio.value) {
         audio.value.load();
-        audio.value.volume = 0.2;
+        audio.value.volume = INITIAL_VOLUME;
       }
     }
   } catch (err) {
@@ -43,7 +56,7 @@ async function checkStream() {
 
 onMounted(() => {
   checkStream();
-  setInterval(checkStream, 120000);
+  setInterval(checkStream, POLL_INTERVAL_MS);
 });
 </script>
 

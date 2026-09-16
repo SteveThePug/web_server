@@ -1,3 +1,11 @@
+/**
+ * Hand-written classes that coerce raw API JSON into real Date objects.
+ *
+ * STATUS: not imported anywhere. Stores consume the GraphQL payloads directly and
+ * format dates at the point of display, so these are dormant; kept as a record of
+ * the intended shape of User/Message/Post.
+ */
+
 export class User {
   constructor({ id, createdAt, updatedAt, deletedAt, username, admin }) {
     this.id = id;

@@ -1,4 +1,11 @@
 <script setup>
+/**
+ * Route `/admin/login`. On success redirects to `?redirect=` (set by the router
+ * guard when it bounced you here) or to /admin.
+ *
+ * auth.logIn() never throws — it swallows the error — so success is detected by
+ * re-reading `auth.loggedIn` afterwards rather than by a try/catch.
+ */
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
@@ -18,6 +25,8 @@ async function handleLogin() {
   submitting.value = true;
   errorMsg.value = "";
   try {
+    // logIn() swallows its error, so success is detected by re-reading
+    // `loggedIn` rather than by catching.
     await auth.logIn(username.value, password.value);
     if (auth.loggedIn) {
       const dest = route.query.redirect || "/admin";

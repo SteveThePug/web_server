@@ -1,4 +1,10 @@
 <script setup>
+/**
+ * Route `/admin` (guarded by `meta.requiresAdmin`) — a tab strip over every
+ * create/manage form. Each entry in `sections` maps a tab id to a component
+ * rendered by <component :is>. Unlike the home widgets these are eagerly
+ * imported, since reaching this page means you want them.
+ */
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import Button from "@/components/input/Button.vue";

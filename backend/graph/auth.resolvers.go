@@ -17,6 +17,12 @@ import (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
+	// The Gin context is needed for two things GraphQL cannot express: the
+	// client IP for rate limiting, and setting response cookies. It is
+	// smuggled in by AuthContextMiddleware.
+	//
+	// This mutation mirrors handlers.Store.Login; the two share the limiter
+	// and services.Auth, so the same 5/min budget covers both entry points.
 	gc := GinContextFromCtx(ctx)
 	if gc == nil {
 		return nil, fmt.Errorf("could not get gin context")
@@ -26,6 +32,8 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, fmt.Errorf("too many login attempts, please try again later")
 	}
 
+	// Identical message for unknown user and wrong password, so the API
+	// cannot be used to enumerate usernames.
 	var user models.User
 	if err := r.Store.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("invalid credentials")
@@ -40,24 +48,10 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, fmt.Errorf("failed to generate tokens")
 	}
 
-	gc.SetSameSite(http.SameSiteLaxMode)
-	gc.SetCookie(
-		"access_token",
-		tokens.AccessToken,
-		int(r.Store.Auth.Config.AccessTokenLifetime.Seconds()),
-		"/",
-		r.Store.Auth.Config.Domain,
-		true, true,
-	)
-	gc.SetCookie(
-		"refresh_token",
-		tokens.RefreshToken,
-		int(r.Store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		"/",
-		r.Store.Auth.Config.Domain,
-		true, true,
-	)
+	setAuthCookies(gc, r.Store.Auth.Config, tokens)
 
+	// The payload carries no token: the tokens only ever travel as HttpOnly
+	// cookies, so client JavaScript never sees them.
 	return &model.AuthPayload{User: &user}, nil
 }
 
@@ -68,6 +62,9 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("could not get gin context")
 	}
 
+	// Max-age -1 tells the browser to drop the cookies. Nothing is
+	// invalidated server-side, so a token captured beforehand still works
+	// until it expires.
 	gc.SetSameSite(http.SameSiteLaxMode)
 	gc.SetCookie("access_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
 	gc.SetCookie("refresh_token", "", -1, "/", r.Store.Auth.Config.Domain, true, true)
@@ -97,6 +94,9 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 		return nil, fmt.Errorf("invalid token claims")
 	}
 
+	// Setting the primary key and calling First with no condition makes GORM
+	// look the row up by that key. Admin status is re-read from the database
+	// here, which is what lets a revoked admin flag take effect on refresh.
 	var user models.User
 	user.ID = uint(userIDF)
 	if err := r.Store.DB.First(&user).Error; err != nil {
@@ -108,23 +108,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 		return nil, fmt.Errorf("failed to generate tokens")
 	}
 
-	gc.SetSameSite(http.SameSiteLaxMode)
-	gc.SetCookie(
-		"access_token",
-		tokens.AccessToken,
-		int(r.Store.Auth.Config.AccessTokenLifetime.Seconds()),
-		"/",
-		r.Store.Auth.Config.Domain,
-		true, true,
-	)
-	gc.SetCookie(
-		"refresh_token",
-		tokens.RefreshToken,
-		int(r.Store.Auth.Config.RefreshTokenLifetime.Seconds()),
-		"/",
-		r.Store.Auth.Config.Domain,
-		true, true,
-	)
+	setAuthCookies(gc, r.Store.Auth.Config, tokens)
 
 	return &model.AuthPayload{User: &user}, nil
 }
@@ -136,6 +120,8 @@ func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
 		return nil, fmt.Errorf("unauthorized")
 	}
 
+	// Read fresh from the database rather than returned from the token
+	// claims, so `me` reflects the current username and admin flag.
 	var user models.User
 	user.ID = userID
 	if err := r.Store.DB.First(&user).Error; err != nil {

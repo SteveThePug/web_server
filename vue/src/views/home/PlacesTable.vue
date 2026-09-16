@@ -1,4 +1,11 @@
 <script setup>
+/**
+ * The Places-to-go table inside the Collage widget. Sign-in only.
+ *
+ * Fetches lazily and at most once: onMounted covers an already-signed-in visitor,
+ * the `loggedIn` watcher covers someone who signs in while the page is open, and
+ * both check `!loaded && !loading` so the two paths can't fire two requests.
+ */
 import { computed, onMounted, watch } from "vue";
 import { usePlacesStore } from "@/stores/places";
 import { useAuthStore } from "@/stores/auth";
@@ -7,6 +14,9 @@ const places = usePlacesStore();
 const auth = useAuthStore();
 const loggedIn = computed(() => auth.loggedIn);
 
+// Two entry points, one fetch: onMounted covers an already-signed-in visitor,
+// the watcher covers signing in with the page already open. The
+// !loaded && !loading test is what stops them both firing a request.
 onMounted(() => {
   if (loggedIn.value && !places.loaded && !places.loading) places.fetch();
 });

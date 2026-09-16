@@ -1,3 +1,9 @@
+<!--
+  Decorative frame: four counter-rotating flowers around the slotted content.
+  Each corner sets its own `--start` angle so the four are permanently offset by
+  90 degrees while sharing one keyframe animation.
+  STATUS: not imported anywhere.
+-->
 <template>
   <div class="container">
     <img src="/img/borders/utena.png" class="flower tl antirotate" />

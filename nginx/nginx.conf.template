@@ -1,3 +1,31 @@
+# =============================================================================
+# nginx.conf.template — PRODUCTION config (steady state, certificates present).
+#
+# WHEN IT IS USED
+#   Rendered to /etc/nginx/nginx.conf by nginx/entrypoint.sh when DEV_MODE is
+#   not "true" AND a real certificate exists at
+#   /etc/letsencrypt/live/<DOMAIN>/. The other two templates cover dev
+#   (nginx_dev.conf.template) and first-boot bootstrap
+#   (nginx_setup.conf.template).
+#
+# TEMPLATING
+#   Only the names in the envsubst allow-list in nginx/entrypoint.sh are
+#   substituted: DOMAIN, BACKEND_HOST/PORT/ENDPOINT, ICECAST_*, GITEA_*,
+#   HASURA_*, QUARTZ_*, PYTHON_*, UPTIMEKUMA_*, WALLABAG_*. Every other dollar
+#   token in this file is an nginx RUNTIME variable (host, remote_addr, uri,
+#   http_upgrade, proxy_add_x_forwarded_for, binary_remote_addr, request_uri,
+#   scheme, http_cookie) and must be left alone — that restriction is the whole
+#   reason the allow-list exists.
+#
+# SERVER BLOCKS (three, in order)
+#   1. :80  any name   -> serves the ACME challenge, 301s everything else to
+#                         https://www.DOMAIN. Certbot renewal depends on this
+#                         block staying reachable on plain HTTP.
+#   2. :443 apex       -> TLS terminates, then 301s to the www host, so there
+#                         is exactly one canonical origin (important: cookies,
+#                         CORS and the SPA all assume www).
+#   3. :443 www        -> the real site.
+# =============================================================================
 events {
     worker_connections  1024;
 }
@@ -9,10 +37,58 @@ http {
     server_tokens off;
     charset utf-8;
 
+    # Docker's embedded DNS. Required because upstreams are referenced through
+    # `set $upstream_* ...` variables below; using a variable in proxy_pass
+    # makes nginx resolve the name PER REQUEST instead of once at startup.
+    # That is the trick that lets nginx boot even when a backend container is
+    # down or not yet created (it 502s until the container appears, rather than
+    # refusing to start with "host not found in upstream"). valid=10s caps how
+    # long a stale container IP can be cached after a redeploy.
     resolver 127.0.0.11 valid=10s;
 
+    # Caps request bodies; must be >= the largest allowed chat image upload or
+    # nginx rejects with 413 before the backend ever sees the request.
     client_max_body_size 50M;
 
+    # ---- Rate limiting -------------------------------------------------------
+    # Each zone is a shared-memory table keyed by $binary_remote_addr (the
+    # client IP in packed 4/16-byte form rather than a string — that is why
+    # "binary": it makes each entry ~64 bytes instead of ~128). 10m therefore
+    # holds roughly 160k distinct IPs, far more than this site will ever see;
+    # 10m is simply the safe round number, not a tuned value. If a zone fills,
+    # nginx evicts the oldest entries and logs a warning.
+    #
+    # `rate` is enforced as a smoothed leaky bucket, not a per-minute counter:
+    # 5r/m means one request allowed every 12 seconds, not 5 at once then
+    # nothing. `burst=N` at the use site allows N requests to queue ahead of
+    # that drip, and `nodelay` (used everywhere here) serves those N
+    # immediately rather than spacing them out — so the practical behaviour is
+    # "N instant requests, then throttled to the drip rate". Anything over the
+    # burst gets 503 immediately.
+    #
+    # Chosen limits and why:
+    #   login  5r/m  burst=3  - brute-force defence on password auth. A human
+    #                           mistyping gets 3 instant tries, then one every
+    #                           12s. Painless for a real user, useless for a
+    #                           credential-stuffing script.
+    #   api    30r/s burst=20 - generous; a normal SPA page load fans out to
+    #                           several API calls and must never be throttled.
+    #                           This is an abuse ceiling, not a quota.
+    #   graphql 10r/s burst=10 - tighter than REST because a single GraphQL
+    #                           query can be arbitrarily expensive to resolve.
+    #                           (Production only; the dev template omits it.)
+    #   upload 5r/m  burst=3  - uploads are 50MB-capable and hit disk; this
+    #                           bounds how fast one IP can fill the volume.
+    #   hotel_search 3r/m burst=2 - each request holds an upstream call to
+    #                           Travelodge/TfL for up to a few minutes and the
+    #                           Python side has a single search slot, so this is
+    #                           really concurrency protection, not abuse
+    #                           protection.
+    #
+    # NOTE: the key is the direct client IP. Since nginx is the edge here (no
+    # CDN or upstream proxy in front), that is correct. If anything is ever put
+    # in front, these zones must switch to a trusted X-Forwarded-For or every
+    # visitor will share one bucket.
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
     limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
     limit_req_zone $binary_remote_addr zone=graphql:10m rate=10r/s;
@@ -24,6 +100,9 @@ http {
 
     access_log /var/log/nginx/access.log compact;
 
+    # nginx's bundled mime.types has no entry for .mjs, so ES modules would be
+    # served as application/octet-stream and browsers refuse to execute them.
+    # This adds the missing mapping without editing the shipped mime.types.
     types {
         text/javascript mjs;
     }
@@ -110,6 +189,12 @@ http {
             add_header Cache-Control "public";
         }
 
+        # User-uploaded files, served straight off the shared `uploads` volume
+        # so the Go process never has to stream them. Because these are
+        # attacker-supplied bytes on our own origin, three headers neutralise
+        # them: nosniff stops content-type guessing, Content-Disposition inline
+        # keeps them from being treated as downloads, and the locked-down CSP
+        # means even an uploaded .html can run no script and load no resource.
         location /uploads/ {
             alias /uploads/;
             add_header X-Content-Type-Options nosniff always;
@@ -117,6 +202,9 @@ http {
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
         }
 
+        # SPA fallback: serve the file if it exists, otherwise hand index.html
+        # to the browser so Vue Router can resolve the path client-side. This
+        # is what makes deep links like /notes-page or /admin work on refresh.
         location / {
             try_files $uri $uri/ /index.html;
         }
@@ -127,10 +215,19 @@ http {
             access_log off;
         }
 
+        # Belt-and-braces: HTTP-01 validation always happens on port 80 (the
+        # :80 block above), so this duplicate on :443 never actually serves a
+        # challenge. Harmless, and kept in case a future challenge type or a
+        # redirect chain lands here. Note it is a regex location (~), so it
+        # matches the path anywhere in the URI, not just at the start.
         location ~ /.well-known/acme-challenge/ {
             root /var/www/certbot;
         }
 
+        # One-off: this GIF is a "web stamp" other people's sites hot-link, so
+        # it needs an explicit CORS header. Ironically the origin allowed is our
+        # own, which means cross-origin embedders are not actually permitted —
+        # see the proposals in DEPLOYMENT.md before changing it.
         location = /img/stamps/mine.gif {
             add_header Access-Control-Allow-Origin "https://www.$DOMAIN";
             expires 7d;
@@ -142,10 +239,49 @@ http {
             add_header Cache-Control "public";
         }
 
+        # ---- Backend API -----------------------------------------------------
+        # Two patterns repeat through every proxied location below:
+        #
+        # 1. THE PREFIX-STRIP REWRITE
+        #      rewrite ^<PREFIX>/(.*)$ /$1 break;
+        #    The public URL carries a prefix (/api, /radio, /gitea, /notes,
+        #    /py) but the upstream service serves its routes from /. The
+        #    rewrite strips the prefix and `break` stops rewrite processing so
+        #    the request stays in this location and goes to proxy_pass with the
+        #    rewritten URI. (This is why proxy_pass here has no trailing path —
+        #    with a variable upstream, nginx would not do the strip for us.)
+        #    The bare `location <PREFIX>` blocks that 301 to `<PREFIX>/` exist
+        #    only so a user typing /gitea without the slash lands correctly.
+        #
+        # 2. THE FOUR FORWARDING HEADERS
+        #      Host                  preserve the browser's hostname so the app
+        #                            builds correct absolute URLs and cookies.
+        #      X-Real-IP             the true client IP (the upstream otherwise
+        #                            sees only nginx's container IP).
+        #      X-Forwarded-For       appends the client to any existing chain.
+        #      X-Forwarded-Proto     tells the app the ORIGINAL request was
+        #                            https even though this hop is plain http.
+        #                            Without it the backend would issue
+        #                            non-Secure cookies and http:// redirects,
+        #                            breaking auth behind TLS termination.
+        #
+        # Ordering matters: nginx picks the longest matching prefix location,
+        # so the specific /ws, /auth/login, /messages/upload and /graphql blocks
+        # win over the catch-all <PREFIX>/ block regardless of file order.
         location $BACKEND_ENDPOINT {
             return 301 $BACKEND_ENDPOINT/;
         }
 
+        # WebSocket endpoint (live chat / activity feed).
+        # The three lines that make an upgrade work, and why each is needed:
+        #   proxy_http_version 1.1   - HTTP/1.0 has no Upgrade mechanism at all.
+        #   Upgrade $http_upgrade    - hop-by-hop headers are NOT forwarded by
+        #   Connection "upgrade"       default, so they must be re-set by hand.
+        # Note the Connection value is hardcoded rather than using the usual
+        # $connection_upgrade map: this location only ever serves websockets, so
+        # there is no plain-HTTP case to fall back to.
+        # Deliberately NOT rate limited — a websocket is one long-lived request
+        # and a limit_req here would drop reconnect storms, not abuse.
         location $BACKEND_ENDPOINT/ws {
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
             proxy_pass $upstream_backend;
@@ -295,6 +431,20 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
+        # ---- Admin gate for /hasura/ and /notes/ ------------------------------
+        # `auth_request` makes nginx fire a subrequest here before serving the
+        # real one; a 2xx lets it through, 401/403 triggers error_page ->
+        # @auth_denied -> redirect to the SPA login. This puts the Go backend's
+        # session cookie in front of two services that have no idea it exists.
+        #   internal;                 - unreachable from outside, subrequest only.
+        #   proxy_pass_request_body off + Content-Length ""
+        #                             - the subrequest must not replay the
+        #                               original body (it could be a 50MB
+        #                               upload); clearing Content-Length stops
+        #                               the backend waiting for a body that is
+        #                               not coming.
+        #   Cookie $http_cookie       - the whole point: forward the session
+        #                               cookie so the backend can validate it.
         location = /internal/auth/admin-validate {
             internal;
             rewrite ^ /auth/validate-admin break;

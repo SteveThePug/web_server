@@ -5,6 +5,11 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
+// Converters from the Spotify library's rich types to the deliberately narrow
+// GraphQL types — the schema exposes only the handful of fields the home page
+// renders.
+
+// mapSpotifyImages keeps just the URLs of a set of album images.
 func mapSpotifyImages(images []spotify.Image) []*model.SpotifyImage {
 	result := make([]*model.SpotifyImage, len(images))
 	for i, img := range images {
@@ -13,6 +18,7 @@ func mapSpotifyImages(images []spotify.Image) []*model.SpotifyImage {
 	return result
 }
 
+// mapSpotifyTrack converts a currently-playing track.
 func mapSpotifyTrack(track *spotify.FullTrack) *model.SpotifyTrack {
 	artists := make([]*model.SpotifyArtist, len(track.Artists))
 	for i, a := range track.Artists {
@@ -28,6 +34,11 @@ func mapSpotifyTrack(track *spotify.FullTrack) *model.SpotifyTrack {
 	}
 }
 
+// mapRecentItems converts recently played history entries.
+//
+// It rebuilds the track inline instead of calling mapSpotifyTrack because a
+// RecentlyPlayedItem holds a SimpleTrack, not the FullTrack that function
+// takes — the duplication is forced by the library's types.
 func mapRecentItems(items []spotify.RecentlyPlayedItem) []*model.SpotifyRecentItem {
 	result := make([]*model.SpotifyRecentItem, len(items))
 	for i, item := range items {

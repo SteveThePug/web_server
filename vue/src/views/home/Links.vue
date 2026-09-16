@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * "Links" widget on /stp: internal routes via <RouterTable>, external profiles
+ * via <LinkTable>.
+ */
 import RouterTable from "@/components/util/RouterTable.vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 import Header from "@/components/text/Header.vue";

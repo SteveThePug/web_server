@@ -1,4 +1,13 @@
 <script setup>
+/**
+ * Layout shell for /cv and /cv/jobs. It renders nothing but the RouterView —
+ * its whole job is the UNSCOPED <style> block below, which re-points the site's
+ * design tokens from the dark palette in assets/styles.css to ink-on-paper
+ * values for everything inside .cv-layout.
+ *
+ * Unscoped is deliberate: scoped styles would not reach the CV template
+ * components, and the point is to override the *global* element styles.
+ */
 import { RouterView } from "vue-router";
 </script>
 

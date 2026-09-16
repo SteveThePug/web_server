@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * "鸟" widget on /stp — a two-tab cell: a <Slideshow> and, once signed in, the
+ * Places list.
+ *
+ * The Places tab is added to `tabs` only when logged in, and the watcher forces
+ * the view back to the collage on logout so a signed-out user is never left
+ * staring at an empty private tab.
+ */
 import { ref, computed, watch } from "vue";
 import Slideshow from "@/components/util/Slideshow.vue";
 import Modal from "@/components/util/Modal.vue";
@@ -19,6 +27,8 @@ const tabs = computed(() => [
 const activeTab = ref("collage");
 const showAdd = ref(false);
 
+// On logout the Places tab disappears from `tabs`; without this the component
+// would be left pointing at a tab that no longer exists and render nothing.
 watch(loggedIn, (isIn) => {
   if (!isIn && activeTab.value === "places") activeTab.value = "collage";
 });

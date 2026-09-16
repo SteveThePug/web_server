@@ -13,6 +13,13 @@
 </template>
 
 <script setup>
+/**
+ * Click-and-drag-to-scroll container ("grab" cursor), for content wider than its
+ * box. Used by the Stamps widget, which also scrolls it programmatically.
+ *
+ * preventDefault on mousedown/mousemove is what stops the browser starting a text
+ * selection mid-drag.
+ */
 import { ref } from "vue";
 
 const container = ref(null);
@@ -40,7 +47,9 @@ const handleMouseMove = (e) => {
 
   const x = e.pageX - container.value.offsetLeft;
   const y = e.pageY - container.value.offsetTop;
-  const walkX = (x - startX.value) * 1; // Multiply by scroll speed factor
+  // The `* 1` is a scroll-speed factor left at 1:1 (content follows the cursor
+  // exactly). Raise it to make dragging move the content further than the mouse.
+  const walkX = (x - startX.value) * 1;
   const walkY = (y - startY.value) * 1;
 
   container.value.scrollLeft = scrollLeft.value - walkX;

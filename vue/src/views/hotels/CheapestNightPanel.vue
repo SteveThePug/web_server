@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * "Cheapest night" tab of /hotels: scans a date range (capped at MAX_SPAN_DAYS,
+ * optionally filtered to particular weekdays) and reports the best hotel per
+ * night. Same streaming/abort/ticker mechanics as SingleStayPanel.vue.
+ */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import SharedFields from "./SharedFields.vue";
 import HotelRows from "./HotelRows.vue";

@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * The live CV template — the only one currently listed in CV.vue.
+ */
 import Project from "./Project.vue";
 </script>
 

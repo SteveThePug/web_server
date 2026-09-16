@@ -1,3 +1,11 @@
+/**
+ * Blog posts for the Feed widget. A view over homeData.posts.
+ *
+ * `post_template` is placeholder content rendered before (or instead of) a
+ * successful fetch — the watch only overwrites `posts` when the fetch returned a
+ * non-empty list, so the widget never flashes empty.
+ */
+
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { gql } from "@/graphql";
@@ -19,6 +27,10 @@ export const usePostsStore = defineStore("posts", () => {
   const postsCount = computed(() => posts.value.length);
 
   const homeData = useHomeDataStore();
+  // Mirror the shared home query. `immediate` matters: homeData may already
+  // have loaded by the time this store is first used, and a plain watch would
+  // never fire for that existing value. The `length > 0` test keeps the
+  // placeholder on screen when the backend returns nothing.
   watch(
     () => homeData.posts,
     (newPosts) => {
@@ -29,10 +41,12 @@ export const usePostsStore = defineStore("posts", () => {
     { immediate: true },
   );
 
+  /** Refresh by re-running the whole home query; the watch above applies it. */
   async function fetchPosts() {
     await homeData.fetchAll();
   }
 
+  /** Soft-delete a post, then refetch so every widget sees the new list. */
   async function deletePost(post) {
     try {
       await gql(

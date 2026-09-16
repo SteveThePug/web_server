@@ -1,4 +1,10 @@
 <script setup>
+/**
+ * Countdown widget with minute/second sliders and a sound on completion.
+ *
+ * The four mutually exclusive v-if blocks are a state machine over
+ * (finished, paused): set/idle, finished, paused, running.
+ */
 import Button from "@/components/input/Button.vue";
 import Header from "@/components/text/Header.vue";
 

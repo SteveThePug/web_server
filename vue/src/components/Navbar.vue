@@ -1,4 +1,14 @@
 <script setup>
+/**
+ * Top bar for DefaultLayout: an "UP" breadcrumb button and a scrolling marquee.
+ *
+ * `parentPath` strips the last path segment, so /shrines/gto -> /shrines and any
+ * one-segment route -> "/". It is null only at the root, which is what hides the
+ * button on the landing page.
+ *
+ * The kaomoji are joined into one long string and handed to <Headline>, which
+ * duplicates and scrolls it — see Headline.vue for why one string and not a list.
+ */
 import Headline from "@/components/text/Headline.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";

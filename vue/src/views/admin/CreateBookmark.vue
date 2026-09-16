@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Admin form: create a categorised bookmark. Emits "done"/"cancel".
+ */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { gql } from "@/graphql";

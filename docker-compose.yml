@@ -1,19 +1,82 @@
+# =============================================================================
+# docker-compose.yml — production topology for the whole site.
+#
+# WHAT IT DOES
+#   Defines every container, the single bridge network they share, and the
+#   named volumes that survive restarts. This file alone IS production:
+#     docker compose up --build
+#   Dev layers docker-compose.dev.yml on top of it (see that file).
+#
+# WHEN IT RUNS
+#   On the Raspberry Pi, via the Gitea Actions deploy workflow
+#   (.gitea/workflows/deploy.yaml) on every push to main, and by hand.
+#
+# ENV VARS
+#   Everything interpolated as ${VAR} below is read by the docker compose CLI
+#   from ./.env at the repo root (which is gitignored — see sync-secrets.sh for
+#   how it is distributed to the Pi). Note the two distinct mechanisms:
+#     - ${VAR} in this file      -> substituted by compose when parsing
+#     - `env_file: ./.env`       -> the whole file injected into the container
+#   Many services need both: the container name comes from substitution, the
+#   app config from env_file.
+#
+#   Required by this file: POSTGRES_{USER,PASSWORD,DB,PORT,HOST},
+#   POSTGRES_GITEA_DB, BACKEND_HOST, HASURA_HOST, HASURA_GRAPHQL_ADMIN_SECRET,
+#   ICECAST_HOST, QUARTZ_HOST, GITEA_HOST, OBSIDIAN_DIR, and the GITEA_*
+#   secrets. PYTHON_HOST/PYTHON_PORT/TFL_APP_KEY/LIQUIDSOAP_HARBOR_PORT have
+#   inline defaults.
+#
+# NAMING CONVENTION / WHY container_name IS SET FROM env
+#   Service discovery is by container name on app-network. nginx builds its
+#   upstreams from the same ${*_HOST} variables (nginx/entrypoint.sh), so
+#   naming the containers from .env keeps the proxy and the containers in sync
+#   from one source of truth. Renaming a *_HOST value renames the container AND
+#   repoints nginx at it — do not change one without the other.
+#
+# WHAT IS PUBLISHED TO THE HOST
+#   Only nginx (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
+#   port. Everything else is reachable only from inside app-network, which is
+#   why the backend, db, hasura, quartz and python have no `ports:` — they are
+#   deliberately not exposed and are reached through nginx.
+# =============================================================================
+
 networks:
+  # One flat bridge network; every service resolves every other by container
+  # name via docker's embedded DNS at 172.28.0.11 (nginx configs point their
+  # `resolver` there). The subnet is pinned explicitly so it cannot collide
+  # with the Pi's LAN range or wander between compose versions.
   app-network:
     driver: bridge
     ipam:
       config:
         - subnet: 172.28.0.0/16
 
+# PERSISTENT vs EPHEMERAL state
+#   Named volumes below survive `docker compose down` and container rebuilds;
+#   they are only destroyed by `docker compose down -v` or an explicit
+#   `docker volume rm`. Bind mounts (./gitea/data, ./backend/token, ./logs,
+#   ./certbot/conf) live in the repo checkout on the Pi and survive everything
+#   short of deleting the directory. Anything inside a container's own
+#   filesystem is ephemeral and gone on rebuild.
 volumes:
-  # Postgres database
+  # Postgres database — PERSISTENT. Holds the app DB *and* the Gitea DB.
+  # Deleting this wipes posts, users, messages and every git repo's metadata.
   dbdata:
-  # File upload
+  # File upload — PERSISTENT. Written by the backend at /backend/uploads,
+  # served read-only by nginx at /uploads/. Shared so nginx can serve user
+  # uploads without proxying through the Go process.
   uploads:
-  # Vue build
+  # Vue build — EPHEMERAL in spirit but a named volume for handoff: the
+  # one-shot `vue` container writes the built SPA here and exits; nginx mounts
+  # it at /etc/nginx/html and serves it. Repopulated on every rebuild.
   vue_dist:
 
 services:
+  # One-shot build container, NOT a long-running service. `vite build` writes
+  # the SPA into the shared vue_dist volume and the container exits 0. That
+  # exit is expected — `docker compose ps` showing vue as Exited is healthy.
+  # In dev this same service is overridden to run the Vite dev server instead
+  # (docker-compose.dev.yml) and does stay up.
   vue:
     build:
       context: ./vue
@@ -24,6 +87,18 @@ services:
     networks:
       - app-network
 
+  # The only public entrypoint. Terminates TLS, serves the SPA, reverse-proxies
+  # everything else. Its config is chosen at container start — see
+  # nginx/entrypoint.sh for the DEV_MODE / cert-present / bootstrap decision.
+  #
+  # START ORDERING: these `depends_on` entries are the plain list form, which
+  # only waits for each container to be *created and started*, NOT for it to be
+  # ready or healthy. That is deliberate — nginx's `resolver 127.0.0.11` means
+  # upstreams are resolved per-request, so a late-starting backend produces a
+  # temporary 502 rather than a failed nginx boot. The one ordering nginx
+  # genuinely cares about (the Vue build finishing) is handled by the polling
+  # loop in its entrypoint, because depends_on cannot express "wait for a
+  # one-shot container to exit successfully" here.
   nginx:
     build:
       context: ./nginx
@@ -45,11 +120,21 @@ services:
       - 80:80
       - 443:443
     volumes:
+      # Shared with certbot: the cert store nginx reads and certbot writes.
+      # PERSISTENT, and private key material — gitignored, never commit.
       - ./certbot/conf:/etc/letsencrypt
+      # Shared with certbot: the ACME HTTP-01 challenge webroot. certbot drops
+      # tokens in, nginx serves them on port 80.
       - ./certbot/www:/var/www/certbot
       - uploads:/uploads
+      # The SPA written by the one-shot `vue` container.
       - vue_dist:/etc/nginx/html
 
+  # Obtains the cert once, then renews every 12h forever. Disabled in dev via
+  # the `disabled` profile in docker-compose.dev.yml. Note this is the stock
+  # certbot image with our script bind-mounted over the entrypoint, so editing
+  # certbot/entrypoint.sh takes effect on restart with no rebuild. Version is
+  # pinned so a certbot release cannot change behaviour under us on redeploy.
   certbot:
     image: certbot/certbot:v3.1.0
     container_name: certbot
@@ -76,11 +161,24 @@ services:
     env_file:
       - ./.env
     volumes:
+      # PERSISTENT, and the subtle one: the Spotify OAuth refresh token is
+      # written here as spotify_token.json. Without this bind mount the token
+      # would live in the container filesystem and be destroyed on every
+      # rebuild, forcing a manual re-authorisation of Spotify after each
+      # deploy. Gitignored (it is a credential).
       - ./backend/token/:/backend/token
+      # The Obsidian vault on the host, read by the backend for the notes API.
+      # Same directory is mounted read-only into quartz to build the notes site.
       - ${OBSIDIAN_DIR}:/backend/notes
       - ./logs:/backend/logs
+      # Same named volume nginx serves at /uploads/ — backend writes, nginx reads.
       - uploads:/backend/uploads
+      # Shared with icecast2, which plays these as the radio fallback playlist;
+      # the backend reads them to report what is queued.
       - ./icecast2/fallback_music:/backend/fallback_music
+    # Reported to docker (and therefore to autoheal, below), which restarts the
+    # container after 3 consecutive failures ~90s apart. start_period gives the
+    # Go process 10s to bind before failures start counting.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
       interval: 30s
@@ -88,6 +186,13 @@ services:
       retries: 3
       start_period: 10s
 
+  # Watchdog: docker itself marks a container `unhealthy` but never acts on it.
+  # autoheal polls the docker socket and restarts anything that goes unhealthy.
+  # AUTOHEAL_CONTAINER_LABEL=all means "watch every container that defines a
+  # healthcheck" (i.e. backend and python) rather than only labelled ones.
+  # It mounts the docker socket, which is effectively root on the host — that
+  # is the price of the feature; keep the image pinned-ish and trusted.
+  # Deliberately NOT on app-network: it talks only to the socket.
   autoheal:
     image: willfarrell/autoheal:latest
     container_name: autoheal
@@ -99,6 +204,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+  # Single Postgres instance serving TWO databases: ${POSTGRES_DB} for the Go
+  # backend and ${POSTGRES_GITEA_DB} for Gitea. The postgres image only creates
+  # POSTGRES_DB on first init, so the Gitea database was created by hand once;
+  # a from-scratch restore must `createdb` it before Gitea will start.
+  # Schema for the app DB comes from GORM auto-migration at backend start —
+  # there are no migration files.
   db:
     image: postgres:16
     container_name: "${POSTGRES_HOST}"
@@ -110,6 +221,11 @@ services:
     volumes:
       - dbdata:/var/lib/postgresql/data
 
+  # Admin-only DB browser, reached at /hasura/. Console and dev mode are OFF in
+  # production (turned on by the dev override). It is additionally gated in
+  # nginx by an `auth_request` subrequest to the backend's /auth/validate-admin,
+  # so an admin cookie is required before the request ever reaches Hasura —
+  # the admin secret alone is not the only line of defence.
   hasura:
     image: hasura/graphql-engine:v2.44.0
     container_name: "${HASURA_HOST}"
@@ -125,6 +241,17 @@ services:
       HASURA_GRAPHQL_DEV_MODE: "false"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log, query-log"
 
+  # Internet radio: one container running BOTH icecast2 (the streaming server
+  # listeners connect to, proxied at /radio/) and liquidsoap (the source that
+  # feeds it). See icecast2/entrypoint.sh.
+  #
+  # This is the only non-nginx service that publishes a host port, and it has
+  # to: LIQUIDSOAP_HARBOR_PORT is the live-DJ input. A broadcasting client
+  # (e.g. butt) connects straight to the Pi on that port with the icecast
+  # source password and pre-empts the fallback playlist. It is NOT proxied
+  # through nginx because it is a raw source protocol, not HTTP the SPA uses.
+  # Note the host:container mapping uses the same variable on both sides, so
+  # the published port always matches what liquidsoap actually binds.
   icecast2:
     build:
       context: ./icecast2
@@ -140,6 +267,11 @@ services:
     ports:
       - "${LIQUIDSOAP_HARBOR_PORT:-8001}:${LIQUIDSOAP_HARBOR_PORT:-8001}"
 
+  # Quartz renders the Obsidian vault into the notes site at /notes/ (also
+  # behind the nginx admin auth_request). The vault is mounted READ-ONLY so a
+  # bug in Quartz can never write into the real notes. Quartz is run in
+  # `build --serve` watch mode, so edits to the vault on the host appear
+  # without restarting the container.
   quartz:
     build:
       context: ./quartz
@@ -153,6 +285,13 @@ services:
     volumes:
       - ${OBSIDIAN_DIR}:/quartz/content:ro
 
+  # FastAPI side-service, proxied at /py/ with the prefix stripped by nginx.
+  # ROOT_PATH=/py tells FastAPI it is mounted under a prefix so the generated
+  # OpenAPI/Swagger URLs (/py/docs) are correct even though the app's own
+  # routes are written relative to /.
+  # Note this service uses `environment:` with an explicit allow-list rather
+  # than `env_file: ./.env` — it only gets the three variables it needs and
+  # never sees the database password, Spotify secrets, or API keys.
   python:
     build:
       context: ./python
@@ -172,6 +311,22 @@ services:
       retries: 3
       start_period: 10s
 
+  # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
+  # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to
+  # main, executed by the act_runner that lives outside docker (gitea-runner/).
+  #
+  # ROOTLESS image: runs as an unprivileged user, so config lives in /etc/gitea
+  # and data in /var/lib/gitea (not /data as in the root image) — that is why
+  # the bind mounts look unlike most Gitea compose examples.
+  #
+  # The GITEA__section__KEY environment convention is Gitea's own: each maps to
+  # an app.ini key and overrides the file at runtime, which is how the secrets
+  # stay in .env instead of in the committed app.ini.template.
+  #
+  # entrypoint is overridden to run our wrapper (which materialises app.ini
+  # from the template on first boot) before handing off to Gitea's real
+  # docker-entrypoint.sh. dumb-init is kept as PID 1 for correct signal/zombie
+  # handling, exactly as the stock image does it.
   gitea:
     image: docker.gitea.com/gitea:1.25.4-rootless
     container_name: "${GITEA_HOST}"
@@ -191,13 +346,26 @@ services:
       - USER_GID=1000
     restart: always
     volumes:
+      # PERSISTENT: repositories, LFS objects, avatars, sessions. The git data
+      # itself. (Gitea's *relational* data is in Postgres, not here.)
       - ./gitea/data:/var/lib/gitea
+      # PERSISTENT: app.ini is generated into this host directory on first boot
+      # and then edited by Gitea itself, so it is gitignored — only the
+      # template is committed.
       - ./gitea/config:/etc/gitea
+      # Mounted over the config dir so the wrapper script is available at the
+      # path the overridden entrypoint points at.
       - ./gitea/entrypoint.sh:/etc/gitea/entrypoint.sh:ro
+      # Match the Pi's clock/zone so commit and CI timestamps are local time.
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
+      # 2222 = Gitea's *built-in* SSH server (the rootless image cannot use 22).
+      # Clones use ssh://git@host:2222/... — including the deploy workflow,
+      # which fetches from ssh://git@localhost:2222.
       - "2222:2222"
+      # 3000 = HTTP, published directly as well as proxied at /gitea/, because
+      # the act_runner registers against http://localhost:3000 from the host.
       - "3000:3000"
     depends_on:
       - db

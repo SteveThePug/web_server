@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * Start of an ASCII-video player: sizes a monospace <pre> to the available box and
+ * fills it with blank rows. No frame data or playback is wired up yet.
+ * STATUS: not imported anywhere.
+ */
 import { useTemplateRef, ref, onMounted, onUnmounted } from "vue";
 
 const display = useTemplateRef("display");

@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * Shell for everything under `/`: sticky navbar, scrolling <main>, sticky footer.
+ *
+ * The RouterView is wrapped in the global `slide` transition (defined in
+ * assets/styles.css). `:key="$route.path"` forces a full remount on every path
+ * change so the transition actually runs even between two routes that share a
+ * component; `mode="out-in"` stops the outgoing and incoming pages overlapping.
+ */
 import { RouterView } from "vue-router";
 import Navbar from "@/components/Navbar.vue";
 import Footer from "@/components/Footer.vue";

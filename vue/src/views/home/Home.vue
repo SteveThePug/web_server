@@ -1,4 +1,17 @@
 <script setup>
+/**
+ * Route `/stp` — the personal home page: an A4-shaped widget grid flanked by two
+ * sidebars.
+ *
+ * Layout is entirely CSS `grid-template-areas`: each child gets a `grid-area`
+ * class and the three breakpoints below (desktop / <=1360px tablet / <=700px
+ * phone) re-draw the whole area map rather than moving elements around.
+ *
+ * The widgets do not fetch individually — they all read stores/homeData.js, which
+ * issues one GraphQL query for the whole page.
+ *
+ * Note which variants are wired up: Intro2 and Gym2, not Intro/Gym.
+ */
 import Timer from "@/components/util/Timer.vue";
 import Time from "@/components/util/Time.vue";
 import Radio from "@/components/util/Radio.vue";

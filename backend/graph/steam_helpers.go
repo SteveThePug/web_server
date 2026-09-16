@@ -7,6 +7,11 @@ import (
 	"adam-french.co.uk/backend/services"
 )
 
+// mapSteamGames converts Steam API games into the GraphQL shape.
+//
+// HeaderImageURL is synthesised rather than returned by the API: Steam's CDN
+// serves every game's cover art at a predictable path keyed by app id, so
+// building the URL here saves an extra API call per game.
 func mapSteamGames(games []services.SteamRecentGame) []*model.SteamGame {
 	result := make([]*model.SteamGame, len(games))
 	for i, g := range games {

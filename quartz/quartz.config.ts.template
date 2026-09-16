@@ -1,3 +1,26 @@
+// =============================================================================
+// quartz.config.ts.template — Quartz site config, rendered to quartz.config.ts
+// by quartz/entrypoint.sh at container start.
+//
+// ONLY the DOMAIN placeholder is substituted (envsubst is given a one-name allow-list), so
+// every other dollar sign and backtick-template-looking construct in this
+// TypeScript file survives untouched. That restriction is deliberate: a bare
+// envsubst over a .ts file would corrupt it.
+//
+// baseUrl must keep pointing at www.<DOMAIN>/notes — it has to match the path nginx
+// proxies (/notes/) or every internal link, the sitemap and the RSS feed point
+// at the wrong place.
+//
+// enableSPA / enablePopovers are off because this site is embedded under a
+// path inside another SPA; Quartz's own client-side router would fight with it.
+//
+// ignorePatterns keeps "private", "templates" and ".obsidian" out of the build
+// — the vault is mounted whole, so this list is the only thing stopping
+// private notes being published. Check it before adding vault folders.
+//
+// This file is committed with real content (no secrets). quartz.layout.ts sits
+// alongside it and is COPY'd in by quartz/Dockerfile without templating.
+// =============================================================================
 import { QuartzConfig } from "./quartz/cfg"
 import * as Plugin from "./quartz/plugins"
 

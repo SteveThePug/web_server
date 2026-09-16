@@ -15,6 +15,17 @@ import (
 	"time"
 )
 
+// This file is a hand-rolled IMAP client, used as an alternative mail source
+// to Microsoft Graph. It exists because the Graph path needs an Azure app
+// registration and admin consent, while IMAP needs only an app password.
+//
+// It implements the bare minimum of RFC 3501 — LOGIN, SELECT, SEARCH, FETCH,
+// LOGOUT — by matching on string prefixes rather than parsing IMAP's grammar
+// properly. It works against Outlook and similar servers with the response
+// shapes seen in practice; it is not a general-purpose IMAP client.
+
+// IMAPConfig holds the mailbox credentials. Password is an app password, not
+// an account password.
 type IMAPConfig struct {
 	Host     string
 	Port     string
@@ -27,9 +38,15 @@ type IMAPConfig struct {
 type imapClient struct {
 	conn   net.Conn
 	reader *bufio.Reader
-	tag    atomic.Int64
+	// tag numbers the commands. IMAP allows several in flight at once
+	// identified by tag; this client never does that, so the atomic is
+	// belt-and-braces rather than load-bearing.
+	tag atomic.Int64
 }
 
+// imapDial opens an implicit-TLS IMAP connection (port 993 style, TLS from the
+// first byte — there is no STARTTLS support here) and consumes the server
+// greeting, which arrives unsolicited before any command.
 func imapDial(addr string) (*imapClient, error) {
 	conn, err := tls.Dial("tcp", addr, nil)
 	if err != nil {
@@ -47,21 +64,31 @@ func imapDial(addr string) (*imapClient, error) {
 	return c, nil
 }
 
+// Close drops the TCP connection. Callers normally send LOGOUT first.
 func (c *imapClient) Close() error {
 	return c.conn.Close()
 }
 
+// nextTag returns the next command tag, e.g. "A0001". The width is cosmetic:
+// past 9999 the tags simply get longer, and they stay unique.
 func (c *imapClient) nextTag() string {
 	return fmt.Sprintf("A%04d", c.tag.Add(1))
 }
 
+// readLine reads one CRLF-terminated protocol line with the terminator
+// stripped. There is no read deadline anywhere in this client, so an
+// unresponsive server can block a sync until the TCP connection itself fails.
 func (c *imapClient) readLine() (string, error) {
 	line, err := c.reader.ReadString('\n')
 	return strings.TrimRight(line, "\r\n"), err
 }
 
-// sendCommand sends a tagged command and reads lines until the tagged response.
-// Returns all untagged response lines and the final tagged status line.
+// sendCommand sends a tagged command and reads lines until the line beginning
+// with that tag, which is the server's final status for the command.
+// Everything before it is an untagged ("* ...") response and is returned.
+//
+// This must not be used for FETCH: it reads line by line and would mistake the
+// bytes of a literal for protocol lines. Use sendFetch instead.
 func (c *imapClient) sendCommand(cmd string) (untagged []string, status string, err error) {
 	tag := c.nextTag()
 	_, err = fmt.Fprintf(c.conn, "%s %s\r\n", tag, cmd)
@@ -87,7 +114,8 @@ func (c *imapClient) sendCommandOK(cmd string) ([]string, error) {
 	if err != nil {
 		return untagged, err
 	}
-	// Status line is like: A0001 OK ...  or  A0001 NO ...
+	// Status line is "<tag> OK ..." on success, "<tag> NO ..." or
+	// "<tag> BAD ..." otherwise; only the second field matters.
 	parts := strings.SplitN(status, " ", 3)
 	if len(parts) < 2 || parts[1] != "OK" {
 		return untagged, fmt.Errorf("command %q failed: %s", cmd, status)
@@ -95,7 +123,10 @@ func (c *imapClient) sendCommandOK(cmd string) ([]string, error) {
 	return untagged, nil
 }
 
-// fetchLiteral reads an IMAP literal {N}\r\n followed by N bytes.
+// readLiteral reads exactly size bytes of an IMAP literal, i.e. the payload
+// announced by a trailing "{N}" on the preceding line. It must read by byte
+// count rather than by line because the payload is arbitrary binary data that
+// will itself contain CRLFs.
 func (c *imapClient) readLiteral(size int) (string, error) {
 	buf := make([]byte, size)
 	_, err := io.ReadFull(c.reader, buf)
@@ -105,8 +136,15 @@ func (c *imapClient) readLiteral(size int) (string, error) {
 	return string(buf), nil
 }
 
-// sendFetch sends a FETCH command and collects the full response including literals.
-// Returns raw response lines (with literals inlined after their header lines).
+// sendFetch sends a FETCH and collects its response, handling literals.
+//
+// The returned slice interleaves protocol lines with literal payloads: when a
+// line ends in "{N}" the next entry is the N bytes that followed it. The
+// caller (fetchEmailsIMAP) relies on that pairing.
+//
+// The literal is detected with LastIndex("{") plus a "}" suffix rather than a
+// real parse, so a line whose text merely ends in braces could be misread —
+// tolerable because only FETCH responses reach this code.
 func (c *imapClient) sendFetch(cmd string) ([]string, error) {
 	tag := c.nextTag()
 	_, err := fmt.Fprintf(c.conn, "%s %s\r\n", tag, cmd)
@@ -158,7 +196,11 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 	}
 	defer c.Close()
 
-	// Quote the password to handle special characters
+	// %q wraps the password in double quotes and backslash-escapes any quote
+	// or backslash inside it, which happens to be exactly IMAP's quoted-string
+	// syntax. The username is NOT quoted: an address needs no escaping.
+	// Note this sends the password in a LOGIN command, so it is only safe
+	// because the connection is TLS from the first byte.
 	quotedPass := fmt.Sprintf("%q", s.Config.IMAP.Password)
 	if _, err := c.sendCommandOK(fmt.Sprintf("LOGIN %s %s", s.Config.IMAP.Email, quotedPass)); err != nil {
 		return nil, fmt.Errorf("IMAP login: %w", err)
@@ -168,14 +210,19 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 		return nil, fmt.Errorf("IMAP select INBOX: %w", err)
 	}
 
-	// SEARCH SINCE uses date only (no time), per IMAP spec
+	// SEARCH SINCE has day granularity only — the time of day is not
+	// expressible — so this always over-fetches back to midnight of `since`.
+	// Harmless: SyncEmails deduplicates by message id. The date must be in
+	// IMAP's dd-Mon-yyyy form, hence this exact layout string.
 	dateStr := since.UTC().Format("02-Jan-2006")
 	untagged, err := c.sendCommandOK(fmt.Sprintf("SEARCH SINCE %s", dateStr))
 	if err != nil {
 		return nil, fmt.Errorf("IMAP search: %w", err)
 	}
 
-	// Parse sequence numbers from "* SEARCH 1 2 3 ..."
+	// Parse sequence numbers from "* SEARCH 1 2 3 ...". parts[2:] skips the
+	// "*" and "SEARCH" tokens; a bare "* SEARCH" (no matches) has len 2 and
+	// is skipped by the length test.
 	var seqNums []string
 	for _, line := range untagged {
 		if strings.HasPrefix(line, "* SEARCH") {
@@ -194,13 +241,18 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 
 	log.Printf("[EmailSync/IMAP] Found %d messages since %s", len(seqNums), dateStr)
 
+	// Every matching message is fetched in one command with a comma-separated
+	// sequence set, and each full body is held in memory. A mailbox with a
+	// very busy day could make this large — there is no batching.
 	seqSet := strings.Join(seqNums, ",")
 	fetchLines, err := c.sendFetch(fmt.Sprintf("FETCH %s (BODY[])", seqSet))
 	if err != nil {
 		return nil, fmt.Errorf("IMAP fetch: %w", err)
 	}
 
-	// Parse fetched messages - literals contain the raw RFC822 message
+	// Pair each "... BODY[] {N}" header line with the literal that sendFetch
+	// stored immediately after it. A message that fails to parse is logged and
+	// skipped rather than failing the whole sync.
 	var messages []graphMessage
 	for i := 0; i < len(fetchLines); i++ {
 		line := fetchLines[i]
@@ -208,7 +260,11 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 		if strings.Contains(line, "BODY[]") && strings.HasSuffix(line, "}") {
 			if i+1 < len(fetchLines) {
 				raw := fetchLines[i+1]
-				i++ // skip the literal
+				// Advance past the literal so its contents are never
+				// examined as a protocol line. Note this is a C-style loop
+				// precisely so i can be advanced here; a range loop could
+				// not do it.
+				i++
 				gm, err := parseRawEmail(raw)
 				if err != nil {
 					log.Printf("[EmailSync/IMAP] Error parsing email: %v", err)
@@ -219,11 +275,16 @@ func (s *EmailSyncService) fetchEmailsIMAP(since time.Time) ([]graphMessage, err
 		}
 	}
 
+	// LOGOUT errors are ignored: the emails are already in hand and the
+	// deferred Close will drop the connection regardless.
 	c.sendCommand("LOGOUT")
 	return messages, nil
 }
 
-// parseRawEmail parses an RFC822 email into a graphMessage.
+// parseRawEmail parses a raw RFC822 message into the same graphMessage struct
+// the Graph API path produces, so everything downstream is source-agnostic.
+// An unparseable Date falls back to now, and a missing From leaves both name
+// and address empty rather than failing.
 func parseRawEmail(raw string) (graphMessage, error) {
 	msg, err := mail.ReadMessage(strings.NewReader(raw))
 	if err != nil {
@@ -266,7 +327,16 @@ func parseRawEmail(raw string) (graphMessage, error) {
 	}, nil
 }
 
-// extractTextBody pulls the text/plain or text/html content from a message body.
+// extractTextBody pulls readable content out of a message body, preferring
+// text/plain and falling back to text/html.
+//
+// It recurses into nested multipart parts by re-wrapping the part's bytes in a
+// synthetic mail.Header carrying just its Content-Type — a shortcut that works
+// because this function only ever reads Content-Type.
+//
+// Quoted-printable and base64 transfer encodings are NOT decoded, so a
+// base64-encoded body reaches Claude as base64. Read errors on a part are
+// swallowed and the part is skipped.
 func extractTextBody(header mail.Header, body io.Reader) string {
 	contentType := header.Get("Content-Type")
 	if contentType == "" {
@@ -326,7 +396,9 @@ func extractTextBody(header mail.Header, body io.Reader) string {
 	return string(b)
 }
 
-// decodeHeader decodes RFC 2047 encoded header values.
+// decodeHeader decodes RFC 2047 encoded-words (the "=?UTF-8?Q?...?=" form
+// used for non-ASCII subjects), returning the input unchanged if it is not
+// encoded or cannot be decoded.
 func decodeHeader(s string) string {
 	dec := new(mime.WordDecoder)
 	decoded, err := dec.DecodeHeader(s)

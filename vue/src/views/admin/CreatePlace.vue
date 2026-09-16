@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Admin form: create a place / thing to do. Goes through stores/places.js rather
+ * than gql() directly, so the new row appears in the Places table immediately.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { usePlacesStore } from "@/stores/places";

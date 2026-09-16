@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// SQLConfig holds the PostgreSQL connection parameters, all read from the
+// environment in main.
 type SQLConfig struct {
 	User     string
 	Password string
@@ -16,6 +18,9 @@ type SQLConfig struct {
 	Port     string
 }
 
+// connectToPostgreSQL opens the GORM connection. sslmode=disable is safe
+// only because Postgres is reachable exclusively on the private Docker
+// network, never over the internet.
 func connectToPostgreSQL(config *SQLConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
@@ -30,6 +35,12 @@ func connectToPostgreSQL(config *SQLConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
+// migrateDatabase brings the schema up to date. This project has no
+// migration files: GORM's AutoMigrate is the only schema source, so it will
+// add tables, columns and indexes but never drop or rename anything. Removing
+// a field from a model therefore leaves the column behind, and a renamed
+// field appears as a brand-new column with no data. Any model added to
+// models.go must also be listed here or its table will never be created.
 func migrateDatabase(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.User{},
@@ -51,6 +62,7 @@ func migrateDatabase(db *gorm.DB) error {
 	return nil
 }
 
+// InitDatabase connects to Postgres and runs the auto-migration.
 func InitDatabase(config *SQLConfig) (*gorm.DB, error) {
 	db, err := connectToPostgreSQL(config)
 	if err != nil {

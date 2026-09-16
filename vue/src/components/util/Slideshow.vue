@@ -1,4 +1,13 @@
 <script setup>
+/**
+ * Crossfading image rotator. Clicking advances immediately.
+ *
+ * Each advance clears and re-arms its own timeout rather than using setInterval,
+ * so a manual click restarts the full interval instead of leaving a short
+ * remainder. The fade works because `:key="currentIndex"` makes Vue treat each
+ * image as a new element for the global `fade` transition, and the wrapper is
+ * `position: relative` so the outgoing copy can be absolutely positioned over it.
+ */
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import Header from "@/components/text/Header.vue";
 

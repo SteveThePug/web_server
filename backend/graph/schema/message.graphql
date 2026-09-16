@@ -1,3 +1,10 @@
+# Chat history. The live chat runs over the WebSocket at /ws, not GraphQL;
+# this query is the initial page load.
+#
+# Two gotchas: authorId is a per-connection counter from the chat hub, not a
+# User id, and private messages are silently filtered out for non-admins
+# rather than causing an error.
+
 type Message {
   id: ID!
   content: String!

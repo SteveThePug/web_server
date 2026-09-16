@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Unfinished layout sketch for a custom audio player — the <audio> element has no
+ * source and none of the controls are wired up. STATUS: not imported anywhere.
+ */
 import Button from "@/components/input/Button.vue";
 </script>
 

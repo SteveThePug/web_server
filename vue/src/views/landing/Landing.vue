@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Route `/` — the professional front door. Deliberately plain: a short bio and a
+ * row of links out to the CV, the personal home page (/stp) and social profiles.
+ * Statically imported by the router (it is the first paint).
+ */
 import Link from "@/components/text/Link.vue";
 import InlineLink from "@/components/text/InlineLink.vue";
 import Header from "@/components/text/Header.vue";

@@ -1,4 +1,15 @@
 <script setup>
+/**
+ * "Single stay" tab of /hotels: cheapest hotels for one specific check-in date.
+ *
+ * Results stream in: the backend sends a `hotels` event with room prices first,
+ * then a `transport` event per hotel as each route is priced, then `done`. Rows
+ * are patched in place by hotel `code` so the table fills in rather than
+ * reloading, and PENDING_ROUTE marks the not-yet-priced ones.
+ *
+ * An AbortController cancels an in-flight stream; a 1s ticker drives the elapsed
+ * counter. Both are torn down in the `finally` and on unmount.
+ */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import SharedFields from "./SharedFields.vue";
 import HotelRows from "./HotelRows.vue";
@@ -157,6 +168,15 @@ function buildRequest() {
     };
 }
 
+/**
+ * Apply one NDJSON event from the search stream.
+ *
+ * Order is `hotels` (room prices for all candidates) -> many `transport`
+ * (one per hotel as its route is priced) -> `done`. Transport events patch the
+ * existing row in place, matched on hotel `code`, so the table fills in
+ * column-by-column instead of being rebuilt — that is what keeps scroll
+ * position and sort order stable while results arrive.
+ */
 function applyEvent(ev) {
     switch (ev.event) {
         case "hotels":
@@ -194,6 +214,8 @@ async function onSearch() {
     searching.value = true;
     elapsed.value = 0;
     saveConfig();
+    // 1s elapsed counter plus an AbortController to cancel the stream; both
+    // are torn down in the finally below and on unmount.
     ticker = setInterval(() => elapsed.value++, 1000);
     aborter = new AbortController();
     try {

@@ -1,3 +1,36 @@
+# =============================================================================
+# nginx_dev.conf.template — LOCAL DEVELOPMENT config.
+#
+# WHEN IT IS USED
+#   Rendered by nginx/entrypoint.sh whenever DEV_MODE=true, which is set only
+#   by docker-compose.dev.yml. Never used on the Pi.
+#
+# HOW IT DIFFERS FROM nginx.conf.template
+#   - `/` is proxied to the Vite dev server at vue:5173 instead of serving
+#     built files from disk. The Upgrade/Connection headers on that block are
+#     for Vite's HMR websocket, not for the app.
+#   - No HTTP->HTTPS redirect and no apex->www redirect: BOTH :80 and :443
+#     serve the full site, so http://localhost just works. The two server
+#     blocks are therefore near-identical copies of each other (see the
+#     duplication note in DEPLOYMENT.md).
+#   - TLS uses the self-signed /etc/letsencrypt/live/localhost/ certificate that
+#     the entrypoint generates, not a Let's Encrypt one. Browsers will warn.
+#   - No HSTS or other security headers — HSTS on localhost would poison the
+#     browser for every other localhost project on the machine.
+#   - No `graphql` rate-limit zone (the production template has one); GraphQL
+#     falls under the general `api` limit here.
+#   - No /assets/, /fonts/, /img/ cache-control blocks: Vite serves those and
+#     long cache lifetimes would defeat hot reload.
+#
+# TEMPLATING
+#   Same envsubst allow-list as production. Every other dollar token is an
+#   nginx runtime variable and must survive substitution untouched.
+#
+# For the rate-limit reasoning, the prefix-strip rewrite, the four forwarding
+# headers, the websocket upgrade block and the auth_request admin gate, see the
+# fully-annotated equivalents in nginx.conf.template — the mechanics here are
+# identical.
+# =============================================================================
 events {
     worker_connections  1024;
 }

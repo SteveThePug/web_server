@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Clock and date widget. updateDateTime() runs once immediately and then every
+ * minute. Note the interval is module-level and never cleared — harmless because
+ * the widget lives for the life of the home page, but it would leak if reused.
+ */
 import Header from "@/components/text/Header.vue";
 import { ref } from "vue";
 

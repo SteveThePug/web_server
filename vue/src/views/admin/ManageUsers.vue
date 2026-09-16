@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Admin panel: list users and toggle their admin flag. Mutates the local `user`
+ * object in place from the mutation's response, so the row updates without a
+ * refetch.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";

@@ -1,3 +1,6 @@
+# Steam presence and recent games for the home page, cached for five minutes.
+# headerImage is built from the app id rather than returned by Steam's API.
+
 type SteamGame {
   appId: Int!
   name: String!

@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Admin form: create a blog post. Emits "done" on success and "cancel" when
+ * dismissed, so the host (the Feed widget's modal, or Admin.vue) decides what to
+ * close or refresh.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { gql } from "@/graphql";

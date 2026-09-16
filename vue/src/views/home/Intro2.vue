@@ -1,4 +1,17 @@
 <script setup lang="ts">
+/**
+ * The live intro widget on /stp: DVD-logo-style bouncing phrases.
+ *
+ * The animation deliberately keeps its state in the plain `animState` array, not
+ * in the reactive `items` ref — mutating a ref 30 times a second would trigger a
+ * Vue re-render per frame. `items` exists only to render the initial DOM; after
+ * that, positions are written straight onto the elements. Element and container
+ * sizes are cached and re-measured on resize rather than read each frame, since
+ * reading offsetWidth in a rAF callback forces a synchronous layout.
+ *
+ * Frames are throttled to ~30fps via FRAME_INTERVAL because the motion is slow
+ * and this is a background decoration.
+ */
 import { rand } from "@vueuse/core";
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 

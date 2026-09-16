@@ -1,4 +1,13 @@
 <script setup>
+/**
+ * 88x31 webring "stamps" widget on /stp, inside a drag-scrollable <Touchscreen>.
+ *
+ * The order is shuffled on module load so the wall looks different each visit.
+ * The rAF loop then drifts the scroll position diagonally and bounces off each
+ * edge — it drives the DOM's scrollLeft/scrollTop directly rather than any
+ * reactive state, and reads scrollWidth/clientWidth each frame because images
+ * load in progressively and change the bounds.
+ */
 import { ref, onMounted, onUnmounted } from "vue";
 
 import Touchscreen from "@/components/util/Touchscreen.vue";
@@ -21,6 +30,8 @@ let srcs = [
   "/img/stamps/demo.gif",
   "/img/stamps/demo.gif",
 ];
+// Shuffled once at module evaluation, so the wall is ordered differently each
+// page load but stable while the widget is mounted. Mutates in place.
 shuffleArray(srcs);
 
 const touchscreen = ref(null);
@@ -30,6 +41,13 @@ let posY = 0;
 let dx = 0.2;
 let dy = 0.12;
 
+/**
+ * rAF loop drifting the scroll position diagonally and bouncing off the edges.
+ *
+ * Writes scrollLeft/scrollTop on the DOM node directly (no reactive state, so
+ * no re-render per frame), and re-reads scrollWidth/clientWidth every frame
+ * because the stamp images load in progressively and keep changing the bounds.
+ */
 function bounce() {
   const el = touchscreen.value?.$el;
   if (!el) return;

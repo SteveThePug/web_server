@@ -6,6 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ConnectWebSocket upgrades GET /ws into a chat connection. The route is
+// public: anyone may chat, and admin status only adds the ability to see and
+// send private messages and to delete.
 func (store *Store) ConnectWebSocket(ctx *gin.Context) {
 	// Work out admin status before upgrading: the browser sends the auth
 	// cookies with the upgrade request, but they are not available afterwards.

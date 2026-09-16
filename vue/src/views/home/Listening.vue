@@ -1,4 +1,11 @@
 <script setup>
+/**
+ * "Listening" widget on /stp: rotates through recent Spotify plays.
+ *
+ * Two timers: a 5s rotation (self-rearming setTimeout, so a manual change would
+ * reset the full interval) and a 2-minute re-poll of Spotify. Both are cleared on
+ * unmount.
+ */
 import Header from "@/components/text/Header.vue";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
@@ -10,6 +17,8 @@ const song = computed(() => songsStore.songs[idx.value]);
 let nextId = null;
 let refreshId = null;
 
+// Self-rearming timeout rather than setInterval, so the full 5s is restarted
+// whenever the song changes rather than leaving a short remainder.
 function nextSong() {
   clearTimeout(nextId);
   nextId = setTimeout(nextSong, 5000);

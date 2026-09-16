@@ -15,6 +15,8 @@ import (
 
 // SpotifyListening is the resolver for the spotifyListening field.
 func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error) {
+	// A nil client means the OAuth flow has never been completed. Report that
+	// as null rather than an error so the home page renders without it.
 	if r.Store.SpotifyClient == nil {
 		return nil, nil
 	}
@@ -38,6 +40,8 @@ func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRece
 		return []*model.SpotifyRecentItem{}, nil
 	}
 
+	// One-minute cache. This resolver is the only writer of that cache; the
+	// REST /spotify/recent endpoint reads it but never fills it.
 	if r.Store.RecentSongsFresh() {
 		return mapRecentItems(*r.Store.RecentSongs), nil
 	}

@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Admin form: log a consumed book/film/game. Emits "done"/"cancel".
+ */
 import Button from "@/components/input/Button.vue";
 
 import { ref } from "vue";

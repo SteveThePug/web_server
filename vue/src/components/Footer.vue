@@ -1,4 +1,10 @@
 <script setup>
+/**
+ * Fake waybar status bar (a nod to the author's Linux setup) for DefaultLayout.
+ *
+ * Everything except the clock is hard-coded decoration — CPU/MEM/DISK/NET/BAT are
+ * not real readings. `.hide-sm` drops them on narrow screens.
+ */
 import { ref, onMounted, onUnmounted } from "vue";
 
 const clock = ref("");

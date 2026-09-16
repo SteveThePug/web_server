@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Route `/shrines/gto` — placeholder, renders <Wip>.
+ */
 import Wip from "@/components/util/Wip.vue";
 </script>
 

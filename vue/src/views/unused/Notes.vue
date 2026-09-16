@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Renders a markdown note fetched from /api/notes/<path> as a blob.
+ * STATUS: no route points here — the /notes link in the Links widget goes to a
+ * separately served path, not this component. Not imported anywhere.
+ */
 import Markdown from "@/components/util/Markdown.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";

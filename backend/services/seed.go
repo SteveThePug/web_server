@@ -9,7 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// SeedDatabase populates an empty database with demo content for local
+// development. It is called from main only when SEED_DB=true, which
+// docker-compose.dev.yml sets; it must never run in production because it
+// creates an admin account with the password "password".
 func SeedDatabase(db *gorm.DB) {
+	// "Any user exists" is the whole idempotency check — if the users table
+	// has a row, nothing is seeded, even if the other tables were emptied.
 	var user models.User
 	if db.First(&user).Error == nil {
 		log.Println("Database already has data, skipping seed")
@@ -23,11 +29,14 @@ func SeedDatabase(db *gorm.DB) {
 		log.Fatal("Failed to hash seed password:", err)
 	}
 
+	// Dev-only credentials: testuser / password.
 	testUser := models.User{
 		Username: "testuser",
 		Password: hashedPassword,
 		Admin:    true,
 	}
+	// GORM writes the generated primary key back into testUser, which the
+	// posts below then reference as their author.
 	db.Create(&testUser)
 
 	posts := []models.Post{

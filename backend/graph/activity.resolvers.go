@@ -20,6 +20,7 @@ func (r *activityResolver) ID(ctx context.Context, obj *models.Activity) (int, e
 
 // CreateActivity is the resolver for the createActivity field.
 func (r *mutationResolver) CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error) {
+	// No middleware guards GraphQL, so each mutation checks for itself.
 	if !IsAdminFromCtx(ctx) {
 		return nil, fmt.Errorf("admin access required")
 	}
@@ -38,6 +39,9 @@ func (r *queryResolver) Activities(ctx context.Context) ([]*models.Activity, err
 	if err := r.Store.DB.Order("created_at DESC").Find(&activities).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &activities[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.Activity, len(activities))
 	for i := range activities {
 		result[i] = &activities[i]

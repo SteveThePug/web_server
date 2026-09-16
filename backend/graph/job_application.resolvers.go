@@ -43,6 +43,10 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 	if !IsAdminFromCtx(ctx) {
 		return nil, fmt.Errorf("admin access required")
 	}
+	// Partial update: every input field is a pointer so that "not supplied"
+	// is distinguishable from "set to empty". A nil field is left untouched;
+	// note this also means a nullable column can never be cleared back to
+	// null through this mutation.
 	var app models.JobApplication
 	if err := r.Store.DB.First(&app, id).Error; err != nil {
 		return nil, err
@@ -79,6 +83,8 @@ func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bo
 	if !IsAdminFromCtx(ctx) {
 		return false, fmt.Errorf("admin access required")
 	}
+	// Soft delete straight by id, without loading first — so deleting an id
+	// that does not exist still returns true.
 	if err := r.Store.DB.Delete(&models.JobApplication{}, id).Error; err != nil {
 		return false, err
 	}
@@ -87,9 +93,12 @@ func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bo
 
 // JobApplications is the resolver for the jobApplications field.
 func (r *queryResolver) JobApplications(ctx context.Context) ([]*models.JobApplication, error) {
+	// Admin-only even though it is a query: job applications are private.
 	if !IsAdminFromCtx(ctx) {
 		return nil, fmt.Errorf("admin access required")
 	}
+	// Find can populate a slice of pointers directly, avoiding the
+	// copy-to-pointers loop the other list resolvers need.
 	var apps []*models.JobApplication
 	if err := r.Store.DB.Order("created_at desc").Find(&apps).Error; err != nil {
 		return nil, err

@@ -1,3 +1,34 @@
+<!--
+  =============================================================================
+  icecast.xml.template — icecast2 server config.
+
+  RENDERED BY icecast2/entrypoint.sh with bare envsubst into
+  /etc/icecast2/icecast.xml at container start. Every VAR placeholder comes from ./.env,
+  which is how the four passwords stay out of git. An unset variable becomes an
+  EMPTY password rather than an error, so verify .env is complete after any
+  change to it.
+
+  THE FOUR CREDENTIALS, and who uses each:
+    source-password  - liquidsoap uses it to push the stream in, and the live
+                       DJ client uses the same value against the liquidsoap
+                       harbor port. Anyone with it can take over the station.
+    relay-password   - for a downstream icecast relaying this stream.
+    admin-user /
+    admin-password   - the icecast web admin UI. Reachable through the /radio/
+                       proxy, so treat it as internet-facing.
+
+  OTHER NOTES:
+    <alias source="/" destination="/status.xsl"/> makes the bare /radio/ URL
+      show the status page instead of a 404.
+    <sources>2</sources> is the minimum that works: one slot for the liquidsoap
+      output and one spare for a reconnect overlapping the old connection.
+      Lowering it to 1 causes reconnect failures.
+    <chroot>0</chroot> — no chroot, because the container already provides the
+      isolation and the process does not run as root.
+    Listener cap is 100, which is far above what a Raspberry Pi's uplink can
+      actually sustain; it is a safety ceiling, not a target.
+  =============================================================================
+-->
 <icecast>
     <authentication>
         <source-password>${ICECAST_SOURCE_PASSWORD}</source-password>

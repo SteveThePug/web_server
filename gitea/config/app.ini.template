@@ -1,3 +1,35 @@
+; =============================================================================
+; app.ini.template — seed configuration for Gitea, copied to app.ini on the
+; FIRST boot on a host by gitea/entrypoint.sh and never touched again after.
+;
+; IMPORTANT: editing this file does nothing to a running install. Gitea owns
+; ./gitea/config/app.ini (it rewrites it from the web UI) and that real file is
+; gitignored because it accumulates generated secrets.
+;
+; SECRET FIELDS ARE DELIBERATELY BLANK HERE
+;   LFS_JWT_SECRET, PASSWD, SECRET_KEY and JWT_SECRET are empty on purpose so
+;   nothing sensitive is committed. Real values arrive at runtime as
+;   GITEA__section__KEY environment variables from ./.env (see
+;   docker-compose.yml), which override app.ini. SECRET_KEY is the exception —
+;   Gitea generates one itself on first run and writes it into the live app.ini.
+;
+; SETTINGS WORTH KNOWING
+;   ROOT_URL must match the public path nginx serves Gitea at (/gitea/), or
+;     every link, clone URL and OAuth redirect Gitea emits will be wrong.
+;   START_SSH_SERVER = true with SSH_PORT 2222: the rootless image cannot bind
+;     22 and cannot use the host's sshd, so Gitea runs its own Go SSH server.
+;     2222 is published in docker-compose.yml; the deploy workflow clones over
+;     ssh://git@localhost:2222.
+;   REVERSE_PROXY_LIMIT = 1 / TRUSTED_PROXIES = * : trust exactly one hop of
+;     X-Forwarded-For, i.e. our nginx, so Gitea logs real client IPs. This is
+;     only safe because nginx is the sole edge.
+;   INSTALL_LOCK = true skips the first-run web installer.
+;   DISABLE_REGISTRATION = true — single-user instance; nobody can sign up.
+;   OFFLINE_MODE = true — no calls out to gravatar/CDNs.
+;   DB_TYPE postgres pointing at the shared `db` container, in its own database
+;     alongside the app's. WORK_PATH/APP_DATA_PATH are /var/lib/gitea, the
+;     rootless image's layout (the root image uses /data instead).
+; =============================================================================
 APP_NAME = Gitea: Git with a cup of tea
 RUN_USER = git
 RUN_MODE = prod

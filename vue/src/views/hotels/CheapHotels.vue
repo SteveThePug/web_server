@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * Route `/hotels` — Travelodge price scanner, front end for the FastAPI service
+ * under /py/hotels.
+ *
+ * Two panels behind a tab strip. The form state is created here and passed down
+ * as a prop, so shared fields (origin, guests, travel budget) survive tab
+ * switches; the chosen tab itself is remembered in localStorage.
+ */
 import { ref, computed, onMounted } from "vue";
 import Header from "@/components/text/Header.vue";
 import Paragraph from "@/components/text/Paragraph.vue";

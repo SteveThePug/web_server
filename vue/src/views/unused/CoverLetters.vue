@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Editable cover-letter template (contenteditable paragraphs, print to PDF).
+ * Despite living in views/unused/, this IS live: CV.vue imports it as the
+ * "Cover Letter" tab on /cv.
+ */
 import { ref } from "vue";
 
 const name = ref("Adam French");

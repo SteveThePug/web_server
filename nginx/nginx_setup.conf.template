@@ -1,3 +1,33 @@
+# =============================================================================
+# nginx_setup.conf.template — BOOTSTRAP config, used exactly once per host.
+#
+# WHEN IT IS USED
+#   Rendered by nginx/entrypoint.sh in production when NO certificate exists
+#   yet at /etc/letsencrypt/live/<DOMAIN>/.
+#
+# WHY IT EXISTS (the chicken-and-egg)
+#   The production config cannot start without a certificate file, and certbot
+#   cannot obtain a certificate without an HTTP server answering Let's
+#   Encrypt's HTTP-01 challenge on port 80. This config is the smallest thing
+#   that breaks that loop: port 80 only, no TLS directives, no upstreams,
+#   nothing that can fail to load. It serves the ACME webroot and 404s
+#   everything else so the half-configured site is never partially exposed.
+#
+# LIFECYCLE
+#   1. nginx starts here.
+#   2. certbot succeeds and writes the certificate into the shared volume.
+#   3. nginx must be RESTARTED for the entrypoint to re-check and switch to
+#      nginx.conf.template. This step is manual:
+#          docker compose restart nginx
+#      Nothing watches the cert directory and flips automatically.
+#
+# TEMPLATING
+#   Only ${DOMAIN} is substituted for this file (a separate, shorter envsubst
+#   call in the entrypoint) because there are no upstreams to fill in.
+#
+# ASSUMES: /var/www/certbot is bind-mounted and shared with the certbot
+# container; port 80 is reachable from the public internet.
+# =============================================================================
 events {
     worker_connections 1024;  # required, can be minimal
 }

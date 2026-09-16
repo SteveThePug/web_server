@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Steam widget on /stp: online status plus a rotation through recent games
+ * (5s rotation, 5-minute re-poll). `loaded` comes from homeData so the widget can
+ * tell "not fetched yet" from "fetched, nothing to show".
+ */
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSteamStore } from "@/stores/steam";

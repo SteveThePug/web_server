@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * First version of the /stp intro widget. Nearly all of its content is commented
+ * out and Home.vue imports Intro2 instead.
+ * STATUS: superseded by Intro2.vue; not imported anywhere.
+ */
 import Header from "@/components/text/Header.vue";
 import Paragraph from "@/components/text/Paragraph.vue";
 </script>

@@ -15,6 +15,8 @@ import (
 
 // GiteaFeed is the resolver for the giteaFeed field.
 func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error) {
+	// One-minute cache on the Store, shared by every visitor, so a busy home
+	// page does not hammer the Gitea container.
 	if r.Store.GiteaFeedFresh() {
 		return mapGiteaFeed(r.Store.GiteaFeed), nil
 	}
@@ -23,6 +25,10 @@ func (r *queryResolver) GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, er
 	if err != nil {
 		return nil, err
 	}
+	// FetchLatestFeed returns (nil, nil) for an empty feed; mapGiteaFeed
+	// would dereference it, so return null to the client instead. The cache
+	// is deliberately not written in that case, so an empty feed is retried
+	// on the next request.
 	if feed == nil {
 		return nil, nil
 	}

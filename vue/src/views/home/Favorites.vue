@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * "Favorites" widget on /stp: a self-scrolling <AutoScroll> list, plus an
+ * admin-only create form in a <Modal> (lazily imported).
+ */
 import Header from "@/components/text/Header.vue";
 import CreateToggle from "@/components/input/CreateToggle.vue";
 import LinkTable from "@/components/util/LinkTable.vue";

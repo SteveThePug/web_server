@@ -1,4 +1,16 @@
 <script setup>
+/**
+ * Route `/cv` — the CV shell: a template picker, a Print button and a link to the
+ * job tracker. Rendered inside CVLayout, which supplies the light print theme.
+ *
+ * The selected template is held in a shallowRef: the value is a component
+ * definition, and a deep `ref` would try to make the whole component object
+ * reactive. Most templates are commented out of `templates` — uncomment a pair of
+ * lines (the import and the entry) to bring one back.
+ *
+ * Printing is just window.print(); the `no-print` class (assets/styles.css) hides
+ * the chrome, and cv-shared.css sizes the pages.
+ */
 import { ref, shallowRef } from "vue";
 import { RouterLink } from "vue-router";
 // import CVGeneral from "./CVGeneral.vue";
@@ -26,6 +38,9 @@ const templates = [
 ];
 
 const selected = ref(0);
+// shallowRef, not ref: the value is a component definition. A deep ref would
+// walk the whole component object making it reactive — wasteful and a known
+// source of warnings.
 const currentComponent = shallowRef(templates[0].component);
 
 function select(index) {
@@ -33,6 +48,8 @@ function select(index) {
     currentComponent.value = templates[index].component;
 }
 
+/** Browser print dialog. The `no-print` class (assets/styles.css) hides the
+ *  selector bar; cv-shared.css handles page sizing and breaks. */
 function print() {
     window.print();
 }

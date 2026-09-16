@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * Standard link. Renders a <RouterLink> when given `to`, a plain <a> when given
+ * `href`. `bare` drops the styling (used where the parent styles the anchor).
+ * External `target="_blank"` links get rel="noopener noreferrer" automatically.
+ */
 import { computed } from "vue";
 
 const props = defineProps({

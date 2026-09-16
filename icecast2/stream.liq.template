@@ -1,3 +1,41 @@
+# =============================================================================
+# stream.liq.template — liquidsoap source script for the internet radio.
+#
+# RENDERED BY icecast2/entrypoint.sh with bare envsubst into
+# /etc/liquidsoap/stream.liq at container start. Every VAR placeholder below comes from
+# ./.env; an unset one silently becomes an empty string.
+#
+# WHAT IT BUILDS, bottom of the fallback chain upward:
+#   blank()  - digital silence; the last resort so the mount is never dropped.
+#   music    - the fallback playlist read from the /music bind mount
+#              (./icecast2/fallback_music on the host). reload_mode="watch"
+#              means adding or removing an MP3 on the host is picked up live,
+#              with no container restart.
+#   live     - a *harbor* input: liquidsoap itself listens on
+#              LIQUIDSOAP_HARBOR_PORT and accepts an incoming source
+#              connection. This is the "go live" path — a broadcasting client
+#              on the LAN/internet connects with ICECAST_SOURCE_PASSWORD and
+#              starts talking. It is the one reason icecast2 publishes a host
+#              port in docker-compose.yml.
+#
+#   fallback(track_sensitive=false, [live, music, blank()])
+#     Picks the first available source in list order, so a live DJ pre-empts
+#     the playlist automatically. track_sensitive=false is the important flag:
+#     it makes the switch happen IMMEDIATELY rather than politely waiting for
+#     the current track to finish — otherwise going live could take minutes.
+#
+#   amplify(0.7, ...) - a fixed -3dB or so trim, because the fallback MP3s are
+#     mastered loud and were clipping against the live input.
+#
+# OUTPUT
+#   Pushes to icecast on localhost (same container) at ICECAST_MOUNT, which is
+#   what nginx exposes at /radio/. fallible=true tells liquidsoap this output
+#   is allowed to fail and be retried, instead of aborting the script — that is
+#   what makes the `sleep 2` startup race in the entrypoint survivable.
+#
+# settings.server.telnet := false — the liquidsoap control socket is off; there
+# is no interactive way to poke the running stream.
+# =============================================================================
 settings.server.telnet := false
 
 music = playlist("/music", mode="randomize", reload_mode="watch")

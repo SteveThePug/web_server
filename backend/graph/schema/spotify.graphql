@@ -1,3 +1,7 @@
+# Spotify "now playing" / "recently played" for the home page. Both resolve to
+# null / an empty list when the backend has never completed the Spotify OAuth
+# flow, so the page degrades rather than erroring.
+
 type SpotifyArtist {
   name: String!
 }

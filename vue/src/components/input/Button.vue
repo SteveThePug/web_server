@@ -1,3 +1,7 @@
+<!--
+  The site's standard button. Wraps a native <button>, so all attributes and
+  listeners (including @click) fall through to it via Vue's attribute inheritance.
+-->
 <script setup></script>
 
 <template>

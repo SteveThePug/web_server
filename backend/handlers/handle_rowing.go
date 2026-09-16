@@ -16,14 +16,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Rowing log. The interesting endpoint is CreateRowing: rather than a form,
+// the admin uploads a photo of the rowing machine display and Claude reads the
+// numbers off it. The session date comes from the photo's EXIF metadata, which
+// also doubles as the deduplication key.
+
+// ExtractedRowingData is the JSON contract for what Claude reads off the
+// display; the keys must match the prompt in CreateRowing.
 type ExtractedRowingData struct {
 	TimeMinutes uint64 `json:"timeMinutes"`
 	TimeSeconds uint64 `json:"timeSeconds"`
 	Distance    uint64 `json:"distance"`
 }
 
+// GetRowing backs the public GET /rowing with every logged session, newest
+// first.
 func (store *Store) GetRowing(ctx *gin.Context) {
 	var rowing []models.Rowing
+	// "Created_At" works because Postgres folds unquoted identifiers to lower
+	// case; the column is created_at.
 	if err := store.DB.Order("Created_At DESC").Find(&rowing).Error; err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -32,6 +43,12 @@ func (store *Store) GetRowing(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, rowing)
 }
 
+// CreateRowing backs the admin-only POST /rowing: it takes a photo of the
+// rowing machine display, dates it from EXIF, has Claude read the time and
+// distance, sanity-checks the result and stores a session.
+//
+// Note it is admin-gated and calls a paid API once per request, so the
+// validation below exists to catch misreadings rather than hostile input.
 func (store *Store) CreateRowing(ctx *gin.Context) {
 	file, err := ctx.FormFile("image")
 	if err != nil {
@@ -46,20 +63,23 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 	}
 	defer f.Close()
 
-	// Get the date taken from the EXIF data
-	x, err := exif.Decode(f)
+	// EXIF is required, not optional: it is both the session date and the
+	// duplicate key, so a stripped-metadata image (anything that has been
+	// through most messaging apps) is rejected outright.
+	exifData, err := exif.Decode(f)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "no EXIF data found"})
 		return
 	}
 
-	dateTaken, err := x.DateTime()
+	dateTaken, err := exifData.DateTime()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "no date found in EXIF data"})
 		return
 	}
 
-	// Seek back to start since exif.Decode advanced the cursor
+	// exif.Decode consumed part of the stream, so rewind before reading the
+	// bytes to send to Claude.
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to seek image"})
 		return
@@ -77,6 +97,9 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 		"image/gif":  true,
 		"image/webp": true,
 	}
+	// This is the browser's claimed type, not a sniffed one; it is passed
+	// straight through to the Anthropic API, so the allow-list is there to
+	// keep the API call well-formed rather than to police the file.
 	mediaType := file.Header.Get("Content-Type")
 	if !allowedMediaTypes[mediaType] {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "unsupported image type"})
@@ -84,7 +107,11 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 	}
 	encoded := base64.StdEncoding.EncodeToString(data)
 
-	// Reject duplicates: same EXIF datetime already recorded
+	// Duplicate guard: two photos of the same session share an EXIF capture
+	// time to the second. Checked before the Claude call so a re-upload costs
+	// nothing. Note this reads err == nil as "found" — an actual database
+	// error is indistinguishable from "no match" here and lets the insert
+	// proceed.
 	var existing models.Rowing
 	if err := store.DB.Where("date = ?", dateTaken).First(&existing).Error; err == nil {
 		ctx.JSON(http.StatusConflict, gin.H{"error": "duplicate entry for this date"})
@@ -130,6 +157,8 @@ No text, no markdown, no explanation. Just the JSON object.`),
 		return
 	}
 
+	// Strip a markdown code fence if the model wrapped its JSON in one
+	// despite the prompt. Same defensive dance as in services/email_sync.go.
 	extractedData := ExtractedRowingData{}
 	raw := message.Content[0].Text
 
@@ -153,7 +182,10 @@ No text, no markdown, no explanation. Just the JSON object.`),
 
 	totalSeconds := extractedData.TimeMinutes*60 + extractedData.TimeSeconds
 
-	// Validate for anomalous values
+	// Sanity bounds on what Claude claims to have read. A misread digit
+	// typically lands far outside human rowing performance, and the pace
+	// check catches the case where time and distance are individually
+	// plausible but inconsistent with each other.
 	const (
 		minDistance    = 100    // metres
 		maxDistance    = 100000 // metres
@@ -177,6 +209,9 @@ No text, no markdown, no explanation. Just the JSON object.`),
 		return
 	}
 
+	// Rough calorie estimate from distance alone: roughly 500 kcal per
+	// 7500 m. Not from the machine and not physiologically derived — it is a
+	// display figure only.
 	calories := float64(extractedData.Distance) / 7500.0 * 500.0
 
 	rowing := models.Rowing{

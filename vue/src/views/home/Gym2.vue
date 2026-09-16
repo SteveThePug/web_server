@@ -1,4 +1,20 @@
 <script setup>
+/**
+ * The live "Rowing" widget on /stp: a hand-drawn SVG line chart of rowing
+ * sessions, with a metric selector and a hover tooltip.
+ *
+ * No chart library — points are projected by hand into a fixed 290x120 viewBox
+ * (W/H) inset by the PL/PT/PR/PB padding constants. The y axis is normalised to
+ * the visible min..max of the selected metric, so `range || 1` guards the
+ * divide-by-zero when every session has the same value, and a single data point
+ * is centred rather than pinned to x=0.
+ *
+ * Rows are reversed (oldest first) for the chart; `slice()` first so the store's
+ * array is not mutated.
+ *
+ * The admin create form is a defineAsyncComponent so CreateRowing.vue is only
+ * downloaded when an admin actually opens it.
+ */
 import { ref, computed, defineAsyncComponent } from "vue";
 import Header from "@/components/text/Header.vue";
 import Modal from "@/components/util/Modal.vue";
@@ -14,6 +30,7 @@ const store = useHomeDataStore();
 const { loaded, error, rowingSessions } = storeToRefs(store);
 const showCreate = ref(false);
 
+// slice() first: reverse() mutates in place and would reorder the store's array.
 const rows = computed(() => rowingSessions.value.slice().reverse());
 const loading = computed(() => !loaded.value);
 
@@ -51,6 +68,9 @@ const chartData = computed(() =>
 const minVal = computed(() => Math.min(...chartData.value.map((d) => d.value)));
 const maxVal = computed(() => Math.max(...chartData.value.map((d) => d.value)));
 
+// Project each session into SVG coordinates inside the PL/PT/PR/PB padded plot
+// area. `range || 1` avoids a divide-by-zero when every value is identical, and
+// a single point is centred horizontally rather than pinned to the left edge.
 const points = computed(() => {
   const data = chartData.value;
   const n = data.length;

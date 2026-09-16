@@ -1,3 +1,18 @@
+/**
+ * The single source of truth for the home page.
+ *
+ * One GraphQL query fetches everything the /stp widgets need (posts, favorites,
+ * activities, Spotify, rowing, bookmarks, Gitea feed, Steam, current user) in a
+ * single round trip, instead of each widget issuing its own request. The
+ * per-domain stores (posts, favorites, activity, songs, steam, auth) are thin
+ * views over this one — they `watch` their slice of it rather than fetching.
+ *
+ * fetchAll() is called once at the bottom of the setup function, i.e. the first
+ * time any component calls useHomeDataStore(). That is why no component has to
+ * kick off the initial load, and why `loaded` is the flag the router guard waits
+ * on to know whether `me` has been resolved yet.
+ */
+
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { gql } from "@/graphql";
@@ -18,6 +33,11 @@ export const useHomeDataStore = defineStore("homeData", () => {
   const bookmarks = ref([]);
   const radioLive = ref(false);
 
+  /**
+   * Fetch every home-page dataset in one GraphQL round trip, plus the radio
+   * liveness probe in parallel. Sets `loaded` on success and `error` on
+   * failure; never throws. Safe to call again to refresh.
+   */
   async function fetchAll() {
     try {
       const [data] = await Promise.all([
@@ -52,6 +72,10 @@ export const useHomeDataStore = defineStore("homeData", () => {
     }
   }
 
+  /**
+   * Probe the Icecast stream with a HEAD request and set `radioLive`.
+   * A failure (404/connection refused) means "offline", not an error.
+   */
   async function fetchRadioStatus() {
     try {
       await axios.head("/radio/stream");
@@ -61,6 +85,8 @@ export const useHomeDataStore = defineStore("homeData", () => {
     }
   }
 
+  // Kick off the initial load as a side effect of the first useHomeDataStore()
+  // call. Pinia setup stores run once, so this fires exactly once per page load.
   fetchAll();
 
   return {

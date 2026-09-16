@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Generic table that derives its columns from the union of keys across all rows,
+ * so heterogeneous objects still line up. STATUS: not imported anywhere.
+ */
 import { computed } from "vue";
 
 const props = defineProps({
@@ -8,6 +12,8 @@ const props = defineProps({
   },
 });
 
+// Union of keys across every row, in first-seen order, so rows with different
+// shapes still line up under one header.
 const resolvedColumns = computed(() => {
   const keys = new Set();
 

@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Link styled to sit inside running prose (bold italic, no underline). Same
+ * `to` vs `href` and auto-`rel` behaviour as Link.vue.
+ */
 import { computed } from "vue";
 
 const props = defineProps({

@@ -1,4 +1,17 @@
 <script setup>
+/**
+ * Route `/automata` — an interactive Turing machine / mobile automaton
+ * simulator, rendered to a <canvas>.
+ *
+ * A machine is described by a transition table: each `delta` line is
+ * "<read>,<write>,<L|R>" over single characters, so the whole configuration is
+ * editable as plain text and shareable. Configuration is kept in localStorage
+ * under STORAGE_KEY.
+ *
+ * The canvas draws colours literally rather than via CSS variables — this is
+ * the one place in the codebase exempt from the "always use a design token"
+ * rule, because canvas has no access to CSS custom properties.
+ */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import InlineLink from "@/components/text/InlineLink.vue";
 import Header from "@/components/text/Header.vue";
@@ -144,6 +157,8 @@ const terminated = ref(false);
 const accepted = ref(false);
 const speed = ref(55); // slider 0..100, log scale
 
+// The slider is 0..100 but useful speeds span 1 to ~2000 steps/sec, so map it
+// logarithmically: 10^(slider*3.3/100) gives 1 at 0 and ~10^3.3 (~2000) at 100.
 const stepsPerSecond = computed(() =>
     Math.max(1, Math.round(10 ** ((speed.value * 3.3) / 100))),
 );
@@ -187,6 +202,8 @@ function parseDelta(str) {
     return { delta, n };
 }
 
+/** Every word of length n over the alphabet `gamma` (|gamma|^n of them) —
+ *  used to list the inputs that have NO transition, i.e. the halting words. */
 function allWords(gamma, n) {
     let words = [""];
     for (let i = 0; i < n; i++) {
@@ -245,6 +262,8 @@ function loadMachine() {
         derivedN.value = n;
         derivedSigma.value = [...sigma].join(",");
         derivedGamma.value = machine.gamma.join(",");
+        // |gamma|^n halting words: only enumerate when the count is small,
+        // otherwise a wide alphabet would hang the page building the list.
         if (machine.gamma.length ** n <= 4096) {
             derivedF.value = allWords(machine.gamma, n)
                 .filter((w) => !delta.has(w))
@@ -279,11 +298,16 @@ function loadMachine() {
     }
 }
 
+// The tape is conceptually infinite in both directions but stored as a finite
+// array. `origin` is the absolute cell index of tape[0], so absolute index i
+// lives at tape[i - origin]; anything outside the array reads as blank.
 function cellAt(i) {
     const j = i - origin;
     return j >= 0 && j < tape.length ? tape[j] : machine.blank;
 }
 
+/** Write to absolute cell `i`, growing the tape (and shifting `origin` when
+ *  growing leftwards) so the array always covers every written cell. */
 function setCell(i, v) {
     let j = i - origin;
     while (j < 0) {
@@ -295,6 +319,17 @@ function setCell(i, v) {
     tape[j] = v;
 }
 
+/**
+ * Apply one transition: read the n-cell window starting at the head, look it up
+ * in delta, write the output back and move the head one cell.
+ *
+ * No matching transition means the machine halts. Whether that counts as
+ * accepting is decided by the word under the head, not by a separate state —
+ * this is the mobile-automaton formulation, where state is encoded in the tape
+ * symbols themselves (see the Busy Beaver preset above).
+ *
+ * @returns {boolean} true if a step was taken, false if the machine halted.
+ */
 function stepMachine() {
     if (!machine || terminated.value) return false;
     let word = "";
@@ -335,6 +370,9 @@ const HEAD_COLOR = "#ffffff";
 
 let colorOf = {};
 
+// One palette colour per non-blank symbol, assigned in alphabet order and
+// wrapping round. Blank stays background-coloured so the history plot shows
+// only the written cells.
 function assignColors() {
     colorOf = {};
     let k = 0;
@@ -353,6 +391,14 @@ let viewLeft = 0;
 let hctx = null;
 let tctx = null;
 
+/**
+ * Size both canvases to the wrapper and clear them.
+ *
+ * Canvas bitmaps are sized in device pixels (cssWidth * devicePixelRatio) so
+ * the drawing is sharp on HiDPI screens; CSS sizes the elements back down.
+ * Every constant below (cell size, 420px history, 56px tape strip) is therefore
+ * multiplied by `dpr`.
+ */
 function resetCanvases() {
     const hc = historyCanvas.value;
     const tc = tapeCanvas.value;
@@ -378,6 +424,15 @@ function resetCanvases() {
     drawTapeStrip();
 }
 
+/**
+ * Draw one row of the space-time diagram: the tape at this instant, one pixel
+ * block per cell, appended below the previous row.
+ *
+ * History is never re-rendered from scratch — old rows are scrolled by blitting
+ * the canvas onto itself (drawImage(canvas, dx, dy)) and repainting only the
+ * strip that scrolled in. That keeps the cost per step constant no matter how
+ * long the machine has been running.
+ */
 function drawHistoryRow() {
     if (!hctx || !machine) return;
     const hc = historyCanvas.value;
@@ -418,6 +473,9 @@ function drawHistoryRow() {
     rowY += cell;
 }
 
+/** Redraw the close-up tape strip, centred on the head, with the n cells the
+ *  next transition will read highlighted. Fully repainted each time — it is
+ *  only ~40 cells wide. */
 function drawTapeStrip() {
     if (!tctx || !machine) return;
     const tc = tapeCanvas.value;
@@ -458,6 +516,15 @@ let rafId = 0;
 let lastTime = 0;
 let stepDebt = 0;
 
+/**
+ * Animation loop. Steps are decoupled from frames: `stepDebt` accumulates
+ * elapsed-time * stepsPerSecond and whole steps are drained each frame, so the
+ * simulation runs at the requested rate regardless of display refresh rate.
+ *
+ * dt is clamped to 0.25s so a backgrounded tab does not come back and try to
+ * run thousands of steps at once, and `budget` is capped at 64 steps per frame
+ * so a fast setting cannot freeze the page.
+ */
 function frame(now) {
     rafId = requestAnimationFrame(frame);
     if (!running.value || !machine) {

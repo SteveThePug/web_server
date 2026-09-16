@@ -13,6 +13,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// SpotifyConfig holds the OAuth app credentials. AuthState is the fixed
+// `state` value used in the authorisation URL; because the flow is only ever
+// driven by hand by the site owner, it is a constant rather than a
+// per-request nonce.
 type SpotifyConfig struct {
 	AuthState    string
 	RedirectURL  string
@@ -20,8 +24,15 @@ type SpotifyConfig struct {
 	ClientSecret string
 }
 
+// SPOTIFY_TOKEN_JSON_PATH is inside a Docker volume, so the refresh token
+// survives container restarts and the OAuth dance only has to be done once.
 const SPOTIFY_TOKEN_JSON_PATH = "/backend/token/spotify_token.json"
 
+// SaveSpotifyToken persists an OAuth token to disk.
+//
+// It copies the fields into a local anonymous struct rather than marshalling
+// oauth2.Token directly, so the on-disk format stays stable regardless of what
+// the oauth2 package adds to its own struct or its JSON tags.
 func SaveSpotifyToken(path string, tok *oauth2.Token) error {
 	data := struct {
 		AccessToken  string    `json:"access_token"`
@@ -48,6 +59,9 @@ func SaveSpotifyToken(path string, tok *oauth2.Token) error {
 	return os.WriteFile(path, jsonBytes, 0600)
 }
 
+// LoadSpotifyToken reads a token previously written by SaveSpotifyToken.
+// A missing file returns an error, which callers treat as "not yet
+// authenticated" rather than a fault.
 func LoadSpotifyToken(path string) (*oauth2.Token, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -75,6 +89,14 @@ func LoadSpotifyToken(path string) (*oauth2.Token, error) {
 	return tok, nil
 }
 
+// InitSpotifyAuth builds the OAuth authenticator and, if a saved token
+// exists, an authenticated client.
+//
+// Start-up never fails on Spotify problems: when there is no token or the
+// refresh is rejected it prints the authorisation URL to the container log
+// and returns a nil client. Every Spotify handler and resolver therefore has
+// to nil-check Store.SpotifyClient. Visiting that URL sends the browser to
+// /spotify/callback, which fills the client in at runtime.
 func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotify.Client) {
 	auth := spotifyauth.New(
 		spotifyauth.WithRedirectURL(config.RedirectURL),
@@ -106,7 +128,18 @@ func InitSpotifyAuth(config *SpotifyConfig) (*spotifyauth.Authenticator, *spotif
 	return auth, client
 }
 
+// RefreshClient exchanges a stored token for a fresh one and returns a client
+// using it.
+//
+// Spotify may issue a new refresh token during this exchange, so the result is
+// written straight back to disk; the write error is ignored because a failed
+// save only costs a re-authentication later, and failing the whole start-up
+// over it would be worse. The returned client also holds the token source
+// internally and keeps refreshing on its own — but those later refreshes are
+// NOT persisted, so after a long uptime the file on disk can be stale.
 func RefreshClient(auth *spotifyauth.Authenticator, token *oauth2.Token) (*spotify.Client, error) {
+	// context.Background rather than a request context: the resulting client
+	// is long-lived and must outlive whichever request triggered this.
 	ctx := context.Background()
 
 	token, err := auth.RefreshToken(ctx, token)

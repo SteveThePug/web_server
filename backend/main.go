@@ -21,7 +21,17 @@ import (
 	"adam-french.co.uk/backend/services"
 )
 
+// Command backend is the Go API for adam-french.co.uk.
+//
+// main is the single place everything is wired together: it reads every
+// setting from the environment, builds the services, packs them into one
+// handlers.Store, and registers the routes. There are three route groups —
+// open, `protected` (valid access token) and `admin` (token with admin=true)
+// — plus the GraphQL endpoint, which does its own per-resolver authorisation
+// instead of using middleware. See backend/README.md for the wider picture.
 func main() {
+	// Logs go to both stdout (so `docker compose logs` works) and a file in a
+	// mounted volume (so they survive the container).
 	logsDir := "/backend/logs"
 	logFile, err := os.OpenFile(logsDir+"/go.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
@@ -35,6 +45,10 @@ func main() {
 
 	r := gin.Default()
 
+	// Only the Docker network nginx sits on may set X-Forwarded-For. Without
+	// this pin any client could spoof its IP and defeat the per-IP login rate
+	// limiter, which keys on ctx.ClientIP(). The CIDR must match the network
+	// defined in docker-compose.yml.
 	err = r.SetTrustedProxies([]string{"172.28.0.0/16"})
 	if err != nil {
 		panic(err)
@@ -50,10 +64,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Dev only; the seeder creates an admin with a known password.
 	if os.Getenv("SEED_DB") == "true" {
 		services.SeedDatabase(db)
 	}
+	// DOMAIN does double duty: the WebSocket origin allow-list and the auth
+	// cookie domain.
 	domainName := os.Getenv("DOMAIN")
+	// The chat hub is a package-level singleton rather than a value on the
+	// Store, so it is initialised rather than constructed.
 	services.InitWebSocket(db, domainName)
 
 	// SPOTIFY
@@ -71,6 +90,9 @@ func main() {
 
 	authSecret := os.Getenv("BACKEND_SECRET")
 	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
+	// Long-lived by design: this is a personal site with a single admin, and
+	// there is no server-side revocation, so a leaked token stays valid for
+	// its whole lifetime.
 	accessTokenLifetime := 7 * 24 * time.Hour
 	refreshTokenLifetime := 365 * 24 * time.Hour
 	authConfig := services.AuthConfig{Secret: []byte(authSecret), Domain: domainName, RefreshTokenLifetime: refreshTokenLifetime, AccessTokenLifetime: accessTokenLifetime, Endpoint: backendEndpoint}
@@ -87,6 +109,8 @@ func main() {
 	steamID := os.Getenv("STEAM_ID")
 
 	// EMAIL SYNC
+	// An unparseable EMAIL_SYNC_INTERVAL is silently ignored and the 30
+	// minute default stands — a typo here fails quietly.
 	emailSyncInterval := 30 * time.Minute
 	if interval := os.Getenv("EMAIL_SYNC_INTERVAL"); interval != "" {
 		if parsed, err := time.ParseDuration(interval); err == nil {
@@ -110,10 +134,16 @@ func main() {
 	}
 	emailSync := services.InitEmailSync(&emailSyncConfig, db, claudeClient)
 
+	// 5 login attempts per IP per minute, applied by both the REST handler
+	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
 	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
 
+	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
+	// the Gin context, so the order in the admin group matters.
+	//
+	// Paths below have no /api prefix: nginx strips it before proxying.
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
 
@@ -146,6 +176,8 @@ func main() {
 	admin.PATCH("/radio/songs/:filename/enable", store.EnableRadioSong)
 
 	// MESSAGES
+	// /ws is deliberately outside the protected group: chat is public, and
+	// the handler checks the cookies itself to decide admin privileges.
 	r.GET("/ws", store.ConnectWebSocket)
 	protected.POST("/messages/upload", store.UploadMessageFile)
 
@@ -153,6 +185,12 @@ func main() {
 	admin.GET("/notes/*path", store.GetNoteFile)
 
 	// GRAPHQL
+	// GraphQL is assembled by hand rather than with handler.NewDefaultServer
+	// so the transports and extensions below are explicit.
+	//
+	// Note the whole API is one POST route with no middleware guard:
+	// authorisation happens per resolver via IsAdminFromCtx / UserIDFromCtx,
+	// so a new resolver is PUBLIC until it checks for itself.
 	gqlSrv := handler.New(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{Store: &store},
 	}))
@@ -160,12 +198,20 @@ func main() {
 	gqlSrv.AddTransport(transport.Options{})
 	gqlSrv.AddTransport(transport.POST{})
 	gqlSrv.AddTransport(transport.MultipartForm{})
+	// Caches parsed query documents so repeated queries skip parsing.
 	gqlSrv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+	// Rejects queries above a computed complexity, the standard defence
+	// against a deeply nested query being used to exhaust the server.
 	gqlSrv.Use(extension.FixedComplexityLimit(200))
+	// Introspection and the playground are both off unless DEV_MODE *and*
+	// their own flag are set, so production does not publish its schema.
 	devMode := os.Getenv("DEV_MODE") == "true"
 	if devMode && os.Getenv("GQL_INTROSPECTION") == "true" {
 		gqlSrv.Use(extension.Introspection{})
 	}
+	// AuthContextMiddleware copies the Gin context and any verified claims
+	// into the request context, which is what resolvers read. The closure is
+	// needed because gqlgen speaks net/http, not gin.
 	r.POST("/graphql", graph.AuthContextMiddleware(auth), func(c *gin.Context) {
 		gqlSrv.ServeHTTP(c.Writer, c.Request)
 	})
@@ -180,11 +226,15 @@ func main() {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	// Launch email sync scheduler
+	// The scheduler runs until ctx is cancelled, which in practice only
+	// happens if r.Run returns — there is no signal handling or graceful
+	// shutdown, so the container is simply killed.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go store.EmailSync.StartScheduler(ctx)
 
 	port := os.Getenv("BACKEND_PORT")
+	// Blocks forever; its error is not checked, so a failure to bind the port
+	// exits main silently with status 0.
 	r.Run(fmt.Sprintf(":%s", port))
 }

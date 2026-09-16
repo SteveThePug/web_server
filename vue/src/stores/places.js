@@ -1,7 +1,17 @@
+/**
+ * Places-to-go list (the "Places" tab inside the Collage widget) — full CRUD.
+ *
+ * Not part of the homeData query because it is sign-in-only; PlacesTable.vue
+ * fetches it lazily once the user is logged in. PLACE_FIELDS is interpolated into
+ * every query/mutation so the selection set can never drift between them.
+ */
+
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { gql } from "@/graphql";
 
+// Shared selection set: interpolated into every query and mutation so they can
+// never drift apart.
 const PLACE_FIELDS = `
   id
   title
@@ -22,6 +32,7 @@ export const usePlacesStore = defineStore("places", () => {
   const loading = ref(false);
   const error = ref(null);
 
+  /** Load all places into `places`. Records failures on `error` rather than throwing. */
   async function fetch() {
     loading.value = true;
     try {
@@ -36,6 +47,7 @@ export const usePlacesStore = defineStore("places", () => {
     }
   }
 
+  /** Create a place and prepend it locally (newest first). Throws on failure. */
   async function create(input) {
     const data = await gql(
       `mutation CreatePlace($input: CreatePlaceInput!) {
@@ -47,6 +59,7 @@ export const usePlacesStore = defineStore("places", () => {
     return data.createPlace;
   }
 
+  /** Patch a place and replace it in the local list. Throws on failure. */
   async function update(id, input) {
     const data = await gql(
       `mutation UpdatePlace($id: ID!, $input: UpdatePlaceInput!) {
@@ -59,10 +72,12 @@ export const usePlacesStore = defineStore("places", () => {
     return data.updatePlace;
   }
 
+  /** Flip a place's `done` flag. */
   async function toggleDone(place) {
     return update(place.id, { done: !place.done });
   }
 
+  /** Soft-delete a place and drop it from the local list. */
   async function remove(id) {
     await gql(
       `mutation DeletePlace($id: ID!) { deletePlace(id: $id) { id } }`,

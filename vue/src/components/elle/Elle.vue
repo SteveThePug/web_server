@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * Decorative animated colour bars. STATUS: not imported anywhere.
+ *
+ * Two known problems if it is ever revived: the call
+ * `generateOffsets((150, 15, 10))` uses the comma operator, so it passes a single
+ * argument 10 as `width` and the other two defaults apply; and animate() logs to
+ * the console on every frame.
+ */
 import { ref, onMounted, useTemplateRef, onUnmounted } from "vue";
 import { getRandomColor } from "@/js/utils";
 

@@ -17,12 +17,21 @@ func (r *messageResolver) ID(ctx context.Context, obj *models.Message) (int, err
 }
 
 // AuthorID is the resolver for the authorId field.
+// AuthorID is the resolver for the authorId field. The value is the chat
+// hub's per-connection counter, not a User id — see models.Message.
 func (r *messageResolver) AuthorID(ctx context.Context, obj *models.Message) (int, error) {
 	return int(obj.AuthorID), nil
 }
 
 // Messages is the resolver for the messages field.
 func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error) {
+	// Non-admins get the public subset rather than an error, so the chat
+	// history loads for everyone. The same filter is applied to the history
+	// replayed over the WebSocket (services.HandleWebSocket) — change one and
+	// the other must change too.
+	//
+	// Note the ordering differs between the two: newest first here, oldest
+	// first over the socket.
 	var messages []models.Message
 	query := r.Store.DB.Order("created_at DESC")
 	if !IsAdminFromCtx(ctx) {
@@ -31,6 +40,9 @@ func (r *queryResolver) Messages(ctx context.Context) ([]*models.Message, error)
 	if err := query.Find(&messages).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &messages[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.Message, len(messages))
 	for i := range messages {
 		result[i] = &messages[i]

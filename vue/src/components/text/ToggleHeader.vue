@@ -1,4 +1,12 @@
 <script setup>
+/**
+ * Section header with a show/hide switch, used by LinkTable's collapsible mode.
+ *
+ * The whole bar is clickable: the click handler forwards to the inner
+ * <ToggleButton>'s DOM node via its $el. The button itself is
+ * `pointer-events-none` with `@click.stop`, so a direct click on it cannot fire
+ * the handler twice.
+ */
 import { ref } from "vue";
 import ToggleButton from "@/components/input/ToggleButton.vue";
 

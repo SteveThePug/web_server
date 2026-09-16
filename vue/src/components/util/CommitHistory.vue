@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Sidebar widget showing the most recent Gitea action, read straight from
+ * homeData.gitFeed (the backend proxies and caches the Gitea API).
+ */
 import { useHomeDataStore } from "@/stores/homeData";
 import { storeToRefs } from "pinia";
 import Header from "@/components/text/Header.vue";

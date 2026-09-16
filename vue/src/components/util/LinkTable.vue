@@ -1,4 +1,11 @@
 <script setup>
+/**
+ * Renders a list of {name, link, type} either as stacked link buttons
+ * (variant="list") or as a two-column table (variant="table").
+ *
+ * Passing `title` wraps the whole thing in a collapsible <ToggleHeader>.
+ * Used by the Bookmarks, Favorites, Consumption and Links widgets.
+ */
 import { ref } from "vue";
 import Link from "@/components/text/Link.vue";
 import ToggleHeader from "@/components/text/ToggleHeader.vue";

@@ -15,6 +15,9 @@ import (
 
 // CreatePlace is the resolver for the createPlace field.
 func (r *mutationResolver) CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error) {
+	// Any signed-in user, not just an admin — places are the one shared,
+	// collaboratively edited list on the site. There is no per-user
+	// ownership, so any signed-in user can edit or delete any place.
 	if _, ok := UserIDFromCtx(ctx); !ok {
 		return nil, fmt.Errorf("authentication required")
 	}
@@ -43,6 +46,8 @@ func (r *mutationResolver) UpdatePlace(ctx context.Context, id int, input model.
 	if _, ok := UserIDFromCtx(ctx); !ok {
 		return nil, fmt.Errorf("authentication required")
 	}
+	// Partial update, same pointer-means-supplied convention as job
+	// applications: nil fields are left as they are.
 	var place models.Place
 	if err := r.Store.DB.First(&place, id).Error; err != nil {
 		return nil, err

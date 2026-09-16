@@ -1,14 +1,14 @@
 <script setup>
-import { computed } from "vue";
-
-const props = defineProps({
+/**
+ * A column of in-app <RouterLink> buttons from a list of {name, link}. Used by
+ * the Links widget and the shrines index.
+ */
+defineProps({
   linkArr: {
     type: Array,
     required: true,
   },
 });
-
-const keys = ["name", "link"];
 </script>
 
 <template>

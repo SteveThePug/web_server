@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Alternative CV template, tailored for backend roles.
+ * STATUS: commented out of CV.vue's template list; not currently reachable.
+ */
 import Project from "./Project.vue";
 </script>
 

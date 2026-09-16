@@ -1,3 +1,12 @@
+/**
+ * Mobile-automaton rule maths (rule enumeration, single-step evolution, batch
+ * evolution) ported from a Python/Mathematica dissertation prototype.
+ *
+ * STATUS: not imported anywhere. views/automata/MobileAutomata.vue is a
+ * self-contained Turing-machine simulator and does not use this module. Kept as
+ * reference for the rule-numbering scheme; safe to treat as dormant.
+ */
+
 function integerDigits(n, b = 10, length = null) {
   // Get the list of digits in base b
   const digits = [];

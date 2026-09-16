@@ -48,10 +48,14 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 		return nil, fmt.Errorf("post not found")
 	}
 
+	// Admin alone is not enough: a post may only be edited by its author, so
+	// one admin cannot rewrite another's posts.
 	if post.AuthorID != userID {
 		return nil, fmt.Errorf("you can only update your own posts")
 	}
 
+	// Both fields are non-pointer in the input, so this is a full replace —
+	// omitting one in the mutation blanks it rather than leaving it alone.
 	post.Title = input.Title
 	post.Content = input.Content
 	if err := r.Store.DB.Save(&post).Error; err != nil {
@@ -81,6 +85,8 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (*models.Post
 		return nil, fmt.Errorf("you can only delete your own posts")
 	}
 
+	// Soft delete; the error is dropped, so a failed delete still reports
+	// success to the client.
 	r.Store.DB.Delete(&post)
 	return &post, nil
 }
@@ -92,10 +98,16 @@ func (r *postResolver) ID(ctx context.Context, obj *models.Post) (int, error) {
 
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*models.Post, error) {
+	// Preload issues a second query for the authors and fills in Post.Author.
+	// Without it the field is nil and the schema's author field resolves to
+	// null — there is no lazy loading and no error to tell you why.
 	var posts []models.Post
 	if err := r.Store.DB.Preload("Author").Order("created_at DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &posts[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.Post, len(posts))
 	for i := range posts {
 		result[i] = &posts[i]

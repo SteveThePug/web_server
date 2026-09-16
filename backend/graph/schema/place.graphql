@@ -1,3 +1,6 @@
+# Places to go. Unlike most mutations these require only a signed-in user,
+# not an admin, and there is no per-user ownership: the list is shared.
+
 type Place {
   id: ID!
   createdAt: Time!

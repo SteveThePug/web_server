@@ -1,3 +1,9 @@
+<!--
+  Route `/stp2` — a static CSS mock of an osu!-style game menu (coloured blocks
+  over a screenshot). No data, no interaction; mounted outside DefaultLayout so
+  it gets no navbar or footer.
+  STATUS: reachable but experimental; not linked from anywhere in the UI.
+-->
 <template>
     <div class="menu">
         <div class="header">

@@ -1,4 +1,13 @@
 <script setup>
+/**
+ * Admin form: upload photos of an erg monitor. The Go backend OCRs each image and
+ * returns the parsed session, so this posts multipart/form-data to /api/rowing
+ * rather than using GraphQL. Uploads run in parallel and each file's row reports
+ * its own outcome.
+ *
+ * The returned Time is a Go duration in nanoseconds, hence the /1e9 before
+ * splitting into minutes and seconds.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import axios from "axios";
@@ -28,6 +37,7 @@ async function submit() {
         const res = await axios.post("/api/rowing", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        // Time comes back as a Go time.Duration, i.e. nanoseconds.
         const mins = Math.floor(res.data.Time / 1e9 / 60);
         const secs = String(Math.floor((res.data.Time / 1e9) % 60)).padStart(
           2,

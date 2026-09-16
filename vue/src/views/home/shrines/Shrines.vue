@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Route `/shrines` — index of the shrine pages.
+ */
 import RouterTable from "@/components/util/RouterTable.vue";
 const shrine_links = [
   { name: "Demoman", link: "/shrines/demoman" },

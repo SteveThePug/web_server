@@ -1,3 +1,6 @@
+<!--
+  Catch-all route for unmatched paths under `/`.
+-->
 <template>
   <main class="flex flex-col items-center">
     <div

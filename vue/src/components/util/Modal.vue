@@ -14,6 +14,9 @@ function onKeydown(e) {
   if (e.key === "Escape") open.value = false;
 }
 
+// The Escape listener is attached only while open, so several modals on one
+// page can't all react to a single keypress. `immediate` covers a modal that
+// mounts already open.
 watch(
   open,
   (isOpen) => {
@@ -30,6 +33,8 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 </script>
 
 <template>
+  <!-- Teleported to <body> so the backdrop escapes any ancestor with
+       overflow/transform/z-index that would otherwise clip or trap it. -->
   <Teleport to="body">
     <div v-if="open" class="modal-backdrop" @click.self="open = false">
       <div class="modal bdr-1" :style="{ maxWidth: props.maxWidth }">

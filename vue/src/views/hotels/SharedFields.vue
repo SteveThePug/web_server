@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * The form fields common to both hotel panels (location, guests, railcards,
+ * origin, departure time, travel/distance limits). Mutates the shared `form`
+ * object from useHotelForm() directly — it is a prop by reference on purpose.
+ */
 import { CUSTOM_ORIGIN } from "./useHotelForm.js";
 
 defineProps({

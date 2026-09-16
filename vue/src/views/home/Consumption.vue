@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * "Consumption" widget on /stp (books/films/games logged as activities). Same
+ * shape as Favorites.vue: AutoScroll list + admin-only lazy create form.
+ */
 import AutoScroll from "@/components/util/AutoScroll.vue";
 import Modal from "@/components/util/Modal.vue";
 import LinkTable from "@/components/util/LinkTable.vue";

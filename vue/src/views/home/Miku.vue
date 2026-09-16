@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Decorative Miku GIF slideshow in the /stp right sidebar.
+ */
 import Slideshow from "@/components/util/Slideshow.vue";
 
 const images = [

@@ -1,3 +1,11 @@
+# Job application tracker. Rows come from these mutations or automatically
+# from the email sync pipeline (backend/services/email_sync.go). These are
+# private data, so the queries here are admin-only as well as the mutations.
+#
+# status is a free-form String, but only the values ranked in
+# services.statusOrder can be advanced automatically by the email pipeline:
+# applied, screening, assessment, interviewing, offer, rejected, withdrawn.
+
 type JobApplication {
   id: ID!
   createdAt: Time!

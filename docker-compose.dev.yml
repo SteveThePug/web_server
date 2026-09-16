@@ -1,22 +1,70 @@
+# =============================================================================
+# docker-compose.dev.yml — local development OVERRIDE layer.
+#
+# WHAT IT DOES
+#   This file is never used alone. It is merged on top of docker-compose.yml:
+#     docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#   Compose merges per-key: `environment` entries are added to (not replacing)
+#   the base ones, while `command` and `ports` are replaced wholesale. Anything
+#   not mentioned here keeps its production definition.
+#
+# WHAT CHANGES vs PRODUCTION
+#   - vue      : one-shot `vite build` becomes the long-running Vite dev server
+#                with the source bind-mounted for hot reload.
+#   - backend  : dev flags on, including database seeding.
+#   - nginx    : DEV_MODE=true, which makes its entrypoint render
+#                nginx_dev.conf.template and self-sign a localhost certificate.
+#   - hasura   : console and dev mode enabled so the GraphQL console is usable.
+#   - python   : uvicorn --reload with the app source bind-mounted.
+#   - certbot  : disabled entirely.
+#
+# HOW TO REACH IT
+#   http://localhost (HTTPS also works on :443 with the self-signed cert, which
+#   the browser will warn about — that is expected).
+#
+# NOT USED ON THE PI. The deploy workflow runs plain `docker compose up`.
+# =============================================================================
+
 services:
     vue:
+        # Replaces the one-shot `vite build`: the container now stays up serving
+        # the Vite dev server on :5173, which nginx_dev.conf proxies `/` to.
         command: ["npm", "run", "dev"]
         volumes:
             - ./vue:/app
+            # The two bare paths are ANONYMOUS-VOLUME MASKS, not typos. Binding
+            # ./vue over /app would otherwise hide the node_modules and WASM
+            # output that were installed/built *inside* the image. Declaring
+            # them as anonymous volumes re-exposes the image's copies on top of
+            # the bind mount, so `npm ci` and wasm-pack results survive and the
+            # host does not need node_modules or a Rust toolchain at all.
             - /app/node_modules
             - /app/src/wasm
         environment:
             - NODE_ENV=development
     backend:
         environment:
+            # Spotify requires an exact redirect URI match, so dev needs its own
+            # (and this localhost URI must be registered in the Spotify app).
             - SPOTIFY_REDIRECT_URI=https://localhost/api/spotify/callback
+            # GraphQL playground + introspection: convenient locally, and off in
+            # production so the schema is not published to the world.
             - GQL_PLAYGROUND=true
             - GQL_INTROSPECTION=true
             - DEV_MODE=true
+            # SEED_DB=true makes the backend populate the database with test
+            # posts/users/messages on startup (services/ seeding). Safe here
+            # because dev uses a throwaway local dbdata volume; it is NEVER set
+            # in production — seeding a live database would inject fake content.
             - SEED_DB=true
     nginx:
         environment:
+            # The single switch that selects nginx_dev.conf.template and the
+            # self-signed localhost certificate. See nginx/entrypoint.sh.
             - DEV_MODE=true
+        # Same mapping as the base file; restated because compose replaces the
+        # `ports` list rather than merging it, so omitting it here would be fine
+        # but restating it makes the dev surface explicit.
         ports:
             - 80:80
             - 443:443
@@ -25,9 +73,18 @@ services:
             HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
             HASURA_GRAPHQL_DEV_MODE: "true"
     python:
+        # Same command as the Dockerfile's CMD plus --reload, paired with the
+        # source bind mount below so editing python/app/ restarts uvicorn.
+        # ${PYTHON_PORT} here is interpolated by the compose CLI from ./.env,
+        # not by the container's shell.
         command: ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PYTHON_PORT:-8000} --root-path /py --reload"]
         volumes:
             - ./python/app:/app/app
     certbot:
+        # Profiles are opt-in: a service with a profile is only started when
+        # that profile is explicitly requested. Nothing ever requests
+        # "disabled", so this is the idiomatic way to switch a service off in an
+        # override file. Dev gets TLS from nginx's self-signed cert instead, and
+        # Let's Encrypt could not validate localhost anyway.
         profiles:
             - disabled

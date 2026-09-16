@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Admin form: create an account. Reports success or failure inline.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/auth";

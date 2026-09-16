@@ -81,6 +81,8 @@ func (r *queryResolver) JobAppReferences(ctx context.Context) ([]*models.JobAppR
 		return nil, fmt.Errorf("admin access required")
 	}
 	var refs []*models.JobAppReference
+	// created_at is the final tie-break so entries sharing a sort_order (the
+	// default 0) keep a stable, insertion-ordered sequence.
 	if err := r.Store.DB.Order("category ASC, sort_order ASC, created_at ASC").Find(&refs).Error; err != nil {
 		return nil, err
 	}

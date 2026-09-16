@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Admin panel: list and upload tracks for the Icecast radio. REST
+ * (multipart/form-data) rather than GraphQL because it moves files.
+ */
 import Button from "@/components/input/Button.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";

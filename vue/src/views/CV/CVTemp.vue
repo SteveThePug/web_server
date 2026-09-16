@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * Scratch copy of a CV template, kept for cannibalising wording.
+ * STATUS: commented out of CV.vue's template list; not currently reachable.
+ */
 import Project from "./Project.vue";
 </script>
 

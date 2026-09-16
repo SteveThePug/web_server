@@ -10,6 +10,16 @@
 </template>
 
 <script setup>
+/**
+ * Scroll container that drifts its own content up and down forever, pausing at
+ * each end. Used by the Favorites and Consumption widgets.
+ *
+ * Position is kept as a 0..1 fraction so it survives content resizing. On the
+ * edges it is clamped to 0.999 / 0.001 rather than exactly 1 / 0 so the next
+ * tick's `reachedBottom` / `reachedTop` test doesn't immediately fire again and
+ * re-trigger the pause. scrollHeight is measured by a ResizeObserver instead of
+ * being read every frame, which would force a layout 60 times a second.
+ */
 import { useTemplateRef, onMounted, onBeforeUnmount } from "vue";
 
 const container = useTemplateRef("container");

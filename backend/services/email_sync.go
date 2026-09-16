@@ -21,8 +21,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// This file is the job-application email pipeline. On a timer it fetches
+// recent mail (via Microsoft Graph or plain IMAP), keeps the ones that look
+// recruitment-related, asks Claude to turn each into structured data, and
+// creates or advances a models.JobApplication row. Every email it has looked
+// at is recorded as a models.ProcessedEmail so it is never handled twice.
+
+// MSGRAPH_TOKEN_JSON_PATH lives in a Docker volume so the OAuth refresh token
+// survives restarts, exactly like the Spotify token.
 const MSGRAPH_TOKEN_JSON_PATH = "/backend/token/msgraph_token.json"
 
+// EmailSyncConfig configures the pipeline. Backend picks the mail source;
+// anything other than "graph" or "imap" leaves the service permanently idle.
 type EmailSyncConfig struct {
 	Backend      string // "graph" or "imap"
 	ClientID     string
@@ -34,22 +44,38 @@ type EmailSyncConfig struct {
 	Enabled      bool
 }
 
+// EmailSyncService owns the sync pipeline.
 type EmailSyncService struct {
-	Config       *EmailSyncConfig
-	OAuthConfig  *oauth2.Config
+	Config      *EmailSyncConfig
+	OAuthConfig *oauth2.Config
+	// HTTPClient doubles as the readiness flag: nil means "not configured or
+	// not yet authenticated", and both the scheduler and the manual-trigger
+	// handler refuse to run while it is nil. On the Graph backend it is a
+	// real token-injecting client; on the IMAP backend it is set to
+	// http.DefaultClient purely so this check passes (IMAP never uses it).
 	HTTPClient   *http.Client
 	DB           *gorm.DB
 	ClaudeClient *anthropic.Client
-	mu           sync.Mutex
+	// mu is used with TryLock, not Lock: it makes a sync a no-op while
+	// another one is running rather than queueing behind it, so the manual
+	// admin trigger cannot pile up on top of the scheduled run.
+	mu sync.Mutex
 }
 
 // Microsoft Graph API response types
 
+// Microsoft Graph API response types. The IMAP backend parses raw RFC822
+// messages into these same structs (see parseRawEmail) so that everything
+// downstream of fetchEmails is backend-agnostic.
+
+// graphMessagesResponse is one page of /me/messages; NextLink is Graph's
+// cursor for the next page and is empty on the last one.
 type graphMessagesResponse struct {
 	Value    []graphMessage `json:"value"`
 	NextLink string         `json:"@odata.nextLink"`
 }
 
+// graphMessage is a single email.
 type graphMessage struct {
 	ID               string    `json:"id"`
 	Subject          string    `json:"subject"`
@@ -59,15 +85,18 @@ type graphMessage struct {
 	BodyPreview      string    `json:"bodyPreview"`
 }
 
+// graphFrom wraps the sender, which Graph nests one level deep.
 type graphFrom struct {
 	EmailAddress graphEmailAddress `json:"emailAddress"`
 }
 
+// graphEmailAddress is a display name plus address.
 type graphEmailAddress struct {
 	Name    string `json:"name"`
 	Address string `json:"address"`
 }
 
+// graphBody is the message body; ContentType is "html" or "text".
 type graphBody struct {
 	ContentType string `json:"contentType"`
 	Content     string `json:"content"`
@@ -75,6 +104,9 @@ type graphBody struct {
 
 // Claude response type
 
+// EmailAnalysis is the JSON contract Claude is asked to return; the keys here
+// must stay in step with emailClassificationPrompt at the bottom of this file.
+// Pointer fields are the ones Claude is allowed to answer null for.
 type EmailAnalysis struct {
 	IsJobEmail bool    `json:"isJobEmail"`
 	Action     string  `json:"action"`
@@ -89,6 +121,12 @@ type EmailAnalysis struct {
 
 // Email filtering config
 
+// Cheap pre-filter, applied before any Claude call so that the bulk of a
+// mailbox never costs an API request. It is intentionally over-inclusive:
+// false positives are cheap (Claude rejects them), false negatives are not
+// (the email is never looked at again once its window has passed).
+
+// subjectKeywords match case-insensitively anywhere in the subject line.
 var subjectKeywords = []string{
 	"application", "interview", "offer", "rejected", "assessment",
 	"applied", "candidate", "position", "role", "hiring",
@@ -96,6 +134,8 @@ var subjectKeywords = []string{
 	"next steps", "coding challenge", "take-home",
 }
 
+// senderDomains are applicant-tracking systems; mail from any of them is
+// considered job-related whatever the subject says.
 var senderDomains = []string{
 	"greenhouse.io", "lever.co", "workday.com", "myworkday.com",
 	"ashbyhq.com", "smartrecruiters.com", "icims.com",
@@ -105,6 +145,11 @@ var senderDomains = []string{
 
 // Status progression order
 
+// statusOrder ranks the application lifecycle so updates can only move an
+// application forwards (see updateJobApplication). A status missing from this
+// map is treated as unknown and never applied. Note that "rejected" and
+// "withdrawn" sit at the top, so once an application reaches them nothing can
+// move it back.
 var statusOrder = map[string]int{
 	"applied":      0,
 	"screening":    1,
@@ -117,6 +162,9 @@ var statusOrder = map[string]int{
 
 // Token persistence
 
+// SaveMSGraphToken persists an OAuth token to disk with 0600 permissions.
+// Like the Spotify equivalent it copies into a local struct so the on-disk
+// shape does not depend on the oauth2 package's own JSON tags.
 func SaveMSGraphToken(path string, tok *oauth2.Token) error {
 	data := struct {
 		AccessToken  string    `json:"access_token"`
@@ -142,6 +190,8 @@ func SaveMSGraphToken(path string, tok *oauth2.Token) error {
 	return os.WriteFile(path, jsonBytes, 0600)
 }
 
+// LoadMSGraphToken reads a token written by SaveMSGraphToken. A missing file
+// is reported as an error and means "not yet authenticated".
 func LoadMSGraphToken(path string) (*oauth2.Token, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -174,6 +224,18 @@ type persistingTokenSource struct {
 	lastToken *oauth2.Token
 }
 
+// Token returns a valid token, refreshing through the wrapped source when
+// needed and writing any new token back to disk.
+//
+// Without this wrapper the oauth2 client would refresh happily in memory but
+// the file on disk would keep the original refresh token; Microsoft rotates
+// refresh tokens, so after the original expired the service would have to be
+// re-authorised by hand on the next restart.
+//
+// There is no mutex here even though oauth2's client may call Token from
+// several goroutines. In practice syncs are serialised by EmailSyncService.mu
+// so concurrent calls do not arise; the worst case if they ever did is a
+// duplicate write of the same token.
 func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 	tok, err := p.base.Token()
 	if err != nil {
@@ -189,6 +251,12 @@ func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 	return tok, nil
 }
 
+// InitEmailSync builds the service and, for the Graph backend, restores a
+// saved OAuth session. It never fails: a misconfigured or unauthenticated
+// service is returned with a nil HTTPClient, which leaves the pipeline idle
+// while the rest of the backend starts normally. For Graph, the authorisation
+// URL is printed to the container log for a one-off manual sign-in that
+// lands on GET /email/callback.
 func InitEmailSync(config *EmailSyncConfig, db *gorm.DB, claudeClient *anthropic.Client) *EmailSyncService {
 	svc := &EmailSyncService{
 		Config:       config,
@@ -264,7 +332,13 @@ func (s *EmailSyncService) CompleteAuth(ctx context.Context, code string) error 
 	return nil
 }
 
-// StartScheduler runs SyncEmails on a recurring interval.
+// StartScheduler runs SyncEmails immediately and then on every tick until ctx
+// is cancelled. It is meant to be run in its own goroutine and returns
+// straight away when the service is disabled or unauthenticated.
+//
+// Because readiness is only checked once here, authenticating later via
+// /email/callback does NOT start the scheduler; the backend has to be
+// restarted, or syncs triggered by hand through POST /email/sync.
 func (s *EmailSyncService) StartScheduler(ctx context.Context) {
 	if !s.Config.Enabled {
 		log.Println("[EmailSync] Disabled, skipping scheduler")
@@ -300,11 +374,17 @@ func (s *EmailSyncService) StartScheduler(ctx context.Context) {
 
 // SyncEmails is the main pipeline: fetch, filter, dedup, classify, create/update.
 func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
+	// TryLock, so a manual trigger during a scheduled run is rejected
+	// immediately instead of blocking a request for minutes.
 	if !s.mu.TryLock() {
 		return fmt.Errorf("sync already in progress")
 	}
 	defer s.mu.Unlock()
 
+	// Registered after the unlock defer, therefore it runs BEFORE it: the
+	// panic is absorbed here and the mutex is still released afterwards.
+	// A recovered panic makes SyncEmails return nil, so the caller sees a
+	// successful sync — the log line is the only evidence.
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("[EmailSync] PANIC recovered: %v", r)
@@ -313,7 +393,13 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 
 	log.Println("[EmailSync] Starting sync...")
 
-	// Determine the time window: use the most recent ProcessedEmail timestamp, or default to 24h ago
+	// Window start = when the last email was *processed*, not when it was
+	// received. Those differ by up to one sync interval, which is deliberate:
+	// it overlaps the windows so nothing that arrived mid-sync is missed. The
+	// overlap re-fetches a few emails, and the ProcessedEmail dedup below is
+	// what stops them being handled twice. On a cold database (no processed
+	// emails at all) it falls back to the last 24 hours, so the pipeline
+	// never tries to ingest an entire mailbox.
 	since := time.Now().Add(-24 * time.Hour)
 	var latest models.ProcessedEmail
 	if err := s.DB.Order("created_at DESC").First(&latest).Error; err == nil {
@@ -342,7 +428,10 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 			continue
 		}
 
-		// Process this email
+		// A failed email is still recorded (with action "error") so the next
+		// sync skips it rather than retrying — and, importantly, so it does
+		// not hold the window open. The trade-off is that a transient Claude
+		// outage permanently drops those emails.
 		action, jobAppID, processErr := s.processEmail(ctx, email)
 		if processErr != nil {
 			log.Printf("[EmailSync] Error processing email %q: %v", email.Subject, processErr)
@@ -379,7 +468,8 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 	return nil
 }
 
-// fetchEmails retrieves emails since the given time using the configured backend.
+// fetchEmails retrieves emails since the given time using the configured
+// backend, normalising both into []graphMessage.
 func (s *EmailSyncService) fetchEmails(ctx context.Context, since time.Time) ([]graphMessage, error) {
 	if s.Config.Backend == "imap" {
 		return s.fetchEmailsIMAP(since)
@@ -399,6 +489,8 @@ func (s *EmailSyncService) fetchEmailsGraph(ctx context.Context, since time.Time
 		"$orderby": {"receivedDateTime asc"},
 	}
 
+	// Graph paginates with @odata.nextLink, which already carries every query
+	// parameter, so the loop below only builds this first URL by hand.
 	nextURL := fmt.Sprintf("https://graph.microsoft.com/v1.0/me/messages?%s", params.Encode())
 
 	for nextURL != "" {
@@ -415,6 +507,8 @@ func (s *EmailSyncService) fetchEmailsGraph(ctx context.Context, since time.Time
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
+		// Status is checked before the read error so that a non-200 reports
+		// Graph's own error body rather than a generic read failure.
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("Graph API returned %d: %s", resp.StatusCode, string(body))
 		}
@@ -446,6 +540,9 @@ func (s *EmailSyncService) filterEmails(emails []graphMessage) []graphMessage {
 	return matched
 }
 
+// matchesFilter reports whether an email looks job-related on subject or
+// sender alone. See subjectKeywords for why this errs towards including too
+// much.
 func (s *EmailSyncService) matchesFilter(email graphMessage) bool {
 	subjectLower := strings.ToLower(email.Subject)
 	for _, kw := range subjectKeywords {
@@ -498,6 +595,10 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 		return "", nil, fmt.Errorf("empty response from Claude")
 	}
 
+	// Only the first content block is read, and the prompt asks for bare JSON,
+	// but models still wrap output in a markdown fence often enough that it is
+	// stripped defensively here. The two TrimPrefix calls are ordered so that
+	// "```json" is removed first and a plain "```" otherwise.
 	raw := message.Content[0].Text
 	raw = strings.TrimSpace(raw)
 	raw = strings.TrimPrefix(raw, "```json")
@@ -518,7 +619,11 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 		return "skipped", nil, nil
 	}
 
-	// Try to find an existing job application
+	// Applications are identified by (company, job title) compared
+	// case-insensitively — there is no external id to match on. Claude
+	// wording the same role slightly differently therefore creates a second
+	// application rather than updating the first. The most recent match wins
+	// when there are several.
 	var existing models.JobApplication
 	found := s.DB.Where("LOWER(company) = LOWER(?) AND LOWER(job_title) = LOWER(?)",
 		analysis.Company, analysis.JobTitle).
@@ -537,6 +642,7 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 	return "skipped", &existing.ID, nil
 }
 
+// createJobApplication inserts a new application from Claude's analysis.
 func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string, *uint, error) {
 	app := models.JobApplication{
 		Company:  analysis.Company,
@@ -547,6 +653,8 @@ func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string
 		Notes:    analysis.Notes,
 	}
 
+	// The prompt asks for YYYY-MM-DD but full RFC3339 comes back often enough
+	// to be worth trying first; an unparseable date is dropped silently.
 	if analysis.AppliedAt != nil {
 		if t, err := time.Parse(time.RFC3339, *analysis.AppliedAt); err == nil {
 			app.AppliedAt = &t
@@ -567,6 +675,10 @@ func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string
 	return "created", &app.ID, nil
 }
 
+// updateJobApplication advances an existing application's status, but only
+// ever forwards through statusOrder. Emails commonly arrive out of order (a
+// delayed "thanks for applying" after an interview invite), and this is what
+// stops a stale email dragging an application backwards.
 func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication, analysis *EmailAnalysis) (string, *uint, error) {
 	newOrder, newExists := statusOrder[analysis.Status]
 	currentOrder, currentExists := statusOrder[existing.Status]
@@ -596,7 +708,13 @@ func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication,
 	return "updated", &existing.ID, nil
 }
 
-// cleanEmailBody strips HTML and truncates the email body for Claude.
+// cleanEmailBody reduces an email body to plain-ish text before it is sent to
+// Claude, cutting token cost and noise.
+//
+// The HTML handling is a regex tag-strip, not a parser: fine for extracting
+// prose, but it would mangle inline <script>/<style> content and mis-handle
+// tags inside attribute values. That is acceptable because the output is only
+// ever read by a language model, never rendered.
 func cleanEmailBody(content string, contentType string) string {
 	text := content
 
@@ -625,7 +743,9 @@ func cleanEmailBody(content string, contentType string) string {
 	text = nlRegex.ReplaceAllString(text, "\n\n")
 	text = strings.TrimSpace(text)
 
-	// Remove common signatures
+	// Cut everything from the first signature marker onwards. The idx > 0
+	// test (not >= 0) means a body that begins with a marker is left alone,
+	// which avoids blanking the whole message.
 	sigPatterns := []string{
 		"\n-- \n",
 		"\nSent from my iPhone",
@@ -649,7 +769,8 @@ func cleanEmailBody(content string, contentType string) string {
 	}
 	text = strings.Join(cleaned, "\n")
 
-	// Truncate to ~4000 characters
+	// Cap the prompt size. This slices by bytes, so a cut can land mid-rune
+	// and leave an invalid UTF-8 tail; harmless for a model prompt.
 	if len(text) > 4000 {
 		text = text[:4000]
 	}
@@ -657,6 +778,8 @@ func cleanEmailBody(content string, contentType string) string {
 	return strings.TrimSpace(text)
 }
 
+// truncate caps a string at maxLen bytes (not runes) before it is stored in
+// ProcessedEmail.Subject.
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
@@ -664,6 +787,9 @@ func truncate(s string, maxLen int) string {
 	return s[:maxLen]
 }
 
+// emailClassificationPrompt must stay in sync with the EmailAnalysis struct:
+// every key it names is a field there, and the status values it lists are the
+// keys of statusOrder.
 const emailClassificationPrompt = `You are an email classifier for job applications. You will receive the subject line, sender, and body of an email. Determine if this email is related to a job application, and if so, extract structured data.
 
 Return ONLY a JSON object with these exact keys:

@@ -4,6 +4,21 @@ Nginx proxies https://www.<DOMAIN>/py/... to this container and strips the
 /py prefix, so routes here are defined relative to "/". FastAPI's root_path
 (set via --root-path on the uvicorn command line) keeps the generated docs
 at /py/docs working behind the proxy.
+
+Endpoints
+  GET  /                      service index
+  GET  /health                liveness probe
+  GET  /hello/{name}          demo route
+  GET  /hotels/origins        the known travel origins the UI offers
+  POST /hotels/search         blocking cheapest-Travelodge search
+  POST /hotels/search/stream  same search, streamed as NDJSON
+  POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
+
+All the hotel work lives in `travelodge`; this module is the HTTP skin around
+it - request validation, a response cache, the one-search-at-a-time guard, and
+the NDJSON framing. Consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
+CheapestNightPanel.vue, useHotelForm.js), which fetch these paths with the /py
+prefix. Field names in the models below are part of that contract.
 """
 
 import json
@@ -28,26 +43,33 @@ app = FastAPI(
 
 
 class Health(BaseModel):
+    """Liveness payload: a fixed status string and the server's UTC time."""
+
     status: str
     time: datetime
 
 
 class Greeting(BaseModel):
+    """A single human-readable message."""
+
     message: str
 
 
 @app.get("/", response_model=Greeting, summary="Service index")
 def index() -> Greeting:
+    """Point a curious caller at the docs (which live at /py/docs via nginx)."""
     return Greeting(message="Python API is running. See /py/docs for the schema.")
 
 
 @app.get("/health", response_model=Health, summary="Liveness check")
 def health() -> Health:
+    """Liveness check; always 200 while the process is up."""
     return Health(status="ok", time=datetime.now(timezone.utc))
 
 
 @app.get("/hello/{name}", response_model=Greeting, summary="Greet a caller")
 def hello(name: str) -> Greeting:
+    """Echo a greeting back. Demo route, nothing depends on it."""
     return Greeting(message=f"Hello, {name}!")
 
 
@@ -60,12 +82,18 @@ MAX_CHILDREN = 8
 MAX_SCAN_DAYS = travelodge.SCAN_MAX_DAYS
 CACHE_TTL_S = 10 * 60
 
+# Only one live search or scan may run at a time, process-wide. A run can spend
+# the entire anonymous TfL budget (50 requests/min), so two concurrent runs
+# would simply starve each other into rate-limit backoff. Callers that find the
+# slot taken get an immediate "try again" rather than queueing.
 _search_slot = threading.Semaphore(1)
 _cache_lock = threading.Lock()
 _cache: dict = {}  # key -> (expires_at, response dict)
 
 
 class Origin(BaseModel):
+    """One selectable travel origin, as offered to the UI's dropdown."""
+
     key: str
     name: str
     lat: float
@@ -120,6 +148,12 @@ class HotelRequestBase(BaseModel):
         return v.strip()
 
     def shared_kwargs(self) -> dict:
+        """Translate the validated request into travelodge.run_* keyword args.
+
+        Parsing runs a second time here (the validators above only checked
+        validity and discarded the result), which is cheap and keeps the model
+        holding exactly what the client sent.
+        """
         origin_name, origin = travelodge.parse_origin(self.origin)
         return {
             "location": self.location,
@@ -134,6 +168,8 @@ class HotelRequestBase(BaseModel):
 
 
 class HotelSearchRequest(HotelRequestBase):
+    """One stay on known dates: rank hotels by room price plus transport."""
+
     checkin: date = Field(..., description="Check-in date (today or later)")
     checkout: Optional[date] = Field(None, description="Check-out date; overrides nights")
     nights: int = Field(1, ge=1, le=14, description="Used when checkout is not given")
@@ -141,6 +177,14 @@ class HotelSearchRequest(HotelRequestBase):
 
     @model_validator(mode="after")
     def _check_dates(self):
+        """Resolve checkout/nights into a consistent pair and bound the stay.
+
+        `checkout` wins when both are given; otherwise it is derived from
+        `nights`. Both fields are then written back so downstream code can
+        trust either one. `date.today()` is the server's local date, so a user
+        in another timezone can be refused a checkin that is still valid for
+        them.
+        """
         if self.checkin < date.today():
             raise ValueError("checkin must be today or later")
         checkout = self.checkout or self.checkin + timedelta(days=self.nights)
@@ -154,6 +198,8 @@ class HotelSearchRequest(HotelRequestBase):
 
 
 class HotelScanRequest(HotelRequestBase):
+    """A range of candidate check-in dates: find the cheapest night to stay."""
+
     start: date = Field(..., description="First candidate check-in date (today or later)")
     end: date = Field(..., description=f"Last candidate check-in date, at most {MAX_SCAN_DAYS} days after start")
     weekdays: list[int] = Field(
@@ -166,6 +212,11 @@ class HotelScanRequest(HotelRequestBase):
     @field_validator("weekdays")
     @classmethod
     def _check_weekdays(cls, v: list[int]) -> list[int]:
+        """Validate and de-duplicate the weekday filter, preserving input order.
+
+        Order is preserved (rather than using a set) so the echoed summary and
+        the cache key stay deterministic for a given request body.
+        """
         days = []
         for d in v:
             if d < 0 or d > 6:
@@ -178,6 +229,12 @@ class HotelScanRequest(HotelRequestBase):
 
     @model_validator(mode="after")
     def _check_dates(self):
+        """Bound the range and reject one that no candidate date can satisfy.
+
+        The final check actually enumerates the candidates, so a range like
+        "Mondays only" over a Tuesday-to-Thursday window fails here with a clear
+        message instead of producing an empty scan.
+        """
         if self.start < date.today():
             raise ValueError("start must be today or later")
         if self.end < self.start:
@@ -190,6 +247,14 @@ class HotelScanRequest(HotelRequestBase):
 
 
 class HotelRow(BaseModel):
+    """One hotel in a result list.
+
+    Prices are pounds. Transport fields are None until the matching "transport"
+    event arrives, and `route` carries the reason when they stay None ("pricing…",
+    "no TfL fare found", "not priced (time limit)"). Field names are consumed
+    verbatim by the Vue frontend - do not rename.
+    """
+
     code: Optional[str] = None
     name: Optional[str] = None
     lat: Optional[float] = None
@@ -216,6 +281,9 @@ class HotelRow(BaseModel):
 
 
 class HotelSearchSummary(BaseModel):
+    """Counts and echoed parameters for a search; `truncated` means the time
+    budget ran out before every shortlisted hotel was priced."""
+
     location: str
     checkin: date
     checkout: date
@@ -238,6 +306,8 @@ class HotelSearchSummary(BaseModel):
 
 
 class HotelSearchResponse(BaseModel):
+    """Final result of the blocking search endpoint."""
+
     summary: HotelSearchSummary
     rows: list[HotelRow]
     cached: bool = False
@@ -245,6 +315,7 @@ class HotelSearchResponse(BaseModel):
 
 @app.get("/hotels/origins", response_model=list[Origin], summary="Known origin stations")
 def hotel_origins() -> list[Origin]:
+    """List the built-in origin stations the UI offers (plus free "lat,lon")."""
     return [Origin(key=k, name=n, lat=lat, lon=lon) for k, (n, lat, lon) in travelodge.ORIGINS.items()]
 
 
@@ -277,6 +348,8 @@ class TransportFields(BaseModel):
 
 
 class NightRow(BaseModel):
+    """One candidate night in a scan, with its cheapest hotels."""
+
     checkin: date
     checkout: date
     status: str = Field("pending", description='"pending", "ok", "failed" or "skipped"')
@@ -289,6 +362,9 @@ class NightRow(BaseModel):
 
 
 class HotelScanSummary(BaseModel):
+    """Counts and echoed parameters for a scan; `truncated` means some nights
+    were skipped or some hotels left unpriced when time ran out."""
+
     location: str
     start: date
     end: date
@@ -326,7 +402,8 @@ class HotelScanEvent(BaseModel):
     detail: Optional[str] = None
 
 
-def _cache_get(key):
+def _cache_get(key: str):
+    """Return a cached response payload for `key`, or None if absent/expired."""
     now = time.monotonic()
     with _cache_lock:
         hit = _cache.get(key)
@@ -335,7 +412,12 @@ def _cache_get(key):
     return None
 
 
-def _cache_put(key, result):
+def _cache_put(key: str, result: dict) -> None:
+    """Cache a completed response for CACHE_TTL_S, sweeping expired entries.
+
+    The sweep is the only eviction: the cache is unbounded between sweeps, which
+    is fine because the one-at-a-time guard caps how fast entries can be added.
+    """
     now = time.monotonic()
     with _cache_lock:
         expired = [k for k, (exp, _) in _cache.items() if exp <= now]
@@ -370,7 +452,14 @@ def _guarded(run, make_error):
 
 
 def _search_events(req: HotelSearchRequest):
-    """Yield HotelSearchEvent objects for a request, serving from cache when possible."""
+    """Yield HotelSearchEvent objects for a request, serving from cache when possible.
+
+    A cache hit replays a two-line stream ("hotels" then "done") carrying the
+    finished result, so the client's streaming reader needs no special case; the
+    `cached` flag is the only difference it can observe. The key is the
+    canonical JSON of the whole validated request, which makes it exact but also
+    means a cosmetically different body (a different `top`, say) misses.
+    """
     key = "search:" + json.dumps(req.model_dump(mode="json"), sort_keys=True)
     hit = _cache_get(key)
     if hit:
@@ -379,6 +468,9 @@ def _search_events(req: HotelSearchRequest):
         return
 
     def run():
+        # run_search yields 3-tuples except for "transport", which is a 2-tuple
+        # of (kind, row) - hence the shape test before unpacking. Only the final
+        # "done" event is worth caching.
         gen = travelodge.run_search(
             checkin=req.checkin,
             checkout=req.checkout,
@@ -398,7 +490,11 @@ def _search_events(req: HotelSearchRequest):
 
 
 def _scan_events(req: HotelScanRequest):
-    """Yield HotelScanEvent objects for a scan, serving from cache when possible."""
+    """Yield HotelScanEvent objects for a scan, serving from cache when possible.
+
+    As with searches, a cache hit is replayed as a "scan" line followed by
+    "done" so the client parses it exactly like a live stream.
+    """
     key = "scan:" + json.dumps(req.model_dump(mode="json"), sort_keys=True)
     hit = _cache_get(key)
     if hit:
@@ -442,7 +538,18 @@ _SCAN_DESCRIPTION = (
 )
 
 
-def _ndjson(events):
+def _ndjson(events) -> StreamingResponse:
+    """Frame an iterable of Pydantic events as newline-delimited JSON.
+
+    NDJSON rather than SSE: the client just splits on "\n" and JSON-parses each
+    line, with no event-type framing to strip. `exclude_none=True` keeps the
+    lines small, so absent keys must be treated as null by the reader.
+
+    X-Accel-Buffering: no is essential - without it nginx buffers the whole
+    response and the user sees nothing until the search finishes, defeating the
+    point of streaming. Cache-Control: no-cache stops any intermediary storing
+    a partial stream.
+    """
     return StreamingResponse(
         (ev.model_dump_json(exclude_none=True) + "\n" for ev in events),
         media_type="application/x-ndjson",
@@ -458,6 +565,17 @@ def _ndjson(events):
     responses={429: {"description": "Another search is already running"}, 502: {"description": "Upstream API failed"}},
 )
 def hotel_search(req: HotelSearchRequest) -> HotelSearchResponse:
+    """Run a search to completion and return the final result.
+
+    Drains the same event generator the streaming endpoint uses and keeps only
+    the "done" event. Because the status code must be chosen before anything is
+    written, an "error" event becomes an HTTPException here: 429 when the single
+    search slot was busy, 502 for anything upstream.
+
+    Raises:
+        HTTPException: 429 (busy) or 502 (upstream failure, or a stream that
+            ended without a result).
+    """
     final = None
     for ev in _search_events(req):
         if ev.event == "error":
@@ -482,7 +600,13 @@ def hotel_search(req: HotelSearchRequest) -> HotelSearchResponse:
     response_class=StreamingResponse,
     responses={200: {"content": {"application/x-ndjson": {"schema": HotelSearchEvent.model_json_schema()}}}},
 )
-def hotel_search_stream(req: HotelSearchRequest):
+def hotel_search_stream(req: HotelSearchRequest) -> StreamingResponse:
+    """Stream the search as NDJSON.
+
+    Always 200: the response starts before the work does, so failures (including
+    the busy-slot case that the blocking endpoint reports as 429) arrive as a
+    final "error" line instead of a status code.
+    """
     return _ndjson(_search_events(req))
 
 
@@ -499,5 +623,12 @@ def hotel_search_stream(req: HotelSearchRequest):
     response_class=StreamingResponse,
     responses={200: {"content": {"application/x-ndjson": {"schema": HotelScanEvent.model_json_schema()}}}},
 )
-def hotel_scan_stream(req: HotelScanRequest):
+def hotel_scan_stream(req: HotelScanRequest) -> StreamingResponse:
+    """Stream the cheapest-night scan as NDJSON.
+
+    Transport is emitted once per unique hotel code, not once per row: the
+    client is expected to apply each "transport" line to every night containing
+    that code. Like the search stream this is always 200, with failures carried
+    as a final "error" line.
+    """
     return _ndjson(_scan_events(req))

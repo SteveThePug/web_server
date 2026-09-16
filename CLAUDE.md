@@ -75,7 +75,25 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 ## Key Patterns
 
 - **GraphQL models vs GORM models**: `gqlgen.yml` maps GraphQL types directly to GORM models in `backend/models`. The `graph/model/` package has only generated input/payload types.
-- **Auth flow**: Login sets `access_token` (24h) and `refresh_token` (365h) as HTTP-only cookies. `AuthMiddleware` validates tokens and injects user into Gin context. `AuthContextMiddleware` passes Gin context into GraphQL resolver context.
+- **Auth flow**: Login sets `access_token` (7 days) and `refresh_token` (365 days) as HTTP-only cookies (`backend/main.go:96`). `AuthMiddleware` validates tokens and injects user into Gin context. `AuthContextMiddleware` passes Gin context into GraphQL resolver context. There is no token revocation — logout only clears cookies.
+- **GraphQL resolvers authorise themselves.** The `/api/graphql` endpoint has no guarding middleware; `AuthContextMiddleware` only makes the user *available*. Every resolver that needs auth must check it itself. See `backend/graph/doc.go`.
 - **Spotify tokens**: Persisted to `/backend/token/spotify_token.json` inside the container, surviving restarts.
 - **Gitea feed**: Backend proxies and caches (1 min TTL) the Gitea activity feed API.
-- **All GORM models use soft delete** (`gorm.DeletedAt` field).
+- **All GORM models use soft delete** (`gorm.DeletedAt` field) — except `ProcessedEmail`, whose dedup must see history. Note that a `uniqueIndex` still collides with soft-deleted rows.
+
+## Further documentation
+
+Each area has its own README with the detail that doesn't belong here:
+
+- `backend/README.md` — request lifecycle, auth model, GraphQL-vs-REST split and why each REST endpoint isn't GraphQL, service rundown, gotchas.
+- `vue/README.md` — app structure, routing, store/GraphQL data flow, the design-token styling system, and a live-vs-legacy map of the views.
+- `python/README.md` — endpoints, the NDJSON streaming contract, the hotel pricing method, and the scraper's fragility points.
+- `DEPLOYMENT.md` — service topology and ports, dev vs prod boot paths, TLS first-run and renewal, what persists, env vars, and an ops runbook.
+- `.env.example` — every environment variable the stack reads, documented, with blank values.
+
+## Conventions
+
+- **Comments explain *why*, not *what*.** The codebase is deliberately heavily commented at the points where behaviour is non-obvious (concurrency, caching, auth, scraping, nginx templating). Preserve these when editing; if you change the behaviour they describe, update them.
+- **Resolver commentary lives inside function bodies**, because gqlgen relocates or strips anything above the signature when regenerating.
+- **Schema files use `#` comments**, not triple-quoted description blocks — descriptions would change GraphQL introspection output.
+- **Legacy views are kept, not deleted.** `vue/src/views/unused/`, `Intro.vue`, `Gym.vue`, the unlisted CV templates and similar carry a `STATUS:` header comment saying whether they are live. They are tree-shaken out of the build. Check the header before assuming a file is dead — e.g. `views/unused/CoverLetters.vue` is actually live on `/cv`.

@@ -1,3 +1,8 @@
+/**
+ * Favourites for the Favorites widget. A view over homeData.favorites; see
+ * stores/posts.js for the placeholder-then-overwrite pattern.
+ */
+
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { useHomeDataStore } from "@/stores/homeData";
@@ -14,6 +19,10 @@ export const useFavoritesStore = defineStore("favorites", () => {
   const favoritesCount = computed(() => favorites.value.length);
 
   const homeData = useHomeDataStore();
+  // Mirror the shared home query. `immediate` matters: homeData may already
+  // have loaded by the time this store is first used, and a plain watch would
+  // never fire for that existing value. The `length > 0` test keeps the
+  // placeholder on screen when the backend returns nothing.
   watch(
     () => homeData.favorites,
     (newFavorites) => {
@@ -24,6 +33,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
     { immediate: true },
   );
 
+  /** Refresh by re-running the whole home query; the watch above applies it. */
   async function fetchFavorites() {
     await homeData.fetchAll();
   }

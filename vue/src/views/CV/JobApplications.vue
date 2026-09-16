@@ -1,4 +1,10 @@
 <script setup>
+/**
+ * Route `/cv/jobs` (guarded by `meta.requiresAdmin`) — a private tracker for job
+ * applications and for the reusable reference snippets that feed the CV copy.
+ * Two independent CRUD tables over GraphQL; editing is inline via an `editingId`
+ * plus a scratch copy of the row.
+ */
 import { ref, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { gql } from "@/graphql";

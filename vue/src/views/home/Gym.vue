@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * First version of the /stp gym widget: a static list of exercises.
+ * STATUS: superseded by Gym2.vue; not imported anywhere.
+ */
 import Header from "@/components/text/Header.vue";
 import LinkTable from "@/components/util/LinkTable.vue";
 const gym = [

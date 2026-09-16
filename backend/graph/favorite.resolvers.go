@@ -38,6 +38,9 @@ func (r *queryResolver) Favorites(ctx context.Context) ([]*models.Favorite, erro
 	if err := r.Store.DB.Order("created_at DESC").Find(&favorites).Error; err != nil {
 		return nil, err
 	}
+	// Copy to a slice of pointers because the schema returns a list of
+	// nullable objects. Taking &favorites[i] is safe: the slice is never
+	// appended to after this point, so the backing array cannot move.
 	result := make([]*models.Favorite, len(favorites))
 	for i := range favorites {
 		result[i] = &favorites[i]

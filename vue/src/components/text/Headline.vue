@@ -1,4 +1,15 @@
 <script setup>
+/**
+ * Infinite horizontal marquee. Renders its slot twice side by side and
+ * translates the pair left; when the offset passes one copy's width it wraps by
+ * adding that width back, so the seam is never visible.
+ *
+ * The offset is a plain `let`, not a ref, and the transform is written straight
+ * to element.style — a reactive ref here would queue a Vue re-render on every one
+ * of the 60 frames per second. The width is measured once and re-measured by a
+ * ResizeObserver rather than read each frame, because reading offsetWidth in the
+ * rAF callback forces a layout on every frame.
+ */
 import { onMounted, useTemplateRef, onUnmounted } from "vue";
 
 const container = useTemplateRef("container");
@@ -54,6 +65,8 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- The slot is rendered twice: the second copy fills the gap the first
+       leaves as it scrolls off, which is what makes the loop seamless. -->
   <div class="root">
     <div class="container" ref="container">
       <div ref="item1">

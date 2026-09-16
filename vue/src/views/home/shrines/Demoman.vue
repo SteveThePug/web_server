@@ -1,4 +1,7 @@
 <script setup>
+/**
+ * Route `/shrines/demoman` — a wall of TF2 Demoman clips via <VideoTable>.
+ */
 import VideoTable from "@/components/util/VideoTable.vue";
 import Link from "@/components/text/Link.vue";
 
