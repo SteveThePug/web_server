@@ -15,7 +15,7 @@ import { ref, shallowRef } from "vue";
 import { RouterLink } from "vue-router";
 // import CVGeneral from "./CVGeneral.vue";
 import CVProgramming from "./CVProgramming.vue";
-import CoverLetters from "../unused/CoverLetters.vue";
+import CoverLetters from "./CoverLetters.vue";
 // import CVSecurity from "./CVSecurity.vue";
 // import CVBackend from "./CVBackend.vue";
 // import CVFrontend from "./CVFrontend.vue";

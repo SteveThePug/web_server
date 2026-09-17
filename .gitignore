@@ -65,3 +65,6 @@ __screenshots__/
 .deploy
 *.xcf
 sync-secrets.sh
+
+# Local-only outstanding-work notes, deliberately not published
+TODO-NEXT.md

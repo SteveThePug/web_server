@@ -110,6 +110,12 @@ function playFinishedSound() {
     </div>
     <div v-if="state === 'paused'" class="flex flex-col">
       <h1>Paused</h1>
+      <p>
+        {{ minutes.toString().padStart(2, "0") }}:{{
+          seconds.toString().padStart(2, "0")
+        }}
+      </p>
+      <Button @click="pauseTimer">Resume</Button>
       <Button @click="resetTimer">Reset</Button>
     </div>
     <div v-if="state === 'running'" class="flex flex-col">

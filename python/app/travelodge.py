@@ -58,6 +58,7 @@ Time budgets
   instead of the whole request dying at the nginx 300s proxy timeout.
 """
 
+import logging
 import math
 import os
 import threading
@@ -67,6 +68,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 
 import requests
+
+# Every upstream field is read tolerantly, so a Travelodge schema change would
+# otherwise be indistinguishable from genuinely sold-out inventory. This logger
+# is the only signal that the difference exists - see `hotels_for`.
+log = logging.getLogger(__name__)
 
 TL_API = "https://www.travelodge.co.uk/api/v2/hotel"
 TL_SITE = "https://www.travelodge.co.uk"
@@ -432,7 +438,27 @@ def hotels_for(location, checkin, checkout, rooms, deadline=None):
     # The fetch deliberately happens outside any cache lock: a slow upstream
     # must not block other threads reading the cache. Two threads racing on the
     # same key both fetch and the second write wins, which is harmless.
-    hotels = [normalise_hotel(h) for h in fetch_hotels(location, checkin, checkout, rooms, deadline=deadline)]
+    raw = fetch_hotels(location, checkin, checkout, rooms, deadline=deadline)
+    hotels = [normalise_hotel(h) for h in raw]
+
+    # A response that parsed but yielded nothing usable is the fingerprint of a
+    # renamed upstream field: the tolerant .get()s in `normalise_hotel` turn a
+    # schema change into "no hotels available", which looks exactly like a
+    # sold-out search. Genuine sold-out inventory still carries names and codes,
+    # so warn only when the shape itself came back empty.
+    if raw and not any(h["code"] and h["name"] for h in hotels):
+        log.warning(
+            "Travelodge returned %d hotels for %r (%s..%s) but none had a usable "
+            "code/name - upstream field names may have changed",
+            len(raw), location, checkin, checkout,
+        )
+    elif raw and not any(h["available"] and h["room_price"] is not None for h in hotels):
+        log.warning(
+            "Travelodge returned %d hotels for %r (%s..%s) but none were priced "
+            "and available - sold out, or minPrice/hasAvailability renamed",
+            len(raw), location, checkin, checkout,
+        )
+
     _tl_cache.set(key, hotels)
     return hotels
 
