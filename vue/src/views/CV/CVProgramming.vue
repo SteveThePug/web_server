@@ -284,13 +284,15 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
-                        <small>Sep 2021 – Jul 2025</small>
+                        <small>Sep 2022 – May 2026</small>
                     </template>
                     <p contenteditable="true">
-                        Served food and drinks in a high-volume live-music venue
-                        in Leeds. Handled busy weekend shifts, managed multiple
-                        tables simultaneously, and maintained a calm, friendly
-                        demeanour during peak hours.
+                        Served food and drinks across Belgrave Music Hall and The
+                        Montpelier (Rose Pubs Group) in Leeds while studying.
+                        Handled busy weekend shifts in a high-volume live-music
+                        venue, managed multiple tables simultaneously, and
+                        maintained a calm, friendly demeanour during peak
+                        hours.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -303,13 +305,13 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Bartender & Waiter</small>
-                        <small>Jul 2020 – Aug 2021</small>
+                        <small>Jul 2022 – Sep 2022</small>
                     </template>
                     <p contenteditable="true">
-                        Worked front-of-house at a busy pub, pulling pints,
-                        taking orders, and ensuring a welcoming atmosphere.
-                        Built rapport with regulars and adapted quickly to
-                        changing priorities during service.
+                        Worked front-of-house at a Greene King family pub in
+                        Eastbourne, pulling pints, taking orders, and ensuring a
+                        welcoming atmosphere. Built rapport with regulars and
+                        with a close-knit team during service.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -322,13 +324,14 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Barista & Front of House</small>
-                        <small>Jun 2020 – Aug 2021</small>
+                        <small>Jun 2022 – Sep 2022</small>
                     </template>
                     <p contenteditable="true">
-                        Worked at a bakery in Eastbourne, preparing freshly
-                        baked goods for display, operating the coffee machine,
-                        and keeping bakery equipment spotless. Built rapport
-                        with regulars and provided attentive, friendly service.
+                        Worked alongside the bakers at a bakery in Eastbourne,
+                        handling freshly baked goods for display, operating the
+                        coffee machine, and keeping equipment spotless. Built
+                        rapport with regulars and provided attentive, friendly
+                        service.
                     </p>
                 </Project>
                 <Project>
@@ -343,12 +346,12 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <small>Cashier & Waiter</small>
-                        <small>Jun 2018 – Mar 2020</small>
+                        <small>Jun 2021 – Sep 2021</small>
                     </template>
                     <p contenteditable="true">
                         Operated the till, served customers, and helped
-                        coordinate table service at a café on London's South
-                        Bank. Developed strong cash-handling accuracy and
+                        coordinate table service at the BFI Southbank riverfront
+                        bar and kitchen (Benugo) on London's South Bank. Developed strong cash-handling accuracy and
                         customer interaction skills in a fast-paced environment.
                     </p>
                 </Project>
