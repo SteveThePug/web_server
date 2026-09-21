@@ -388,6 +388,8 @@ services:
       - ${OBSIDIAN_DIR}:/space
       - ./silverbullet/git-sync.sh:/git-sync.sh:ro
       - ./silverbullet/ssh:/ssh:ro
+      # ssh will not run for a uid with no passwd entry; see the file's comment.
+      - ./silverbullet/passwd:/etc/passwd:ro
 
   # FastAPI side-service, proxied at /py/ with the prefix stripped by nginx.
   # ROOT_PATH=/py tells FastAPI it is mounted under a prefix so the generated
