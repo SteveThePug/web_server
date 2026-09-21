@@ -69,6 +69,7 @@
 #   GITEA_HOST / GITEA_PORT        git server upstream
 #   HASURA_HOST / HASURA_PORT      Hasura console upstream
 #   QUARTZ_HOST / QUARTZ_PORT      notes site upstream
+#   SILVERBULLET_HOST / _PORT      notes editor upstream (defaulted below)
 #   PYTHON_HOST / PYTHON_PORT      FastAPI upstream (defaulted below)
 #   DEV_MODE                       "true" only via docker-compose.dev.yml
 #   CERT_WATCH_INTERVAL            optional, seconds between certificate-watch
@@ -86,11 +87,13 @@ set -e
 # Defaults for optional services so envsubst never leaves an empty upstream
 export PYTHON_HOST="${PYTHON_HOST:-python}"
 export PYTHON_PORT="${PYTHON_PORT:-8000}"
+export SILVERBULLET_HOST="${SILVERBULLET_HOST:-silverbullet}"
+export SILVERBULLET_PORT="${SILVERBULLET_PORT:-3000}"
 
 # The envsubst allow-list, defined once and reused by both full-config branches
 # so the two lists cannot drift apart. It MUST stay single-quoted here and be
 # passed as "$ENVSUBST_VARS" (one argument) below.
-ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
+ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${QUARTZ_HOST} ${QUARTZ_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
 
 # Check if DEV_MODE
 if [ "$DEV_MODE" = "true" ]; then

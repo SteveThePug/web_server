@@ -113,6 +113,7 @@ services:
       - gitea
       - hasura
       - quartz
+      - silverbullet
       - python
     networks:
       - app-network
@@ -320,6 +321,73 @@ services:
       - ./.env
     volumes:
       - ${OBSIDIAN_DIR}:/quartz/content:ro
+
+  # Browser-based editor for the SAME vault quartz renders read-only at /notes/.
+  # Quartz is a static site generator with no write path; this is what makes the
+  # notes editable from a phone. Proxied at /sb/ behind the same nginx admin gate.
+  #
+  # SINGLE-SPACE MODE is auto-detected because the mounted folder is not empty
+  # (the alternative, multi-space, expects /data to be a SilverBullet-owned
+  # folder of spaces). In this mode it treats the mount as the space itself and
+  # writes NO database or metadata files into the vault — the folder stays a
+  # plain directory of markdown that quartz and Obsidian still understand.
+  silverbullet:
+    image: ghcr.io/silverbulletmd/silverbullet:2.11.0
+    container_name: "${SILVERBULLET_HOST:-silverbullet}"
+    restart: always
+    networks:
+      - app-network
+    environment:
+      SB_PORT: "${SILVERBULLET_PORT:-3000}"
+      # The app builds its service-worker scope and asset URLs from this, which
+      # is why nginx must NOT strip the /sb/ prefix. See nginx.conf.template.
+      SB_URL_PREFIX: /sb
+      # Mirrors quartz.config.ts.template's ignorePatterns so the editor hides
+      # what the published site hides. MUST be newline separated: a comma
+      # separated list is accepted silently and does nothing.
+      SB_SPACE_IGNORE: |
+        private
+        templates
+        .obsidian
+      # Pinned rather than inferred from the mount's owner, so the files it
+      # writes match the vault's ownership on the host.
+      PUID: "1000"
+      PGID: "1000"
+      # Uncomment for a look-but-don't-touch first boot against a real vault:
+      # SB_READ_ONLY: "true"
+    volumes:
+      - ${OBSIDIAN_DIR}:/data
+
+  # SilverBullet has no concept of git, so this commits and pushes what it
+  # writes, and pulls what Obsidian pushes from elsewhere.
+  #
+  # WHY A SEPARATE CONTAINER and not SilverBullet's own shell backend: enabling
+  # that would give anyone who gets past the nginx admin gate command execution
+  # inside the container. Since SilverBullet itself runs with no SB_USER, that
+  # gate is the only thing protecting it, so the blast radius stays here.
+  silverbullet-git:
+    image: alpine/git:v2.49.1
+    container_name: "${SILVERBULLET_GIT_HOST:-silverbullet-git}"
+    restart: always
+    networks:
+      - app-network
+    # Same uid SilverBullet writes as, so commits don't leave root-owned objects
+    # in .git that the host user can no longer clean up.
+    user: "1000:1000"
+    environment:
+      SYNC_INTERVAL: "${SILVERBULLET_GIT_INTERVAL:-300}"
+      GIT_AUTHOR_NAME: silverbullet
+      GIT_AUTHOR_EMAIL: "silverbullet@${DOMAIN}"
+      GIT_COMMITTER_NAME: silverbullet
+      GIT_COMMITTER_EMAIL: "silverbullet@${DOMAIN}"
+      # uid 1000 has no home in this image; give git somewhere writable.
+      HOME: /tmp
+      GIT_SSH_COMMAND: "ssh -i /ssh/id_ed25519 -o UserKnownHostsFile=/ssh/known_hosts -o IdentitiesOnly=yes"
+    entrypoint: ["/bin/sh", "/git-sync.sh"]
+    volumes:
+      - ${OBSIDIAN_DIR}:/space
+      - ./silverbullet/git-sync.sh:/git-sync.sh:ro
+      - ./silverbullet/ssh:/ssh:ro
 
   # FastAPI side-service, proxied at /py/ with the prefix stripped by nginx.
   # ROOT_PATH=/py tells FastAPI it is mounted under a prefix so the generated

@@ -24,6 +24,8 @@ db (5432)        ── PostgreSQL 16
 icecast2 (8000)  ── Audio Streaming (Icecast2 + Liquidsoap)
 gitea (3000)     ── Self-Hosted Git
 quartz (8080)    ── Obsidian Notes Publisher (Quartz v4.4.0)
+silverbullet (3000) ── Obsidian Notes Editor (SilverBullet 2.11.0)
+silverbullet-git ── Commits/pushes notes edits to the notes repo
 python (8000)    ── Python API (FastAPI)
 hasura (8080)    ── Hasura GraphQL Engine (Docker profile: hasura)
 autoheal         ── Auto-restart unhealthy containers
@@ -44,7 +46,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 - Spotify integration (currently playing, recently played)
 - Steam integration (online status, recent games)
-- Obsidian note viewer via Quartz
+- Obsidian note viewer via Quartz, editable from any browser via SilverBullet
 - Live radio streaming via Icecast2 + Liquidsoap
 - Real-time chat over WebSockets with image/video uploads
 - Blog with admin panel (CRUD)
@@ -56,7 +58,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Job application tracker with status workflow and CSV export (admin-only, `/cv/jobs`)
 - Database-backed bookmarks grouped by category, managed via GraphQL (admin-only)
 - Hasura GraphQL console (admin-only)
-- Admin-gated routes: `/notes`, `/hasura` require admin JWT via Nginx `auth_request`
+- Admin-gated routes: `/notes`, `/sb`, `/hasura` require admin JWT via Nginx `auth_request`
 - Landing page with animated stamps section
 - Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
 - Backend healthcheck with autoheal container for automatic recovery
@@ -72,6 +74,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 | `/cv/jobs`     | Job application tracker (admin-only, hidden print) |
 | `/bookmarks`   | Bookmarks (database-backed, grouped by category)   |
 | `/notes/:path` | Obsidian note viewer (via Quartz, admin-only)      |
+| `/sb/`         | Obsidian note editor (via SilverBullet, admin-only) |
 | `/shrines`     | Fan shrine index + individual shrines              |
 
 ## API
@@ -182,6 +185,7 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | `/gitea`   | gitea:3000   | Git service                                |
 | `/hasura`  | hasura:8080  | GraphQL console + WebSocket (admin-only)   |
 | `/notes`   | quartz:8080  | Obsidian notes (admin-only)                |
+| `/sb`      | silverbullet:3000 | Obsidian notes editor (admin-only)    |
 | `/py`      | python:8000  | Python API (FastAPI; docs at `/py/docs`)   |
 | `/uploads` | local alias  | User-uploaded files                        |
 
@@ -216,6 +220,9 @@ Create a `.env` file in the project root. All services read from this file.
 | `WALLABAG_PORT`                   | Wallabag port (planned)                                                         |
 | `QUARTZ_HOST`                     | Quartz hostname (use `quartz` for Docker)                                       |
 | `QUARTZ_PORT`                     | Quartz port (typically `8080`)                                                  |
+| `SILVERBULLET_HOST`               | SilverBullet hostname (defaults to `silverbullet`)                              |
+| `SILVERBULLET_PORT`               | SilverBullet port (defaults to `3000`)                                          |
+| `SILVERBULLET_GIT_INTERVAL`       | Seconds between notes commit/push cycles (defaults to `300`)                    |
 | `GITEA_RUNNER_HOST`               | Gitea runner hostname                                                           |
 | `GITEA_RUNNER_NAME`               | Gitea runner display name                                                       |
 | `GITEA_RUNNER_REGISTRATION_TOKEN` | Token to register Gitea Actions runner                                          |
@@ -267,7 +274,8 @@ Populate `LFS_JWT_SECRET`, `SECRET_KEY`, `INTERNAL_TOKEN`, `JWT_SECRET`, and the
 ### Obsidian Notes Setup
 
 1. Set `OBSIDIAN_DIR` in `.env` to the absolute path of your Obsidian vault on the host machine
-2. The vault is mounted read-only into the Quartz container at `/quartz/content`
+2. The vault is mounted read-only into the Quartz container at `/quartz/content`, and
+   read-write into SilverBullet at `/data`, which serves it as an editor at `/sb/`
 3. Quartz builds a static site from the vault on startup and serves it at `/notes/`
 4. The backend also mounts the vault at `/backend/notes` (legacy, see deprecated endpoints above)
 

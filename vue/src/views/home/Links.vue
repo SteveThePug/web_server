@@ -21,6 +21,7 @@ const social_links = [
   { name: "Github", link: "https://github.com/SteveThePug" },
   { name: "Spotify", link: "https://open.spotify.com/user/stevethepug" },
   { name: "Notes", link: "/notes/" },
+  { name: "Notes (edit)", link: "/sb/" },
 ];
 </script>
 

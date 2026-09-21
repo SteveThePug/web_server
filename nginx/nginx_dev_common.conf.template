@@ -29,6 +29,7 @@
         set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
         set $upstream_hasura http://$HASURA_HOST:$HASURA_PORT;
         set $upstream_quartz http://$QUARTZ_HOST:$QUARTZ_PORT;
+        set $upstream_silverbullet http://$SILVERBULLET_HOST:$SILVERBULLET_PORT;
         set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
 
         # PRIVATE attachments (admin-only). Attachments on *private* chat
@@ -181,6 +182,29 @@
             error_page 401 403 = @auth_denied;
             rewrite ^/notes/(.*)$ /$1 break;
             proxy_pass $upstream_quartz;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /sb {
+            return 301 /sb/;
+        }
+
+        # SilverBullet: the editor for the same vault quartz renders at /notes/.
+        # Deliberately NO prefix-strip rewrite, unlike every other proxied app
+        # here. SilverBullet is a PWA told its own base path via SB_URL_PREFIX=/sb,
+        # and its service worker scope and asset URLs are built from that. Strip
+        # the prefix and the app loads a blank page with no error in the log.
+        # Upgrade/Connection are for its sync websocket.
+        location /sb/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            proxy_pass $upstream_silverbullet;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";

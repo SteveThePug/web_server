@@ -55,6 +55,8 @@ backend  icecast2  gitea    hasura   quartz  python |               |
 | db (Postgres 16) | `${POSTGRES_HOST}` | 5432 | none | no |
 | hasura | `${HASURA_HOST}` | `${HASURA_PORT}` | `/hasura/` (admin-gated) | no |
 | quartz (notes) | `${QUARTZ_HOST}` | `${QUARTZ_PORT}` | `/notes/` (admin-gated) | no |
+| silverbullet | `${SILVERBULLET_HOST}` | `${SILVERBULLET_PORT}` | `/sb/` (admin-gated) | no |
+| silverbullet-git | n/a | n/a | none (timer loop) | no |
 | python (FastAPI) | `${PYTHON_HOST}` | `${PYTHON_PORT}` | `/py/`, docs at `/py/docs` | no |
 | icecast2 + liquidsoap | `${ICECAST_HOST}` | `${ICECAST_PORT}` | `/radio/` | **harbor port only** |
 | gitea | `${GITEA_HOST}` | 3000, 2222 | `/gitea/` | **3000, 2222** |
@@ -71,11 +73,14 @@ in one step — never change one without the other.**
 - **Canonical host.** `http://` → `https://`, and apex → `www`. The SPA, the
   cookies and the CORS rules all assume `www.<DOMAIN>`.
 - **Prefix stripping.** `/api`, `/radio`, `/gitea`, `/notes`, `/py` are stripped
+  — but `/sb/` deliberately is NOT: SilverBullet is told its own base path via
+  `SB_URL_PREFIX` and builds its service-worker scope from it, so stripping the
+  prefix serves a blank page with nothing in the log.
   by a `rewrite ... break` before proxying; each upstream serves from `/`.
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/hasura/` and `/notes/` are protected by an `auth_request`
+- **Admin gate.** `/hasura/`, `/notes/` and `/sb/` are protected by an `auth_request`
   subrequest to the backend's `/auth/validate-admin`; a failure redirects to the
   SPA login. Neither service has any auth of its own at that path.
 - **Uploads served directly.** `/uploads/` is an alias onto the shared `uploads`
@@ -207,7 +212,7 @@ of deleting the directory:
 | `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
 | `./logs` | Backend logs | |
 | `./icecast2/fallback_music` | Radio fallback MP3s | Synced by `sync-secrets.sh`, not git |
-| `${OBSIDIAN_DIR}` | The Obsidian vault | Read-write to backend, **read-only** to quartz |
+| `${OBSIDIAN_DIR}` | The Obsidian vault (a git clone of the notes repo) | Read-write to backend and silverbullet, **read-only** to quartz |
 
 **Ephemeral:** anything else inside a container. Notably the Vue build, the
 rendered nginx/icecast/quartz configs, and the Gitea runner's downloaded binary

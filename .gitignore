@@ -68,3 +68,7 @@ sync-secrets.sh
 
 # Local-only outstanding-work notes, deliberately not published
 TODO-NEXT.md
+
+# SilverBullet git deploy key (key material only; the README stays)
+silverbullet/ssh/*
+!silverbullet/ssh/README.md
