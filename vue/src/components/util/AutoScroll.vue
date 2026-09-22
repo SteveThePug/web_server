@@ -36,7 +36,10 @@ let cachedScrollHeight = 0;
 
 function measureScrollHeight() {
   const el = container.value;
-  if (el) cachedScrollHeight = el.scrollHeight;
+  // Scrollable range, not full content height: scrollTop saturates at
+  // scrollHeight - clientHeight, so using scrollHeight would stop the drift
+  // one viewport short of the end while pos still climbed to 1.
+  if (el) cachedScrollHeight = Math.max(0, el.scrollHeight - el.clientHeight);
 }
 
 function stopLoop() {
