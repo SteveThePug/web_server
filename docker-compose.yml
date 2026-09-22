@@ -342,12 +342,18 @@ services:
       # The app builds its service-worker scope and asset URLs from this, which
       # is why nginx must NOT strip the /sb/ prefix. See nginx.conf.template.
       SB_URL_PREFIX: /sb
-      # Mirrors quartz.config.ts.template's ignorePatterns so the editor hides
-      # what the published site hides. MUST be newline separated: a comma
-      # separated list is accepted silently and does nothing.
+      # Only .obsidian: it is editor config and plugin JS, not notes.
+      #
+      # Deliberately NOT quartz's ignorePatterns, which also lists private/ and
+      # templates/. Those two settings answer different questions: quartz hides
+      # private/ because it must never be PUBLISHED, whereas this is the editor,
+      # reachable only through the admin gate, and hiding notes from it just
+      # stops you editing them. Quartz keeps its own ignorePatterns, so nothing
+      # here changes what /notes/ publishes.
+      #
+      # MUST be newline separated: a comma separated list is accepted silently
+      # and does nothing.
       SB_SPACE_IGNORE: |
-        private
-        templates
         .obsidian
       # Pinned rather than inferred from the mount's owner, so the files it
       # writes match the vault's ownership on the host.
