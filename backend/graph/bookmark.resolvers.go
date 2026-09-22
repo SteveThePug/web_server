@@ -51,7 +51,7 @@ func (r *mutationResolver) DeleteBookmark(ctx context.Context, id int) (*models.
 // Bookmarks is the resolver for the bookmarks field.
 func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, error) {
 	var bookmarks []models.Bookmark
-	if err := r.Store.DB.Order("category ASC, created_at ASC").Find(&bookmarks).Error; err != nil {
+	if err := r.Store.DB.Order("category ASC, created_at DESC").Find(&bookmarks).Error; err != nil {
 		return nil, err
 	}
 	return ptrs(bookmarks), nil
