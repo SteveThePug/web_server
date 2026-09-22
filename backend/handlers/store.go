@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"sync"
 	"time"
 
@@ -66,6 +67,12 @@ type Store struct {
 	// restarting an OAuth flow that takes seconds.
 	spotifyStatesMu sync.Mutex
 	spotifyStates   map[string]time.Time
+
+	// spotifyNilLoggedAt rate-limits the "Spotify not authenticated" log line:
+	// every page visit hits spotifyRecent, so an unauthenticated backend would
+	// otherwise write a flood of identical lines. nil means "recently logged".
+	spotifyNilLoggedMu sync.Mutex
+	spotifyNilLoggedAt time.Time
 }
 
 // spotifyStateTTL is how long an unused Spotify OAuth nonce stays valid. Long
@@ -122,6 +129,20 @@ func (s *Store) ConsumeSpotifyState(state string) bool {
 // fields. Each "Cached..." method returns the value plus a bool that is true
 // only when the entry is present and inside its TTL; each "Set..." method
 // stores a value and stamps it.
+
+// LogSpotifyUnauthenticated logs that the Spotify OAuth flow has never been
+// completed (or a stored token stopped working), with a where hint. It is
+// rate-limited to one line per hour — see spotifyNilLoggedAt — because
+// spotifyRecent is hit by every home-page visit.
+func (s *Store) LogSpotifyUnauthenticated(where string) {
+	s.spotifyNilLoggedMu.Lock()
+	defer s.spotifyNilLoggedMu.Unlock()
+	if time.Since(s.spotifyNilLoggedAt) < time.Hour {
+		return
+	}
+	s.spotifyNilLoggedAt = time.Now()
+	log.Printf("[Spotify] not authenticated (seen in %s) — an admin can reconnect via GET /api/spotify/auth", where)
+}
 
 // CachedRecentSongs returns the cached Spotify recently-played list if it is
 // within its one-minute TTL. An empty list counts as stale, so an empty

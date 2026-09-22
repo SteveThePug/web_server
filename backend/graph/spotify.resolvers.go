@@ -16,6 +16,7 @@ func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPla
 	// A nil client means the OAuth flow has never been completed. Report that
 	// as null rather than an error so the home page renders without it.
 	if r.Store.SpotifyClient == nil {
+		r.Store.LogSpotifyUnauthenticated("spotifyListening")
 		return nil, nil
 	}
 
@@ -35,6 +36,7 @@ func (r *queryResolver) SpotifyListening(ctx context.Context) (*model.SpotifyPla
 // SpotifyRecent is the resolver for the spotifyRecent field.
 func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error) {
 	if r.Store.SpotifyClient == nil {
+		r.Store.LogSpotifyUnauthenticated("spotifyRecent")
 		return []*model.SpotifyRecentItem{}, nil
 	}
 
@@ -46,4 +48,23 @@ func (r *queryResolver) SpotifyRecent(ctx context.Context) ([]*model.SpotifyRece
 	}
 
 	return mapRecentItems(played), nil
+}
+
+// SpotifyNeedsReauth is the resolver for the spotifyNeedsReauth field.
+//
+// Admin-gated: false for everyone else, so this query leaks nothing. Admin is
+// read from the access-token claims the AuthContextMiddleware resolved, not
+// the database — the same trade-off AdminMiddleware makes (revocation waits
+// for token expiry).
+func (r *queryResolver) SpotifyNeedsReauth(ctx context.Context) (bool, error) {
+	if r.Store.SpotifyClient != nil {
+		return false, nil
+	}
+
+	if !IsAdminFromCtx(ctx) {
+		return false, nil
+	}
+
+	r.Store.LogSpotifyUnauthenticated("spotifyNeedsReauth")
+	return true, nil
 }

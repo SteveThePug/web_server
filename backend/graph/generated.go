@@ -170,24 +170,25 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Activities       func(childComplexity int) int
-		Bookmarks        func(childComplexity int) int
-		Favorites        func(childComplexity int) int
-		GiteaFeed        func(childComplexity int) int
-		JobAppReferences func(childComplexity int) int
-		JobApplication   func(childComplexity int, id int) int
-		JobApplications  func(childComplexity int) int
-		Me               func(childComplexity int) int
-		Messages         func(childComplexity int) int
-		Places           func(childComplexity int) int
-		Post             func(childComplexity int, id int) int
-		Posts            func(childComplexity int) int
-		RowingSessions   func(childComplexity int) int
-		SpotifyListening func(childComplexity int) int
-		SpotifyRecent    func(childComplexity int) int
-		SteamStatus      func(childComplexity int) int
-		User             func(childComplexity int, id int) int
-		Users            func(childComplexity int) int
+		Activities         func(childComplexity int) int
+		Bookmarks          func(childComplexity int) int
+		Favorites          func(childComplexity int) int
+		GiteaFeed          func(childComplexity int) int
+		JobAppReferences   func(childComplexity int) int
+		JobApplication     func(childComplexity int, id int) int
+		JobApplications    func(childComplexity int) int
+		Me                 func(childComplexity int) int
+		Messages           func(childComplexity int) int
+		Places             func(childComplexity int) int
+		Post               func(childComplexity int, id int) int
+		Posts              func(childComplexity int) int
+		RowingSessions     func(childComplexity int) int
+		SpotifyListening   func(childComplexity int) int
+		SpotifyNeedsReauth func(childComplexity int) int
+		SpotifyRecent      func(childComplexity int) int
+		SteamStatus        func(childComplexity int) int
+		User               func(childComplexity int, id int) int
+		Users              func(childComplexity int) int
 	}
 
 	Rowing struct {
@@ -321,6 +322,7 @@ type QueryResolver interface {
 	RowingSessions(ctx context.Context) ([]*models.Rowing, error)
 	SpotifyListening(ctx context.Context) (*model.SpotifyPlaying, error)
 	SpotifyRecent(ctx context.Context) ([]*model.SpotifyRecentItem, error)
+	SpotifyNeedsReauth(ctx context.Context) (bool, error)
 	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
 	Users(ctx context.Context) ([]*models.User, error)
 	User(ctx context.Context, id int) (*models.User, error)
@@ -1081,6 +1083,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SpotifyListening(childComplexity), true
+	case "Query.spotifyNeedsReauth":
+		if e.ComplexityRoot.Query.SpotifyNeedsReauth == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SpotifyNeedsReauth(childComplexity), true
 	case "Query.spotifyRecent":
 		if e.ComplexityRoot.Query.SpotifyRecent == nil {
 			break
@@ -5242,6 +5250,29 @@ func (ec *executionContext) fieldContext_Query_spotifyRecent(_ context.Context, 
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Query_spotifyNeedsReauth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_spotifyNeedsReauth(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SpotifyNeedsReauth(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_spotifyNeedsReauth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _Query_steamStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9409,6 +9440,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_spotifyRecent(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "spotifyNeedsReauth":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_spotifyNeedsReauth(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res

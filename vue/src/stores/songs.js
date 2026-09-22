@@ -22,6 +22,12 @@ const song_template = {
 export const useSongsStore = defineStore("songs", () => {
   const songs = ref([song_template]);
 
+  // signalEnglish (see below) plus an admin-only "needs Spotify re-auth"
+  // flag, fetched alongside the songs. The widget uses it to offer the
+  // reconnect link; non-admins also get the field (false) because the query
+  // is public and the resolver simply gates it.
+  const needsReauth = ref(false);
+
   const songsCount = computed(() => songs.value.length);
 
   const homeData = useHomeDataStore();
@@ -52,8 +58,10 @@ export const useSongsStore = defineStore("songs", () => {
             }
             playedAt
           }
+          spotifyNeedsReauth
         }
       `);
+      needsReauth.value = !!data.spotifyNeedsReauth;
       if (Array.isArray(data.spotifyRecent) && data.spotifyRecent.length > 0) {
         songs.value = data.spotifyRecent;
       }
@@ -66,6 +74,8 @@ export const useSongsStore = defineStore("songs", () => {
     songs,
 
     songsCount,
+
+    needsReauth,
 
     fetchSongs,
   };

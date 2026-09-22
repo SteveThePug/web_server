@@ -8,6 +8,7 @@
 import Header from "@/components/text/Header.vue";
 import { computed, onMounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
+import { useAuthStore } from "@/stores/auth";
 import { useRotation } from "@/js/useRotation";
 
 const ROTATE_MS = 5000;
@@ -22,6 +23,30 @@ const { idx, next: nextSong } = useRotation(() => songsStore.songs, ROTATE_MS, {
 
 const song = computed(() => songsStore.songs[idx.value]);
 
+// Admin-only reconnect: when spotifyNeedsReauth comes back true the backend
+// has no Spotify client (OAuth never completed or the token was revoked), so
+// the widget offers the OAuth start endpoint instead of the template song.
+// Non-admins get none of this.
+const auth = useAuthStore();
+const showReconnect = computed(
+  () => auth.loggedIn && auth.user.admin && songsStore.needsReauth,
+);
+
+// GET /api/spotify/auth returns { url } — the Spotify authorisation URL with
+// a one-shot state nonce. Navigating to it runs the OAuth dance; the callback
+// installs the client server-side. Errors are swallowed: the widget simply
+// stays as it was.
+async function reconnect() {
+  try {
+    const res = await fetch("/api/spotify/auth");
+    if (!res.ok) return;
+    const { url } = await res.json();
+    window.location.href = url;
+  } catch (err) {
+    console.error("Cannot start Spotify re-authentication", err);
+  }
+}
+
 onMounted(() => {
   songsStore.fetchSongs();
 });
@@ -33,7 +58,17 @@ onMounted(() => {
       <Header>Listening To</Header>
     </div>
     <div class="content-scroll">
-      <Transition name="fade">
+      <div v-if="showReconnect" class="flex flex-col items-center">
+        <p class="text-center">Spotify needs reconnecting.</p>
+        <button
+          type="button"
+          class="underline text-mid cursor-pointer bg-transparent border-0"
+          @click="reconnect"
+        >
+          Reconnect Spotify
+        </button>
+      </div>
+      <Transition name="fade" v-else>
         <div
           @click="nextSong"
           :key="song.track.name"
