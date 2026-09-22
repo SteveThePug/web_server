@@ -107,6 +107,12 @@ http {
         text/javascript mjs;
     }
 
+    # TLS protocol versions, pinned: nginx's defaults still include TLSv1 and
+    # TLSv1.1, which are deprecated and fail modern compliance scans.
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
     gzip on;
     gzip_vary on;
     gzip_proxied any;
@@ -145,6 +151,8 @@ http {
 		ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
 		ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
+		add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+
         return 301 https://www.$DOMAIN$request_uri;
     }
 
@@ -167,27 +175,31 @@ http {
 		ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
 		ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
-        add_header X-Frame-Options "SAMEORIGIN" always;
-        add_header X-Content-Type-Options "nosniff" always;
-        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+        # Security headers live in nginx/security_headers.conf and are
+        # included there instead of here, because any location that declares
+        # so much as one add_header of its own otherwise inherits none of
+        # these (nginx's add_header inheritance is all-or-nothing).
+        include /etc/nginx/security_headers.conf;
 
         # Vite hashed assets - immutable, cache 1 year
         location /assets/ {
             expires 1y;
             add_header Cache-Control "public, immutable";
+            include /etc/nginx/security_headers.conf;
         }
 
         # Fonts - cache 30 days
         location /fonts/ {
             expires 30d;
             add_header Cache-Control "public";
+            include /etc/nginx/security_headers.conf;
         }
 
         # Images - cache 7 days
         location /img/ {
             expires 7d;
             add_header Cache-Control "public";
+            include /etc/nginx/security_headers.conf;
         }
 
         # PRIVATE attachments (admin-only). Attachments on *private* chat
@@ -202,6 +214,7 @@ http {
             auth_request /internal/auth/admin-validate;
             error_page 401 403 = @auth_denied;
             alias /uploads/private/;
+            include /etc/nginx/security_headers.conf;
             add_header X-Content-Type-Options nosniff always;
             add_header Content-Disposition "inline" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
@@ -215,6 +228,7 @@ http {
         # means even an uploaded .html can run no script and load no resource.
         location /uploads/ {
             alias /uploads/;
+            include /etc/nginx/security_headers.conf;
             add_header X-Content-Type-Options nosniff always;
             add_header Content-Disposition "inline" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
@@ -251,11 +265,13 @@ http {
             add_header Access-Control-Allow-Origin "*";
             expires 7d;
             add_header Cache-Control "public";
+            include /etc/nginx/security_headers.conf;
         }
 
         location /sound/ {
             expires 7d;
             add_header Cache-Control "public";
+            include /etc/nginx/security_headers.conf;
         }
 
         # ---- Backend API -----------------------------------------------------

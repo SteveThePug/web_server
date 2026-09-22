@@ -39,11 +39,16 @@ type Tokens struct {
 	RefreshToken string
 }
 
-// InitAuth builds the Auth service from config.
+// InitAuth builds the Auth service from config. An absent or too-short
+// secret is fatal: HS256 happily signs and verifies with a zero-length key,
+// so starting up with an empty BACKEND_SECRET would let anyone forge admin
+// tokens. Fail loudly at boot rather than serving a forgeable auth system.
 func InitAuth(config *AuthConfig) *Auth {
-	auth := Auth{Config: config}
+	if len(config.Secret) < 32 {
+		panic("auth secret must be set and at least 32 bytes (check BACKEND_SECRET)")
+	}
 
-	return &auth
+	return &Auth{Config: config}
 }
 
 // GenerateJWT issues an access/refresh pair for user.

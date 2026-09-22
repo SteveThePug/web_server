@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"adam-french.co.uk/backend/models"
 	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
 )
@@ -26,9 +25,14 @@ func (store *Store) ConnectWebSocket(ctx *gin.Context) {
 // isAdminRequest reports whether the request carries valid admin credentials.
 // It prefers the access token and falls back to the refresh token plus a DB
 // lookup, so an admin whose access token has just expired is still recognised.
+// Both branches go through AuthenticateTokenWithClaims rather than bare
+// VerifyJWT: that is what enforces the "tv" token-version claim, so a token
+// revoked by logout or a password change is rejected here too. A bare
+// VerifyJWT would leave /ws honouring stale tokens for their full lifetime
+// while every other path rejects them.
 func (store *Store) isAdminRequest(ctx *gin.Context) bool {
 	if accessToken, err := ctx.Cookie("access_token"); err == nil {
-		if claims, err := store.Auth.VerifyJWT(accessToken); err == nil {
+		if _, claims, err := store.Auth.AuthenticateTokenWithClaims(store.DB, accessToken); err == nil {
 			admin, ok := (*claims)["admin"].(bool)
 			return ok && admin
 		}
@@ -38,16 +42,8 @@ func (store *Store) isAdminRequest(ctx *gin.Context) bool {
 	if err != nil {
 		return false
 	}
-	claims, err := store.Auth.VerifyJWT(refreshToken)
+	user, err := store.Auth.AuthenticateToken(store.DB, refreshToken)
 	if err != nil {
-		return false
-	}
-	userIDF, ok := (*claims)["id"].(float64)
-	if !ok {
-		return false
-	}
-	user := models.User{ID: uint(userIDF)}
-	if err := store.DB.First(&user).Error; err != nil {
 		return false
 	}
 	return user.Admin

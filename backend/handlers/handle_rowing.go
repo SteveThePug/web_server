@@ -87,6 +87,15 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 		return
 	}
 
+	// Cap the upload before buffering it (and then base64-encoding it, 1.33x
+	// bigger): the route is admin-only but an unbounded read would still let
+	// a giant file exhaust the Pi's memory and produce a huge paid API call.
+	// 10MB is well above any photo this endpoint is meant to take.
+	if file.Size > 10<<20 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "image too large (max 10MB)"})
+		return
+	}
+
 	data, err := io.ReadAll(f)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read image"})

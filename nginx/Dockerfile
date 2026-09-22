@@ -34,5 +34,8 @@ COPY nginx_dev.conf.template /etc/nginx/nginx_dev.conf.template
 # (same envsubst allow-list) to /etc/nginx/nginx_dev_common.conf, which is the
 # path both `include` directives in nginx_dev.conf.template point at.
 COPY nginx_dev_common.conf.template /etc/nginx/nginx_dev_common.conf.template
+# Static security-header include, referenced from nginx.conf.template (and
+# any location that sets its own add_header). Not templated — no envsubst.
+COPY security_headers.conf /etc/nginx/security_headers.conf
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
