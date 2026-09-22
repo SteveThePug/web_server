@@ -2,7 +2,9 @@ package services
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -308,8 +310,19 @@ func parseRawEmail(raw string) (graphMessage, error) {
 	// Extract body text
 	bodyContent := extractTextBody(msg.Header, msg.Body)
 
+	// Dedup is keyed on GraphMessageID: a missing Message-ID header would
+	// yield "", which collides every headerless message onto one shared row
+	// (the first one processed, forever). Synthesise an id from stable
+	// message traits instead — hashing because From/Date/Subject/size are not
+	// unique alone but their combination is stable across retries.
+	msgID := header.Get("Message-ID")
+	if msgID == "" {
+		hash := sha256.Sum256([]byte(fromAddr + "|" + dateStr + "|" + header.Get("Subject") + "|" + bodyContent))
+		msgID = "synth-" + hex.EncodeToString(hash[:8])
+	}
+
 	return graphMessage{
-		ID:               header.Get("Message-ID"),
+		ID:               msgID,
 		Subject:          decodeHeader(header.Get("Subject")),
 		ReceivedDateTime: parsedDate.Format(time.RFC3339),
 		From: graphFrom{

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -393,17 +394,23 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 
 	log.Println("[EmailSync] Starting sync...")
 
-	// Window start = when the last email was *processed*, not when it was
-	// received. Those differ by up to one sync interval, which is deliberate:
-	// it overlaps the windows so nothing that arrived mid-sync is missed. The
-	// overlap re-fetches a few emails, and the ProcessedEmail dedup below is
-	// what stops them being handled twice. On a cold database (no processed
-	// emails at all) it falls back to the last 24 hours, so the pipeline
-	// never tries to ingest an entire mailbox.
+	// Window start comes from the newest email we have ever *received* (one of
+	// two clocks in play) rather than from when we processed it: receive time
+	// lags processing time by up to one sync duration, and a later window
+	// anchored to processing time would start AFTER mail that arrived just at
+	// the previous fetch — a permanent hole (the overlap the code always meant
+	// to have is produced only when both edges speak the same clock).
+	// Anchoring on ReceivedAt keeps the window behind the fetch, the
+	// ProcessedEmail dedup absorbs the deliberate re-fetch overlap, and on a
+	// cold database it falls back to the last 24 hours so the pipeline never
+	// tries to ingest an entire mailbox.
 	since := time.Now().Add(-24 * time.Hour)
 	var latest models.ProcessedEmail
-	if err := s.DB.Order("created_at DESC").First(&latest).Error; err == nil {
-		since = latest.CreatedAt
+	if err := s.DB.Where("received_at > ?", time.Time{}).Order("received_at DESC").First(&latest).Error; err == nil {
+		// Pull the window back one slack period so mail delivered a second or
+		// two after the last fetch (or indexed late by the provider) is still
+		// inside the next window; dedup makes re-processing it harmless.
+		since = latest.ReceivedAt.Add(-fetchSlack)
 	}
 
 	// Pull the window back to cover any still-retryable failure. Without this
@@ -411,9 +418,15 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 	// is written now, so the next window starts after it — and the retry
 	// below could never see the email again. Rows predating ReceivedAt have
 	// a zero value and are ignored rather than dragging the window to 0001.
+	//
+	// Old failures are age-capped: attempts only advance when the email is
+	// actually re-fetched, so a message that has left the mailbox would stay
+	// under the cap forever and rewind every sync on this day's fetch. After
+	// maxRewindAge the email is treated as gone, like any abandoned retry.
 	var oldestRetryable models.ProcessedEmail
 	if err := s.DB.
-		Where("action = ? AND attempts < ? AND received_at > ?", "error", maxEmailAttempts, time.Time{}).
+		Where("action = ? AND attempts < ? AND received_at > ? AND received_at > ?",
+			"error", maxEmailAttempts, time.Time{}, time.Now().Add(-maxRewindAge)).
 		Order("received_at ASC").
 		First(&oldestRetryable).Error; err == nil && oldestRetryable.ReceivedAt.Before(since) {
 		log.Printf("[EmailSync] Rewinding window to %s to retry a previous failure",
@@ -456,7 +469,17 @@ func (s *EmailSyncService) SyncEmails(ctx context.Context) error {
 
 		// The row carries the outcome either way. On failure the attempt
 		// counter advances, so repeated failures walk the row towards the cap
-		// and it eventually stops being retried.
+		// and it eventually stops being retried. A cancelled sync (the admin
+		// closed the tab mid-backlog, or nginx cut the request) is not a
+		// failure of the email, though: attempts must not advance for it, or
+		// two closed tabs would strand a healthy email at the cap and skip it
+		// forever. Writing nothing preserves the existing row untouched, so it
+		// is simply retried at the next sync.
+		if processErr != nil && errors.Is(processErr, context.Canceled) {
+			skipped++
+			continue
+		}
+
 		record := models.ProcessedEmail{
 			GraphMessageID: email.ID,
 			Subject:        truncate(email.Subject, 255),
@@ -647,11 +670,21 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 	// wording the same role slightly differently therefore creates a second
 	// application rather than updating the first. The most recent match wins
 	// when there are several.
+	// The lookup is Unscoped: a deleted-with-notes row is stored, not purged
+	// (see models.JobApplication), so invisibility here makes the matcher
+	// believe the application never existed and a follow-up email in the same
+	// thread re-creates it — the admin deletes it, it comes back. A hit on a
+	// deleted row instead becomes a suppression: nothing is updated, nothing
+	// is created, and the pipeline leaves the deletion to stand.
 	var existing models.JobApplication
-	found := s.DB.Where("LOWER(company) = LOWER(?) AND LOWER(job_title) = LOWER(?)",
+	found := s.DB.Unscoped().Where("LOWER(company) = LOWER(?) AND LOWER(job_title) = LOWER(?)",
 		analysis.Company, analysis.JobTitle).
 		Order("created_at DESC").
 		First(&existing).Error == nil
+
+	if found && existing.DeletedAt.Valid {
+		return "skipped", nil, nil
+	}
 
 	if found && analysis.Action == "update" {
 		return s.updateJobApplication(&existing, &analysis)
@@ -665,12 +698,25 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 	return "skipped", &existing.ID, nil
 }
 
+// NormalizeStatus coerces Claude's status guess into the tracked vocabulary,
+// lowering the case it occasionally drifts on and rejecting anything outside
+// statusOrder. An unrecognised status stored verbatim would disable the
+// forward-only guard for that row (updateJobApplication allows any recognised
+// status over an unknown one), so the safe fallback is the pipeline's default.
+func NormalizeStatus(s string) string {
+	lowered := strings.ToLower(strings.TrimSpace(s))
+	if _, ok := statusOrder[lowered]; ok {
+		return lowered
+	}
+	return "applied"
+}
+
 // createJobApplication inserts a new application from Claude's analysis.
 func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string, *uint, error) {
 	app := models.JobApplication{
 		Company:  analysis.Company,
 		JobTitle: analysis.JobTitle,
-		Status:   analysis.Status,
+		Status:   NormalizeStatus(analysis.Status),
 		Location: analysis.Location,
 		URL:      analysis.URL,
 		Notes:    analysis.Notes,
@@ -698,16 +744,22 @@ func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string
 	return "created", &app.ID, nil
 }
 
-// updateJobApplication advances an existing application's status, but only
-// ever forwards through statusOrder. Emails commonly arrive out of order (a
-// delayed "thanks for applying" after an interview invite), and this is what
-// stops a stale email dragging an application backwards.
-func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication, analysis *EmailAnalysis) (string, *uint, error) {
-	newOrder, newExists := statusOrder[analysis.Status]
-	currentOrder, currentExists := statusOrder[existing.Status]
+// statusAdvances reports whether next is a forward move from current through
+// statusOrder. Emails commonly arrive out of order (a delayed "thanks for
+// applying" after an interview invite), and this is what stops a stale email
+// dragging an application backwards. An unknown next status is never applied;
+// an unknown current status is treated as "anywhere before the start", so any
+// recognised status can take over from it.
+func statusAdvances(current, next string) bool {
+	nextOrder, nextExists := statusOrder[next]
+	currentOrder, currentExists := statusOrder[current]
+	return nextExists && (!currentExists || nextOrder > currentOrder)
+}
 
-	// Only update if the new status represents progression
-	if !newExists || (currentExists && newOrder <= currentOrder) {
+// updateJobApplication advances an existing application's status, but only
+// ever forwards (see statusAdvances).
+func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication, analysis *EmailAnalysis) (string, *uint, error) {
+	if !statusAdvances(existing.Status, analysis.Status) {
 		return "skipped", &existing.ID, nil
 	}
 
@@ -852,6 +904,18 @@ func StripMarkdownFence(raw string) string {
 // unparseable email billing on every sync forever. Three gives a transient
 // outage two further chances across subsequent syncs.
 const maxEmailAttempts = 3
+
+// fetchSlack pulls each sync's window edge back by this much so mail that was
+// delayed between fetch and filter (or index-registered late) is still caught
+// by the next window. Consumers pay for it with deliberate re-fetches, which
+// the ProcessedEmail dedup makes free.
+const fetchSlack = 30 * time.Second
+
+// maxRewindAge stops a stuck retry from pinning the window open forever. A
+// failed email is only rewound for while it is younger than this; past that it
+// has probably been deleted from the mailbox or fallen out of the provider's
+// returns, so re-fetching for it would never yield anything.
+const maxRewindAge = 7 * 24 * time.Hour
 
 // retryableFailure reports whether a previously recorded email should be
 // processed again. Only failures are retried, and only while they have

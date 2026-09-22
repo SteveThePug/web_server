@@ -8,9 +8,11 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 )
 
 // ID is the resolver for the id field.
@@ -23,12 +25,20 @@ func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model
 	if !IsAdminFromCtx(ctx) {
 		return nil, fmt.Errorf("admin access required")
 	}
+	// String! is non-null but not non-empty, and the columns are only
+	// `not null`, so "" stores happily and then never matches the email
+	// pipeline's LOWER(company) lookup — an orphan row no sync can advance.
+	jobTitle := strings.TrimSpace(input.JobTitle)
+	company := strings.TrimSpace(input.Company)
+	if jobTitle == "" || company == "" {
+		return nil, fmt.Errorf("jobTitle and company are required")
+	}
 	app := models.JobApplication{
-		JobTitle:  input.JobTitle,
-		Company:   input.Company,
+		JobTitle:  jobTitle,
+		Company:   company,
 		Location:  input.Location,
 		URL:       input.URL,
-		Status:    input.Status,
+		Status:    services.NormalizeStatus(input.Status),
 		Notes:     input.Notes,
 		AppliedAt: input.AppliedAt,
 	}
@@ -44,18 +54,25 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 		return nil, fmt.Errorf("admin access required")
 	}
 	// Partial update: every input field is a pointer so that "not supplied"
-	// is distinguishable from "set to empty". A nil field is left untouched;
-	// note this also means a nullable column can never be cleared back to
-	// null through this mutation.
+	// is distinguishable from "set to empty". A nil field is left untouched.
+	// An explicit "" on a nullable column does clear it — that is how the UI
+	// empties a wrong URL or stale notes — but the same value on a required
+	// column is rejected rather than blanking a live row.
 	var app models.JobApplication
 	if err := r.Store.DB.First(&app, id).Error; err != nil {
 		return nil, err
 	}
 	if input.JobTitle != nil {
-		app.JobTitle = *input.JobTitle
+		if strings.TrimSpace(*input.JobTitle) == "" {
+			return nil, fmt.Errorf("jobTitle cannot be empty")
+		}
+		app.JobTitle = strings.TrimSpace(*input.JobTitle)
 	}
 	if input.Company != nil {
-		app.Company = *input.Company
+		if strings.TrimSpace(*input.Company) == "" {
+			return nil, fmt.Errorf("company cannot be empty")
+		}
+		app.Company = strings.TrimSpace(*input.Company)
 	}
 	if input.Location != nil {
 		app.Location = input.Location
@@ -64,7 +81,7 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 		app.URL = input.URL
 	}
 	if input.Status != nil {
-		app.Status = *input.Status
+		app.Status = services.NormalizeStatus(*input.Status)
 	}
 	if input.Notes != nil {
 		app.Notes = input.Notes
@@ -100,7 +117,10 @@ func (r *queryResolver) JobApplications(ctx context.Context) ([]*models.JobAppli
 	// Find can populate a slice of pointers directly, avoiding the
 	// copy-to-pointers loop the other list resolvers need.
 	var apps []*models.JobApplication
-	if err := r.Store.DB.Order("created_at desc").Find(&apps).Error; err != nil {
+	// id is the tie-break: one sync loop inserts several rows inside the same
+	// timestamp, and Postgres gives no stable order for equal sort keys, so
+	// without it the list can reshuffle between two identical page loads.
+	if err := r.Store.DB.Order("created_at desc, id desc").Find(&apps).Error; err != nil {
 		return nil, err
 	}
 	return apps, nil
