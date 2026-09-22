@@ -44,8 +44,12 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM debian:bookworm-slim
 
+# wget is not just for humans: the compose healthcheck probes the server with
+# `wget -qO- http://localhost:8080/`, and without it in the image every probe
+# fails as "executable file not found" — Docker then marks the container
+# unhealthy and autoheal kills it in a ~90s restart loop.
 RUN apt-get update \
-    && apt-get install --yes ca-certificates \
+    && apt-get install --yes --no-install-recommends ca-certificates wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /backend
