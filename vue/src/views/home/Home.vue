@@ -10,7 +10,7 @@
  * The widgets do not fetch individually — they all read stores/homeData.js, which
  * issues one GraphQL query for the whole page.
  *
- * Note which variants are wired up: Intro2 and Gym2, not Intro/Gym.
+ * Note which variants are wired up: Intro3 and Gym2, not Intro/Intro2/Gym.
  */
 import Timer from "@/components/util/Timer.vue";
 import Time from "@/components/util/Time.vue";
@@ -18,7 +18,7 @@ import Radio from "@/components/util/Radio.vue";
 import Chat from "@/components/util/Chat.vue";
 import CommitHistory from "@/components/util/CommitHistory.vue";
 
-import Intro2 from "./Intro2.vue";
+import Intro3 from "./Intro3.vue";
 import Miku from "./Miku.vue";
 import Stamps from "./Stamps.vue";
 import Listening from "./Listening.vue";
@@ -50,7 +50,7 @@ import Bookmarks from "./Bookmarks.vue";
         />
       </div>
       <div class="page-a4 homeGrid relative bdr-1 border-quaternary">
-        <Intro2 class="intro cell" />
+        <Intro3 class="intro cell" />
         <Listening class="listening cell" />
         <Stamps class="stamps cell" />
         <Feed class="feed cell" />
