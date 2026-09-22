@@ -1,15 +1,19 @@
 <script setup>
 /**
  * The chat widget: message list, composer, file attach, admin delete and an
- * admins-only "private" mode. Drives stores/messages.js and is mounted in the
- * right-hand sidebar of views/home/Home.vue.
+ * admins-only "private" channel. Drives stores/messages.js and is mounted in
+ * the right-hand sidebar of views/home/Home.vue.
+ *
+ * Admins see two tabs. The socket carries both channels in one stream (the
+ * server only sends private messages to admin connections), so the tab is a
+ * view over `messages` and also decides whether what you send is private —
+ * you cannot post to a channel you are not looking at.
  *
  * Owns the socket lifecycle — connect() on mount, disconnect() on unmount — so
  * the socket exists only while the widget is on screen.
  */
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import Button from "@/components/input/Button.vue";
-import ToggleButton from "@/components/input/ToggleButton.vue";
 import { useMessagesStore } from "@/stores/messages";
 import { useAuthStore } from "@/stores/auth";
 import Header from "@/components/text/Header.vue";
@@ -17,13 +21,22 @@ import Link from "@/components/text/Link.vue";
 
 const messagesStore = useMessagesStore();
 const authStore = useAuthStore();
-const messages = computed(() => messagesStore.messages);
 const messageInput = ref("");
 const messagesContainer = ref(null);
 const messagesInner = ref(null);
 const fileInput = ref(null);
 const isAdmin = computed(() => !!authStore.user.admin);
-const sendPrivate = ref(false);
+
+const activeTab = ref("public");
+const isPrivateTab = computed(
+  () => isAdmin.value && activeTab.value === "private",
+);
+
+// The private tab is the only place private messages are shown, so the public
+// tab stays public even for an admin.
+const messages = computed(() =>
+  messagesStore.messages.filter((m) => !!m.private === isPrivateTab.value),
+);
 
 // Autoscroll only when the reader is already at the bottom: scrolling up to
 // read history must not be yanked back down by an incoming message.
@@ -63,11 +76,18 @@ watch(
   },
 );
 
+// A tab switch swaps the whole list, so start the new one at its newest message
+// rather than at whatever scroll offset the old one left behind.
+watch(activeTab, () => {
+  isNearBottom.value = true;
+  nextTick(scrollToBottom);
+});
+
 function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
   isNearBottom.value = true;
-  messagesStore.sendMessage(text, isAdmin.value && sendPrivate.value);
+  messagesStore.sendMessage(text, isPrivateTab.value);
   messageInput.value = "";
 }
 
@@ -76,8 +96,11 @@ function deleteMessage(id) {
 }
 
 // Admin status is fixed when the socket connects (from the auth cookies), so
-// reconnect after a login/logout to pick up or drop private messages.
-watch(isAdmin, () => {
+// reconnect after a login/logout to pick up or drop private messages. A
+// demoted admin must also be moved off the private tab, which no longer has
+// anything to show.
+watch(isAdmin, (admin) => {
+  if (!admin) activeTab.value = "public";
   if (!messagesStore.isConnected) return;
   messagesStore.disconnect();
   messagesStore.connect();
@@ -89,10 +112,7 @@ async function onFileSelected(e) {
   isNearBottom.value = true;
   // The private flag both routes the upload to /uploads/private/ and marks the
   // message itself private; the two must agree.
-  await messagesStore.uploadAndSendFile(
-    file,
-    isAdmin.value && sendPrivate.value,
-  );
+  await messagesStore.uploadAndSendFile(file, isPrivateTab.value);
   fileInput.value.value = "";
 }
 
@@ -183,7 +203,29 @@ onUnmounted(() => {
 
 <template>
   <div class="chat-root flex-col flex min-h-0">
-    <Header>Chat</Header>
+    <Header>{{ isPrivateTab ? "Private Chat" : "Chat" }}</Header>
+    <div v-if="isAdmin" class="flex gap-1 pt-1" role="tablist">
+      <button
+        type="button"
+        class="chat-tab flex-1"
+        role="tab"
+        :aria-selected="activeTab === 'public'"
+        :class="{ 'is-active': activeTab === 'public' }"
+        @click="activeTab = 'public'"
+      >
+        Public
+      </button>
+      <button
+        type="button"
+        class="chat-tab flex-1"
+        role="tab"
+        :aria-selected="activeTab === 'private'"
+        :class="{ 'is-active': activeTab === 'private' }"
+        @click="activeTab = 'private'"
+      >
+        🔒 Private
+      </button>
+    </div>
     <div
       ref="messagesContainer"
       class="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 min-w-0"
@@ -205,13 +247,6 @@ onUnmounted(() => {
           >
             ×
           </button>
-          <span
-            v-if="message.private"
-            class="text-tertiary"
-            title="Private: only admins can see this"
-            aria-label="Private message"
-            >🔒</span
-          >
           <span class="text-tertiary">{{ message.authorId }}:</span>
           <template
             v-for="(part, i) in parseMessageParts(message.text || '')"
@@ -258,7 +293,8 @@ onUnmounted(() => {
       <input
         v-model="messageInput"
         @keyup.enter="sendMessage"
-        aria-label="Chat message"
+        :aria-label="isPrivateTab ? 'Private chat message' : 'Chat message'"
+        :placeholder="isPrivateTab ? 'Admins only' : ''"
       />
       <input
         ref="fileInput"
@@ -266,19 +302,9 @@ onUnmounted(() => {
         class="hidden"
         @change="onFileSelected"
       />
-      <label
-        v-if="isAdmin"
-        class="flex items-center gap-2 py-1 text-sm text-secondary cursor-pointer"
-      >
-        <ToggleButton v-model="sendPrivate" />
-        <span>Private (admins only)</span>
-      </label>
       <div class="flex gap-2">
         <Button class="flex-1" @click="sendMessage">Send</Button>
-        <Button
-          v-if="authStore.user.admin"
-          class="flex-1"
-          @click="fileInput.click()"
+        <Button v-if="isAdmin" class="flex-1" @click="fileInput.click()"
           >Attach</Button
         >
         <Button v-if="!isNearBottom" class="flex-1" @click="goToBottom"
@@ -290,6 +316,28 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.chat-tab {
+  padding: 2px 6px;
+  color: var(--color-primary);
+  background-color: var(--color-link-bg);
+  border: 1px solid transparent;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+.chat-tab:hover {
+  border-color: var(--color-primary);
+}
+.chat-tab.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-tertiary);
+  background-color: var(--color-surface-tint);
+}
+
 @media (max-width: 850px) {
   .chat-root {
     max-height: none;
