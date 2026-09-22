@@ -52,9 +52,9 @@ const faces_string = faces.join("      ");
 
 <template>
   <nav class="flex flex-row w-full h-fit border border-primary bg-surface">
-    <RouterLink class="bdr-2 bg-surface" v-if="parentPath" :to="parentPath">
-      <span>UP</span>
-    </RouterLink>
+    <!-- <RouterLink class="bdr-2 bg-surface" v-if="parentPath" :to="parentPath"> -->
+    <!--   <span>UP</span> -->
+    <!-- </RouterLink> -->
     <Headline class="border flex-1 max-w-full">
       <code class="whitespace-pre">{{ faces_string }}</code>
     </Headline>
