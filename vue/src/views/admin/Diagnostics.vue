@@ -49,6 +49,15 @@ const blank = computed(() =>
   vars.value.filter((v) => !v.set),
 );
 
+// Traffic view: a filter over the log tail for "who is using my site" —
+// lines with a client IP (the formatter appends it only for real visitors
+// and error statuses). Skips the standard line numbers of JSON-array output.
+const trafficOnly = ref(true);
+const shownLines = computed(() => {
+  if (!trafficOnly.value) return lines.value;
+  return lines.value.filter((l) => /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(l.trim()) || l.includes("!!! SERVER ERROR") || l.includes(" !!"));
+});
+
 onMounted(() => {
   fetchConfig();
   fetchLogs();
@@ -92,12 +101,18 @@ onMounted(() => {
       messages, newest last.
     </p>
     <div class="log-controls">
+      <label class="hint toggle">
+        <input type="checkbox" v-model="trafficOnly" /> visitors only
+      </label>
       <Button :disabled="loadingLogs" @click="fetchLogs">
         {{ loadingLogs ? "Loading…" : "Refresh" }}
       </Button>
     </div>
     <p v-if="logsError" class="error">{{ logsError }}</p>
-    <pre v-else class="log-output">{{ lines.join("\n") }}</pre>
+    <p v-else-if="shownLines.length === 0" class="hint">
+      No {{ trafficOnly ? "visitor" : "" }} lines in the current tail.
+    </p>
+    <pre v-else class="log-output">{{ shownLines.join("\n") }}</pre>
   </div>
 </template>
 
@@ -137,6 +152,15 @@ td {
 .log-controls {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+}
+
+.toggle {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
 }
 
 .log-output {

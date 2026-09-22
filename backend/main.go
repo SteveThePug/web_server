@@ -43,7 +43,12 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	// Custom traffic formatter (services/traffic_log.go) instead of gin's
+	// default: quiets heartbeat subrequests, surfaces external visitors and
+	// server errors. Same writer pair as above.
+	r.Use(gin.LoggerWithFormatter(services.TrafficLogFormatter))
+	r.Use(gin.Recovery())
 
 	// Only the Docker network nginx sits on may set X-Forwarded-For. Without
 	// this pin any client could spoof its IP and defeat the per-IP login rate
