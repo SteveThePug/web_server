@@ -23,8 +23,8 @@ backend (8080)   ── Go API (GraphQL + REST)
 db (5432)        ── PostgreSQL 16
 icecast2 (8000)  ── Audio Streaming (Icecast2 + Liquidsoap)
 gitea (3000)     ── Self-Hosted Git
-quartz (8080)    ── Obsidian Notes Publisher (Quartz v4.4.0)
 silverbullet (3000) ── Obsidian Notes Editor (SilverBullet 2.11.0)
+silverbullet-public (3000) ── Public read-only notes site (same image, SB_READ_ONLY)
 silverbullet-git ── Commits/pushes notes edits to the notes repo
 python (8000)    ── Python API (FastAPI)
 hasura (8080)    ── Hasura GraphQL Engine (Docker profile: hasura)
@@ -46,7 +46,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 - Spotify integration (currently playing, recently played)
 - Steam integration (online status, recent games)
-- Obsidian note viewer via Quartz, editable from any browser via SilverBullet
+- Public Obsidian notes site via a read-only SilverBullet, editable from any browser via a second, admin-only SilverBullet
 - Live radio streaming via Icecast2 + Liquidsoap
 - Real-time chat over WebSockets with image/video uploads
 - Blog with admin panel (CRUD)
@@ -73,7 +73,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 | `/cv`          | Curriculum Vitae (printable)                       |
 | `/cv/jobs`     | Job application tracker (admin-only, hidden print) |
 | `/bookmarks`   | Bookmarks (database-backed, grouped by category)   |
-| `/notes/:path` | Obsidian note viewer (via Quartz, admin-only)      |
+| `/notes/:path` | Obsidian notes (read-only SilverBullet, public; `private/` excluded) |
 | `/sb/`         | Obsidian note editor (via SilverBullet, admin-only) |
 | `/shrines`     | Fan shrine index + individual shrines              |
 
@@ -184,16 +184,16 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | `/radio`   | icecast:8000 | Audio streaming                            |
 | `/gitea`   | gitea:3000   | Git service                                |
 | `/hasura`  | hasura:8080  | GraphQL console + WebSocket (admin-only)   |
-| `/notes`   | quartz:8080  | Obsidian notes (admin-only)                |
+| `/notes`   | silverbullet-public:3000 | Obsidian notes (public, read-only) |
 | `/sb`      | silverbullet:3000 | Obsidian notes editor (admin-only)    |
 | `/py`      | python:8000  | Python API (FastAPI; docs at `/py/docs`)   |
 | `/uploads` | local alias  | User-uploaded files                        |
 
-`/hasura` and `/notes` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
+`/hasura` and `/sb` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
 
 ### Deprecated Endpoints
 
-**Backend note API** (`GET /api/notes/*path`) - The backend has a REST endpoint that serves note files directly from the mounted Obsidian vault. This is superseded by the Quartz service which now handles note rendering at `/notes/`. The backend endpoint still exists in code but is no longer the primary note serving path.
+**Backend note API** (`GET /api/notes/*path`) - The backend has a REST endpoint that serves note files directly from the mounted Obsidian vault. This is superseded by the public SilverBullet instance which now handles note rendering at `/notes/`. The backend endpoint still exists in code but is no longer the primary note serving path.
 
 ## Setup
 
@@ -218,10 +218,10 @@ Create a `.env` file in the project root. All services read from this file.
 | `UPTIMEKUMA_PORT`                 | Uptime Kuma port (planned)                                                      |
 | `WALLABAG_HOST`                   | Wallabag hostname (planned)                                                     |
 | `WALLABAG_PORT`                   | Wallabag port (planned)                                                         |
-| `QUARTZ_HOST`                     | Quartz hostname (use `quartz` for Docker)                                       |
-| `QUARTZ_PORT`                     | Quartz port (typically `8080`)                                                  |
 | `SILVERBULLET_HOST`               | SilverBullet hostname (defaults to `silverbullet`)                              |
 | `SILVERBULLET_PORT`               | SilverBullet port (defaults to `3000`)                                          |
+| `SILVERBULLET_PUBLIC_HOST`        | Public notes SilverBullet hostname (defaults to `silverbullet-public`)          |
+| `SILVERBULLET_PUBLIC_PORT`        | Public notes SilverBullet port (defaults to `3000`)                             |
 | `SILVERBULLET_GIT_INTERVAL`       | Seconds between notes commit/push cycles (defaults to `300`)                    |
 | `GITEA_RUNNER_HOST`               | Gitea runner hostname                                                           |
 | `GITEA_RUNNER_NAME`               | Gitea runner display name                                                       |
@@ -274,9 +274,12 @@ Populate `LFS_JWT_SECRET`, `SECRET_KEY`, `INTERNAL_TOKEN`, `JWT_SECRET`, and the
 ### Obsidian Notes Setup
 
 1. Set `OBSIDIAN_DIR` in `.env` to the absolute path of your Obsidian vault on the host machine
-2. The vault is mounted read-only into the Quartz container at `/quartz/content`, and
-   read-write into SilverBullet at `/data`, which serves it as an editor at `/sb/`
-3. Quartz builds a static site from the vault on startup and serves it at `/notes/`
+2. The vault is mounted read-write into `silverbullet` at `/data`, which serves it as an
+   editor at `/sb/`, and read-only into `silverbullet-public`, which serves it publicly at
+   `/notes/` with `SB_READ_ONLY`
+3. `private/` and `templates/` (at any depth), and dot-folders such as `.git`, are kept off
+   `/notes/` by `SB_SPACE_IGNORE` **and** nginx deny blocks — the nginx blocks are the ones that
+   actually enforce it. See `DEPLOYMENT.md` ("Public notes privacy boundary")
 4. The backend also mounts the vault at `/backend/notes` (legacy, see deprecated endpoints above)
 
 ### SSL Certificates (Certbot)

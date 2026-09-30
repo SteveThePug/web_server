@@ -11,7 +11,7 @@
 # TEMPLATING
 #   Only the names in the envsubst allow-list in nginx/entrypoint.sh are
 #   substituted: DOMAIN, BACKEND_HOST/PORT/ENDPOINT, ICECAST_*, GITEA_*,
-#   HASURA_*, QUARTZ_*, PYTHON_*, UPTIMEKUMA_*, WALLABAG_*. Every other dollar
+#   HASURA_*, SILVERBULLET_*, PYTHON_*, UPTIMEKUMA_*, WALLABAG_*. Every other dollar
 #   token in this file is an nginx RUNTIME variable (host, remote_addr, uri,
 #   http_upgrade, proxy_add_x_forwarded_for, binary_remote_addr, request_uri,
 #   scheme, http_cookie) and must be left alone — that restriction is the whole
@@ -165,8 +165,8 @@ http {
         set $upstream_icecast http://$ICECAST_HOST:$ICECAST_PORT;
         set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
         set $upstream_hasura http://$HASURA_HOST:$HASURA_PORT;
-        set $upstream_quartz http://$QUARTZ_HOST:$QUARTZ_PORT;
         set $upstream_silverbullet http://$SILVERBULLET_HOST:$SILVERBULLET_PORT;
+        set $upstream_silverbullet_public http://$SILVERBULLET_PUBLIC_HOST:$SILVERBULLET_PUBLIC_PORT;
         set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
 
         root /etc/nginx/html;
@@ -205,7 +205,7 @@ http {
         # PRIVATE attachments (admin-only). Attachments on *private* chat
         # messages are written by the backend to /backend/uploads/private/ and
         # must not be readable by the public, so this subpath is put behind the
-        # same admin `auth_request` used for /hasura/ and /notes/. nginx picks
+        # same admin `auth_request` used for /hasura/ and /sb/. nginx picks
         # the LONGEST matching prefix location, so this block wins over the
         # public /uploads/ block below for /uploads/private/* regardless of
         # ordering. Same three hardening headers as the public block, because
@@ -279,8 +279,7 @@ http {
         #
         # 1. THE PREFIX-STRIP REWRITE
         #      rewrite ^<PREFIX>/(.*)$ /$1 break;
-        #    The public URL carries a prefix (/api, /radio, /gitea, /notes,
-        #    /py) but the upstream service serves its routes from /. The
+        #    The public URL carries a prefix (/api, /radio, /gitea, /py) but the upstream service serves its routes from /. The
         #    rewrite strips the prefix and `break` stops rewrite processing so
         #    the request stays in this location and goes to proxy_pass with the
         #    rewritten URI. (This is why proxy_pass here has no trailing path —
@@ -377,7 +376,7 @@ http {
         # surface — kick sources, change metadata — protected only by the
         # icecast admin password, and it was reachable from the public
         # internet through this proxy. Put it behind the same admin
-        # `auth_request` as /hasura/ and /notes/ so an admin session cookie is
+        # `auth_request` as /hasura/ and /sb/ so an admin session cookie is
         # required before the request ever reaches icecast. Longest-prefix
         # matching means this wins over /radio/ below; listener traffic
         # (/radio/$ICECAST_MOUNT, /radio/status.xsl) is untouched.
@@ -436,9 +435,55 @@ http {
             return 301 /notes/;
         }
 
+        # PUBLIC notes viewer: a second, read-only SilverBullet over the same
+        # vault the /sb/ editor edits. No auth_request — this is the public
+        # site. See the silverbullet-public service in docker-compose.yml.
+        #
+        # THE DENY BLOCKS BELOW ARE THE PRIVACY BOUNDARY, not decoration.
+        # SB_SPACE_IGNORE only hides paths from the file LIST. Everything else
+        # happily serves them (all verified against 2.11.0 with curl):
+        #   /notes/.fs/private/x.md    raw file, straight off disk
+        #   /notes/private/x           the page URL: the server pre-renders the
+        #                              note's content into the HTML shell
+        #   /notes/.fs/.git/...        the vault's whole git repo, i.e. every
+        #                              version of every private note ever
+        # and gitignore semantics mean `private/` in SB_SPACE_IGNORE hides a
+        # private/ folder at ANY depth from the list, so the block must too.
+        #
+        # 1. private/ or templates/ as any path segment, page URL or /.fs/.
+        #    ~* so Private/ is caught; (/|$) so the folder itself matches.
+        # 2. Any dot-segment below the first: .git, .obsidian, .env, ... The
+        #    first segment is exempt because that is where SilverBullet's own
+        #    endpoints live (/.fs, /.config, /.client, /.events ...). Nothing
+        #    the client legitimately loads has a dot-segment deeper than that.
+        # nginx matches against the normalised URI (percent-decoded, `..`
+        # resolved, slashes merged), so %2F, // or ../ tricks cannot slip past.
+        # Keep the folder list in step with SB_SPACE_IGNORE on
+        # silverbullet-public. 404 rather than 403 so the response does not
+        # confirm a private path exists.
+        location ~* ^/notes/(.*/)?(private|templates)(/|$) {
+            return 404;
+        }
+
+        location ~ ^/notes/.+/\. {
+            return 404;
+        }
+
+        # Revisions are read from the vault's own .git, i.e. the full history
+        # of every file INCLUDING private/ and anything ever deleted.
+        # SB_REVISIONS=disabled already turns this off upstream; this is the
+        # second lock in case that env var is ever dropped. ^~ so no regex
+        # location can take precedence.
+        location ^~ /notes/.revisions {
+            return 404;
+        }
+
+        # Same as /sb/: deliberately NO prefix-strip rewrite. The app is told
+        # its base path via SB_URL_PREFIX=/notes and builds its service worker
+        # scope and asset URLs from it; strip the prefix and it loads blank.
+        # Upgrade/Connection are for its live-update event stream.
         location /notes/ {
-            rewrite ^/notes/(.*)$ /$1 break;
-            proxy_pass $upstream_quartz;
+            proxy_pass $upstream_silverbullet_public;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
@@ -452,7 +497,7 @@ http {
             return 301 /sb/;
         }
 
-        # SilverBullet: the editor for the same vault quartz renders at /notes/.
+        # SilverBullet: the admin-only EDITOR for the vault /notes/ publishes.
         # Deliberately NO prefix-strip rewrite, unlike every other proxied app
         # here. SilverBullet is a PWA told its own base path via SB_URL_PREFIX=/sb,
         # and its service worker scope and asset URLs are built from that. Strip
@@ -506,11 +551,11 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # ---- Admin gate for /hasura/ and /notes/ ------------------------------
+        # ---- Admin gate (/hasura/, /sb/, /radio/admin/, /uploads/private/) ----
         # `auth_request` makes nginx fire a subrequest here before serving the
         # real one; a 2xx lets it through, 401/403 triggers error_page ->
         # @auth_denied -> redirect to the SPA login. This puts the Go backend's
-        # session cookie in front of two services that have no idea it exists.
+        # session cookie in front of services that have no idea it exists.
         #   internal;                 - unreachable from outside, subrequest only.
         #   proxy_pass_request_body off + Content-Length ""
         #                             - the subrequest must not replay the
