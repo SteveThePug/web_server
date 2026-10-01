@@ -30,7 +30,7 @@ Only three things are reachable from outside the Pi: nginx on 80/443, Gitea on
    |        |         |        |       |       |    |         as icecast2)
    v        v         v        v       v       v    |               |
 /api/    /radio/   /gitea/  /hasura/ /notes/  /py/  |               |
-backend  icecast2  gitea    hasura   quartz  python |               |
+backend  icecast2  gitea    hasura   sb-pub  python |               |
   |         ^                  |                    |               |
   |         |                  |                    |               |
   |         +------------------|--------------------|---------------+
@@ -54,8 +54,8 @@ backend  icecast2  gitea    hasura   quartz  python |               |
 | backend (Go) | `${BACKEND_HOST}` | `${BACKEND_PORT}` (8080) | `${BACKEND_ENDPOINT}` = `/api/` | no |
 | db (Postgres 16) | `${POSTGRES_HOST}` | 5432 | none | no |
 | hasura | `${HASURA_HOST}` | `${HASURA_PORT}` | `/hasura/` (admin-gated) | no |
-| quartz (notes) | `${QUARTZ_HOST}` | `${QUARTZ_PORT}` | `/notes/` (admin-gated) | no |
-| silverbullet | `${SILVERBULLET_HOST}` | `${SILVERBULLET_PORT}` | `/sb/` (admin-gated) | no |
+| silverbullet (editor) | `${SILVERBULLET_HOST}` | `${SILVERBULLET_PORT}` | `/sb/` (admin-gated) | no |
+| silverbullet-public (notes site) | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only) | no |
 | silverbullet-git | n/a | n/a | none (timer loop) | no |
 | python (FastAPI) | `${PYTHON_HOST}` | `${PYTHON_PORT}` | `/py/`, docs at `/py/docs` | no |
 | icecast2 + liquidsoap | `${ICECAST_HOST}` | `${ICECAST_PORT}` | `/radio/` | **harbor port only** |
@@ -72,17 +72,24 @@ in one step — never change one without the other.**
 
 - **Canonical host.** `http://` → `https://`, and apex → `www`. The SPA, the
   cookies and the CORS rules all assume `www.<DOMAIN>`.
-- **Prefix stripping.** `/api`, `/radio`, `/gitea`, `/notes`, `/py` are stripped
-  — but `/sb/` deliberately is NOT: SilverBullet is told its own base path via
+- **Prefix stripping.** `/api`, `/radio`, `/gitea`, `/py` are stripped
+  — but `/sb/` and `/notes/` deliberately are NOT: SilverBullet is told its own base path via
   `SB_URL_PREFIX` and builds its service-worker scope from it, so stripping the
   prefix serves a blank page with nothing in the log.
   by a `rewrite ... break` before proxying; each upstream serves from `/`.
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/hasura/`, `/notes/` and `/sb/` are protected by an `auth_request`
+- **Admin gate.** `/hasura/`, `/sb/`, `/radio/admin/` and `/uploads/private/` are protected by an `auth_request`
   subrequest to the backend's `/auth/validate-admin`; a failure redirects to the
-  SPA login. Neither service has any auth of its own at that path.
+  SPA login. None of these services has any auth of its own at that path.
+- **Public notes privacy boundary.** `/notes/` is public, and the only thing
+  keeping `private/` (and `templates/`, `.git`, `.obsidian`) off it is a pair of
+  nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
+  file *list*; direct `/.fs/` fetches and server-rendered page URLs still serve
+  them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
+  adding it to the deny regex in both nginx templates publishes it. See the
+  comment above `location /notes/` in `nginx.conf.template`.
 - **Uploads served directly.** `/uploads/` is an alias onto the shared `uploads`
   volume with `nosniff`, `Content-Disposition: inline` and a deny-all CSP, so
   user-supplied files cannot execute anything on our origin.
@@ -212,10 +219,10 @@ of deleting the directory:
 | `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
 | `./logs` | Backend logs | |
 | `./icecast2/fallback_music` | Radio fallback MP3s | Synced by `sync-secrets.sh`, not git |
-| `${OBSIDIAN_DIR}` | The Obsidian vault (a git clone of the notes repo) | Read-write to backend and silverbullet, **read-only** to quartz |
+| `${OBSIDIAN_DIR}` | The Obsidian vault (a git clone of the notes repo) | Read-write to backend and silverbullet, **read-only** to silverbullet-public |
 
 **Ephemeral:** anything else inside a container. Notably the Vue build, the
-rendered nginx/icecast/quartz configs, and the Gitea runner's downloaded binary
+rendered nginx/icecast configs, and the Gitea runner's downloaded binary
 are all regenerated.
 
 ---
@@ -230,7 +237,7 @@ Two distinct mechanisms read it, and services use both:
 - **`${VAR}` in `docker-compose.yml`** — substituted by the compose CLI at parse
   time. Builds container names, published ports, the Hasura database URL.
 - **`env_file: ./.env`** — injects the whole file into the container. Used by
-  nginx, backend, db, icecast2, quartz, certbot.
+  nginx, backend, db, icecast2, certbot.
 
 `gitea` instead receives explicit `GITEA__section__KEY` variables (Gitea's own
 convention for overriding `app.ini` keys), and `python` receives an explicit

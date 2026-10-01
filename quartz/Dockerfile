@@ -1,6 +1,12 @@
 # =============================================================================
 # Quartz image — builds the Obsidian notes site.
 #
+# STATUS: RETIRED (not live). /notes/ is now served by the read-only
+# silverbullet-public service; this directory is no longer referenced by
+# docker-compose.yml or nginx. Kept for reference / rollback: restoring it means
+# re-adding the service, the QUARTZ_* vars to nginx/entrypoint.sh's allow-list,
+# and pointing /notes/ back at it (with the prefix-strip rewrite Quartz needs).
+#
 # HOW THE SOURCE IS OBTAINED: Quartz is not an npm package you depend on, it is
 # an application you clone and configure. So the image `git clone`s the
 # upstream repo at build time, which is why `git` is installed. --depth 1

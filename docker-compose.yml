@@ -22,7 +22,7 @@
 #
 #   Required by this file: POSTGRES_{USER,PASSWORD,DB,PORT,HOST},
 #   POSTGRES_GITEA_DB, BACKEND_HOST, HASURA_HOST, HASURA_GRAPHQL_ADMIN_SECRET,
-#   ICECAST_HOST, QUARTZ_HOST, GITEA_HOST, OBSIDIAN_DIR, and the GITEA_*
+#   ICECAST_HOST, GITEA_HOST, OBSIDIAN_DIR, and the GITEA_*
 #   secrets. PYTHON_HOST/PYTHON_PORT/TFL_APP_KEY/LIQUIDSOAP_HARBOR_PORT have
 #   inline defaults.
 #
@@ -36,7 +36,7 @@
 # WHAT IS PUBLISHED TO THE HOST
 #   Only nginx (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
 #   port. Everything else is reachable only from inside app-network, which is
-#   why the backend, db, hasura, quartz and python have no `ports:` — they are
+#   why the backend, db, hasura, silverbullet and python have no `ports:` — they are
 #   deliberately not exposed and are reached through nginx.
 # =============================================================================
 
@@ -112,8 +112,8 @@ services:
       - icecast2
       - gitea
       - hasura
-      - quartz
       - silverbullet
+      - silverbullet-public
       - python
     networks:
       - app-network
@@ -178,7 +178,8 @@ services:
       # deploy. Gitignored (it is a credential).
       - ./backend/token/:/backend/token
       # The Obsidian vault on the host, read by the backend for the notes API.
-      # Same directory is mounted read-only into quartz to build the notes site.
+      # Same directory is mounted read-write into silverbullet (the editor) and
+      # read-only into silverbullet-public (the /notes/ site).
       - ${OBSIDIAN_DIR}:/backend/notes
       - ./logs:/backend/logs
       # Same named volume nginx serves at /uploads/ — backend writes, nginx reads.
@@ -304,33 +305,16 @@ services:
     ports:
       - "${LIQUIDSOAP_HARBOR_PORT:-8001}:${LIQUIDSOAP_HARBOR_PORT:-8001}"
 
-  # Quartz renders the Obsidian vault into the notes site at /notes/ (also
-  # behind the nginx admin auth_request). The vault is mounted READ-ONLY so a
-  # bug in Quartz can never write into the real notes. Quartz is run in
-  # `build --serve` watch mode, so edits to the vault on the host appear
-  # without restarting the container.
-  quartz:
-    build:
-      context: ./quartz
-      dockerfile: Dockerfile
-    container_name: "${QUARTZ_HOST}"
-    restart: always
-    networks:
-      - app-network
-    env_file:
-      - ./.env
-    volumes:
-      - ${OBSIDIAN_DIR}:/quartz/content:ro
-
-  # Browser-based editor for the SAME vault quartz renders read-only at /notes/.
-  # Quartz is a static site generator with no write path; this is what makes the
-  # notes editable from a phone. Proxied at /sb/ behind the same nginx admin gate.
+  # Browser-based editor for the vault, so notes are editable from a phone.
+  # Proxied at /sb/ behind the nginx admin gate. The public site at /notes/ is
+  # a SECOND, read-only SilverBullet over the same folder (silverbullet-public,
+  # below).
   #
   # SINGLE-SPACE MODE is auto-detected because the mounted folder is not empty
   # (the alternative, multi-space, expects /data to be a SilverBullet-owned
   # folder of spaces). In this mode it treats the mount as the space itself and
   # writes NO database or metadata files into the vault — the folder stays a
-  # plain directory of markdown that quartz and Obsidian still understand.
+  # plain directory of markdown that Obsidian still understands.
   silverbullet:
     image: ghcr.io/silverbulletmd/silverbullet:2.11.0
     container_name: "${SILVERBULLET_HOST:-silverbullet}"
@@ -344,12 +328,11 @@ services:
       SB_URL_PREFIX: /sb
       # Only .obsidian: it is editor config and plugin JS, not notes.
       #
-      # Deliberately NOT quartz's ignorePatterns, which also lists private/ and
-      # templates/. Those two settings answer different questions: quartz hides
-      # private/ because it must never be PUBLISHED, whereas this is the editor,
-      # reachable only through the admin gate, and hiding notes from it just
-      # stops you editing them. Quartz keeps its own ignorePatterns, so nothing
-      # here changes what /notes/ publishes.
+      # Deliberately NOT silverbullet-public's list, which also hides private/
+      # and templates/. The two answer different questions: the public
+      # instance hides private/ because it must never be PUBLISHED, whereas
+      # this is the editor, reachable only through the admin gate, and hiding
+      # notes from it just stops you editing them.
       #
       # MUST be newline separated: a comma separated list is accepted silently
       # and does nothing.
@@ -363,6 +346,59 @@ services:
       # SB_READ_ONLY: "true"
     volumes:
       - ${OBSIDIAN_DIR}:/data
+
+  # The PUBLIC notes site at /notes/ (replaced Quartz): the same SilverBullet
+  # image in read-only mode over the same vault, with no auth. Visitors get the
+  # full client — navigation, backlinks, live queries — but cannot write.
+  # Edits made in the /sb/ editor show up here live, since both watch one folder.
+  #
+  # KEEPING private/ PRIVATE takes three layers, because none is enough alone:
+  #   1. SB_SPACE_IGNORE     hides the paths from the file LIST, so they are
+  #                          never indexed, searched or shown. It does NOT stop
+  #                          a direct fetch of /.fs/private/x.md, nor the page
+  #                          URL /notes/private/x (server-rendered with the
+  #                          note's content), nor /.fs/.git/ — SilverBullet
+  #                          only applies it to listing (checked in 2.11.0).
+  #   2. nginx deny blocks   404 any private/ or templates/ segment and any
+  #                          nested dot-folder under /notes/; this is what
+  #                          actually closes those holes. Keep its folder list
+  #                          in step with the one below.
+  #   3. SB_REVISIONS        the default ("unmanaged") serves history from the
+  #                          vault's own .git, i.e. every version of every file
+  #                          including private/ and deleted ones. Disabled here,
+  #                          and nginx blocks /notes/.revisions as well.
+  #
+  # SB_READ_ONLY rejects writes server-side and also disables the shell and the
+  # /.proxy endpoint (otherwise an open fetch proxy). The :ro mount is a second
+  # lock on writes. It is flagged "legacy" upstream in favour of multi-space
+  # mode's per-space publish setting, which cannot exclude a folder and would
+  # mean migrating the editor too — revisit if single-space mode is removed.
+  #
+  # Keep the image tag in lockstep with the editor above.
+  silverbullet-public:
+    image: ghcr.io/silverbulletmd/silverbullet:2.11.0
+    container_name: "${SILVERBULLET_PUBLIC_HOST:-silverbullet-public}"
+    restart: always
+    networks:
+      - app-network
+    environment:
+      SB_PORT: "${SILVERBULLET_PUBLIC_PORT:-3000}"
+      # Same reason as the editor's SB_URL_PREFIX: nginx must not strip /notes/.
+      SB_URL_PREFIX: /notes
+      SB_READ_ONLY: "true"
+      SB_REVISIONS: disabled
+      # Newline separated (commas are silently ignored). Gitignore semantics,
+      # so these match at any depth. Must match the folder list in the
+      # /notes/ deny regex in BOTH nginx templates, or a new entry here is
+      # hidden from the list but still publicly fetchable.
+      SB_SPACE_IGNORE: |
+        private/
+        templates/
+        .obsidian
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - ${OBSIDIAN_DIR}:/data:ro
 
   # SilverBullet has no concept of git, so this commits and pushes what it
   # writes, and pulls what Obsidian pushes from elsewhere.
