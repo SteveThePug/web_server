@@ -54,7 +54,7 @@ function formatHours(minutes) {
         <div
           @click="nextGame"
           :key="game.appId"
-          class="flex flex-col items-center pt-2"
+          class="game flex flex-col items-center pt-2"
         >
           <img
             :src="game.headerImageUrl"
@@ -89,24 +89,30 @@ function formatHours(minutes) {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: scroll;
+  overflow: hidden;
+}
+
+/* Fit, don't scroll: the text keeps its natural height and the header image
+   shrinks into whatever is left of the widget's fixed height. It shrinks but
+   never grows (flex: 0 1 auto), so in the tall small-screen tab panel it stays
+   at its natural size next to the title instead of floating mid-box. */
+.game {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .game-img {
+  flex: 0 1 auto;
+  min-height: 0;
   width: 90%;
-  max-width: 300px;
+  max-width: 460px; /* Steam header images are 460x215 */
   height: auto;
+  object-fit: contain;
 }
 
 p {
+  flex-shrink: 0;
   width: 100%;
   margin: 0 auto;
-}
-
-@media (max-width: 850px) {
-  .steam-wrapper {
-    height: auto;
-    min-height: 120px;
-  }
 }
 </style>

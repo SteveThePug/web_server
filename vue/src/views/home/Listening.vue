@@ -72,7 +72,7 @@ onMounted(() => {
         <div
           @click="nextSong"
           :key="song.track.name"
-          class="flex flex-col items-center"
+          class="song flex flex-col items-center"
         >
           <img
             :src="song.track.album.images[0].url"
@@ -109,16 +109,45 @@ onMounted(() => {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+/* The cell's size is fixed by the home grid, so the content has to fit it
+   rather than scroll: the text keeps its natural height and the album art takes
+   whatever is left. Sizing the art by width instead (it is square) overflows
+   as soon as the cell is wider than it is tall or a title wraps. */
+.song {
+  height: 100%;
+  padding: 0.25rem;
+  box-sizing: border-box;
 }
 
 img {
-  width: 70%;
-  max-width: 100%;
-  height: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
 }
 p {
+  flex-shrink: 0;
   width: 100%;
   margin: 0 auto;
+  /* Two lines at most, so a long title can't squeeze the art down to nothing
+     in the narrow phone cell. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Phone: the cell is one narrow column, where four lines of text would leave
+   almost nothing for the art. */
+@media (max-width: 700px) {
+  p {
+    font-size: 0.875rem;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
 }
 </style>

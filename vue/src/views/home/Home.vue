@@ -7,6 +7,13 @@
  * class and the three breakpoints below (desktop / <=1360px tablet / <=700px
  * phone) re-draw the whole area map rather than moving elements around.
  *
+ * Below 1360px there is no room for the sidebars, so their widgets collapse
+ * into a single tabbed panel under the sheet. That is done purely in CSS — the
+ * tab bar only sets `data-tab` on the wrapper and the media query hides the
+ * other widgets — so every widget stays mounted exactly once at every width
+ * (Chat holds a WebSocket, Steam a rotation timer) and resizing across the
+ * breakpoint loses no state.
+ *
  * The widgets do not fetch individually — they all read stores/homeData.js, which
  * issues one GraphQL query for the whole page.
  *
@@ -30,11 +37,36 @@ import Gym2 from "./Gym2.vue";
 import Consumption from "./Consumption.vue";
 import Steam from "./Steam.vue";
 import Bookmarks from "./Bookmarks.vue";
+
+import { ref } from "vue";
+
+// Small-screen tab bar. `id` matches the [data-tab] selectors in the tablet
+// media query below.
+const TABS = [
+  { id: "chat", label: "Chat" },
+  { id: "bookmarks", label: "Bookmarks" },
+  { id: "commits", label: "Commits" },
+  { id: "steam", label: "Steam" },
+];
+const activeTab = ref("chat");
 </script>
 
 <template>
   <main class="justify-center flex flex-row w-full h-full overflow-x-hidden">
-    <div class="outerWrap flex flex-row">
+    <div class="outerWrap flex flex-row" :data-tab="activeTab">
+      <nav class="widget-tabs" aria-label="Widgets">
+        <button
+          v-for="tab in TABS"
+          :key="tab.id"
+          type="button"
+          class="widget-tab"
+          :class="{ 'is-active': activeTab === tab.id }"
+          :aria-pressed="activeTab === tab.id"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
       <div class="sidebar">
         <Time class="time-sidebar cell" />
         <Timer class="timer-sidebar cell" />
@@ -150,42 +182,87 @@ import Bookmarks from "./Bookmarks.vue";
   height: 15rem;
 }
 
-/* Tablet: sidebars stack below the sheet */
+/* Small-screen only; switched on in the tablet media query */
+.widget-tabs {
+  display: none;
+}
+
+.widget-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.25rem;
+  color: var(--color-primary);
+  background-color: var(--color-link-bg);
+  border: 2px solid var(--color-quaternary);
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+.widget-tab:hover {
+  border-color: var(--color-primary);
+}
+.widget-tab.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-tertiary);
+  background-color: var(--color-surface-tint);
+}
+
+/* Tablet: the sidebars collapse into one tabbed panel below the sheet */
 @media (max-width: 1360px) {
   .outerWrap {
     flex-direction: column;
     align-items: center;
     height: auto;
+    gap: 5px;
+    padding-bottom: 10px;
   }
 
+  /* Visual order is sheet, tab bar, selected widget — whatever the DOM order */
   .homeGrid {
-    order: -1;
+    order: -2;
     width: 95vw;
     height: 297mm;
     margin-inline: 0;
     box-sizing: border-box;
   }
 
-  .sidebar {
+  .widget-tabs {
+    order: -1;
+    display: flex;
+    gap: 5px;
     width: 95vw;
-    flex-direction: column;
-    align-items: center;
-    flex: unset;
-    justify-content: space-around;
+    margin-top: 5px;
   }
 
-  .commits-sidebar,
-  .steam-sidebar,
-  .bookmarks-sidebar {
-    width: 100%;
-    max-height: 300px;
+  /* The two sidebars stop being boxes, so their widgets become direct flex
+     children of .outerWrap and the one selected widget sits under the tabs. */
+  .sidebar {
+    display: contents;
   }
 
-  .chat-sidebar {
-    width: 100%;
-    min-height: 400px;
-    max-height: 800px;
-    height: 25vh;
+  /* One fixed panel size for every tab, so switching doesn't make the page
+     jump. The .outerWrap prefix is for specificity: it has to beat the
+     widgets' own scoped height rules (Steam's 54mm, Chat's 100%). */
+  .outerWrap .commits-sidebar,
+  .outerWrap .steam-sidebar,
+  .outerWrap .bookmarks-sidebar,
+  .outerWrap .chat-sidebar {
+    flex: none;
+    width: 95vw;
+    height: clamp(360px, 70vh, 640px);
+    max-height: none;
+  }
+
+  .outerWrap:not([data-tab="commits"]) .commits-sidebar,
+  .outerWrap:not([data-tab="steam"]) .steam-sidebar,
+  .outerWrap:not([data-tab="bookmarks"]) .bookmarks-sidebar,
+  .outerWrap:not([data-tab="chat"]) .chat-sidebar {
+    display: none;
   }
 
   .time-sidebar,
@@ -203,7 +280,9 @@ import Bookmarks from "./Bookmarks.vue";
     border-width: 0;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: repeat(11, 1fr);
-    height: 150vh;
+    /* The floor keeps the 11 rows usable on short phones, where 150vh alone
+       leaves the two-row Listening cell too small to show its album art. */
+    height: max(150vh, 1000px);
     grid-template-areas:
       "intro       intro       intro"
       "intro       intro       intro"
