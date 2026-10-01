@@ -1,0 +1,23 @@
+# STATUS: deprecated — not part of the stack. See ../README.md for how to bring
+# it back. Kept verbatim from docker-compose.yml, so it still relies on that
+# file's `db` service and `app-network`, and must be layered on top of it.
+services:
+  # Admin-only DB browser, reached at /hasura/. Console and dev mode are OFF in
+  # production (turned on by the dev override). It is additionally gated in
+  # nginx by an `auth_request` subrequest to the backend's /auth/validate-admin,
+  # so an admin cookie is required before the request ever reaches Hasura —
+  # the admin secret alone is not the only line of defence.
+  hasura:
+    image: hasura/graphql-engine:v2.44.0
+    container_name: "${HASURA_HOST}"
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - app-network
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+      HASURA_GRAPHQL_ADMIN_SECRET: "${HASURA_GRAPHQL_ADMIN_SECRET}"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+      HASURA_GRAPHQL_DEV_MODE: "false"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log, query-log"

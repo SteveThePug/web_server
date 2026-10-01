@@ -27,8 +27,6 @@ silverbullet (3000) ── Obsidian Notes Editor (SilverBullet 2.11.0)
 silverbullet-public (3000) ── Public read-only notes site (same image, SB_READ_ONLY)
 silverbullet-git ── Commits/pushes notes edits to the notes repo
 python (8000)    ── Python API (FastAPI)
-hasura (8080)    ── Hasura GraphQL Engine (Docker profile: hasura)
-autoheal         ── Auto-restart unhealthy containers
 certbot          ── SSL Certificate Management (disabled in dev)
 ```
 
@@ -57,11 +55,10 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Printable CV with role-specific sections
 - Job application tracker with status workflow and CSV export (admin-only, `/cv/jobs`)
 - Database-backed bookmarks grouped by category, managed via GraphQL (admin-only)
-- Hasura GraphQL console (admin-only)
-- Admin-gated routes: `/notes`, `/sb`, `/hasura` require admin JWT via Nginx `auth_request`
+- Admin-gated routes: `/notes`, `/sb` require admin JWT via Nginx `auth_request`
 - Landing page with animated stamps section
 - Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
-- Backend healthcheck with autoheal container for automatic recovery
+- Backend healthcheck (reported in `docker ps`; nothing restarts on it)
 
 ## Pages
 
@@ -183,13 +180,12 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | `/api`     | backend:8080 | API (rate limited: 30r/s)                  |
 | `/radio`   | icecast:8000 | Audio streaming                            |
 | `/gitea`   | gitea:3000   | Git service                                |
-| `/hasura`  | hasura:8080  | GraphQL console + WebSocket (admin-only)   |
 | `/notes`   | silverbullet-public:3000 | Obsidian notes (public, read-only) |
 | `/sb`      | silverbullet:3000 | Obsidian notes editor (admin-only)    |
 | `/py`      | python:8000  | Python API (FastAPI; docs at `/py/docs`)   |
 | `/uploads` | local alias  | User-uploaded files                        |
 
-`/hasura` and `/sb` are protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
+`/sb` is protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
 
 ### Deprecated Endpoints
 
@@ -249,9 +245,6 @@ Create a `.env` file in the project root. All services read from this file.
 | `CLAUDE_API_KEY`                  | Anthropic Claude API key                                                        |
 | `STEAM_API_KEY`                   | Steam Web API key                                                               |
 | `STEAM_ID`                        | Steam user ID                                                                   |
-| `HASURA_GRAPHQL_ADMIN_SECRET`     | Hasura admin secret                                                             |
-| `HASURA_HOST`                     | Hasura hostname (use `hasura` for Docker)                                       |
-| `HASURA_PORT`                     | Hasura port (typically `8080`)                                                  |
 | `PYTHON_HOST`                     | Python API hostname (defaults to `python`)                                      |
 | `PYTHON_PORT`                     | Python API port (defaults to `8000`)                                            |
 | `SEED_DB`                         | Set to `true` to seed test data on startup                                      |
@@ -319,7 +312,6 @@ This:
 - Disables certbot
 - Seeds the database with test data (`SEED_DB=true`)
 - Enables GraphQL playground and introspection
-- Enables Hasura console and dev mode
 
 Visit `http://localhost` to test.
 

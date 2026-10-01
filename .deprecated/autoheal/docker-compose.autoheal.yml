@@ -1,0 +1,27 @@
+# STATUS: deprecated — not part of the stack. See ../README.md for how to bring
+# it back. Kept verbatim from docker-compose.yml.
+services:
+  # Watchdog: docker itself marks a container `unhealthy` but never acts on it.
+  # autoheal polls the docker socket and restarts anything that goes unhealthy.
+  # AUTOHEAL_CONTAINER_LABEL=all means "watch every container that defines a
+  # healthcheck" (i.e. backend and python) rather than only labelled ones.
+  # It mounts the docker socket, which is effectively root on the host — that
+  # is the price of the feature. Because of that the image is pinned BY DIGEST,
+  # not by a floating tag: `:latest` meant any future push to Docker Hub would
+  # silently gain root on the Pi at the next `docker compose pull`/`up`. The
+  # digest below is a multi-arch index (it includes linux/arm64, which is what
+  # the Pi pulls) and was the content of `willfarrell/autoheal:latest` at the
+  # time of pinning. To bump it: pull the new tag, `docker image inspect
+  # willfarrell/autoheal:<tag> --format '{{index .RepoDigests 0}}'`, and paste
+  # the digest here — never go back to a bare tag.
+  # Deliberately NOT on app-network: it talks only to the socket.
+  autoheal:
+    image: willfarrell/autoheal@sha256:4ce976e9033b41426d44633295d6a08f9bc5929b27866352d91b31d4f6b26447
+    container_name: autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+      - AUTOHEAL_INTERVAL=30
+      - AUTOHEAL_START_PERIOD=60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

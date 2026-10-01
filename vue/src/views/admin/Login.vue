@@ -4,7 +4,7 @@
  *
  * The `?redirect=` is set by two different gates: the SPA router guard
  * (`meta.requiresAdmin`) and nginx's `auth_request` gate in front of the
- * proxied containers (/notes/, /sb/, /hasura/). The latter means the
+ * proxied containers (/notes/, /sb/). The latter means the
  * destination is frequently NOT a Vue route, so see goTo() below.
  *
  * auth.logIn() never throws — it swallows the error — so success is detected by
@@ -26,7 +26,7 @@ const errorMsg = ref("");
 
 // Send the browser to `dest`, choosing SPA navigation vs. a real page load.
 //
-// nginx bounces /notes/, /sb/ and /hasura/ here when the admin cookie is
+// nginx bounces /notes/ and /sb/ here when the admin cookie is
 // missing; those paths belong to other containers, so router.push() would just
 // match the catch-all 404 route and never leave the SPA. Resolving the path
 // first tells us which it is: the catch-all matches everything, so landing on

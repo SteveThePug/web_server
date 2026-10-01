@@ -67,7 +67,6 @@
 #   BACKEND_ENDPOINT               URL prefix the API is mounted at (e.g. /api)
 #   ICECAST_HOST / ICECAST_PORT    radio stream upstream
 #   GITEA_HOST / GITEA_PORT        git server upstream
-#   HASURA_HOST / HASURA_PORT      Hasura console upstream
 #   SILVERBULLET_HOST / _PORT      notes editor upstream (defaulted below)
 #   SILVERBULLET_PUBLIC_HOST / _PORT
 #                                  public notes viewer upstream (defaulted below)
@@ -96,7 +95,7 @@ export SILVERBULLET_PUBLIC_PORT="${SILVERBULLET_PUBLIC_PORT:-3000}"
 # The envsubst allow-list, defined once and reused by both full-config branches
 # so the two lists cannot drift apart. It MUST stay single-quoted here and be
 # passed as "$ENVSUBST_VARS" (one argument) below.
-ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${HASURA_HOST} ${HASURA_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${SILVERBULLET_PUBLIC_HOST} ${SILVERBULLET_PUBLIC_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
+ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${SILVERBULLET_PUBLIC_HOST} ${SILVERBULLET_PUBLIC_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
 
 # Check if DEV_MODE
 if [ "$DEV_MODE" = "true" ]; then

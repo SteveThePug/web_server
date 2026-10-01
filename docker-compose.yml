@@ -21,7 +21,7 @@
 #   app config from env_file.
 #
 #   Required by this file: POSTGRES_{USER,PASSWORD,DB,PORT,HOST},
-#   POSTGRES_GITEA_DB, BACKEND_HOST, HASURA_HOST, HASURA_GRAPHQL_ADMIN_SECRET,
+#   POSTGRES_GITEA_DB, BACKEND_HOST,
 #   ICECAST_HOST, GITEA_HOST, OBSIDIAN_DIR, and the GITEA_*
 #   secrets. PYTHON_HOST/PYTHON_PORT/TFL_APP_KEY/LIQUIDSOAP_HARBOR_PORT have
 #   inline defaults.
@@ -36,7 +36,7 @@
 # WHAT IS PUBLISHED TO THE HOST
 #   Only nginx (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
 #   port. Everything else is reachable only from inside app-network, which is
-#   why the backend, db, hasura, silverbullet and python have no `ports:` — they are
+#   why the backend, db, silverbullet and python have no `ports:` — they are
 #   deliberately not exposed and are reached through nginx.
 # =============================================================================
 
@@ -111,7 +111,6 @@ services:
       - backend
       - icecast2
       - gitea
-      - hasura
       - silverbullet
       - silverbullet-public
       - python
@@ -187,40 +186,17 @@ services:
       # Shared with icecast2, which plays these as the radio fallback playlist;
       # the backend reads them to report what is queued.
       - ./icecast2/fallback_music:/backend/fallback_music
-    # Reported to docker (and therefore to autoheal, below), which restarts the
-    # container after 3 consecutive failures ~90s apart. start_period gives the
-    # Go process 10s to bind before failures start counting.
+    # Reported to docker only: nothing acts on `unhealthy` since the autoheal
+    # watchdog was retired (.deprecated/autoheal), so this just shows up in
+    # `docker ps`. `restart: always` covers a crashed process, not a hung one.
+    # start_period gives the Go process 10s to bind before failures start
+    # counting.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  # Watchdog: docker itself marks a container `unhealthy` but never acts on it.
-  # autoheal polls the docker socket and restarts anything that goes unhealthy.
-  # AUTOHEAL_CONTAINER_LABEL=all means "watch every container that defines a
-  # healthcheck" (i.e. backend and python) rather than only labelled ones.
-  # It mounts the docker socket, which is effectively root on the host — that
-  # is the price of the feature. Because of that the image is pinned BY DIGEST,
-  # not by a floating tag: `:latest` meant any future push to Docker Hub would
-  # silently gain root on the Pi at the next `docker compose pull`/`up`. The
-  # digest below is a multi-arch index (it includes linux/arm64, which is what
-  # the Pi pulls) and was the content of `willfarrell/autoheal:latest` at the
-  # time of pinning. To bump it: pull the new tag, `docker image inspect
-  # willfarrell/autoheal:<tag> --format '{{index .RepoDigests 0}}'`, and paste
-  # the digest here — never go back to a bare tag.
-  # Deliberately NOT on app-network: it talks only to the socket.
-  autoheal:
-    image: willfarrell/autoheal@sha256:4ce976e9033b41426d44633295d6a08f9bc5929b27866352d91b31d4f6b26447
-    container_name: autoheal
-    restart: always
-    environment:
-      - AUTOHEAL_CONTAINER_LABEL=all
-      - AUTOHEAL_INTERVAL=30
-      - AUTOHEAL_START_PERIOD=60
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
   # Single Postgres instance serving TWO databases: ${POSTGRES_DB} for the Go
   # backend and ${POSTGRES_GITEA_DB} for Gitea. The postgres image only creates
@@ -258,26 +234,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 90s
-
-  # Admin-only DB browser, reached at /hasura/. Console and dev mode are OFF in
-  # production (turned on by the dev override). It is additionally gated in
-  # nginx by an `auth_request` subrequest to the backend's /auth/validate-admin,
-  # so an admin cookie is required before the request ever reaches Hasura —
-  # the admin secret alone is not the only line of defence.
-  hasura:
-    image: hasura/graphql-engine:v2.44.0
-    container_name: "${HASURA_HOST}"
-    restart: always
-    depends_on:
-      - db
-    networks:
-      - app-network
-    environment:
-      HASURA_GRAPHQL_DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-      HASURA_GRAPHQL_ADMIN_SECRET: "${HASURA_GRAPHQL_ADMIN_SECRET}"
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
-      HASURA_GRAPHQL_DEV_MODE: "false"
-      HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log, query-log"
 
   # Internet radio: one container running BOTH icecast2 (the streaming server
   # listeners connect to, proxied at /radio/) and liquidsoap (the source that

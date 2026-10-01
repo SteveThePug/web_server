@@ -11,7 +11,7 @@
 # TEMPLATING
 #   Only the names in the envsubst allow-list in nginx/entrypoint.sh are
 #   substituted: DOMAIN, BACKEND_HOST/PORT/ENDPOINT, ICECAST_*, GITEA_*,
-#   HASURA_*, SILVERBULLET_*, PYTHON_*, UPTIMEKUMA_*, WALLABAG_*. Every other dollar
+#   SILVERBULLET_*, PYTHON_*, UPTIMEKUMA_*, WALLABAG_*. Every other dollar
 #   token in this file is an nginx RUNTIME variable (host, remote_addr, uri,
 #   http_upgrade, proxy_add_x_forwarded_for, binary_remote_addr, request_uri,
 #   scheme, http_cookie) and must be left alone — that restriction is the whole
@@ -164,7 +164,6 @@ http {
         set $upstream_backend http://$BACKEND_HOST:$BACKEND_PORT;
         set $upstream_icecast http://$ICECAST_HOST:$ICECAST_PORT;
         set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
-        set $upstream_hasura http://$HASURA_HOST:$HASURA_PORT;
         set $upstream_silverbullet http://$SILVERBULLET_HOST:$SILVERBULLET_PORT;
         set $upstream_silverbullet_public http://$SILVERBULLET_PUBLIC_HOST:$SILVERBULLET_PUBLIC_PORT;
         set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
@@ -205,7 +204,7 @@ http {
         # PRIVATE attachments (admin-only). Attachments on *private* chat
         # messages are written by the backend to /backend/uploads/private/ and
         # must not be readable by the public, so this subpath is put behind the
-        # same admin `auth_request` used for /hasura/ and /sb/. nginx picks
+        # same admin `auth_request` used for /sb/. nginx picks
         # the LONGEST matching prefix location, so this block wins over the
         # public /uploads/ block below for /uploads/private/* regardless of
         # ordering. Same three hardening headers as the public block, because
@@ -376,7 +375,7 @@ http {
         # surface — kick sources, change metadata — protected only by the
         # icecast admin password, and it was reachable from the public
         # internet through this proxy. Put it behind the same admin
-        # `auth_request` as /hasura/ and /sb/ so an admin session cookie is
+        # `auth_request` as /sb/ so an admin session cookie is
         # required before the request ever reaches icecast. Longest-prefix
         # matching means this wins over /radio/ below; listener traffic
         # (/radio/$ICECAST_MOUNT, /radio/status.xsl) is untouched.
@@ -411,24 +410,6 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /hasura {
-            return 301 /hasura/;
-        }
-
-        location /hasura/ {
-            auth_request /internal/auth/admin-validate;
-            error_page 401 403 = @auth_denied;
-            rewrite ^/hasura/(.*)$ /$1 break;
-            proxy_pass $upstream_hasura;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
         }
 
         location /notes {
@@ -551,7 +532,7 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # ---- Admin gate (/hasura/, /sb/, /radio/admin/, /uploads/private/) ----
+        # ---- Admin gate (/sb/, /radio/admin/, /uploads/private/) ----
         # `auth_request` makes nginx fire a subrequest here before serving the
         # real one; a 2xx lets it through, 401/403 triggers error_page ->
         # @auth_denied -> redirect to the SPA login. This puts the Go backend's

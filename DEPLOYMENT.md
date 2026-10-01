@@ -29,13 +29,13 @@ Only three things are reachable from outside the Pi: nginx on 80/443, Gitea on
    ---------------------------------------------    |        (same container
    |        |         |        |       |       |    |         as icecast2)
    v        v         v        v       v       v    |               |
-/api/    /radio/   /gitea/  /hasura/ /notes/  /py/  |               |
-backend  icecast2  gitea    hasura   sb-pub  python |               |
-  |         ^                  |                    |               |
-  |         |                  |                    |               |
-  |         +------------------|--------------------|---------------+
-  |                            |                    |
-  +----------+-----------------+--------------------+
+/api/    /radio/   /gitea/  /sb/     /notes/  /py/  |               |
+backend  icecast2  gitea    sb       sb-pub  python |               |
+  |         ^                                       |               |
+  |         |                                       |               |
+  |         +---------------------------------------|---------------+
+  |                                                 |
+  +----------+--------------------------------------+
              v
           +------+
           |  db  |  postgres:16
@@ -43,7 +43,6 @@ backend  icecast2  gitea    hasura   sb-pub  python |               |
 
   vue      one-shot build container -> writes vue_dist volume -> nginx serves it
   certbot  no ports; shares ./certbot/conf and ./certbot/www with nginx
-  autoheal no network; watches the docker socket and restarts unhealthy containers
 ```
 
 ### Who listens where
@@ -53,7 +52,6 @@ backend  icecast2  gitea    hasura   sb-pub  python |               |
 | nginx | `nginx` | 80, 443 | — | **80, 443** |
 | backend (Go) | `${BACKEND_HOST}` | `${BACKEND_PORT}` (8080) | `${BACKEND_ENDPOINT}` = `/api/` | no |
 | db (Postgres 16) | `${POSTGRES_HOST}` | 5432 | none | no |
-| hasura | `${HASURA_HOST}` | `${HASURA_PORT}` | `/hasura/` (admin-gated) | no |
 | silverbullet (editor) | `${SILVERBULLET_HOST}` | `${SILVERBULLET_PORT}` | `/sb/` (admin-gated) | no |
 | silverbullet-public (notes site) | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only) | no |
 | silverbullet-git | n/a | n/a | none (timer loop) | no |
@@ -62,7 +60,6 @@ backend  icecast2  gitea    hasura   sb-pub  python |               |
 | gitea | `${GITEA_HOST}` | 3000, 2222 | `/gitea/` | **3000, 2222** |
 | vue | `vue` | 5173 (dev only) | `/` (dev only) | no |
 | certbot | `certbot` | — | — | no |
-| autoheal | `autoheal` | — | — | no |
 
 Container names come from `.env`, and nginx builds its upstreams from the same
 variables. **Renaming a `*_HOST` value renames the container and repoints nginx
@@ -80,7 +77,7 @@ in one step — never change one without the other.**
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/hasura/`, `/sb/`, `/radio/admin/` and `/uploads/private/` are protected by an `auth_request`
+- **Admin gate.** `/sb/`, `/radio/admin/` and `/uploads/private/` are protected by an `auth_request`
   subrequest to the backend's `/auth/validate-admin`; a failure redirects to the
   SPA login. None of these services has any auth of its own at that path.
 - **Public notes privacy boundary.** `/notes/` is public, and the only thing
@@ -139,7 +136,6 @@ The override layer changes five services and disables one:
   `:443` serve the whole site, no HSTS, no HTTP→HTTPS redirect.
 - **backend** — `DEV_MODE`, GraphQL playground and introspection on, a localhost
   Spotify redirect URI, and **`SEED_DB=true`**.
-- **hasura** — console and dev mode on.
 - **python** — `uvicorn --reload` with `python/app` bind-mounted.
 - **certbot** — put in the `disabled` profile, so it never starts. Let's Encrypt
   cannot validate localhost anyway.
@@ -235,7 +231,7 @@ All configuration lives in **`./.env`** at the repo root, which is gitignored.
 Two distinct mechanisms read it, and services use both:
 
 - **`${VAR}` in `docker-compose.yml`** — substituted by the compose CLI at parse
-  time. Builds container names, published ports, the Hasura database URL.
+  time. Builds container names and published ports.
 - **`env_file: ./.env`** — injects the whole file into the container. Used by
   nginx, backend, db, icecast2, certbot.
 
@@ -377,9 +373,10 @@ icecast source password. liquidsoap pre-empts the fallback playlist immediately
 silence. Adding MP3s to `icecast2/fallback_music/` is picked up live
 (`reload_mode="watch"`) with no restart.
 
-**Unhealthy containers** are restarted automatically by `autoheal`, which polls
-the docker socket every 30s. Only `backend` and `python` define healthchecks, so
-only they are covered.
+**Unhealthy containers are not restarted automatically.** `backend` and `python`
+define healthchecks, but the `autoheal` watchdog that acted on them was retired
+(`.deprecated/autoheal`), so `unhealthy` is only visible in `docker ps`.
+`restart: always` still brings back a container whose process exits.
 
 ---
 
@@ -405,5 +402,3 @@ Documented, not fixed — each would change deploy behaviour.
    today (neither contains whitespace) but a latent quoting bug.
 7. **`UPTIMEKUMA_*` and `WALLABAG_*` are substituted by nginx but no compose
    service provides them** — leftovers from removed services.
-8. **`autoheal` mounts the docker socket**, which is effectively root on the
-   host, and uses the `:latest` tag.

@@ -14,7 +14,6 @@
 #   - backend  : dev flags on, including database seeding.
 #   - nginx    : DEV_MODE=true, which makes its entrypoint render
 #                nginx_dev.conf.template and self-sign a localhost certificate.
-#   - hasura   : console and dev mode enabled so the GraphQL console is usable.
 #   - python   : uvicorn --reload with the app source bind-mounted.
 #   - certbot  : disabled entirely.
 #
@@ -68,10 +67,6 @@ services:
         ports:
             - 80:80
             - 443:443
-    hasura:
-        environment:
-            HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-            HASURA_GRAPHQL_DEV_MODE: "true"
     python:
         # Same command as the Dockerfile's CMD plus --reload, paired with the
         # source bind mount below so editing python/app/ restarts uvicorn.
