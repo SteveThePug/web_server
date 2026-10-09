@@ -10,15 +10,16 @@ type ClaudeConfig struct {
 	APIKey string
 }
 
-// InitClaude builds the shared Anthropic client. It is used in two places:
-// reading a rowing machine display from a photo (handlers.CreateRowing) and
-// classifying job-application emails (EmailSyncService.processEmail).
+// InitClaude builds the Anthropic client used to classify job-application
+// emails (EmailSyncService.processEmail). The other Claude caller, the rowing
+// photo reader, lives in the Python service and builds its own client from
+// the same CLAUDE_API_KEY.
 //
 // No validation happens here: with an empty or wrong API key construction
 // still succeeds and the failure only surfaces on the first request.
 func InitClaude(config *ClaudeConfig) *anthropic.Client {
 	// anthropic.NewClient returns a value, not a pointer, so take its address
-	// to share one client across every caller.
+	// so it can be handed around without copying.
 	client := anthropic.NewClient(option.WithAPIKey(config.APIKey))
 	return &client
 }

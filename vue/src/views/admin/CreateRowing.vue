@@ -1,7 +1,7 @@
 <script setup>
 /**
- * Admin form: upload photos of an erg monitor. The Go backend OCRs each image and
- * returns the parsed session, so this posts multipart/form-data to /api/rowing
+ * Admin form: upload photos of an erg monitor. The Go backend has each image read
+ * (by Claude, via the Python service) and returns the parsed session, so this posts multipart/form-data to /api/rowing
  * rather than using GraphQL. Uploads run in parallel and each file's row reports
  * its own outcome.
  *

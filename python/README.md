@@ -1,7 +1,8 @@
 # Python API service
 
 A small FastAPI app (`app/main.py`) served by uvicorn on port 8000 inside the
-`python` container. Most of it is one feature: **cheap Travelodge finder** —
+`python` container. It also hosts one internal route, the **rowing display
+reader** (see below). Most of it is one feature: **cheap Travelodge finder** —
 given a London location and dates it pulls live room prices from Travelodge and
 adds the cost of getting there from a chosen station on TfL, so you can rank
 hotels by what the night *actually* costs, not just the room.
@@ -12,9 +13,11 @@ hotels by what the night *actually* costs, not just the room.
 | --- | --- |
 | `app/main.py` | HTTP skin: request models/validation, response cache, one-at-a-time guard, NDJSON framing, route handlers |
 | `app/travelodge.py` | All the real work: upstream calls, caching, rate limiting, fare maths, the two search generators |
+| `app/rowing.py` | The Claude call that reads time and distance off a photo of a rowing machine display |
 | `app/__init__.py` | Empty; makes `app` a package so `app.main:app` resolves |
 
-`travelodge.py` never imports FastAPI and can be driven from a plain script.
+`travelodge.py` and `rowing.py` never import FastAPI and can be driven from a
+plain script.
 
 ## Endpoints
 
@@ -30,6 +33,7 @@ Paths below are as the service sees them; from a browser prefix everything with
 | POST | `/hotels/search` | Blocking search; returns once every shortlisted hotel is priced |
 | POST | `/hotels/search/stream` | Same search as NDJSON progress lines |
 | POST | `/hotels/scan/stream` | Cheapest night across a date range, NDJSON |
+| POST | `/internal/rowing/read` | **Internal.** Read a rowing display photo with Claude |
 
 Interactive schema: `/py/docs` (Swagger UI), `/py/openapi.json`.
 
@@ -59,6 +63,26 @@ already running and 502 on upstream failure.
 Only **one** live search or scan runs process-wide at a time (the TfL budget
 can't be shared), and identical requests are cached for 10 minutes.
 
+### Rowing display reader (internal)
+
+`POST /internal/rowing/read` takes `{"media_type": "image/jpeg", "data":
+"<base64>"}` and returns `{"timeMinutes", "timeSeconds", "distance"}` as read
+by Claude (`claude-haiku-4-5`). It is the image half of the Go backend's
+admin-only `POST /api/rowing`: the Go handler does the admin check, the EXIF
+date, the duplicate check, the sanity bounds and the insert, and calls this
+only once it has decided the paid call is worth making. Nothing here judges
+whether the numbers are plausible.
+
+It is the only route in this service that is **not public**, and it has no
+auth of its own, so two things keep it internal: nginx answers `/py/internal/`
+with a 404, and the route 404s any request carrying the `X-Real-IP` /
+`X-Forwarded-For` headers nginx adds to everything it proxies. The Go backend
+calls the container directly (`http://python:8000/...`) and sends neither.
+
+Errors: 502 with a fixed `detail` (`failed to process image`, `empty response
+from image processor`, `failed to parse image data`) that the Go handler
+relays to the admin; 503 if `CLAUDE_API_KEY` is unset.
+
 ## Behind nginx
 
 `nginx/nginx.conf.template` proxies `/py/` to this container and **strips the
@@ -73,8 +97,8 @@ braces version of the same thing. The internal deadlines in `travelodge.py`
 (200s for a search, 240s for a scan) exist to finish *before* that 300s cut, and
 return partial results with `summary.truncated = true` instead of dying.
 
-Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, and the
-optional `TFL_APP_KEY` (see below). Dev mode mounts `python/app` and runs
+Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
+`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the rowing reader. Dev mode mounts `python/app` and runs
 uvicorn with `--reload`.
 
 ## Running locally
@@ -96,7 +120,8 @@ uvicorn app.main:app --reload --port 8000
 # http://localhost:8000/docs   (no /py prefix when run directly)
 ```
 
-Dependencies are `fastapi`, `uvicorn[standard]` and `requests` — nothing else.
+Dependencies are `fastapi`, `uvicorn[standard]`, `requests` and `anthropic` —
+nothing else.
 
 ## How the pricing works
 

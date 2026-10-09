@@ -394,8 +394,11 @@ services:
   # OpenAPI/Swagger URLs (/py/docs) are correct even though the app's own
   # routes are written relative to /.
   # Note this service uses `environment:` with an explicit allow-list rather
-  # than `env_file: ./.env` — it only gets the three variables it needs and
-  # never sees the database password, Spotify secrets, or API keys.
+  # than `env_file: ./.env` — it only gets the variables it needs and never
+  # sees the database password, Spotify secrets, or the other API keys.
+  # CLAUDE_API_KEY is the one secret on the list: the rowing photo reader
+  # (POST /internal/rowing/read, called by the backend, blocked at nginx) makes
+  # the Claude call that used to live in the Go backend.
   python:
     build:
       context: ./python
@@ -408,6 +411,7 @@ services:
       - PYTHON_PORT=${PYTHON_PORT:-8000}
       - ROOT_PATH=/py
       - TFL_APP_KEY=${TFL_APP_KEY:-}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,os; urllib.request.urlopen(f\"http://localhost:{os.environ.get('PYTHON_PORT','8000')}/health\")"]
       interval: 30s

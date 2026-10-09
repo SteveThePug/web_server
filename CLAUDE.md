@@ -48,14 +48,14 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 
 **Frontend** (`vue/`): Vue 3 SPA with Vite, Tailwind CSS v4, Pinia stores, Vue Router. Built in a separate container; assets served through Nginx (production) or proxied to Vite dev server (dev mode).
 
-**Python API** (`python/`): FastAPI app served by uvicorn on port 8000. Nginx proxies `/py/` to it and strips the prefix, so routes in `python/app/main.py` are written relative to `/`. Swagger UI at `/py/docs`. Dev mode mounts `python/app` and runs uvicorn with `--reload`.
+**Python API** (`python/`): FastAPI app served by uvicorn on port 8000. Nginx proxies `/py/` to it and strips the prefix, so routes in `python/app/main.py` are written relative to `/`. Swagger UI at `/py/docs`. Dev mode mounts `python/app` and runs uvicorn with `--reload`. One route, `/internal/rowing/read` (the Claude call behind `POST /api/rowing`), is internal: the Go backend calls it directly over the Docker network and nginx 404s `/py/internal/`.
 
 **Nginx** (`nginx/`): Reverse proxy + SPA server. Config is templated (`nginx.conf.template`) and selected at runtime by `entrypoint.sh` based on `DEV_MODE` and certificate presence. Rate limiting on login (5/min), API (30/sec), uploads (5/min).
 
 ## Backend Structure
 
 - `main.go` — entry point: wires up DB, services, router
-- `handlers/store.go` — `Store` struct holds DB, SpotifyAuth, ClaudeClient, Auth, etc. Passed to all handlers
+- `handlers/store.go` — `Store` struct holds DB, SpotifyAuth, Auth, EmailSync, etc. Passed to all handlers
 - `handlers/handle_*.go` — REST handlers grouped by domain
 - `graph/schema/*.graphql` — GraphQL schema files (source of truth)
 - `graph/*.resolvers.go` — resolver implementations (one per schema file, `follow-schema` layout)
