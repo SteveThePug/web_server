@@ -13,10 +13,13 @@ Endpoints
   POST /hotels/search         blocking cheapest-Travelodge search
   POST /hotels/search/stream  same search, streamed as NDJSON
   POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
+  POST /internal/rowing/read  read a rowing display photo with Claude
+                              (Go backend only - not reachable through nginx)
 
 All the hotel work lives in `travelodge`; this module is the HTTP skin around
 it - request validation, a response cache, the one-search-at-a-time guard, and
-the NDJSON framing. Consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
+the NDJSON framing. The rowing reader lives in `rowing` and is the one route
+here that is not public: see the "Internal" section at the bottom. Consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
 CheapestNightPanel.vue, useHotelForm.js), which fetch these paths with the /py
 prefix. Field names in the models below are part of that contract.
 """
@@ -25,18 +28,18 @@ import json
 import re
 import threading
 from datetime import date, datetime, timedelta, timezone
-from typing import Optional
+from typing import Literal, Optional
 from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from . import travelodge
+from . import rowing, travelodge
 
 app = FastAPI(
     title="Python API",
-    version="0.3.0",
+    version="0.4.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
 )
@@ -640,3 +643,75 @@ def hotel_scan_stream(req: HotelScanRequest) -> StreamingResponse:
     as a final "error" line.
     """
     return _ndjson(_scan_events(req))
+
+
+# --------------------------------------------------------------------------- #
+# Internal: rowing display reader
+# --------------------------------------------------------------------------- #
+# 10MB of image (the Go handler's upload cap) once base64-encoded, rounded up.
+MAX_IMAGE_B64_CHARS = 14_000_000
+
+
+class RowingReadRequest(BaseModel):
+    """An image for Claude to read, as the Go backend sends it."""
+
+    # The types the Anthropic API accepts for an image block. The Go handler
+    # checks the same list first so the admin gets its friendlier 400.
+    media_type: Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
+    data: str = Field(..., min_length=1, max_length=MAX_IMAGE_B64_CHARS, description="Base64 image bytes")
+
+
+def _internal_only(request: Request) -> None:
+    """Refuse a request that arrived through nginx.
+
+    Every other route in this service is public, but this one spends a paid
+    Claude call per request and has no auth of its own - the admin check
+    happens in the Go backend, which calls this container directly over
+    app-network. Two layers keep the outside world off it, because either alone
+    is one config edit away from being lost:
+
+      1. nginx answers /py/internal/ with a 404 (both templates).
+      2. nginx stamps X-Real-IP and X-Forwarded-For on everything it proxies
+         here, and a client cannot make it omit them; the Go backend sends
+         neither. So their presence means the request came from outside.
+
+    404 rather than 403, so the route is indistinguishable from one that does
+    not exist.
+    """
+    if "x-real-ip" in request.headers or "x-forwarded-for" in request.headers:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
+@app.post(
+    "/internal/rowing/read",
+    response_model=rowing.RowingReading,
+    summary="Read time and distance off a rowing machine display",
+    description=(
+        "Internal to the Go backend's admin-only `POST /api/rowing`; not reachable through nginx. "
+        "Sends the image to Claude and returns the three numbers it read. No plausibility checking "
+        "happens here - the caller owns the sanity bounds."
+    ),
+    responses={
+        502: {"description": "Claude failed, or its reply was not the expected JSON"},
+        503: {"description": "CLAUDE_API_KEY is not set"},
+    },
+)
+def rowing_read(req: RowingReadRequest, request: Request) -> rowing.RowingReading:
+    """Read a rowing display photo.
+
+    A plain `def`, so FastAPI runs it in the threadpool and the blocking Claude
+    call does not stall the event loop the hotel streams are served from.
+
+    Raises:
+        HTTPException: 404 (came through nginx), 503 (no API key) or 502
+            (Claude failed or returned something unparseable). The 502 detail
+            is one of rowing.ReadError's fixed messages, which the Go handler
+            passes on to the admin verbatim.
+    """
+    _internal_only(request)
+    try:
+        return rowing.read_display(req.media_type, req.data)
+    except rowing.NotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e)) from None
+    except rowing.ReadError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from None

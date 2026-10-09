@@ -90,6 +90,8 @@ func main() {
 	spotifyAuth, spotifyClient := services.InitSpotifyAuth(&spotifyConfig)
 
 	// CLAUDE
+	// Only the email pipeline uses this client now; the rowing photo reader's
+	// Claude call moved to the Python service, which reads the same key.
 	claudeAPIKey := os.Getenv("CLAUDE_API_KEY")
 	claudeConfig := services.ClaudeConfig{APIKey: claudeAPIKey}
 	claudeClient := services.InitClaude(&claudeConfig)
@@ -113,6 +115,20 @@ func main() {
 
 	steamAPIKey := os.Getenv("STEAM_API_KEY")
 	steamID := os.Getenv("STEAM_ID")
+
+	// PYTHON SERVICE
+	// Called directly over the Docker network, not through nginx, for the
+	// rowing photo reader. The defaults mirror docker-compose.yml, where both
+	// variables are optional.
+	pythonHost := os.Getenv("PYTHON_HOST")
+	if pythonHost == "" {
+		pythonHost = "python"
+	}
+	pythonPort := os.Getenv("PYTHON_PORT")
+	if pythonPort == "" {
+		pythonPort = "8000"
+	}
+	pythonURL := fmt.Sprintf("http://%s:%s", pythonHost, pythonPort)
 
 	// EMAIL SYNC
 	// An unparseable EMAIL_SYNC_INTERVAL is silently ignored and the 30
@@ -144,7 +160,7 @@ func main() {
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, ClaudeClient: claudeClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.

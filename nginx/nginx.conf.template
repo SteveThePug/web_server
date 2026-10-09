@@ -519,6 +519,15 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
+        # /py/internal/: routes the Go backend calls directly over app-network
+        # (the rowing photo reader, which spends a paid Claude call and has no
+        # auth of its own). Never proxied. ^~ so no regex location can claim
+        # the path first. The Python side also refuses anything carrying the
+        # X-Real-IP / X-Forwarded-For headers set below, as a second layer.
+        location ^~ /py/internal/ {
+            return 404;
+        }
+
         location /py/ {
             limit_req zone=api burst=20 nodelay;
             # Hotel search blocks for up to a few minutes while it calls Travelodge and TfL

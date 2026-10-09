@@ -237,7 +237,8 @@ Two distinct mechanisms read it, and services use both:
 
 `gitea` instead receives explicit `GITEA__section__KEY` variables (Gitea's own
 convention for overriding `app.ini` keys), and `python` receives an explicit
-three-variable allow-list, so it never sees the database password or any API key.
+allow-list, so it never sees the database password or any API key other than
+the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY` for the rowing photo reader).
 
 **`.env` reaches the Pi via `./sync-secrets.sh`**, which syncs exactly two
 things between this checkout and `adamf@stppi.local:~/deploy/web_server`:

@@ -888,8 +888,8 @@ If isJobEmail is false, only include that field. No text, no markdown, no explan
 // a plain "```" otherwise. It is deliberately forgiving: unfenced input is
 // returned unchanged apart from surrounding whitespace.
 //
-// Shared with handlers.CreateRowing, which prompts for bare JSON in the same
-// way and gets the same fenced output.
+// python/app/rowing.py carries a port of this for the rowing photo reader,
+// which prompts for bare JSON in the same way and gets the same fenced output.
 func StripMarkdownFence(raw string) string {
 	raw = strings.TrimSpace(raw)
 	raw = strings.TrimPrefix(raw, "```json")

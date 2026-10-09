@@ -107,8 +107,9 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   recent mail (Microsoft Graph *or* a hand-rolled IMAP client), keyword-filter
   it, ask Claude to extract structured data, create or advance a
   `JobApplication`. Runs on a timer and can be triggered by an admin.
-- **claude.go** — the shared Anthropic client, used by the email pipeline and
-  by the rowing photo reader.
+- **claude.go** — the Anthropic client, used by the email pipeline. (The
+  rowing photo reader's Claude call lives in the Python service; `POST /rowing`
+  reaches it directly at `http://$PYTHON_HOST:$PYTHON_PORT/internal/rowing/read`.)
 - **notes.go** — path-traversal-safe file lookup for the notes directory.
 - **seed.go** — dev-only test data. Creates an admin with the password
   `password`, so it must never run in production (`SEED_DB=true` is set only
@@ -150,8 +151,8 @@ generated struct rather than the model you expected.
   are benign (at worst a duplicate upstream fetch), but do not add a field
   there that would be unsafe to tear.
 - **Claude output is parsed as JSON** after stripping a possible markdown code
-  fence — via the shared `services.StripMarkdownFence`, used by both
-  `handle_rowing.go` and `email_sync.go`.
+  fence — `services.StripMarkdownFence` in `email_sync.go`, with a port of it
+  in `python/app/rowing.py` for the rowing photo reader.
 - **The email pipeline retries a failure up to `maxEmailAttempts` (3) times.**
   A failed email is recorded with action `"error"` and an attempt counter;
   while it has attempts left the next sync reprocesses it and updates the same
@@ -180,7 +181,8 @@ generated struct rather than the model you expected.
 | `SEED_DB` | seed dev test data (never in production) |
 | `GQL_INTROSPECTION` / `GQL_PLAYGROUND` | dev-only GraphQL extras |
 | `SPOTIFY_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` / `SPOTIFY_AUTH_STATE` | Spotify OAuth |
-| `CLAUDE_API_KEY` | Anthropic API |
+| `CLAUDE_API_KEY` | Anthropic API (email pipeline; the python service reads it too) |
+| `PYTHON_HOST` / `PYTHON_PORT` | Python service, for the rowing photo reader (default `python:8000`) |
 | `GITEA_HOST` / `GITEA_PORT` | Gitea activity feed |
 | `STEAM_API_KEY` / `STEAM_ID` | Steam presence |
 | `EMAIL_SYNC_ENABLED` / `EMAIL_BACKEND` / `EMAIL_SYNC_INTERVAL` | email pipeline (`graph` or `imap`) |

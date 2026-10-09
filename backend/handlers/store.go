@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"adam-french.co.uk/backend/services"
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"gorm.io/gorm"
@@ -30,11 +29,15 @@ type Store struct {
 	DB            *gorm.DB
 	SpotifyAuth   *spotifyauth.Authenticator
 	SpotifyClient *spotify.Client
-	ClaudeClient  *anthropic.Client
 	Auth          *services.Auth
 	Notes         *services.Notes
 	LoginLimiter  *services.RateLimiter
 	EmailSync     *services.EmailSyncService
+
+	// Base URL of the Python service on the Docker network, no trailing
+	// slash. Used for the one call that bypasses nginx: reading a rowing
+	// display photo (see handle_rowing.go).
+	PythonURL string
 
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can
