@@ -6,8 +6,11 @@
 # WHAT IT DOES
 #   nginx.conf is not shipped in the image. Instead three *templates* are baked
 #   in (see nginx/Dockerfile) and this script renders exactly one of them to
-#   /etc/nginx/nginx.conf before starting nginx in the foreground. In dev it
-#   also renders the shared server-block partial the dev template includes.
+#   /etc/nginx/nginx.conf before starting nginx in the foreground. It also
+#   renders the PARTIALS those templates `include`: the proxy route table
+#   shared by production and dev (nginx_routes.conf, every boot path) and, in
+#   dev only, the body shared by the two dev server blocks
+#   (nginx_dev_common.conf). See RENDERED FILES below.
 #   After nginx starts, a background watcher handles certificates appearing or
 #   being renewed — see CERTIFICATE WATCHER at the bottom of this file.
 #
@@ -46,6 +49,19 @@
 #        production config, validates it and reloads nginx in place.
 #   Step (c) IS automatic now. A first deploy on a new domain no longer needs a
 #   manual `docker compose restart nginx`; a restart remains a valid fallback.
+#
+# RENDERED FILES (template in the image -> path nginx reads)
+#   nginx.conf.template | nginx_dev.conf.template | nginx_setup.conf.template
+#                                   -> /etc/nginx/nginx.conf      (one of three)
+#   nginx_routes.conf.template      -> /etc/nginx/nginx_routes.conf
+#        The reverse-proxy locations common to production and dev. Included
+#        by nginx.conf.template directly and by nginx_dev_common.conf. This is
+#        where a new proxied route goes.
+#   nginx_dev_common.conf.template  -> /etc/nginx/nginx_dev_common.conf
+#        Dev only: included by both server blocks of nginx_dev.conf.template.
+#   The `include` directives name those rendered paths literally, so a partial
+#   must be written BEFORE anything runs nginx (or `nginx -t`) against a config
+#   that includes it.
 #
 # THE envsubst TEMPLATING PATTERN
 #   The templates are plain nginx configs containing $VARIABLES. Two different
@@ -93,9 +109,26 @@ export SILVERBULLET_PUBLIC_HOST="${SILVERBULLET_PUBLIC_HOST:-silverbullet-public
 export SILVERBULLET_PUBLIC_PORT="${SILVERBULLET_PUBLIC_PORT:-3000}"
 
 # The envsubst allow-list, defined once and reused by both full-config branches
-# so the two lists cannot drift apart. It MUST stay single-quoted here and be
-# passed as "$ENVSUBST_VARS" (one argument) below.
+# and by every partial, so the lists cannot drift apart. It MUST stay
+# single-quoted here and be passed as "$ENVSUBST_VARS" (one argument) below.
 ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${SILVERBULLET_PUBLIC_HOST} ${SILVERBULLET_PUBLIC_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
+
+# Render the shared proxy route table. Done ONCE, here, ahead of the three-way
+# decision, rather than inside each branch:
+#   - dev and production both include it, so both need it before nginx starts;
+#   - the setup branch does not include it, but the certificate watcher at the
+#     bottom of this file later switches setup -> production by validating a
+#     candidate production config with `nginx -t`, and that candidate includes
+#     this path. Having it already on disk means the watcher has nothing extra
+#     to render and no ordering to get wrong.
+# It is safe to write straight to the live path (no temp file + validate, as
+# the watcher does for nginx.conf): this runs before nginx has started, and
+# its content depends only on the image's template and the container's
+# environment, neither of which can change while the container lives — so
+# there is never a newer version to swap in under a running nginx.
+envsubst "$ENVSUBST_VARS" \
+  </etc/nginx/nginx_routes.conf.template \
+  >/etc/nginx/nginx_routes.conf
 
 # Check if DEV_MODE
 if [ "$DEV_MODE" = "true" ]; then
@@ -112,7 +145,8 @@ if [ "$DEV_MODE" = "true" ]; then
   fi
   # In dev mode, so use nginx_dev.conf.template. Its two server blocks both
   # `include /etc/nginx/nginx_dev_common.conf`, so the shared partial has to be
-  # rendered through the SAME allow-list, into exactly that path, first.
+  # rendered through the SAME allow-list, into exactly that path, first. (That
+  # partial in turn includes nginx_routes.conf, rendered above.)
   envsubst "$ENVSUBST_VARS" \
     </etc/nginx/nginx_dev_common.conf.template \
     >/etc/nginx/nginx_dev_common.conf
@@ -122,7 +156,8 @@ if [ "$DEV_MODE" = "true" ]; then
   CONFIG_MODE=dev
 elif [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
   echo "Certificates found. Using production nginx config."
-  # In production with certificates already existing, so use nginx.conf.template
+  # In production with certificates already existing, so use nginx.conf.template.
+  # It includes nginx_routes.conf, rendered above.
   envsubst "$ENVSUBST_VARS" \
     </etc/nginx/nginx.conf.template \
     >/etc/nginx/nginx.conf
@@ -130,7 +165,9 @@ elif [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencr
 else
   echo "Certificates NOT found. Using setup nginx config."
   # In production with no certificates, so use nginx_setup.conf.template and will need restart after generation
-  # Only ${DOMAIN} is substituted: the setup config has no upstreams at all.
+  # Only ${DOMAIN} is substituted: the setup config has no upstreams at all
+  # (and does not include nginx_routes.conf — that file is on disk only so the
+  # certificate watcher can switch to the production config later).
   envsubst '${DOMAIN}' </etc/nginx/nginx_setup.conf.template >/etc/nginx/nginx.conf
   CONFIG_MODE=setup
 fi
@@ -202,6 +239,12 @@ CERT_WATCH_INTERVAL="${CERT_WATCH_INTERVAL:-60}"
 
 # Render the production template to a temp file, validate it, and only then
 # install it. Returns non-zero (installing nothing) if either step fails.
+# The candidate `include`s /etc/nginx/nginx_routes.conf by absolute path, so
+# `nginx -t` here validates the shared route table too; that file was rendered
+# once at the top of this script and is deliberately NOT re-rendered here (it
+# cannot have changed — see the comment where it is rendered — and rewriting a
+# file the running nginx may be about to re-read would only add a window in
+# which it is truncated).
 render_prod_config() {
   _candidate=/tmp/nginx.conf.candidate
   envsubst "$ENVSUBST_VARS" </etc/nginx/nginx.conf.template >"$_candidate" 2>/dev/null || return 1

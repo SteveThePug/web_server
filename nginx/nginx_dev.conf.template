@@ -11,8 +11,7 @@
 #     for Vite's HMR websocket, not for the app.
 #   - No HTTP->HTTPS redirect and no apex->www redirect: BOTH :80 and :443
 #     serve the full site, so http://localhost just works. The two server
-#     blocks are therefore near-identical copies of each other (see the
-#     duplication note in DEPLOYMENT.md).
+#     blocks therefore share one body, nginx_dev_common.conf.template.
 #   - TLS uses the self-signed /etc/letsencrypt/live/localhost/ certificate that
 #     the entrypoint generates, not a Let's Encrypt one. Browsers will warn.
 #   - No HSTS or other security headers — HSTS on localhost would poison the
@@ -26,10 +25,13 @@
 #   Same envsubst allow-list as production. Every other dollar token is an
 #   nginx runtime variable and must survive substitution untouched.
 #
-# For the rate-limit reasoning, the prefix-strip rewrite, the four forwarding
-# headers, the websocket upgrade block and the auth_request admin gate, see the
-# fully-annotated equivalents in nginx.conf.template — the mechanics here are
-# identical.
+# INCLUDE CHAIN
+#   this file -> nginx_dev_common.conf (once per server block: the dev-only
+#   /uploads/ and `/` locations) -> nginx_routes.conf (the proxy route table
+#   shared with production). The prefix-strip rewrite, the four forwarding
+#   headers, the websocket upgrade block and the auth_request admin gate are
+#   annotated in nginx_routes.conf.template; the rate-limit reasoning is in
+#   nginx.conf.template.
 # =============================================================================
 events {
     worker_connections  1024;
@@ -46,6 +48,10 @@ http {
 
     client_max_body_size 50M;
 
+    # These four zones are referenced by limit_req lines in the SHARED
+    # nginx_routes.conf.template, so they must exist here with the same names
+    # as in nginx.conf.template or nginx refuses to load the config. Rates are
+    # kept equal to production so a limit that would bite there bites here too.
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
     limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
     limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/m;

@@ -1,20 +1,170 @@
-name: Deploy with Docker Compose
+# =============================================================================
+# deploy.yaml — test every push; deploy pushes to main that pass.
+#
+# TWO JOBS
+#   test    runs on every push, to any branch: `go vet` + `go test` for the
+#           backend and pytest for the Python service. These are the same
+#           checks as `make check-backend` and `make check-python`.
+#   deploy  runs only for refs/heads/main, and only if `test` passed
+#           (`needs: test`). Before this gate existed every push to main went
+#           straight to the live site.
+#
+# WHERE THIS RUNS, AND WHAT THAT RULES OUT
+#   A self-hosted act_runner on the Pi itself, in HOST mode (see
+#   gitea-runner/run.sh): steps are shell commands on the Pi, not in a job
+#   container. So:
+#   - No host toolchains are assumed. The Pi is known to have git and docker
+#     and nothing else; Go and Python run inside `docker run` containers
+#     pinned to the same base images as backend/Dockerfile (golang:1.26) and
+#     python/Dockerfile (python:3.12-slim). Bump them together.
+#   - No `actions/checkout`. It is a JavaScript action and would need Node on
+#     the host. The source is fetched with plain git instead, from the same
+#     local Gitea SSH remote the deploy step has always used.
+#
+# THE LIVE DIRECTORY IS NOT TOUCHED UNTIL TESTS PASS
+#   The site runs out of /home/adamf/deploy/web_server. The test job never
+#   goes near it: it fetches into a separate bare cache repo and exports the
+#   pushed commit to a scratch directory. Only the deploy job, after `test`
+#   is green, does the `git reset --hard` there.
+#
+# NOT TESTED HERE: THE VUE BUILD
+#   Deliberately skipped. `docker compose up --build` in the deploy job
+#   already runs the full frontend build (wasm-pack + vite) while building the
+#   vue image, and a failed image build aborts `up` BEFORE any container is
+#   replaced, so the old site keeps serving. Building it a second time here
+#   would cost the Pi several minutes per push to learn nothing new. The same
+#   reasoning does not hold for Go and Python: their images build fine with
+#   failing tests, which is exactly why those are gated here.
+#
+# NO pull_request TRIGGER
+#   `push` with no branch filter already covers every branch, including the
+#   head branch of any PR in this repo, so adding pull_request would run the
+#   suite twice per push on a machine with little CPU to spare.
+# =============================================================================
+name: Test and deploy
 
 on:
     push:
-        branches: [main]
 
 jobs:
+    test:
+        runs-on: self-hosted
+        env:
+            # The commit and ref this push delivered. Passed through env rather
+            # than interpolated into the scripts so a branch name can never be
+            # parsed as shell.
+            SHA: ${{ github.sha }}
+            REF: ${{ github.ref }}
+            REMOTE: ssh://git@localhost:2222/adamf/web_server.git
+            GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+            # Bare repo kept between runs so each fetch is incremental (the
+            # history is ~140MB; a fresh clone per push would be slow on the
+            # Pi's SD card). Lives outside the deploy directory on purpose.
+            CACHE: /home/adamf/.cache/web_server-ci/repo.git
+            # This run's source tree, exported from the cache and removed in
+            # the last step. Keyed by commit so two runs cannot share a tree.
+            SRC: /home/adamf/.cache/web_server-ci/src-${{ github.sha }}
+        steps:
+            - name: Export the pushed commit to a scratch directory
+              shell: bash
+              run: |
+                  set -eu
+                  mkdir -p "$(dirname "$CACHE")"
+                  [ -d "$CACHE" ] || git init --quiet --bare "$CACHE"
+                  # Fetch the pushed ref, then export the exact pushed commit.
+                  # Using $SHA rather than FETCH_HEAD means that if the branch
+                  # has moved on since this run was queued we still test the
+                  # commit this run is about, not a newer one.
+                  git --git-dir="$CACHE" fetch --quiet --no-tags "$REMOTE" "$REF"
+                  rm -rf "$SRC"
+                  mkdir -p "$SRC"
+                  # `git archive` gives a clean tree of tracked files only: no
+                  # .git, and nothing left over from an earlier run.
+                  git --git-dir="$CACHE" archive --format=tar "$SHA" | tar -x -C "$SRC"
+                  # Do not rely on the shell having pipefail: if the archive
+                  # half failed, make sure that is noticed here.
+                  test -f "$SRC/backend/go.mod"
+                  test -f "$SRC/python/requirements-dev.txt"
+                  echo "Exported $SHA ($REF) to $SRC"
+
+            # The whole repo is mounted, not just backend/, because
+            # services/env_manager_test.go reads ../../.env.example to check
+            # it against env_registry.json. Read-only: tests write only to
+            # t.TempDir(), and a read-only mount means the container (root)
+            # cannot leave root-owned files in $SRC that the clean-up step,
+            # running as the runner user, could not delete.
+            #
+            # The two named volumes are the Go module cache and build cache.
+            # Without them every run would re-download every dependency and
+            # recompile gorm, gin and gqlgen from scratch — minutes on a Pi.
+            # They survive `docker image prune` and the weekly maintenance
+            # job; `docker volume rm web_server_ci_gomod web_server_ci_gobuild`
+            # resets them if they ever go bad.
+            - name: Backend - go vet and go test
+              shell: bash
+              run: |
+                  set -eu
+                  docker run --rm \
+                      -v "$SRC":/src:ro \
+                      -w /src/backend \
+                      -v web_server_ci_gomod:/go/pkg/mod \
+                      -v web_server_ci_gobuild:/root/.cache/go-build \
+                      golang:1.26 \
+                      sh -c 'go vet ./... && go test ./...'
+
+            # requirements-dev.txt pulls in requirements.txt plus pytest. The
+            # install is repeated every run (the container is thrown away) but
+            # the pip cache volume means it is unpacking cached wheels, not
+            # downloading. Read-only source for the same reason as above, so
+            # bytecode and the pytest cache are switched off rather than left
+            # to fail noisily.
+            - name: Python - pytest
+              shell: bash
+              run: |
+                  set -eu
+                  docker run --rm \
+                      -v "$SRC":/src:ro \
+                      -w /src/python \
+                      -v web_server_ci_pip:/root/.cache/pip \
+                      -e PYTHONDONTWRITEBYTECODE=1 \
+                      python:3.12-slim \
+                      sh -c 'pip install --quiet --disable-pip-version-check --root-user-action=ignore -r requirements-dev.txt && python -m pytest tests -q -p no:cacheprovider'
+
+            # always(): a failed test must not leave a source tree behind per
+            # push. The cache repo is kept; only this run's export goes.
+            - name: Remove the scratch directory
+              if: always()
+              shell: bash
+              run: rm -rf "$SRC"
+
     deploy:
+        # Both conditions matter: `needs` makes a red test job skip this one,
+        # and the `if` keeps pushes to other branches from deploying at all.
+        needs: test
+        if: github.ref == 'refs/heads/main'
         runs-on: self-hosted
         steps:
             - name: Pull changes
               working-directory: /home/adamf/deploy/web_server
               env:
                   GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+                  SHA: ${{ github.sha }}
+              shell: bash
               run: |
+                  set -eu
                   git config --global --add safe.directory /home/adamf/deploy/web_server
                   git fetch ssh://git@localhost:2222/adamf/web_server.git main
+                  # Deploy only the commit the test job just passed. If main
+                  # has moved on since this run started, FETCH_HEAD is a newer
+                  # commit that THIS run never tested — stop, and let that
+                  # commit's own run test and deploy it. Failing (rather than
+                  # resetting to $SHA anyway) also means re-running an old run
+                  # can never roll the site back to an old commit.
+                  if [ "$(git rev-parse FETCH_HEAD)" != "$SHA" ]; then
+                      echo "main is at $(git rev-parse FETCH_HEAD), but this run tested $SHA."
+                      echo "Not deploying: the run for the newer commit will."
+                      exit 1
+                  fi
                   git reset --hard FETCH_HEAD
 
             - name: Run docker compose up

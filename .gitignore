@@ -24,6 +24,10 @@ gitea-runner/nohup.out
 # Python bytecode
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Virtualenv `make check-python` builds on demand from python/requirements-dev.txt
+/.venv/
 
 # Generated WASM output
 vue/src/wasm/

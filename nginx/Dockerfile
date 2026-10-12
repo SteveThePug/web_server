@@ -1,5 +1,6 @@
 # =============================================================================
-# nginx image — the public edge. Stock nginx plus two tools and three templates.
+# nginx image — the public edge. Stock nginx plus two tools, three config
+# templates and the two partials they include.
 #
 # BASE: nginx:1.27, pinned to a minor version. Official nginx images are
 #   multi-arch, so the same tag resolves to the arm64 build on the Raspberry Pi
@@ -19,9 +20,11 @@
 #
 # apt lists are deleted in the SAME RUN layer so they never end up in the image.
 #
-# NO nginx.conf IS COPIED IN. All three templates (plus the dev partial) are,
+# NO nginx.conf IS COPIED IN. All three templates (plus the two partials) are,
 # and entrypoint.sh picks one at container start. See nginx/entrypoint.sh for
-# that decision.
+# that decision. A new partial needs BOTH a COPY here and an envsubst render in
+# the entrypoint, or nginx fails at start with "open() ... failed" on the
+# include.
 # =============================================================================
 FROM nginx:1.27
 RUN rm -rf /etc/nginx/html/* && \
@@ -34,6 +37,10 @@ COPY nginx_dev.conf.template /etc/nginx/nginx_dev.conf.template
 # (same envsubst allow-list) to /etc/nginx/nginx_dev_common.conf, which is the
 # path both `include` directives in nginx_dev.conf.template point at.
 COPY nginx_dev_common.conf.template /etc/nginx/nginx_dev_common.conf.template
+# The proxy route table shared by production and dev. entrypoint.sh renders it
+# (same envsubst allow-list) to /etc/nginx/nginx_routes.conf, the path
+# nginx.conf.template and nginx_dev_common.conf.template both `include`.
+COPY nginx_routes.conf.template /etc/nginx/nginx_routes.conf.template
 # Static security-header include, referenced from nginx.conf.template (and
 # any location that sets its own add_header). Not templated — no envsubst.
 COPY security_headers.conf /etc/nginx/security_headers.conf

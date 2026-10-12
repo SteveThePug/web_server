@@ -1,5 +1,6 @@
 # =============================================================================
-# nginx_dev.conf.template — SHARED BODY of the dev :80 and :443 server blocks.
+# nginx_dev_common.conf.template — SHARED BODY of the dev :80 and :443 server
+# blocks.
 #
 # WHY THIS FILE EXISTS
 #   In dev the :80 and :443 server blocks are byte-for-byte identical apart
@@ -16,21 +17,19 @@
 #   the entrypoint, or it will reach nginx unsubstituted.
 #
 # WHAT BELONGS HERE
-#   Everything inside a `server { ... }` block: the `set $upstream_*` vars and
-#   every `location`. NOT `listen`, `server_name` or the ssl_certificate lines
-#   (those differ between the two blocks), and NOT the enclosing braces — this
-#   file must be brace-balanced on its own.
+#   Only what dev does DIFFERENTLY from production inside a server block: the
+#   /uploads/ locations without security headers, and `/` proxied to Vite.
+#   Everything else — the `set $upstream_*` vars and every reverse-proxied
+#   route — is in nginx_routes.conf.template, shared with production and
+#   included at the bottom of this file. ADD NEW PROXIED ROUTES THERE, not
+#   here.
+#   NOT `listen`, `server_name` or the ssl_certificate lines (those differ
+#   between the two blocks), and NOT the enclosing braces — this file must be
+#   brace-balanced on its own.
 #
-# This is the DEV file only. Production uses a single :443 server block in
-# nginx.conf.template and needs no partial.
+# This is the DEV file only. Production's single :443 www server block in
+# nginx.conf.template includes nginx_routes.conf directly.
 # =============================================================================
-        set $upstream_backend http://$BACKEND_HOST:$BACKEND_PORT;
-        set $upstream_icecast http://$ICECAST_HOST:$ICECAST_PORT;
-        set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
-        set $upstream_silverbullet http://$SILVERBULLET_HOST:$SILVERBULLET_PORT;
-        set $upstream_silverbullet_public http://$SILVERBULLET_PUBLIC_HOST:$SILVERBULLET_PUBLIC_PORT;
-        set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
-
         # PRIVATE attachments (admin-only). Attachments on *private* chat
         # messages are written by the backend to /backend/uploads/private/ and
         # must not be readable by the public, so this subpath is put behind the
@@ -48,6 +47,12 @@
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
         }
 
+        # Both /uploads/ blocks are the production ones MINUS
+        # `include security_headers.conf`: that file carries HSTS, which must
+        # never be sent from localhost. That one line is why they are not in
+        # the shared route table (see WHAT DOES NOT in
+        # nginx_routes.conf.template). Keep the rest in step with
+        # nginx.conf.template.
         location /uploads/ {
             alias /uploads/;
             add_header X-Content-Type-Options nosniff always;
@@ -55,6 +60,7 @@
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
         }
 
+        # The Vite dev server; Upgrade/Connection carry its HMR websocket.
         location / {
             proxy_pass http://vue:5173;
             proxy_http_version 1.1;
@@ -63,205 +69,6 @@
             proxy_set_header Host $host;
         }
 
-        location $BACKEND_ENDPOINT {
-            return 301 $BACKEND_ENDPOINT/;
-        }
-
-        location $BACKEND_ENDPOINT/ws {
-            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass $upstream_backend;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location $BACKEND_ENDPOINT/auth/login {
-            limit_req zone=login burst=3 nodelay;
-            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass $upstream_backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location $BACKEND_ENDPOINT/messages/upload {
-            limit_req zone=upload burst=3 nodelay;
-            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass $upstream_backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location $BACKEND_ENDPOINT/ {
-            limit_req zone=api burst=20 nodelay;
-            rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
-            proxy_pass $upstream_backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /radio {
-            return 301 /radio/;
-        }
-
-        # The icecast ADMIN UI (/radio/admin/*) is a full station-control
-        # surface — kick sources, change metadata — protected only by the
-        # icecast admin password, and it was reachable from the public
-        # internet through this proxy. Put it behind the same admin
-        # `auth_request` as /sb/ so an admin session cookie is
-        # required before the request ever reaches icecast. Longest-prefix
-        # matching means this wins over /radio/ below; listener traffic
-        # (/radio/$ICECAST_MOUNT, /radio/status.xsl) is untouched.
-        location /radio/admin/ {
-            auth_request /internal/auth/admin-validate;
-            error_page 401 403 = @auth_denied;
-            rewrite ^/radio/(.*)$ /$1 break;
-            proxy_pass $upstream_icecast;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /radio/ {
-            rewrite ^/radio/(.*)$ /$1 break;
-            proxy_pass $upstream_icecast;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /gitea {
-            return 301 /gitea/;
-        }
-
-        location /gitea/ {
-            rewrite ^/gitea/(.*)$ /$1 break;
-            proxy_pass $upstream_gitea;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /notes {
-            return 301 /notes/;
-        }
-
-        # PUBLIC notes viewer (read-only SilverBullet). The deny blocks are
-        # the privacy boundary: SB_SPACE_IGNORE hides files from the list but
-        # NOT from a direct /.fs/ fetch, a page URL (server-rendered), or
-        # /.fs/.git/. Full explanation in nginx.conf.template; keep the two in
-        # step.
-        location ~* ^/notes/(.*/)?(private|templates)(/|$) {
-            return 404;
-        }
-
-        location ~ ^/notes/.+/\. {
-            return 404;
-        }
-
-        location ^~ /notes/.revisions {
-            return 404;
-        }
-
-        location /notes/ {
-            proxy_pass $upstream_silverbullet_public;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /sb {
-            return 301 /sb/;
-        }
-
-        # SilverBullet: the admin-only EDITOR for the vault /notes/ publishes.
-        # Deliberately NO prefix-strip rewrite, unlike every other proxied app
-        # here. SilverBullet is a PWA told its own base path via SB_URL_PREFIX=/sb,
-        # and its service worker scope and asset URLs are built from that. Strip
-        # the prefix and the app loads a blank page with no error in the log.
-        # Upgrade/Connection are for its sync websocket.
-        location /sb/ {
-            auth_request /internal/auth/admin-validate;
-            error_page 401 403 = @auth_denied;
-            proxy_pass $upstream_silverbullet;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /py {
-            return 301 /py/;
-        }
-
-        # /py/hotels/search[/stream] and /py/hotels/scan/stream: long-running NDJSON streams
-        location ~ ^/py/hotels/(search|scan) {
-            # Public, up-to-a-minute upstream call with a single search slot: keep it to a few per minute per IP
-            limit_req zone=hotel_search burst=2 nodelay;
-            proxy_read_timeout 300s;
-            proxy_send_timeout 300s;
-            # The stream variant sends NDJSON progress lines; pass them through as they arrive
-            proxy_buffering off;
-            proxy_cache off;
-            gzip off;
-            rewrite ^/py/(.*)$ /$1 break;
-            proxy_pass $upstream_python;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # /py/internal/: routes the Go backend calls directly over app-network
-        # (the rowing photo reader and the job posting reader, which spend a
-        # paid Claude call and have no auth of their own). Never proxied. ^~ so no regex location can claim
-        # the path first. The Python side also refuses anything carrying the
-        # X-Real-IP / X-Forwarded-For headers set below, as a second layer.
-        location ^~ /py/internal/ {
-            return 404;
-        }
-
-        location /py/ {
-            limit_req zone=api burst=20 nodelay;
-            # Hotel search blocks for up to a few minutes while it calls Travelodge and TfL
-            proxy_read_timeout 300s;
-            proxy_send_timeout 300s;
-            rewrite ^/py/(.*)$ /$1 break;
-            proxy_pass $upstream_python;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location = /internal/auth/admin-validate {
-            internal;
-            rewrite ^ /auth/validate-admin break;
-            proxy_pass $upstream_backend;
-            proxy_pass_request_body off;
-            proxy_set_header Content-Length "";
-            proxy_set_header Cookie $http_cookie;
-        }
-
-        location @auth_denied {
-            return 302 /admin/login?redirect=$request_uri;
-        }
+        # Every other route, shared with production. This file has no regex
+        # locations of its own, so where the include sits is cosmetic.
+        include /etc/nginx/nginx_routes.conf;
