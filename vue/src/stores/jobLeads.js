@@ -98,5 +98,14 @@ export const useJobLeadsStore = defineStore("jobLeads", () => {
     return data.runJobLeadSync;
   }
 
-  return { leads, loading, error, status, fetch, dismiss, restore, promote, fetchDescription, fetchStatus, runSync };
+  /**
+   * Score every unscored lead in the inbox without polling any source. Same
+   * contract as runSync(): resolves at once, and fetchStatus() shows it finish.
+   */
+  async function scoreAll() {
+    const data = await gql(`mutation ScoreJobLeads { scoreJobLeads }`);
+    return data.scoreJobLeads;
+  }
+
+  return { leads, loading, error, status, fetch, dismiss, restore, promote, fetchDescription, fetchStatus, runSync, scoreAll };
 });

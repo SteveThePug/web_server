@@ -144,7 +144,15 @@ func (r *mutationResolver) RunJobLeadSync(ctx context.Context) (bool, error) {
 	if r.Store.JobLeads == nil {
 		return false, fmt.Errorf("job leads are not configured")
 	}
-	return r.Store.JobLeads.RunInBackground(), nil
+	return r.Store.JobLeads.RunInBackground(false), nil
+}
+
+// ScoreJobLeads is the resolver for the scoreJobLeads field.
+func (r *mutationResolver) ScoreJobLeads(ctx context.Context) (bool, error) {
+	if r.Store.JobLeads == nil {
+		return false, fmt.Errorf("job leads are not configured")
+	}
+	return r.Store.JobLeads.RunInBackground(true), nil
 }
 
 // JobSources is the resolver for the jobSources field.

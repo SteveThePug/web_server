@@ -41,9 +41,10 @@ const (
 	// nginx forwarded.
 	jobScorePath = "/internal/jobs/score"
 
-	// maxScoresPerRun bounds the Claude calls one run can make, and so both
+	// maxScoresPerRun bounds the Claude calls one Run can make, and so both
 	// its cost and its length. A first poll of a few boards can match
-	// hundreds of leads; the rest are picked up by later runs, newest first.
+	// hundreds of leads; the rest are picked up by later runs, newest first,
+	// or all at once by ScoreAll. It is also ScoreAll's batch size.
 	maxScoresPerRun = 40
 
 	// maxScoreAttempts caps how many times a lead Claude failed to score is
@@ -55,6 +56,11 @@ const (
 	// seconds, and a run that is cut short loses nothing — unscored leads are
 	// simply still unscored next time.
 	maxRunDuration = 20 * time.Minute
+
+	// maxScoreAllDuration bounds ScoreAll, which has no cap on the count. An
+	// hour is several hundred leads at a few seconds each; whatever is left
+	// when it runs out is picked up by pressing the button again.
+	maxScoreAllDuration = time.Hour
 
 	// leadBatch sizes the IN lists and inserts, well inside Postgres's limit
 	// of 65535 bound parameters per statement.
@@ -157,16 +163,21 @@ func (s *JobLeadService) StartScheduler(ctx context.Context) {
 }
 
 // RunInBackground starts a run and returns at once, reporting false when one
-// was already going. It backs the page's "Check now": a run can take minutes,
+// was already going. It backs the page's two buttons — "Check now" (Run) and
+// "Score unscored" (ScoreAll, when scoreOnly is set). Either can take minutes,
 // far longer than a request should be held open, so the page polls Status
 // instead of waiting.
-func (s *JobLeadService) RunInBackground() bool {
+func (s *JobLeadService) RunInBackground(scoreOnly bool) bool {
 	if s.Status().Running {
 		return false
 	}
+	run := s.Run
+	if scoreOnly {
+		run = s.ScoreAll
+	}
 	go func() {
 		// Not the request's context: the request is over long before this is.
-		if err := s.Run(context.Background()); err != nil && !errors.Is(err, ErrLeadSyncRunning) {
+		if err := run(context.Background()); err != nil && !errors.Is(err, ErrLeadSyncRunning) {
 			log.Printf("[JobLeads] Manual run error: %v", err)
 		}
 	}()
@@ -174,7 +185,55 @@ func (s *JobLeadService) RunInBackground() bool {
 }
 
 // Run is one pass of the pipeline: fetch, store, pre-filter, score.
-func (s *JobLeadService) Run(ctx context.Context) (err error) {
+func (s *JobLeadService) Run(ctx context.Context) error {
+	return s.exclusive(ctx, maxRunDuration, s.fetchAndScore)
+}
+
+// ScoreAll scores every matched lead that has no score yet, without polling
+// any source. It exists because Run caps its scoring at maxScoresPerRun: after
+// a first poll of several boards, or after the profile was filled in late,
+// there is a backlog, and clearing it should not mean re-fetching every board
+// (and spending search-API quota) forty leads at a time.
+//
+// The pre-filter is re-applied first, so keywords edited since the last run
+// decide what gets scored. There is no cap on the count — the person pressed a
+// button that says "all" — only maxScoreAllDuration on the time.
+func (s *JobLeadService) ScoreAll(ctx context.Context) error {
+	return s.exclusive(ctx, maxScoreAllDuration, func(ctx context.Context) error {
+		profile, err := LoadJobSearchProfile(s.DB)
+		if err != nil {
+			return fmt.Errorf("loading the search profile: %w", err)
+		}
+		if strings.TrimSpace(profile.Profile) == "" {
+			return errors.New("the search profile is empty, so there is nothing to score against")
+		}
+		if err := s.refilter(newLeadFilter(profile)); err != nil {
+			return fmt.Errorf("re-applying the filter: %w", err)
+		}
+
+		log.Println("[JobLeads] Scoring all unscored leads")
+		total := 0
+		var failed []uint
+		for {
+			// Each pass takes the next batch. A lead that fails is skipped
+			// for the rest of this job, so one press spends one attempt on
+			// it, not all three — a passing Claude hiccup should not write a
+			// lead off for good. That is also why the loop terminates: every
+			// lead a pass looks at is either scored or added to `failed`.
+			scored, tried, nowFailed, err := s.scoreLeads(ctx, profile, failed)
+			total += scored
+			failed = append(failed, nowFailed...)
+			if err != nil || tried == 0 {
+				log.Printf("[JobLeads] Scoring finished: %d scored", total)
+				return err
+			}
+		}
+	})
+}
+
+// exclusive runs work as the one pipeline job in flight, maintaining the
+// status the page polls. A second job requested meanwhile is refused.
+func (s *JobLeadService) exclusive(ctx context.Context, limit time.Duration, work func(context.Context) error) (err error) {
 	if !s.mu.TryLock() {
 		return ErrLeadSyncRunning
 	}
@@ -185,7 +244,7 @@ func (s *JobLeadService) Run(ctx context.Context) (err error) {
 	s.statusMu.Unlock()
 
 	// Runs before the unlock above. It also absorbs a panic, turning it into
-	// this run's error, so one malformed posting cannot take the backend down
+	// this job's error, so one malformed posting cannot take the backend down
 	// or leave `running` stuck true.
 	defer func() {
 		if r := recover(); r != nil {
@@ -203,9 +262,13 @@ func (s *JobLeadService) Run(ctx context.Context) (err error) {
 		s.statusMu.Unlock()
 	}()
 
-	ctx, cancel := context.WithTimeout(ctx, maxRunDuration)
+	ctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
+	return work(ctx)
+}
 
+// fetchAndScore is the body of Run.
+func (s *JobLeadService) fetchAndScore(ctx context.Context) error {
 	profile, err := LoadJobSearchProfile(s.DB)
 	if err != nil {
 		return fmt.Errorf("loading the search profile: %w", err)
@@ -239,7 +302,7 @@ func (s *JobLeadService) Run(ctx context.Context) (err error) {
 	if err := s.refilter(filter); err != nil {
 		return fmt.Errorf("re-applying the filter: %w", err)
 	}
-	scored, err := s.scoreLeads(ctx, profile)
+	scored, _, _, err := s.scoreLeads(ctx, profile, nil)
 	log.Printf("[JobLeads] Run finished: %d new leads, %d scored", added, scored)
 	return err
 }
@@ -610,26 +673,30 @@ type scoreRequest struct {
 }
 
 // scoreLeads asks Claude to score the matched leads that have no score yet,
-// newest first, up to maxScoresPerRun, and reports how many it scored.
+// newest first, up to maxScoresPerRun, leaving out the ids in skip. It reports
+// how many it scored, how many it tried, and which ones Claude failed on;
+// tried is zero once nothing is left to score, which is what ScoreAll loops
+// on.
 //
 // With no profile text there is nothing to score against, so it does nothing
 // — leads still arrive and can be read, they just carry no score.
-func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSearchProfile) (int, error) {
+func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSearchProfile, skip []uint) (scored, tried int, failed []uint, err error) {
 	if strings.TrimSpace(profile.Profile) == "" {
-		return 0, nil
+		return 0, 0, nil, nil
+	}
+	query := s.DB.Where("state = ? AND matched = ? AND score IS NULL AND score_attempts < ?", LeadNew, true, maxScoreAttempts)
+	if len(skip) > 0 {
+		query = query.Where("id NOT IN ?", skip)
 	}
 	var leads []models.JobLead
-	if err := s.DB.
-		Where("state = ? AND matched = ? AND score IS NULL AND score_attempts < ?", LeadNew, true, maxScoreAttempts).
-		Order("created_at DESC, id DESC").Limit(maxScoresPerRun).
-		Find(&leads).Error; err != nil {
-		return 0, fmt.Errorf("loading leads to score: %w", err)
+	if err := query.Order("created_at DESC, id DESC").Limit(maxScoresPerRun).Find(&leads).Error; err != nil {
+		return 0, 0, nil, fmt.Errorf("loading leads to score: %w", err)
 	}
 
-	scored := 0
 	for i := range leads {
 		lead := &leads[i]
 		result, err := s.scoreLead(ctx, profile.Profile, lead)
+		tried++
 
 		var readErr *PythonError
 		switch {
@@ -637,7 +704,7 @@ func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSear
 			reasons := strings.TrimSpace(result.Reasons)
 			score := min(max(result.Score, 0), 100)
 			if dbErr := s.DB.Model(lead).Updates(map[string]any{"score": score, "score_reasons": reasons}).Error; dbErr != nil {
-				return scored, fmt.Errorf("saving a score: %w", dbErr)
+				return scored, tried, failed, fmt.Errorf("saving a score: %w", dbErr)
 			}
 			scored++
 		case errors.As(err, &readErr):
@@ -645,19 +712,24 @@ func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSear
 			// move on; maxScoreAttempts stops it being retried forever.
 			log.Printf("[JobLeads] Scoring lead %d failed: %v", lead.ID, err)
 			if dbErr := s.DB.Model(lead).UpdateColumn("score_attempts", gorm.Expr("score_attempts + 1")).Error; dbErr != nil {
-				return scored, fmt.Errorf("recording a failed score: %w", dbErr)
+				return scored, tried, failed, fmt.Errorf("recording a failed score: %w", dbErr)
 			}
+			failed = append(failed, lead.ID)
+		case ctx.Err() != nil:
+			// Out of time (or shut down) mid-call. Nothing is wrong with
+			// scoring, so say what happened rather than "unavailable".
+			return scored, tried, failed, errors.New("ran out of time before every lead was scored; run it again to continue")
 		default:
-			// Anything else is not about this lead: no API key, the Python
-			// service down, the run cancelled. The next lead would fail the
-			// same way, so stop, and spend no attempt on it.
+			// Anything else is not about this lead: no API key, or the Python
+			// service down. The next lead would fail the same way, so stop,
+			// and spend no attempt on it.
 			// The detail names internal addresses and goes to the log; the
 			// returned error is shown on the leads page.
 			log.Printf("[JobLeads] Scoring stopped at lead %d: %v", lead.ID, err)
-			return scored, errors.New("scoring is unavailable: the Python service did not answer, or has no Claude key (see the backend log)")
+			return scored, tried, failed, errors.New("scoring is unavailable: the Python service did not answer, or has no Claude key (see the backend log)")
 		}
 	}
-	return scored, nil
+	return scored, tried, failed, nil
 }
 
 func (s *JobLeadService) scoreLead(ctx context.Context, profile string, lead *models.JobLead) (LeadScore, error) {

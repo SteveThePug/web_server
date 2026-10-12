@@ -284,11 +284,18 @@ throughout (`graph/schema/job_lead.graphql`, all `@admin`) with the work in
   lead Claude cannot score is retried on three runs and then left. With an
   empty profile nothing is scored. If scoring is unavailable (no API key,
   Python down) the run stops scoring without spending an attempt on any lead.
+- **Scoring the backlog.** The `scoreJobLeads` mutation
+  (`JobLeadService.ScoreAll`, "Score unscored" on the page) scores every
+  matched, unscored lead with no cap and without polling any source. It is
+  for the backlog a first poll of several boards leaves behind, or leads
+  that arrived before the profile was written. A lead that fails is tried
+  once per press. It stops after an hour; pressing again continues.
 - **When it runs.** `JOB_LEADS_ENABLED=true` starts a timer
   (`JOB_LEADS_INTERVAL`, default `6h`); it does not run at start-up, so a
   deploy spends nothing. The `runJobLeadSync` mutation starts a run in a
   goroutine and returns at once, whether or not the timer is on, and
-  `jobLeadSyncStatus` reports on it — a run can take minutes, so unlike
+  `jobLeadSyncStatus` reports on it (and on `scoreJobLeads`; only one of
+  the two jobs runs at a time) — a run can take minutes, so unlike
   `POST /email/sync` it does not hold the request open. The status is in
   memory and resets on restart.
 - **Promotion** (`promoteJobLead`) is the only way a lead reaches the tracker.

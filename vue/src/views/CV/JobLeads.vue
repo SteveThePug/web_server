@@ -12,9 +12,11 @@
  * This view owns the page frame, the single error banner, the run button and
  * the list. Data access is in stores/jobLeads.js; nothing here calls gql().
  *
- * A run takes from seconds to a few minutes, so "Check now" does not wait for
- * it: the server starts the run and this page polls its status, then reloads
- * the list when it finishes.
+ * There are two server jobs. "Check now" polls the sources and scores up to
+ * forty new leads; "Score unscored" polls nothing and scores the whole
+ * backlog. Either takes from seconds to many minutes, so the button does not
+ * wait: the server starts the job and this page polls its status, then
+ * reloads the list when it finishes.
  */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { RouterLink } from "vue-router";
@@ -159,6 +161,9 @@ function stopPolling() {
 async function pollStatus() {
   const current = await store.fetchStatus();
   if (current?.running) {
+    // Scores are saved one at a time, so reloading as it goes lets a long
+    // "Score unscored" fill the list in rather than sit still for minutes.
+    await fetchLeads();
     pollTimer = setTimeout(pollStatus, POLL_MS);
     return;
   }
@@ -167,11 +172,12 @@ async function pollStatus() {
   await Promise.all([fetchLeads(), sourcesBox.value?.refresh()]);
 }
 
-async function checkNow() {
+/** Start one of the two server jobs ("runSync" or "scoreAll") and wait on it. */
+async function start(job) {
   try {
-    // false means a run was already going (the scheduler's, say); either way
+    // false means a job was already going (the scheduler's, say); either way
     // there is now one to wait for.
-    await store.runSync();
+    await store[job]();
     error.value = "";
     status.value = { ...(status.value ?? {}), running: true };
     stopPolling();
@@ -181,10 +187,17 @@ async function checkNow() {
   }
 }
 
+// Matched inbox leads with no score: what "Score unscored" would work
+// through. A lead Claude failed on three times stays in this count, though
+// the server will not try it again.
+const unscoredCount = computed(
+  () => leads.value.filter((lead) => lead.state === "new" && lead.matched && lead.score == null).length,
+);
+
 const running = computed(() => !!status.value?.running);
 
 const lastRun = computed(() => {
-  if (running.value) return "Checking sources and scoring…";
+  if (running.value) return "Working…";
   if (!status.value?.lastRunAt) return "";
   const when = new Date(status.value.lastRunAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
   return `Last checked ${when}`;
@@ -211,12 +224,21 @@ onBeforeUnmount(stopPolling);
       <div class="jl-header-right">
         <span class="jl-hint">{{ lastRun }}</span>
         <button
+          v-if="unscoredCount"
+          class="cv-btn"
+          :disabled="running"
+          title="Score every unscored lead in the inbox against the profile, without polling the sources. One Claude call per lead."
+          @click="start('scoreAll')"
+        >
+          Score unscored ({{ unscoredCount }})
+        </button>
+        <button
           class="cv-btn cv-btn-primary"
           :disabled="running"
-          title="Poll every source now, then score new leads. Profile and keyword changes take effect on a run."
-          @click="checkNow"
+          title="Poll every source now, then score up to 40 new leads. Profile and keyword changes take effect on a run."
+          @click="start('runSync')"
         >
-          {{ running ? "Checking…" : "Check now" }}
+          {{ running ? "Working…" : "Check now" }}
         </button>
       </div>
     </div>

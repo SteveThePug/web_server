@@ -130,4 +130,9 @@ extend type Mutation {
   # if it started, false if one was already running. Poll jobLeadSyncStatus
   # to see it finish.
   runJobLeadSync: Boolean! @admin
+
+  # Scores every matched lead that has no score yet, without polling any
+  # source. Background and polled like runJobLeadSync, and refused (false)
+  # while either is running.
+  scoreJobLeads: Boolean! @admin
 }
