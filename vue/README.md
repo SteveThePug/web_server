@@ -14,11 +14,31 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies API requests:
-- `/api` -> `http://localhost:8080` (Go backend)
-- `/gitea` -> `http://localhost:3000` (Gitea)
-- `/radio` -> `http://localhost:8000` (Icecast2)
-- `/py` -> `http://localhost:8000` (FastAPI; the `/py` prefix is stripped, as nginx does in production)
+The Vite dev server stands in for nginx and proxies four prefixes. Each target
+is an environment variable, read in `vite.config.js` from the shell or from
+`vue/.env.local`:
+
+| Prefix | Variable | Default | Service |
+| --- | --- | --- | --- |
+| `/api` | `VITE_PROXY_API` | `http://localhost:8080` | Go backend |
+| `/gitea` | `VITE_PROXY_GITEA` | `http://localhost:3000` | Gitea |
+| `/py` | `VITE_PROXY_PY` | `http://localhost:8000` | FastAPI (the `/py` prefix is stripped, as nginx does in production) |
+| `/radio` | `VITE_PROXY_RADIO` | `http://localhost:8000` | Icecast2 |
+
+**The defaults are not "where the compose stack is".** The stack publishes only
+nginx (80/443), Gitea (3000) and the liquidsoap harbor port to the host; the
+backend, the Python service and Icecast are reachable only inside the Docker
+network. The defaults are each service's own port, i.e. where it listens when
+you run it directly on the host (`go run .`, `uvicorn app.main:app`). `/py` and
+`/radio` both default to 8000 because both services do, so at most one of them
+can be right at a time — normally `/py`, with the radio simply reading as
+offline.
+
+To use a running compose stack instead, point the prefix at its nginx, e.g.
+`VITE_PROXY_API=http://localhost npm run dev`. That works for `/api`, `/gitea`
+and `/radio`, which are forwarded with the path intact. It does not work for
+`/py`, because the proxy strips the prefix nginx routes on — `VITE_PROXY_PY`
+has to be a bare uvicorn.
 
 ## Structure
 
@@ -28,6 +48,7 @@ src/
   App.vue          empty shell; all chrome lives in the layouts
   router/index.js  route table + the single admin route guard
   graphql.js       the entire GraphQL client (one axios POST)
+  api.js           the REST client for the backend's JSON routes under /api
   layouts/         DefaultLayout (dark, navbar+footer) and CVLayout (light, print)
   stores/          Pinia stores
   components/      reusable UI — text/, input/, util/, borders/, elle/
@@ -58,11 +79,34 @@ view its own chunk.
 Route `name`s are contracts used by `RouterLink`/`router.push` — renaming one
 breaks every link to it.
 
-**The admin guard** (`router.beforeEach`) has one subtlety: the admin flag comes
-from the `me` field of the home-data query, which arrives asynchronously.
-Navigating straight to `/admin` on a cold load would otherwise read an empty
-user and bounce a real admin to the login page, so the guard first awaits
-`homeData.loaded` via a self-stopping watcher.
+**The admin guard** (`router.beforeEach`) has one subtlety: who is signed in is
+learned asynchronously. Navigating straight to `/admin` on a cold load would
+otherwise read an empty user and bounce a real admin to the login page, so the
+guard first awaits `auth.ensureLoaded()` and then reads `auth.user.admin`.
+
+`ensureLoaded()` (in `stores/auth.js`) resolves once the session user is known:
+
+- If nothing has supplied it yet, it issues a standalone
+  `query { me { id username admin } }` — at most one in flight, and not again
+  once answered.
+- On `/stp` it usually has nothing to do: the home query also returns `me`, and
+  `homeData` hands it to the auth store (`auth.adoptSession()`), so that page
+  does not fire a second request.
+- `logIn()`, `logOut()` and `refreshToken()` set the user directly and mark it
+  known, so a change of session mid-visit is what the next navigation sees. An
+  answer that was requested before such a change is discarded.
+- It **never rejects and never hangs**. A failed `me` query settles as "not
+  signed in" (the guard redirects to the login page) and is retried on the next
+  call.
+
+The guard deliberately does not wait on the home query. It used to, via
+`homeData.loaded`, which is only set on success — so when that query failed
+(it fans out to Spotify, Steam and Gitea) navigation to `/admin` or `/cv/jobs`
+never resolved. The auth store does not import `homeData` at all; the
+dependency runs the other way.
+
+`/admin/login` is not guarded, so `Login.vue` calls `ensureLoaded()` itself to
+show its "Already signed in" card.
 
 ## Data flow
 
@@ -77,25 +121,105 @@ rides along in **HTTP-only cookies** set by the Go backend, so nothing here
 touches tokens — the request just has to be same-origin (nginx in production,
 the Vite proxy in dev).
 
+The backend's REST routes go through `src/api.js`, the same idea for plain JSON:
+
+```js
+const body = await api.get("/admin/logs", { fallback: "Failed to load logs" });
+await api.post("/radio/upload", formData, { fallback: "Upload failed" });
+```
+
+It prefixes `/api`, resolves to the response body, and on failure throws an
+`ApiError` whose `message` is the backend's `{"error": "..."}` string when there
+is one, otherwise the `fallback` the caller passed. `err.status` carries the
+HTTP status for the few callers that branch on it (the Environment tab treats a
+401/403 while polling as "the apply rotated my session"). Any other option is
+passed to axios, so multipart bodies and `onUploadProgress` work unchanged.
+
+### Which one to use
+
+| You are… | Use |
+| --- | --- |
+| reading or writing the site's data model | `gql()`, from a store |
+| doing list/create/update/delete on one GraphQL type | a store built with `createCrudStore()` |
+| calling a backend REST route (uploads, admin tooling, OAuth start) | `api` |
+| reading the Python service's NDJSON streams | `views/hotels/hotelsStream.js` — incremental `fetch`, not `api` |
+| probing `/radio/stream` | bare `axios.head` — it is Icecast, not the API |
+
+New views should not call `gql()` or `axios` directly (a few small admin forms
+still call `gql()` for a one-off mutation). A view that needs data gets a
+store; a view that needs a REST route calls `api`.
+
+### Stores
+
 **`stores/homeData.js` is the hub.** It issues *one* query for everything the
 `/stp` page needs (posts, favourites, activities, Spotify, rowing, bookmarks,
 Gitea feed, Steam status, current user) instead of letting a dozen widgets each
 fire their own request. That fetch is kicked off as a side effect of the first
 `useHomeDataStore()` call, so no component has to start it.
 
-The other stores are thin views over it:
+`homeData` exposes two flags, because "finished" and "succeeded" are different
+questions. **`settled`** turns true when a fetch completes either way — a
+loading state or anything that waits must key off this one. **`loaded`** turns
+true only once a fetch has succeeded, meaning the data is real. Waiting on
+`loaded` alone waits forever when the query fails.
 
 | Store | Role |
 | --- | --- |
-| `homeData` | the one query; owns `loaded` / `error` |
-| `auth` | current user; mirrors `homeData.me`, plus login/logout mutations |
+| `homeData` | the one query; owns `settled` / `loaded` / `error`, and pushes `me` to `auth` |
+| `auth` | current user (`ensureLoaded()`, see Routing), plus login/logout mutations |
 | `posts`, `favorites`, `activity`, `songs`, `steam` | mirror one slice of `homeData` via an `immediate` watch, and keep a placeholder value until real data arrives |
-| `places` | independent CRUD; sign-in only, so it is fetched lazily |
+| `places` | CRUD via `createCrudStore`; sign-in only, so it is fetched lazily |
+| `jobApplications` | CRUD via `createCrudStore` for `/cv/jobs`, plus `fetchDescription(id)` |
+| `jobAppReferences` | CRUD via `createCrudStore` for the Quick Reference box on `/cv/jobs` |
 | `messages` | the chat WebSocket — not GraphQL at all |
 | `models` | dormant; not imported anywhere |
 
 The mirroring watches are `immediate` on purpose: a store created *after*
 `homeData` has already loaded would never see the existing value otherwise.
+
+Two factories keep the repeated shapes in one place:
+
+- **`createMirrorStore`** — the body of a store that mirrors a `homeData` slice.
+- **`createCrudStore(id, { type, list, fields, ... })`** — a whole store for one
+  GraphQL type that has the schema's usual `create<Type>` / `update<Type>` /
+  `delete<Type>` mutations and a list query. It gives `fetch`, `create`,
+  `update`, `remove` and `loaded` / `loading` / `error`, and patches the local
+  array after each mutation rather than refetching. `fields` is interpolated
+  into every operation so the selection sets cannot drift. Options cover the
+  real differences between the three users: `itemsKey` (the name the array is
+  exposed under), `insert` (`"prepend"` or `"append"`), `deleteReturns`
+  (`"object"` for `deletePlace`, `"boolean"` for the job tracker's deletes — a
+  scalar must not be given a selection set) and `extend` for extra actions.
+
+  The error contract is deliberate: `fetch()` never throws and records the
+  failure on `error`; the mutations throw, so the form that called them can
+  show the message and keep what was typed.
+
+## The job tracker (`/cv/jobs`)
+
+| File | Holds |
+| --- | --- |
+| `views/CV/JobApplications.vue` | the route: page frame, the one error banner, pipeline bar, filter/sort, the applications table and its inline editing |
+| `views/CV/JobApplicationForm.vue` | the "add an application" form |
+| `views/CV/JobReferences.vue` | the Quick Reference box — a separate table |
+| `views/CV/jobStatus.js` | `STATUS_OPTIONS` and `OPEN_STATUSES` |
+| `views/CV/jobs-shared.css` | the input classes all three use (see Styling) |
+| `stores/jobApplications.js`, `stores/jobAppReferences.js` | all the GraphQL |
+
+The two child components have no error display. They emit `fail` (with the
+error) and `ok`, and the parent's banner shows or clears the message — one
+banner for the page, as before the split.
+
+The list query leaves out `description`, the captured posting text, because it
+is tens of kilobytes a row. It is fetched for one row when its "Posting" button
+is pressed, and cached in the view for that visit only.
+
+**The status list is a copy.** The source of truth is `enum JobStatus` in
+`backend/graph/schema/job_application.graphql`, ranked by `statusOrder` in
+`backend/services/email_sync.go`; the server rejects anything outside it. A
+third copy lives in `public/job-capture.user.js`, which is a single installed
+file and cannot import `jobStatus.js`. Change all three together — and bump the
+userscript's `@version`, or installed copies will not update.
 
 ## Component conventions
 
@@ -121,14 +245,16 @@ The mirroring watches are `immediate` on purpose: a store created *after*
 ## Dev vs production
 
 - **Dev** (`npm run dev`): Vite serves the SPA and proxies `/api`, `/gitea`,
-  `/radio` and `/py` (see the table above and `vite.config.js`). The `/py`
-  proxy strips the prefix, matching what nginx does in production.
+  `/radio` and `/py` to the `VITE_PROXY_*` targets (see Development above and
+  `vite.config.js`). The `/py` proxy strips the prefix, matching what nginx
+  does in production.
 - **Production** (`npm run build`): `dist/` is built into the nginx container
   and served as static files, with nginx doing the same reverse-proxying.
 
 Note `npm run build` runs `build:wasm` first, which needs **wasm-pack** on the
 PATH. If you only want the Vue bundle and `src/wasm/` is already populated,
-`npx vite build` skips that step.
+`npm run build:js` (plain `vite build`) skips that step. It is also the local
+check that the app still compiles — there is no test runner or linter.
 
 ## Live vs legacy views
 
@@ -144,6 +270,7 @@ in its header comment; the summary:
 | `views/home/BadApple.vue` | unfinished ASCII video player; not imported |
 | `views/CV/CVProgramming.vue` | live — the only CV template listed in `CV.vue` |
 | `views/CV/CV{General,Backend,Frontend,Security,Electrical,Hospitality,Analyst,Temp}.vue` | commented out of `CV.vue`'s list; unreachable |
+| `views/CV/JobApplications.vue`, `JobApplicationForm.vue`, `JobReferences.vue` | live (`/cv/jobs`) — the route and its two child components |
 | `views/unused/CoverLetters.vue` | **live** despite the directory — it is the "Cover Letter" tab on `/cv` |
 | `views/unused/Notes.vue` | no route points at it; not imported |
 | `components/util/wasm/AutoScroll.vue` | Rust port of the JS AutoScroll; not imported |
@@ -157,13 +284,14 @@ tree-shaken out. They are kept deliberately; don't delete without asking.
 
 ## Styling
 
-Everything visual is defined in three places:
+Everything visual is defined in a handful of places:
 
 | File | What it holds |
 | --- | --- |
 | `src/assets/styles.css` | Fonts, **design tokens**, default element styles (dark theme), reusable classes (`bdr-1`, `bdr-2`, `page-a4`, `halftone`), the `slide` and `fade` transitions, print rules |
 | `src/layouts/CVLayout.vue` | The **light theme** for `/cv` and `/cv/jobs`: re-points the colour tokens to ink-on-paper values and holds the shared `.cv-btn` styles |
 | `src/views/CV/cv-shared.css` | Typography and page layout for the CV templates (`.cv-template`, `.cv-page`, `--cv-*` size variables) |
+| `src/views/CV/jobs-shared.css` | The job tracker's input classes (`.ja-input`, `.ja-input-sm`, `.ja-select`), shared by `JobApplications.vue` and its two child components; every selector is prefixed with the page's `.ja-root` class |
 | `src/views/hotels/hotels-shared.css` | Panels, forms, tables and tab strip for `/hotels`, shared by the single-stay and cheapest-night panels; every selector is prefixed with the page's `.hotels` root class |
 
 ### Tokens

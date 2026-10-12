@@ -16,7 +16,7 @@
  * once from the response that created it.
  */
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
-import axios from "axios";
+import { api } from "@/api";
 import Button from "@/components/input/Button.vue";
 import SecretReveal from "@/components/admin/SecretReveal.vue";
 import CaptureToken from "./CaptureToken.vue";
@@ -54,13 +54,15 @@ function resetDrafts() {
 
 async function fetchEnv() {
   try {
-    const res = await axios.get("/api/admin/env");
-    groups.value = res.data.groups;
-    status.value = res.data.status;
+    const res = await api.get("/admin/env", {
+      fallback: "Failed to load the environment",
+    });
+    groups.value = res.groups;
+    status.value = res.status;
     error.value = "";
     resetDrafts();
   } catch (err) {
-    error.value = err.response?.data?.error || "Failed to load the environment";
+    error.value = err.message;
   } finally {
     loading.value = false;
   }
@@ -137,19 +139,18 @@ async function apply() {
   applying.value = true;
   outcome.value = null;
   try {
-    const res = await axios.put("/api/admin/env", body);
-    revealed.value = res.data.generated || {};
-    status.value = res.data.status;
-    awaitedId.value = res.data.status.id;
+    const res = await api.put("/admin/env", body, {
+      fallback: "Failed to queue the change",
+    });
+    revealed.value = res.generated || {};
+    status.value = res.status;
+    awaitedId.value = res.status.id;
     // Staged secrets have been sent; do not keep them in the inputs.
     resetDrafts();
     startPolling();
   } catch (err) {
     applying.value = false;
-    outcome.value = {
-      ok: false,
-      text: err.response?.data?.error || "Failed to queue the change",
-    };
+    outcome.value = { ok: false, text: err.message };
   }
 }
 
@@ -165,12 +166,12 @@ function stopPolling() {
 async function poll() {
   let next;
   try {
-    next = (await axios.get("/api/admin/env/status")).data;
+    next = await api.get("/admin/env/status");
   } catch (err) {
     // 401/403 after an apply means the change invalidated this session
     // (rotating BACKEND_SECRET does). Anything else is the backend
     // restarting, which is the apply working.
-    if ([401, 403].includes(err.response?.status)) {
+    if ([401, 403].includes(err.status)) {
       stopPolling();
       applying.value = false;
       outcome.value = {
@@ -200,15 +201,14 @@ async function poll() {
 
 async function cancelPending() {
   try {
-    status.value = (await axios.delete("/api/admin/env/pending")).data;
+    status.value = await api.delete("/admin/env/pending", {
+      fallback: "Failed to withdraw the change",
+    });
     stopPolling();
     applying.value = false;
     outcome.value = { ok: true, text: "Pending change withdrawn. Nothing was applied." };
   } catch (err) {
-    outcome.value = {
-      ok: false,
-      text: err.response?.data?.error || "Failed to withdraw the change",
-    };
+    outcome.value = { ok: false, text: err.message };
   }
 }
 

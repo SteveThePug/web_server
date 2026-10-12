@@ -2,8 +2,14 @@
 /**
  * Route `/cv/jobs` (guarded by `meta.requiresAdmin`) — a private tracker for job
  * applications and for the reusable reference snippets that feed the CV copy.
- * Two independent CRUD tables over GraphQL; editing is inline via an `editingId`
- * plus a scratch copy of the row.
+ *
+ * This view owns the page frame, the single error banner and the applications
+ * table (pipeline bar, filter/sort, inline editing via an `editingId` plus a
+ * scratch copy of the row). The two other pieces are components beside it:
+ * JobReferences.vue (the Quick Reference box, a separate table) and
+ * JobApplicationForm.vue (the add form). Data access is in
+ * stores/jobApplications.js and stores/jobAppReferences.js; nothing here calls
+ * gql() directly.
  *
  * Rows also arrive from two places that are not this page: the email pipeline,
  * and the browser userscript in `public/job-capture.user.js`, which the header
@@ -11,62 +17,20 @@
  */
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { gql } from "@/graphql";
+import { storeToRefs } from "pinia";
+import { useJobApplicationsStore } from "@/stores/jobApplications";
+import { STATUS_OPTIONS, OPEN_STATUSES } from "./jobStatus";
+import JobReferences from "./JobReferences.vue";
+import JobApplicationForm from "./JobApplicationForm.vue";
+import "./jobs-shared.css";
 
-const applications = ref([]);
+const store = useJobApplicationsStore();
+const { applications } = storeToRefs(store);
 const editingId = ref(null);
 const editForm = ref({});
 const error = ref("");
 
-/**
- * The status vocabulary is the email pipeline's (services.statusOrder), not a
- * separate UI list: the pipeline writes these lowercase keys, and a status it
- * does not rank switches its forward-only progression guard off for that row.
- * Labels are display-only.
- */
-const STATUS_OPTIONS = [
-  // Captured from the browser but not applied to yet. No email produces it.
-  { value: "saved", label: "Saved" },
-  { value: "applied", label: "Applied" },
-  { value: "screening", label: "Screening" },
-  { value: "assessment", label: "Assessment" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "offer", label: "Offer" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
-];
-
-// Statuses still in play — used to decide whether a row is worth chasing.
-// "saved" is absent on purpose: nobody owes a reply on a job not applied to.
-const OPEN_STATUSES = ["applied", "screening", "assessment", "interviewing"];
 const STALE_DAYS = 14;
-
-function today() {
-  return new Date().toISOString().substring(0, 10);
-}
-
-const form = ref({
-  jobTitle: "",
-  company: "",
-  location: "",
-  url: "",
-  status: "applied",
-  notes: "",
-  // Logging an application on the day you send it is the common case, so the
-  // date defaults to today rather than landing null and ageing as unknown.
-  appliedAt: today(),
-});
-
-const references = ref([]);
-const refForm = ref({ category: "profile", label: "", value: "" });
-const editingRefId = ref(null);
-const editRefForm = ref({});
-const REF_CATEGORIES = ["profile", "experience"];
-const REF_FIELDS = `id category label value sortOrder createdAt`;
-
-// `description` is deliberately not here: it is the full text of the posting,
-// tens of kilobytes a row, and is fetched per row when asked for.
-const APP_FIELDS = `id jobTitle company location url status notes appliedAt createdAt updatedAt`;
 
 // The captured posting text for the one row whose description is open.
 // `undefined` in the cache means "not fetched", `""` means "fetched, none saved".
@@ -88,49 +52,14 @@ function fail(err) {
   error.value = String(err?.message ?? err);
 }
 
-async function fetchApplications() {
-  try {
-    const data = await gql(`query { jobApplications { ${APP_FIELDS} } }`);
-    applications.value = data.jobApplications;
-  } catch (err) {
-    fail(err);
-  }
+function clearError() {
+  error.value = "";
 }
 
-async function createApplication() {
-  if (!form.value.jobTitle.trim() || !form.value.company.trim()) return;
-  try {
-    const input = {
-      jobTitle: form.value.jobTitle.trim(),
-      company: form.value.company.trim(),
-      status: form.value.status,
-      location: form.value.location || undefined,
-      url: form.value.url || undefined,
-      notes: form.value.notes || undefined,
-      appliedAt: form.value.appliedAt
-        ? new Date(form.value.appliedAt).toISOString()
-        : undefined,
-    };
-    const data = await gql(
-      `mutation CreateJobApplication($input: CreateJobApplicationInput!) {
-                createJobApplication(input: $input) { ${APP_FIELDS} }
-            }`,
-      { input },
-    );
-    applications.value.unshift(data.createJobApplication);
-    form.value = {
-      jobTitle: "",
-      company: "",
-      location: "",
-      url: "",
-      status: "applied",
-      notes: "",
-      appliedAt: today(),
-    };
-    error.value = "";
-  } catch (err) {
-    fail(err);
-  }
+async function fetchApplications() {
+  // The store's fetch() records its failure instead of throwing.
+  await store.fetch();
+  if (store.error) fail(store.error);
 }
 
 function startEdit(app) {
@@ -178,7 +107,7 @@ async function saveEdit(id) {
     // "delete this wrong URL" into a silent no-op that re-renders the old
     // value. appliedAt has no empty representation, so clearing it is not
     // offered — the field stays as it was.
-    const input = {
+    await store.update(id, {
       jobTitle: editForm.value.jobTitle,
       company: editForm.value.company,
       status: editForm.value.status,
@@ -188,15 +117,7 @@ async function saveEdit(id) {
       appliedAt: editForm.value.appliedAt
         ? new Date(editForm.value.appliedAt).toISOString()
         : undefined,
-    };
-    const data = await gql(
-      `mutation UpdateJobApplication($id: ID!, $input: UpdateJobApplicationInput!) {
-                updateJobApplication(id: $id, input: $input) { ${APP_FIELDS} }
-            }`,
-      { id, input },
-    );
-    const idx = applications.value.findIndex((a) => a.id === id);
-    if (idx !== -1) applications.value[idx] = data.updateJobApplication;
+    });
     editingId.value = null;
     error.value = "";
   } catch (err) {
@@ -210,14 +131,7 @@ async function saveEdit(id) {
 async function setStatus(app, status) {
   if (status === app.status) return;
   try {
-    const data = await gql(
-      `mutation UpdateJobApplication($id: ID!, $input: UpdateJobApplicationInput!) {
-                updateJobApplication(id: $id, input: $input) { ${APP_FIELDS} }
-            }`,
-      { id: app.id, input: { status } },
-    );
-    const idx = applications.value.findIndex((a) => a.id === app.id);
-    if (idx !== -1) applications.value[idx] = data.updateJobApplication;
+    await store.update(app.id, { status });
     error.value = "";
   } catch (err) {
     fail(err);
@@ -232,11 +146,7 @@ async function toggleDescription(app) {
   descriptionId.value = app.id;
   if (descriptions.value[app.id] !== undefined) return;
   try {
-    const data = await gql(
-      `query JobDescription($id: ID!) { jobApplication(id: $id) { description } }`,
-      { id: app.id },
-    );
-    descriptions.value[app.id] = data.jobApplication?.description ?? "";
+    descriptions.value[app.id] = await store.fetchDescription(app.id);
   } catch (err) {
     descriptionId.value = null;
     fail(err);
@@ -249,11 +159,7 @@ async function deleteApplication(app) {
   if (!confirm(`Delete the ${app.jobTitle} application at ${app.company}?`))
     return;
   try {
-    await gql(
-      `mutation DeleteJobApplication($id: ID!) { deleteJobApplication(id: $id) }`,
-      { id: app.id },
-    );
-    applications.value = applications.value.filter((a) => a.id !== app.id);
+    await store.remove(app.id);
     error.value = "";
   } catch (err) {
     fail(err);
@@ -295,95 +201,6 @@ function exportCsv() {
   a.download = "job_applications.csv";
   a.click();
   URL.revokeObjectURL(url);
-}
-
-async function fetchReferences() {
-  try {
-    const data = await gql(`query { jobAppReferences { ${REF_FIELDS} } }`);
-    references.value = data.jobAppReferences;
-  } catch (err) {
-    fail(err);
-  }
-}
-
-async function createReference() {
-  if (!refForm.value.label || !refForm.value.value) return;
-  try {
-    const input = {
-      category: refForm.value.category,
-      label: refForm.value.label,
-      value: refForm.value.value,
-    };
-    const data = await gql(
-      `mutation CreateJobAppReference($input: CreateJobAppReferenceInput!) {
-                createJobAppReference(input: $input) { ${REF_FIELDS} }
-            }`,
-      { input },
-    );
-    references.value.push(data.createJobAppReference);
-    refForm.value = { category: refForm.value.category, label: "", value: "" };
-    error.value = "";
-  } catch (err) {
-    fail(err);
-  }
-}
-
-function startRefEdit(ref) {
-  editingRefId.value = ref.id;
-  editRefForm.value = {
-    category: ref.category,
-    label: ref.label,
-    value: ref.value,
-  };
-}
-
-function cancelRefEdit() {
-  editingRefId.value = null;
-  editRefForm.value = {};
-}
-
-async function saveRefEdit(id) {
-  try {
-    const input = {
-      category: editRefForm.value.category || undefined,
-      label: editRefForm.value.label || undefined,
-      value: editRefForm.value.value || undefined,
-    };
-    const data = await gql(
-      `mutation UpdateJobAppReference($id: ID!, $input: UpdateJobAppReferenceInput!) {
-                updateJobAppReference(id: $id, input: $input) { ${REF_FIELDS} }
-            }`,
-      { id, input },
-    );
-    const idx = references.value.findIndex((r) => r.id === id);
-    if (idx !== -1) references.value[idx] = data.updateJobAppReference;
-    editingRefId.value = null;
-    error.value = "";
-  } catch (err) {
-    fail(err);
-  }
-}
-
-async function deleteReference(ref) {
-  if (!confirm(`Delete the reference "${ref.label}"?`)) return;
-  try {
-    await gql(
-      `mutation DeleteJobAppReference($id: ID!) { deleteJobAppReference(id: $id) }`,
-      { id: ref.id },
-    );
-    references.value = references.value.filter((r) => r.id !== ref.id);
-    error.value = "";
-  } catch (err) {
-    fail(err);
-  }
-}
-
-function refsByCategory(category) {
-  return references.value.filter((r) => r.category === category);
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text);
 }
 
 function statusLabel(status) {
@@ -465,10 +282,7 @@ function toggleStatusFilter(status) {
   statusFilter.value = statusFilter.value === status ? null : status;
 }
 
-onMounted(() => {
-  fetchApplications();
-  fetchReferences();
-});
+onMounted(fetchApplications);
 </script>
 
 <template>
@@ -506,134 +320,9 @@ onMounted(() => {
       <button class="cv-btn cv-btn-sm" @click="error = ''">Dismiss</button>
     </div>
 
-    <div class="ja-ref-section">
-      <h3 class="ja-ref-heading">Quick Reference</h3>
-      <div v-for="cat in REF_CATEGORIES" :key="cat" class="ja-ref-category">
-        <h4 class="ja-ref-cat-label">{{ cat }}</h4>
-        <div
-          v-for="ref in refsByCategory(cat)"
-          :key="ref.id"
-          class="ja-ref-item"
-        >
-          <template v-if="editingRefId !== ref.id">
-            <span class="ja-ref-label">{{ ref.label }}</span>
-            <span class="ja-ref-value" :title="ref.value">{{ ref.value }}</span>
-            <button
-              class="cv-btn cv-btn-sm"
-              @click="copyToClipboard(ref.value)"
-              title="Copy"
-            >
-              Copy
-            </button>
-            <button class="cv-btn cv-btn-sm" @click="startRefEdit(ref)">
-              Edit
-            </button>
-            <button
-              class="cv-btn cv-btn-sm cv-btn-danger"
-              @click="deleteReference(ref)"
-            >
-              Delete
-            </button>
-          </template>
-          <template v-else>
-            <select
-              v-model="editRefForm.category"
-              class="ja-input ja-input-sm ja-select"
-            >
-              <option v-for="c in REF_CATEGORIES" :key="c" :value="c">
-                {{ c }}
-              </option>
-            </select>
-            <input
-              v-model="editRefForm.label"
-              class="ja-input ja-input-sm"
-              placeholder="Label"
-            />
-            <input
-              v-model="editRefForm.value"
-              class="ja-input ja-input-sm"
-              placeholder="Value"
-            />
-            <button
-              class="cv-btn cv-btn-sm cv-btn-primary"
-              @click="saveRefEdit(ref.id)"
-            >
-              Save
-            </button>
-            <button class="cv-btn cv-btn-sm" @click="cancelRefEdit">
-              Cancel
-            </button>
-          </template>
-        </div>
-        <p v-if="!refsByCategory(cat).length" class="ja-ref-empty">
-          No {{ cat }} items yet.
-        </p>
-      </div>
-      <form class="ja-ref-form" @submit.prevent="createReference">
-        <select v-model="refForm.category" class="ja-input ja-select">
-          <option v-for="c in REF_CATEGORIES" :key="c" :value="c">
-            {{ c }}
-          </option>
-        </select>
-        <input
-          v-model="refForm.label"
-          class="ja-input"
-          placeholder="Label *"
-          required
-        />
-        <input
-          v-model="refForm.value"
-          class="ja-input"
-          placeholder="Value *"
-          required
-        />
-        <button type="submit" class="cv-btn cv-btn-primary">Add</button>
-      </form>
-    </div>
+    <JobReferences @fail="fail" @ok="clearError" />
 
-    <form class="ja-form" @submit.prevent="createApplication">
-      <div class="ja-form-row">
-        <input
-          v-model="form.jobTitle"
-          class="ja-input"
-          placeholder="Job title *"
-          required
-        />
-        <input
-          v-model="form.company"
-          class="ja-input"
-          placeholder="Company *"
-          required
-        />
-        <select v-model="form.status" class="ja-input ja-select">
-          <option v-for="s in STATUS_OPTIONS" :key="s.value" :value="s.value">
-            {{ s.label }}
-          </option>
-        </select>
-      </div>
-      <div class="ja-form-row">
-        <input
-          v-model="form.location"
-          class="ja-input"
-          placeholder="Location"
-        />
-        <input v-model="form.url" class="ja-input" placeholder="URL" />
-        <input
-          v-model="form.appliedAt"
-          class="ja-input"
-          type="date"
-          title="Applied date"
-        />
-      </div>
-      <div class="ja-form-row">
-        <textarea
-          v-model="form.notes"
-          class="ja-input ja-textarea"
-          placeholder="Notes"
-        />
-        <button type="submit" class="cv-btn cv-btn-primary">Add</button>
-      </div>
-    </form>
+    <JobApplicationForm @fail="fail" @ok="clearError" />
 
     <!-- Pipeline bar: counts at a glance, each one a filter toggle. -->
     <div class="ja-pipeline" v-if="applications.length">
@@ -835,7 +524,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Colours are the paper palette from CVLayout.vue; buttons are .cv-btn from there too. */
+/* Colours are the paper palette from CVLayout.vue; buttons are .cv-btn from
+   there too. The input classes (.ja-input, .ja-input-sm, .ja-select) are in
+   jobs-shared.css because the child components use them as well. */
 .ja-root {
   padding: 1.5rem;
   border-top: 2px solid var(--color-ink-soft);
@@ -891,51 +582,6 @@ onMounted(() => {
   background: #fef2f2;
   color: #7f1d1d;
   font-size: 0.85rem;
-}
-
-/* Forms */
-.ja-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.ja-form-row {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.ja-input {
-  padding: 0.35rem 0.6rem;
-  border: 1px solid var(--color-line);
-  border-radius: 4px;
-  font-size: 0.85rem;
-  background: var(--color-paper);
-  flex: 1;
-  min-width: 120px;
-}
-
-.ja-input:focus {
-  outline: none;
-  border-color: var(--color-ink-muted);
-}
-
-.ja-select {
-  cursor: pointer;
-}
-
-.ja-textarea {
-  resize: vertical;
-  min-height: 2.4rem;
-}
-
-.ja-input-sm {
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
-  width: 100%;
-  min-width: 0;
 }
 
 .ja-edit-notes {
@@ -1137,70 +783,6 @@ onMounted(() => {
 .ja-empty {
   color: var(--color-ink-faint);
   font-size: 0.9rem;
-}
-
-/* Quick-reference box */
-.ja-ref-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border: 1px solid var(--color-line-soft);
-  border-radius: 6px;
-  background: var(--color-paper);
-}
-
-.ja-ref-heading {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: var(--color-ink-soft);
-}
-
-.ja-ref-category {
-  margin-bottom: 0.75rem;
-}
-
-.ja-ref-cat-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-ink-muted);
-  text-transform: capitalize;
-  margin-bottom: 0.35rem;
-}
-
-.ja-ref-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0;
-}
-
-.ja-ref-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--color-ink-soft);
-  min-width: 80px;
-}
-
-.ja-ref-value {
-  font-size: 0.85rem;
-  color: var(--color-ink-muted);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ja-ref-empty {
-  font-size: 0.8rem;
-  color: var(--color-ink-faint);
-  margin: 0.2rem 0;
-}
-
-.ja-ref-form {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
 }
 
 /* Seven columns plus an action cell will not fit a phone, so the table becomes

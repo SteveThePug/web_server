@@ -17,6 +17,11 @@ import { useAuthStore } from "@/stores/auth";
 import Button from "@/components/input/Button.vue";
 
 const auth = useAuthStore();
+// Nothing else on this route resolves the session: the guard only runs for
+// admin routes and the home query is not issued here. Without this, someone
+// already signed in who opens /admin/login directly would see the login form
+// instead of the "Already signed in" card.
+auth.ensureLoaded();
 const router = useRouter();
 const route = useRoute();
 const username = ref("");

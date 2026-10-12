@@ -5,7 +5,7 @@
  */
 import Button from "@/components/input/Button.vue";
 import { ref, onMounted } from "vue";
-import axios from "axios";
+import { api } from "@/api";
 
 const songs = ref([]);
 const files = ref([]);
@@ -14,8 +14,8 @@ const loading = ref(false);
 
 async function fetchSongs() {
   try {
-    const res = await axios.get("/api/radio/songs");
-    songs.value = res.data.songs;
+    const res = await api.get("/radio/songs");
+    songs.value = res.songs;
   } catch (err) {
     console.error(err);
   }
@@ -39,13 +39,14 @@ async function upload() {
       const formData = new FormData();
       formData.append("file", file);
       try {
-        await axios.post("/api/radio/upload", formData, {
+        await api.post("/radio/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
+          fallback: "Upload failed",
         });
         results.value[i].status = "Uploaded";
         results.value[i].ok = true;
       } catch (err) {
-        results.value[i].status = err.response?.data?.error || "Upload failed";
+        results.value[i].status = err.message;
         results.value[i].ok = false;
       }
     }),
@@ -58,7 +59,7 @@ async function upload() {
 
 async function deleteSong(name) {
   try {
-    await axios.delete(`/api/radio/songs/${encodeURIComponent(name)}`);
+    await api.delete(`/radio/songs/${encodeURIComponent(name)}`);
     await fetchSongs();
   } catch (err) {
     console.error(err);
@@ -68,9 +69,7 @@ async function deleteSong(name) {
 async function toggleSong(song) {
   const action = song.disabled ? "enable" : "disable";
   try {
-    await axios.patch(
-      `/api/radio/songs/${encodeURIComponent(song.name)}/${action}`,
-    );
+    await api.patch(`/radio/songs/${encodeURIComponent(song.name)}/${action}`);
     await fetchSongs();
   } catch (err) {
     console.error(err);

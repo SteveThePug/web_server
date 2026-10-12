@@ -13,11 +13,9 @@
  */
 
 import { createRouter, createWebHistory } from "vue-router";
-import { watch } from "vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import CVLayout from "@/layouts/CVLayout.vue";
 import Landing from "@/views/landing/Landing.vue";
-import { useHomeDataStore } from "@/stores/homeData";
 import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
@@ -120,29 +118,21 @@ const router = createRouter({
 
 // Guard for routes marked `meta: { requiresAdmin: true }`.
 //
-// The admin flag comes from homeData's `me` field, which arrives asynchronously.
-// Navigating straight to /admin on a cold load would otherwise read an empty
-// user and bounce a legitimate admin to the login page, so the guard first
-// blocks on homeData.loaded. The watcher is self-stopping: `stop()` is called
-// from inside the callback before resolving, so the promise settles exactly
-// once and the watcher does not leak across navigations.
+// The admin flag arrives asynchronously, so navigating straight to /admin on a
+// cold load would otherwise read an empty user and bounce a legitimate admin to
+// the login page. The guard therefore awaits auth.ensureLoaded(), which issues
+// a standalone `me` query unless the user is already known.
+//
+// It deliberately does not wait on the home query (stores/homeData.js): that
+// one fans out to Spotify, Steam and Gitea, and a guard that waited on it hung
+// forever when it failed. ensureLoaded() always settles — a failed `me` reads
+// as "not signed in" — and `user` is re-read on every navigation, so a login or
+// logout during the session is honoured.
 router.beforeEach(async (to) => {
     if (!to.meta.requiresAdmin) return;
-    const homeData = useHomeDataStore();
-    if (!homeData.loaded) {
-        await new Promise((resolve) => {
-            const stop = watch(
-                () => homeData.loaded,
-                (val) => {
-                    if (val) {
-                        stop();
-                        resolve();
-                    }
-                },
-            );
-        });
-    }
-    if (!useAuthStore().user.admin)
+    const auth = useAuthStore();
+    await auth.ensureLoaded();
+    if (!auth.user.admin)
         return { path: "/admin/login", query: { redirect: to.fullPath } };
 });
 

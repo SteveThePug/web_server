@@ -10,6 +10,7 @@ import { computed, onMounted } from "vue";
 import { useSongsStore } from "@/stores/songs";
 import { useAuthStore } from "@/stores/auth";
 import { useRotation } from "@/js/useRotation";
+import { api } from "@/api";
 
 const ROTATE_MS = 5000;
 const REFRESH_MS = 120000;
@@ -38,9 +39,7 @@ const showReconnect = computed(
 // stays as it was.
 async function reconnect() {
   try {
-    const res = await fetch("/api/spotify/auth");
-    if (!res.ok) return;
-    const { url } = await res.json();
+    const { url } = await api.get("/spotify/auth");
     window.location.href = url;
   } catch (err) {
     console.error("Cannot start Spotify re-authentication", err);

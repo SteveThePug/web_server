@@ -1,9 +1,10 @@
 <script setup>
 /**
  * Steam widget on /stp: online status plus a rotation through recent games
- * (5s rotation, 5-minute re-poll, both from useRotation()). `loaded` comes from
+ * (5s rotation, 5-minute re-poll, both from useRotation()). `settled` comes from
  * homeData so the widget can tell "not fetched yet" from "fetched, nothing to
- * show".
+ * show" — and, unlike `loaded`, it also turns true when the fetch fails, so the
+ * widget cannot sit on "Loading..." forever.
  */
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
@@ -18,7 +19,7 @@ const REFRESH_MS = 5 * 60 * 1000;
 const steamStore = useSteamStore();
 const { steamStatus } = storeToRefs(steamStore);
 const homeData = useHomeDataStore();
-const { loaded } = storeToRefs(homeData);
+const { settled } = storeToRefs(homeData);
 
 const { idx, next: nextGame } = useRotation(
   () => steamStatus.value.recentGames,
@@ -47,7 +48,7 @@ function formatHours(minutes) {
       </span>
     </Header>
 
-    <div v-if="!loaded" class="p-2 text-sm">Loading...</div>
+    <div v-if="!settled" class="p-2 text-sm">Loading...</div>
 
     <div v-else-if="game" class="game-container">
       <Transition name="fade">

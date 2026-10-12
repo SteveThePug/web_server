@@ -8,7 +8,7 @@
  * the response to generating it, and replacing it needs no restart.
  */
 import { ref, onMounted } from "vue";
-import axios from "axios";
+import { api } from "@/api";
 import Button from "@/components/input/Button.vue";
 import SecretReveal from "@/components/admin/SecretReveal.vue";
 import "./env.css";
@@ -22,11 +22,12 @@ const newToken = ref("");
 
 async function fetchCaptureToken() {
   try {
-    capture.value = (await axios.get("/api/admin/capture-token")).data;
+    capture.value = await api.get("/admin/capture-token", {
+      fallback: "Failed to load the capture token state",
+    });
     error.value = "";
   } catch (err) {
-    error.value =
-      err.response?.data?.error || "Failed to load the capture token state";
+    error.value = err.message;
   }
 }
 
@@ -42,12 +43,14 @@ async function generate() {
     return;
   busy.value = true;
   try {
-    const res = await axios.post("/api/admin/capture-token");
-    newToken.value = res.data.token;
-    capture.value = { set: true, createdAt: res.data.createdAt };
+    const res = await api.post("/admin/capture-token", undefined, {
+      fallback: "Failed to generate a token",
+    });
+    newToken.value = res.token;
+    capture.value = { set: true, createdAt: res.createdAt };
     error.value = "";
   } catch (err) {
-    error.value = err.response?.data?.error || "Failed to generate a token";
+    error.value = err.message;
   } finally {
     busy.value = false;
   }
@@ -58,11 +61,13 @@ async function revoke() {
     return;
   busy.value = true;
   try {
-    capture.value = (await axios.delete("/api/admin/capture-token")).data;
+    capture.value = await api.delete("/admin/capture-token", {
+      fallback: "Failed to revoke the token",
+    });
     newToken.value = "";
     error.value = "";
   } catch (err) {
-    error.value = err.response?.data?.error || "Failed to revoke the token";
+    error.value = err.message;
   } finally {
     busy.value = false;
   }

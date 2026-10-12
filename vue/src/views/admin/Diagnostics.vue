@@ -10,7 +10,7 @@
  * onMounted, which is the desired "refresh on tab change" behaviour.
  */
 import { ref, onMounted, computed } from "vue";
-import axios from "axios";
+import { api } from "@/api";
 import Button from "@/components/input/Button.vue";
 
 const lines = ref([]);
@@ -20,11 +20,13 @@ const loadingLogs = ref(false);
 async function fetchLogs() {
   loadingLogs.value = true;
   try {
-    const res = await axios.get("/api/admin/logs");
-    lines.value = res.data.lines;
+    const res = await api.get("/admin/logs", {
+      fallback: "Failed to load logs",
+    });
+    lines.value = res.lines;
     logsError.value = "";
   } catch (err) {
-    logsError.value = err.response?.data?.error || "Failed to load logs";
+    logsError.value = err.message;
   } finally {
     loadingLogs.value = false;
   }

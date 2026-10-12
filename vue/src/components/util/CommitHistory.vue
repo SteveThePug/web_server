@@ -2,6 +2,9 @@
 /**
  * Sidebar widget showing the most recent Gitea action, read straight from
  * homeData.gitFeed (the backend proxies and caches the Gitea API).
+ *
+ * The loading state keys off `settled` rather than `loaded` so a failed home
+ * query ends in "No activity found." instead of loading forever.
  */
 import { useHomeDataStore } from "@/stores/homeData";
 import { storeToRefs } from "pinia";
@@ -9,14 +12,14 @@ import Header from "@/components/text/Header.vue";
 import Link from "@/components/text/Link.vue";
 
 const homeData = useHomeDataStore();
-const { gitFeed: feed, loaded } = storeToRefs(homeData);
+const { gitFeed: feed, settled } = storeToRefs(homeData);
 </script>
 
 <template>
   <div class="flex flex-col text-center min-h-0 h-full overflow-x-hidden">
     <Header class="text-left">Commits</Header>
 
-    <div v-if="!loaded" class="flex-1 overflow-y-auto">
+    <div v-if="!settled" class="flex-1 overflow-y-auto">
       <p>Loading latest activity...</p>
     </div>
 

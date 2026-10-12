@@ -10,6 +10,7 @@
     "build:wasm": "wasm-pack build crates/stp_wasm --target web --out-dir ../../src/wasm",
     "dev": "vite",
     "build": "npm run build:wasm && vite build",
+    "build:js": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

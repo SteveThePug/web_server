@@ -1,10 +1,18 @@
 /**
  * Current user + login/logout mutations.
  *
- * `user` is populated two ways: mirrored from homeData.me (the shared home query
- * also returns the session user), and set directly by logIn()/refreshToken().
- * The watch is `immediate` so a store created after homeData has already loaded
- * still picks up the user.
+ * `user` is populated three ways:
+ *   - ensureLoaded(): a standalone `me` query, fired at most once per page load.
+ *     The router guard awaits it, and so does the login page.
+ *   - adoptSession(): stores/homeData.js hands over the `me` it got back from
+ *     the home query, so the /stp page never needs the standalone query.
+ *   - logIn() / refreshToken() / logOut(), which set it directly.
+ *
+ * This store deliberately does NOT import homeData. It used to mirror
+ * homeData.me with a watch, which meant that merely asking "who is signed in?"
+ * instantiated homeData and so fired the nine-field home query — Spotify, Steam
+ * and Gitea upstreams included — and the guard then had to wait on it. The
+ * dependency now points the other way: homeData pushes `me` in here.
  *
  * The JWTs themselves are never visible here — the backend sets access_token and
  * refresh_token as HTTP-only cookies, so `loggedIn` is inferred purely from
@@ -12,28 +20,66 @@
  */
 
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { gql } from "@/graphql";
-import { useHomeDataStore } from "@/stores/homeData";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
   const loggedIn = computed(() => !!user.value.username);
 
-  const homeData = useHomeDataStore();
-  // Mirror the `me` field from the shared home query. `immediate` so a store
-  // created after homeData loaded still sees the user. Only overwrite on a
-  // truthy `me` — a logged-out response is null and must not clobber a user
-  // that logIn() just set.
-  watch(
-    () => homeData.me,
-    (me) => {
-      if (me) {
-        user.value = me;
-      }
-    },
-    { immediate: true },
-  );
+  // True once something has answered "who is signed in?" — the `me` query,
+  // the home query, or a login/logout. Until then an empty `user` means
+  // "unknown", not "signed out", which is the distinction the guard needs.
+  const resolved = ref(false);
+
+  // Bumped by every login/logout/refresh. A `me` answer that was requested
+  // before the bump describes the previous session, so it is dropped rather
+  // than allowed to sign a logged-out user back in (or the reverse).
+  let epoch = 0;
+  let pending = null;
+
+  function markSessionChanged() {
+    epoch++;
+    resolved.value = true;
+  }
+
+  /**
+   * Apply a `me` answer that was requested when the session was at
+   * `requestedAt` (a value from sessionEpoch()). Only a truthy `me` overwrites
+   * `user`: a signed-out answer is null and must not clobber a user that
+   * logIn() set while the request was in flight.
+   */
+  function adoptSession(me, requestedAt = epoch) {
+    if (requestedAt !== epoch) return;
+    if (me) user.value = me;
+    resolved.value = true;
+  }
+
+  /** Token for adoptSession(): read it before issuing a query that returns `me`. */
+  function sessionEpoch() {
+    return epoch;
+  }
+
+  /**
+   * Resolve once the signed-in user is known, fetching `me` if nothing has
+   * supplied it yet. NEVER rejects and never hangs: a failed query settles as
+   * "not signed in", because the router guard awaits this and a navigation
+   * that never resolves is worse than a bounce to the login page. A failure is
+   * not remembered, so the next call tries again.
+   */
+  function ensureLoaded() {
+    if (resolved.value) return Promise.resolve();
+    if (!pending) {
+      const requestedAt = epoch;
+      pending = gql(`query Me { me { id username admin } }`)
+        .then((data) => adoptSession(data.me, requestedAt))
+        .catch((err) => console.error("me query failed:", err))
+        .finally(() => {
+          pending = null;
+        });
+    }
+    return pending;
+  }
 
   /** Clear the session cookies server-side, then blank the local user.
    *  Deliberately clears `user` even if the mutation fails. */
@@ -44,6 +90,7 @@ export const useAuthStore = defineStore("auth", () => {
       console.error(err);
     }
     user.value = {};
+    markSessionChanged();
   }
 
   /** Log in and populate `user`. Swallows errors: on a bad password `user`
@@ -55,6 +102,7 @@ export const useAuthStore = defineStore("auth", () => {
         { input: { username, password } },
       );
       user.value = data.login.user;
+      markSessionChanged();
     } catch (err) {
       console.error(err);
     }
@@ -83,6 +131,7 @@ export const useAuthStore = defineStore("auth", () => {
         `mutation { refreshToken { user { id username admin } } }`,
       );
       user.value = data.refreshToken.user;
+      markSessionChanged();
     } catch (err) {
       console.log(err);
     }
@@ -106,6 +155,10 @@ export const useAuthStore = defineStore("auth", () => {
     user,
 
     loggedIn,
+
+    ensureLoaded,
+    adoptSession,
+    sessionEpoch,
 
     logIn,
     refreshToken,

@@ -27,12 +27,14 @@ const CreateRowing = defineAsyncComponent(
 );
 
 const store = useHomeDataStore();
-const { loaded, error, rowingSessions } = storeToRefs(store);
+const { settled, error, rowingSessions } = storeToRefs(store);
 const showCreate = ref(false);
 
 // slice() first: reverse() mutates in place and would reorder the store's array.
 const rows = computed(() => rowingSessions.value.slice().reverse());
-const loading = computed(() => !loaded.value);
+// `settled`, not `loaded`: a home query that fails never sets `loaded`, and the
+// error branch below would be unreachable behind a permanent spinner.
+const loading = computed(() => !settled.value);
 
 const metric = ref("distance");
 const hovered = ref(null);

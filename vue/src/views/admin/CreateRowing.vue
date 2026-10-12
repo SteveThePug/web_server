@@ -10,7 +10,7 @@
  */
 import Button from "@/components/input/Button.vue";
 import { ref } from "vue";
-import axios from "axios";
+import { api } from "@/api";
 
 const emit = defineEmits(["done", "cancel"]);
 
@@ -34,19 +34,20 @@ async function submit() {
       const formData = new FormData();
       formData.append("image", file);
       try {
-        const res = await axios.post("/api/rowing", formData, {
+        const res = await api.post("/rowing", formData, {
           headers: { "Content-Type": "multipart/form-data" },
+          fallback: "Upload failed",
         });
         // Time comes back as a Go time.Duration, i.e. nanoseconds.
-        const mins = Math.floor(res.data.Time / 1e9 / 60);
-        const secs = String(Math.floor((res.data.Time / 1e9) % 60)).padStart(
+        const mins = Math.floor(res.Time / 1e9 / 60);
+        const secs = String(Math.floor((res.Time / 1e9) % 60)).padStart(
           2,
           "0",
         );
-        results.value[i].status = `${res.data.Distance}m in ${mins}:${secs}`;
+        results.value[i].status = `${res.Distance}m in ${mins}:${secs}`;
         results.value[i].ok = true;
       } catch (err) {
-        results.value[i].status = err.response?.data?.error || "Upload failed";
+        results.value[i].status = err.message;
         results.value[i].ok = false;
       }
     }),
