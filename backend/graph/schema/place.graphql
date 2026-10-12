@@ -1,5 +1,6 @@
-# Places to go. Unlike most mutations these require only a signed-in user,
-# not an admin, and there is no per-user ownership: the list is shared.
+# Places to go. Unlike most mutations these require only a signed-in user
+# (@signedIn), not an admin, and there is no per-user ownership: the list is
+# shared. The query is guarded too — the list is not public.
 
 type Place {
   id: ID!
@@ -38,11 +39,11 @@ input UpdatePlaceInput {
 }
 
 extend type Query {
-  places: [Place!]!
+  places: [Place!]! @signedIn
 }
 
 extend type Mutation {
-  createPlace(input: CreatePlaceInput!): Place!
-  updatePlace(id: ID!, input: UpdatePlaceInput!): Place!
-  deletePlace(id: ID!): Place!
+  createPlace(input: CreatePlaceInput!): Place! @signedIn
+  updatePlace(id: ID!, input: UpdatePlaceInput!): Place! @signedIn
+  deletePlace(id: ID!): Place! @signedIn
 }

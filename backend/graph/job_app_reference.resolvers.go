@@ -7,22 +7,13 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
-// ID is the resolver for the id field.
-func (r *jobAppReferenceResolver) ID(ctx context.Context, obj *models.JobAppReference) (int, error) {
-	return int(obj.ID), nil
-}
-
 // CreateJobAppReference is the resolver for the createJobAppReference field.
 func (r *mutationResolver) CreateJobAppReference(ctx context.Context, input model.CreateJobAppReferenceInput) (*models.JobAppReference, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	ref := models.JobAppReference{
 		Category: input.Category,
 		Label:    input.Label,
@@ -39,9 +30,6 @@ func (r *mutationResolver) CreateJobAppReference(ctx context.Context, input mode
 
 // UpdateJobAppReference is the resolver for the updateJobAppReference field.
 func (r *mutationResolver) UpdateJobAppReference(ctx context.Context, id int, input model.UpdateJobAppReferenceInput) (*models.JobAppReference, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	var ref models.JobAppReference
 	if err := r.Store.DB.First(&ref, id).Error; err != nil {
 		return nil, err
@@ -66,10 +54,13 @@ func (r *mutationResolver) UpdateJobAppReference(ctx context.Context, id int, in
 
 // DeleteJobAppReference is the resolver for the deleteJobAppReference field.
 func (r *mutationResolver) DeleteJobAppReference(ctx context.Context, id int) (bool, error) {
-	if !IsAdminFromCtx(ctx) {
-		return false, fmt.Errorf("admin access required")
+	// Loaded first so a missing id is an error rather than a `true` that
+	// deleted nothing; see DeleteJobApplication.
+	var ref models.JobAppReference
+	if err := r.Store.DB.First(&ref, id).Error; err != nil {
+		return false, err
 	}
-	if err := r.Store.DB.Delete(&models.JobAppReference{}, id).Error; err != nil {
+	if err := r.Store.DB.Delete(&ref).Error; err != nil {
 		return false, err
 	}
 	return true, nil
@@ -77,9 +68,6 @@ func (r *mutationResolver) DeleteJobAppReference(ctx context.Context, id int) (b
 
 // JobAppReferences is the resolver for the jobAppReferences field.
 func (r *queryResolver) JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	var refs []*models.JobAppReference
 	// created_at is the final tie-break so entries sharing a sort_order (the
 	// default 0) keep a stable, insertion-ordered sequence.
@@ -88,8 +76,3 @@ func (r *queryResolver) JobAppReferences(ctx context.Context) ([]*models.JobAppR
 	}
 	return refs, nil
 }
-
-// JobAppReference returns JobAppReferenceResolver implementation.
-func (r *Resolver) JobAppReference() JobAppReferenceResolver { return &jobAppReferenceResolver{r} }
-
-type jobAppReferenceResolver struct{ *Resolver }

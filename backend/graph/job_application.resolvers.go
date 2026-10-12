@@ -12,19 +12,10 @@ import (
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
-	"adam-french.co.uk/backend/services"
 )
-
-// ID is the resolver for the id field.
-func (r *jobApplicationResolver) ID(ctx context.Context, obj *models.JobApplication) (int, error) {
-	return int(obj.ID), nil
-}
 
 // CreateJobApplication is the resolver for the createJobApplication field.
 func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	// String! is non-null but not non-empty, and the columns are only
 	// `not null`, so "" stores happily and then never matches the email
 	// pipeline's LOWER(company) lookup — an orphan row no sync can advance.
@@ -33,12 +24,15 @@ func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model
 	if jobTitle == "" || company == "" {
 		return nil, fmt.Errorf("jobTitle and company are required")
 	}
+	// input.Status is already one of the JobStatus values: the enum's
+	// unmarshaller (services.UnmarshalJobStatus) refused anything else before
+	// this resolver was reached, so it is stored as it came.
 	app := models.JobApplication{
 		JobTitle:    jobTitle,
 		Company:     company,
 		Location:    input.Location,
 		URL:         input.URL,
-		Status:      services.NormalizeStatus(input.Status),
+		Status:      input.Status,
 		Notes:       input.Notes,
 		AppliedAt:   input.AppliedAt,
 		Description: input.Description,
@@ -51,9 +45,6 @@ func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model
 
 // UpdateJobApplication is the resolver for the updateJobApplication field.
 func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	// Partial update: every input field is a pointer so that "not supplied"
 	// is distinguishable from "set to empty". A nil field is left untouched.
 	// An explicit "" on a nullable column does clear it — that is how the UI
@@ -82,7 +73,7 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 		app.URL = input.URL
 	}
 	if input.Status != nil {
-		app.Status = services.NormalizeStatus(*input.Status)
+		app.Status = *input.Status
 	}
 	if input.Notes != nil {
 		app.Notes = input.Notes
@@ -101,12 +92,19 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 
 // DeleteJobApplication is the resolver for the deleteJobApplication field.
 func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bool, error) {
-	if !IsAdminFromCtx(ctx) {
-		return false, fmt.Errorf("admin access required")
+	// Loaded first so a missing id is an error, as it is for the deletes that
+	// return the row (deletePost, deletePlace, deleteBookmark). Deleting by
+	// id alone reports success whether or not anything matched, which told
+	// the tracker a row was gone when it had never existed. The return type
+	// stays Boolean! for the front end's sake, so the only value is true.
+	//
+	// Soft delete: the row is kept, which is what lets the email pipeline see
+	// that an application was deleted and not re-create it.
+	var app models.JobApplication
+	if err := r.Store.DB.First(&app, id).Error; err != nil {
+		return false, err
 	}
-	// Soft delete straight by id, without loading first — so deleting an id
-	// that does not exist still returns true.
-	if err := r.Store.DB.Delete(&models.JobApplication{}, id).Error; err != nil {
+	if err := r.Store.DB.Delete(&app).Error; err != nil {
 		return false, err
 	}
 	return true, nil
@@ -114,10 +112,12 @@ func (r *mutationResolver) DeleteJobApplication(ctx context.Context, id int) (bo
 
 // JobApplications is the resolver for the jobApplications field.
 func (r *queryResolver) JobApplications(ctx context.Context) ([]*models.JobApplication, error) {
-	// Admin-only even though it is a query: job applications are private.
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
+	// Admin-only even though it is a query (@admin in the schema): job
+	// applications are private.
+	//
+	// A row whose stored status is outside the JobStatus enum does not fail
+	// this list: services.MarshalJobStatus passes it through.
+	//
 	// Find can populate a slice of pointers directly, avoiding the
 	// copy-to-pointers loop the other list resolvers need.
 	var apps []*models.JobApplication
@@ -132,17 +132,9 @@ func (r *queryResolver) JobApplications(ctx context.Context) ([]*models.JobAppli
 
 // JobApplication is the resolver for the jobApplication field.
 func (r *queryResolver) JobApplication(ctx context.Context, id int) (*models.JobApplication, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	var app models.JobApplication
 	if err := r.Store.DB.First(&app, id).Error; err != nil {
 		return nil, err
 	}
 	return &app, nil
 }
-
-// JobApplication returns JobApplicationResolver implementation.
-func (r *Resolver) JobApplication() JobApplicationResolver { return &jobApplicationResolver{r} }
-
-type jobApplicationResolver struct{ *Resolver }

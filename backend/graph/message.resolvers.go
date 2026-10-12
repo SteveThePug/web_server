@@ -11,11 +11,6 @@ import (
 	"adam-french.co.uk/backend/models"
 )
 
-// ID is the resolver for the id field.
-func (r *messageResolver) ID(ctx context.Context, obj *models.Message) (int, error) {
-	return int(obj.ID), nil
-}
-
 // AuthorID is the resolver for the authorId field.
 // AuthorID is the resolver for the authorId field. The value is the chat
 // hub's per-connection counter, not a User id — see models.Message.

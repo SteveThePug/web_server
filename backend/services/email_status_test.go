@@ -6,8 +6,8 @@ import "testing"
 // predicate extracted out of updateJobApplication. The rest of
 // updateJobApplication (note appending, the DB.Save, the returned counters)
 // needs a live *gorm.DB and the only driver in go.mod is postgres, so it is
-// deliberately not exercised here. Nothing in this file touches Claude or the
-// Graph API either; email classification is a network call by construction.
+// deliberately not exercised here. Nothing in this file touches the classifier
+// or the Graph API either; see email_classify_test.go for the former.
 
 func TestStatusAdvances(t *testing.T) {
 	cases := []struct {

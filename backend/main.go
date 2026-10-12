@@ -27,8 +27,9 @@ import (
 // setting from the environment, builds the services, packs them into one
 // handlers.Store, and registers the routes. There are three route groups —
 // open, `protected` (valid access token) and `admin` (token with admin=true)
-// — plus the GraphQL endpoint, which does its own per-resolver authorisation
-// instead of using middleware. See backend/README.md for the wider picture.
+// — plus the GraphQL endpoint, which is authorised by the @admin / @signedIn
+// directives in its schema instead of by middleware. See backend/README.md
+// for the wider picture.
 func main() {
 	// Logs go to both stdout (so `docker compose logs` works) and a file in a
 	// mounted volume (so they survive the container).
@@ -89,12 +90,10 @@ func main() {
 	spotifyConfig := services.SpotifyConfig{RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
 	spotifyAuth, spotifyClient := services.InitSpotifyAuth(&spotifyConfig)
 
-	// CLAUDE
-	// Only the email pipeline uses this client now; the rowing photo reader's
-	// Claude call moved to the Python service, which reads the same key.
-	claudeAPIKey := os.Getenv("CLAUDE_API_KEY")
-	claudeConfig := services.ClaudeConfig{APIKey: claudeAPIKey}
-	claudeClient := services.InitClaude(&claudeConfig)
+	// No Claude client here: every Claude call — the rowing photo reader, the
+	// job posting reader and the email classifier — is made by the Python
+	// service, which is the only container that reads CLAUDE_API_KEY. The
+	// backend reaches those routes at pythonURL, below.
 
 	authSecret := os.Getenv("BACKEND_SECRET")
 	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
@@ -117,9 +116,9 @@ func main() {
 	steamID := os.Getenv("STEAM_ID")
 
 	// PYTHON SERVICE
-	// Called directly over the Docker network, not through nginx, for the
-	// rowing photo reader. The defaults mirror docker-compose.yml, where both
-	// variables are optional.
+	// Called directly over the Docker network, not through nginx, for its
+	// three /internal/ Claude routes (services/python_call.go). The defaults
+	// mirror docker-compose.yml, where both variables are optional.
 	pythonHost := os.Getenv("PYTHON_HOST")
 	if pythonHost == "" {
 		pythonHost = "python"
@@ -154,7 +153,7 @@ func main() {
 		SyncInterval: emailSyncInterval,
 		Enabled:      os.Getenv("EMAIL_SYNC_ENABLED") == "true",
 	}
-	emailSync := services.InitEmailSync(&emailSyncConfig, db, claudeClient)
+	emailSync := services.InitEmailSync(&emailSyncConfig, db, pythonURL)
 
 	// 5 login attempts per IP per minute, applied by both the REST handler
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
@@ -251,11 +250,19 @@ func main() {
 	// GraphQL is assembled by hand rather than with handler.NewDefaultServer
 	// so the transports and extensions below are explicit.
 	//
-	// Note the whole API is one POST route with no middleware guard:
-	// authorisation happens per resolver via IsAdminFromCtx / UserIDFromCtx,
-	// so a new resolver is PUBLIC until it checks for itself.
+	// Note the whole API is one POST route with no middleware guard.
+	// Authorisation is declared in the schema instead: a field marked @admin
+	// or @signedIn is refused by the matching function in graph.Directives()
+	// before its resolver runs. A field with neither is PUBLIC, so a new
+	// mutation needs one — graph/directives_test.go fails until it has one or
+	// is added to the list of deliberately public fields there.
+	//
+	// Directives must stay wired here: gqlgen fails closed on a nil directive
+	// (the field errors with "directive admin is not implemented"), so
+	// dropping this line breaks every guarded field rather than opening it.
 	gqlSrv := handler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: &graph.Resolver{Store: &store},
+		Resolvers:  &graph.Resolver{Store: &store},
+		Directives: graph.Directives(),
 	}))
 	gqlSrv.AddTransport(transport.Websocket{KeepAlivePingInterval: 10 * time.Second})
 	gqlSrv.AddTransport(transport.Options{})

@@ -7,24 +7,16 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
-// ID is the resolver for the id field.
-func (r *activityResolver) ID(ctx context.Context, obj *models.Activity) (int, error) {
-	return int(obj.ID), nil
-}
-
 // CreateActivity is the resolver for the createActivity field.
 func (r *mutationResolver) CreateActivity(ctx context.Context, input model.CreateActivityInput) (*models.Activity, error) {
-	// No middleware guards GraphQL, so each mutation checks for itself.
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
-
+	// Admin-only, but there is no check to see here: the field is marked
+	// @admin in the schema and the directive (directives.go) has already
+	// refused anyone else by the time this runs.
 	activity := models.Activity{Type: input.Type, Name: input.Name, Link: input.Link}
 	if err := r.Store.DB.Create(&activity).Error; err != nil {
 		return nil, err
@@ -41,8 +33,3 @@ func (r *queryResolver) Activities(ctx context.Context) ([]*models.Activity, err
 	}
 	return ptrs(activities), nil
 }
-
-// Activity returns ActivityResolver implementation.
-func (r *Resolver) Activity() ActivityResolver { return &activityResolver{r} }
-
-type activityResolver struct{ *Resolver }

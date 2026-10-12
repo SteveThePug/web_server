@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"adam-french.co.uk/backend/services"
 )
 
 // readRowingDisplay is the Go half of the contract with the Python service's
@@ -63,7 +65,7 @@ func TestReadRowingDisplayErrors(t *testing.T) {
 		name       string
 		status     int
 		body       string
-		wantDetail string // non-empty: a displayReadError with this message
+		wantDetail string // non-empty: a services.PythonError with this message
 	}{
 		{"reader failure is relayed", http.StatusBadGateway, `{"detail": "failed to parse image data"}`, "failed to parse image data"},
 		{"validation error is not relayed", http.StatusUnprocessableEntity, `{"detail": [{"msg": "bad"}]}`, ""},
@@ -82,12 +84,12 @@ func TestReadRowingDisplayErrors(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected an error")
 			}
-			var readErr *displayReadError
+			var readErr *services.PythonError
 			if relayed := errors.As(err, &readErr); relayed != (c.wantDetail != "") {
 				t.Fatalf("relayed = %v, err = %v", relayed, err)
 			}
-			if readErr != nil && readErr.detail != c.wantDetail {
-				t.Fatalf("detail = %q, want %q", readErr.detail, c.wantDetail)
+			if readErr != nil && readErr.Detail != c.wantDetail {
+				t.Fatalf("detail = %q, want %q", readErr.Detail, c.wantDetail)
 			}
 		})
 	}

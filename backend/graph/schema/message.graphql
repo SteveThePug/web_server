@@ -3,7 +3,8 @@
 #
 # Two gotchas: authorId is a per-connection counter from the chat hub, not a
 # User id, and private messages are silently filtered out for non-admins
-# rather than causing an error.
+# rather than causing an error — which is why the query has no @admin: the
+# resolver makes that decision per row.
 
 type Message {
   id: ID!

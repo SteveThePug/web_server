@@ -7,7 +7,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
@@ -16,11 +15,9 @@ import (
 // CreatePlace is the resolver for the createPlace field.
 func (r *mutationResolver) CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error) {
 	// Any signed-in user, not just an admin — places are the one shared,
-	// collaboratively edited list on the site. There is no per-user
-	// ownership, so any signed-in user can edit or delete any place.
-	if _, ok := UserIDFromCtx(ctx); !ok {
-		return nil, fmt.Errorf("authentication required")
-	}
+	// collaboratively edited list on the site, so the schema marks these
+	// fields @signedIn rather than @admin. There is no per-user ownership, so
+	// any signed-in user can edit or delete any place.
 	place := models.Place{
 		Title:    input.Title,
 		Location: input.Location,
@@ -43,9 +40,6 @@ func (r *mutationResolver) CreatePlace(ctx context.Context, input model.CreatePl
 
 // UpdatePlace is the resolver for the updatePlace field.
 func (r *mutationResolver) UpdatePlace(ctx context.Context, id int, input model.UpdatePlaceInput) (*models.Place, error) {
-	if _, ok := UserIDFromCtx(ctx); !ok {
-		return nil, fmt.Errorf("authentication required")
-	}
 	// Partial update, same pointer-means-supplied convention as job
 	// applications: nil fields are left as they are.
 	var place models.Place
@@ -84,9 +78,6 @@ func (r *mutationResolver) UpdatePlace(ctx context.Context, id int, input model.
 
 // DeletePlace is the resolver for the deletePlace field.
 func (r *mutationResolver) DeletePlace(ctx context.Context, id int) (*models.Place, error) {
-	if _, ok := UserIDFromCtx(ctx); !ok {
-		return nil, fmt.Errorf("authentication required")
-	}
 	var place models.Place
 	if err := r.Store.DB.First(&place, id).Error; err != nil {
 		return nil, err
@@ -97,24 +88,11 @@ func (r *mutationResolver) DeletePlace(ctx context.Context, id int) (*models.Pla
 	return &place, nil
 }
 
-// ID is the resolver for the id field.
-func (r *placeResolver) ID(ctx context.Context, obj *models.Place) (int, error) {
-	return int(obj.ID), nil
-}
-
 // Places is the resolver for the places field.
 func (r *queryResolver) Places(ctx context.Context) ([]*models.Place, error) {
-	if _, ok := UserIDFromCtx(ctx); !ok {
-		return nil, fmt.Errorf("authentication required")
-	}
 	var places []models.Place
 	if err := r.Store.DB.Order("done ASC, priority DESC, created_at DESC").Find(&places).Error; err != nil {
 		return nil, err
 	}
 	return ptrs(places), nil
 }
-
-// Place returns PlaceResolver implementation.
-func (r *Resolver) Place() PlaceResolver { return &placeResolver{r} }
-
-type placeResolver struct{ *Resolver }

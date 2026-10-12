@@ -20,11 +20,6 @@ func (r *queryResolver) RowingSessions(ctx context.Context) ([]*models.Rowing, e
 	return ptrs(rows), nil
 }
 
-// ID is the resolver for the id field.
-func (r *rowingResolver) ID(ctx context.Context, obj *models.Rowing) (int, error) {
-	return int(obj.ID), nil
-}
-
 // Time is the resolver for the time field.
 // Time is the resolver for the time field: total session seconds, narrowed
 // from uint64 to GraphQL's Int.

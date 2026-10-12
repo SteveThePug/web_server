@@ -1,19 +1,16 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
 
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -39,68 +36,21 @@ type ExtractedRowingData struct {
 
 // rowingReadPath is the Python route. It is internal: nginx refuses
 // /py/internal/ and the route itself refuses anything nginx forwarded, so the
-// only way in is this direct container-to-container call.
+// only way in is the direct container-to-container call services.CallPython
+// makes.
 const rowingReadPath = "/internal/rowing/read"
-
-// rowingReadClient bounds the wait on the Python service. Two minutes sits
-// above that side's own worst case (a 30s Claude timeout, retried twice with
-// backoff), so a slow Claude surfaces as Python's error rather than as a
-// timeout here.
-var rowingReadClient = &http.Client{Timeout: 2 * time.Minute}
-
-// displayReadError is a failure the Python service reported in words that are
-// safe and useful to show the admin (its 502 detail), as opposed to a
-// transport or decoding failure, which is only logged.
-type displayReadError struct{ detail string }
-
-func (e *displayReadError) Error() string { return e.detail }
 
 // readRowingDisplay sends the image to the Python service and returns what
 // Claude read off it. No plausibility checking happens on either side of this
-// call; that is CreateRowing's job.
+// call; that is CreateRowing's job. A failure the reader described in its own
+// words comes back as a *services.PythonError (see services.CallPython).
 func (store *Store) readRowingDisplay(ctx context.Context, mediaType string, image []byte) (ExtractedRowingData, error) {
-	var extracted ExtractedRowingData
-
-	// encoding/json writes a []byte as standard base64, which is the form the
-	// Anthropic API wants and so what the Python side passes straight through.
-	body, err := json.Marshal(struct {
+	// Data is a []byte so that it is sent as standard base64, the encoding
+	// the Anthropic API expects.
+	return services.CallPython[ExtractedRowingData](ctx, store.PythonURL, rowingReadPath, struct {
 		MediaType string `json:"media_type"`
 		Data      []byte `json:"data"`
 	}{mediaType, image})
-	if err != nil {
-		return extracted, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, store.PythonURL+rowingReadPath, bytes.NewReader(body))
-	if err != nil {
-		return extracted, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := rowingReadClient.Do(req)
-	if err != nil {
-		return extracted, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// FastAPI errors are {"detail": ...}. Only a 502 carries one of the
-		// reader's own fixed messages; a 422's detail is a list, which fails
-		// to decode into the string and falls through to the generic error.
-		var failure struct {
-			Detail string `json:"detail"`
-		}
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		if resp.StatusCode == http.StatusBadGateway && json.Unmarshal(raw, &failure) == nil && failure.Detail != "" {
-			return extracted, &displayReadError{detail: failure.Detail}
-		}
-		return extracted, fmt.Errorf("rowing reader returned %d: %s", resp.StatusCode, raw)
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&extracted); err != nil {
-		return extracted, fmt.Errorf("decoding rowing reader response: %w", err)
-	}
-	return extracted, nil
 }
 
 // GetRowing backs the public GET /rowing with every logged session, newest
@@ -219,9 +169,9 @@ func (store *Store) CreateRowing(ctx *gin.Context) {
 		// passed on; anything else is a plumbing failure the admin can do
 		// nothing with.
 		msg := "failed to process image"
-		var readErr *displayReadError
+		var readErr *services.PythonError
 		if errors.As(err, &readErr) {
-			msg = readErr.detail
+			msg = readErr.Detail
 		}
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return

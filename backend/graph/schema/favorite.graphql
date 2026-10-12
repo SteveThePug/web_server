@@ -18,5 +18,5 @@ extend type Query {
 }
 
 extend type Mutation {
-  createFavorite(input: CreateFavoriteInput!): Favorite!
+  createFavorite(input: CreateFavoriteInput!): Favorite! @admin
 }

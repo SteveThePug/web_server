@@ -13,9 +13,10 @@ import (
 // It always attaches the *gin.Context, and attaches the JWT claims only when a
 // valid access token is present. Crucially it never rejects a request: a
 // missing, expired or forged token simply leaves the context anonymous, which
-// is what lets public queries work and pushes every authorisation decision
-// into the individual resolvers (see IsAdminFromCtx). Both cookie and verify
-// errors are swallowed for exactly that reason.
+// is what lets public queries work and leaves every authorisation decision
+// to the field being resolved — the @admin / @signedIn directives on it (see
+// directives.go), or the resolver itself for anything finer. Both cookie and
+// verify errors are swallowed for exactly that reason.
 //
 // It takes the database because validating a token means loading the user to
 // compare token versions; see services.Auth.AuthenticateTokenWithClaims.

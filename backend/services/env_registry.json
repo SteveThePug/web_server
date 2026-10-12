@@ -1,5 +1,5 @@
 [
-  {"name": "CLAUDE_API_KEY", "group": "API keys", "purpose": "Email pipeline, rowing photo reader, job posting reader", "kind": "secret", "editable": true, "services": ["backend", "python"], "docsUrl": "https://console.anthropic.com/settings/keys"},
+  {"name": "CLAUDE_API_KEY", "group": "API keys", "purpose": "Claude calls, all made by the Python service: email classifier, rowing photo reader, job posting reader", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://console.anthropic.com/settings/keys"},
   {"name": "STEAM_API_KEY", "group": "API keys", "purpose": "Steam status widget", "kind": "secret", "editable": true, "services": ["backend"], "docsUrl": "https://steamcommunity.com/dev/apikey"},
   {"name": "STEAM_ID", "group": "API keys", "purpose": "Steam account the widget reports on (64-bit ID)", "kind": "text", "editable": true, "services": ["backend"]},
   {"name": "TFL_APP_KEY", "group": "API keys", "purpose": "TfL Unified API, used by the hotel finder", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://api-portal.tfl.gov.uk/profile"},

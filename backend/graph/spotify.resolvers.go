@@ -61,6 +61,8 @@ func (r *queryResolver) SpotifyNeedsReauth(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
+	// A soft check, deliberately not @admin: the directive would turn this
+	// into an error on the public home page query.
 	if !IsAdminFromCtx(ctx) {
 		return false, nil
 	}

@@ -18,6 +18,6 @@ extend type Query {
 }
 
 extend type Mutation {
-  createBookmark(input: CreateBookmarkInput!): Bookmark!
-  deleteBookmark(id: ID!): Bookmark!
+  createBookmark(input: CreateBookmarkInput!): Bookmark! @admin
+  deleteBookmark(id: ID!): Bookmark! @admin
 }

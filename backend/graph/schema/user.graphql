@@ -12,12 +12,12 @@ input CreateUserInput {
 }
 
 extend type Query {
-  users: [User!]!
-  user(id: ID!): User
+  users: [User!]! @admin
+  user(id: ID!): User @admin
 }
 
 extend type Mutation {
-  createUser(input: CreateUserInput!): User!
-  deleteUser(id: ID!): User!
-  setUserAdmin(id: ID!, admin: Boolean!): User!
+  createUser(input: CreateUserInput!): User! @admin
+  deleteUser(id: ID!): User! @admin
+  setUserAdmin(id: ID!, admin: Boolean!): User! @admin
 }

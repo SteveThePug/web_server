@@ -8,12 +8,13 @@ import (
 	"adam-french.co.uk/backend/models"
 )
 
-// These tests cover only the pure helpers of the email sync: body cleaning,
-// truncation, fence stripping, timestamp parsing, the retry predicate and the
-// filter. Everything else in email_sync.go — token acquisition, the Graph
-// paging loop, processEmail and the create/update paths — needs either a live
-// *gorm.DB, a Microsoft Graph endpoint or a Claude call, none of which exist
-// in a test run, so they are deliberately not exercised here.
+// These tests cover the pure helpers of the email sync: body cleaning,
+// truncation, timestamp parsing, the retry predicate and the filter. The
+// classify step, which is an HTTP call to the Python service, is covered in
+// email_classify_test.go. What is left uncovered — token acquisition, the
+// Graph paging loop, and the create/update paths processEmail ends in — needs
+// either a live *gorm.DB or a Microsoft Graph endpoint, neither of which
+// exists in a test run.
 //
 // matchesFilter is a method but reads no field of the receiver (it matches
 // against the package-level subjectKeywords/senderDomains), which is why a
@@ -130,29 +131,6 @@ func TestTruncate(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			if got := truncate(c.s, c.maxLen); got != c.want {
 				t.Fatalf("truncate(%q, %d) = %q, want %q", c.s, c.maxLen, got, c.want)
-			}
-		})
-	}
-}
-
-func TestStripMarkdownFence(t *testing.T) {
-	cases := []struct {
-		name string
-		raw  string
-		want string
-	}{
-		{"json-tagged fence", "```json\n{\"a\":1}\n```", `{"a":1}`},
-		{"bare fence", "```\n{\"a\":1}\n```", `{"a":1}`},
-		{"unfenced input is returned as-is", `{"a":1}`, `{"a":1}`},
-		{"surrounding whitespace is trimmed", "\n\n  {\"a\":1}  \n", `{"a":1}`},
-		{"leading whitespace before the fence", "  ```json\n{\"a\":1}\n```  ", `{"a":1}`},
-		{"opening fence only", "```json\n{\"a\":1}", `{"a":1}`},
-		{"empty input", "", ""},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			if got := StripMarkdownFence(c.raw); got != c.want {
-				t.Fatalf("StripMarkdownFence(%q) = %q, want %q", c.raw, got, c.want)
 			}
 		})
 	}

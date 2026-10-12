@@ -36,6 +36,7 @@ extend type Query {
   spotifyRecent: [SpotifyRecentItem!]
   # True only for an admin session while the backend lacks a Spotify client
   # (OAuth never completed or the token was revoked), used by the Listening
-  # widget to offer a reconnect link. Everyone else gets false.
+  # widget to offer a reconnect link. Everyone else gets false — a soft
+  # check in the resolver, not @admin, so the home page query never errors.
   spotifyNeedsReauth: Boolean!
 }

@@ -63,6 +63,93 @@ func TestEnvRegistryMatchesEnvExample(t *testing.T) {
 	}
 }
 
+// composePythonEnv returns the variable names in the `environment:` list of
+// the `python` service in docker-compose.yml.
+//
+// It reads the file as text rather than through a YAML library — there is
+// none among this module's direct dependencies, and the shape needed is
+// narrow: a two-space-indented `python:` key under `services:`, a
+// four-space-indented `environment:` under it, and `- NAME=value` items. If
+// the compose file is ever restructured so that this finds nothing, the test
+// below fails loudly rather than passing on an empty list.
+func composePythonEnv(t *testing.T) []string {
+	t.Helper()
+	raw, err := os.ReadFile("../../docker-compose.yml")
+	if err != nil {
+		t.Fatalf("reading docker-compose.yml: %v", err)
+	}
+
+	item := regexp.MustCompile(`^      - ["']?([A-Z][A-Z0-9_]*)(=|["']?\s*$)`)
+	var names []string
+	inPython, inEnvironment := false, false
+	for _, line := range strings.Split(string(raw), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " "))
+		switch {
+		case indent <= 2:
+			// A new service (or a top-level key) ends the block.
+			inPython, inEnvironment = line == "  python:", false
+		case inPython && indent == 4:
+			inEnvironment = trimmed == "environment:"
+		case inPython && inEnvironment:
+			match := item.FindStringSubmatch(line)
+			if match == nil {
+				t.Fatalf("python.environment has an entry this test cannot read: %q", line)
+			}
+			names = append(names, match[1])
+		}
+	}
+	if len(names) == 0 {
+		t.Fatal("found no python.environment list in docker-compose.yml; has the file's layout changed?")
+	}
+	return names
+}
+
+// The python service is the one container given an explicit `environment:`
+// list instead of the whole .env, so that it never holds the database
+// password or the JWT secret. The cost is a third place a new Python variable
+// has to be added — the registry, .env.example and that list — and forgetting
+// the third is silent: the variable is simply empty inside the container.
+//
+// So the registry's claim "python reads this" and the compose list must
+// agree, in both directions:
+//
+//   - a variable the registry says python reads must be passed to it;
+//   - an editable variable that is passed to it must say so in the registry,
+//     or changing it in the admin panel would not recreate the container.
+//
+// Locked variables are exempt from the second rule. They are never applied
+// through the panel, so the registry gives none of them a services list
+// (PYTHON_PORT is passed to python and is one of these). Names in the compose
+// list that are not registry variables at all, such as the literal ROOT_PATH,
+// are not this test's business.
+func TestEnvRegistryMatchesComposePythonEnvironment(t *testing.T) {
+	compose := composePythonEnv(t)
+
+	registry := map[string]EnvVar{}
+	for _, v := range newEnvManager(t).Vars() {
+		registry[v.Name] = v
+		if slices.Contains(v.Services, "python") && !slices.Contains(compose, v.Name) {
+			t.Errorf("%s lists the python service in env_registry.json but is not in "+
+				"python.environment in docker-compose.yml, so the container never receives it", v.Name)
+		}
+	}
+
+	for _, name := range compose {
+		v, known := registry[name]
+		if !known || !v.Editable {
+			continue
+		}
+		if !slices.Contains(v.Services, "python") {
+			t.Errorf("%s is passed to the python service in docker-compose.yml but env_registry.json "+
+				"does not list python among its services, so editing it would not recreate the container", name)
+		}
+	}
+}
+
 func TestEnvRegistryEntriesAreWellFormed(t *testing.T) {
 	kinds := []string{"secret", "generated", "text", "url", "bool", "duration", "number", "enum"}
 	for _, v := range newEnvManager(t).Vars() {

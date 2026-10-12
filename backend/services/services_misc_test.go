@@ -16,8 +16,6 @@ import (
 //   - FetchLatestFeed: it is an HTTP call to the Gitea container. Its only
 //     logic beyond the request is the empty-feed nil,nil case, and testing it
 //     would mean either a network or an injected client that does not exist.
-//   - claude.go: InitClaude is a single SDK constructor with no validation and
-//     no prompt building; there is nothing to assert that is not the SDK's.
 //   - The 1-minute Gitea cache TTL: it lives in handlers.Store, not here.
 //   - RateLimiter's window expiry uses the real clock (Allow calls time.Now
 //     directly and there is no injectable clock), so the expiry case below

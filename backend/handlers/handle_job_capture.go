@@ -1,12 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Job capture: the three endpoints behind userscripts/job-capture.user.js,
+// Job capture: the three endpoints behind vue/public/job-capture.user.js,
 // which adds the posting open in the browser to the job tracker.
 //
 // These are REST, and token-authenticated, because the caller is a userscript
@@ -50,10 +46,6 @@ const (
 	// anything longer, so the cut has to happen on this side.
 	maxPageRunes = 40_000
 )
-
-// jobExtractClient bounds the wait on the Python service; see
-// rowingReadClient for why two minutes.
-var jobExtractClient = &http.Client{Timeout: 2 * time.Minute}
 
 // CaptureTokenMiddleware guards the capture routes with the token generated
 // in the admin panel (services.CaptureToken), presented as
@@ -250,55 +242,16 @@ type ExtractedJobPosting struct {
 	Notes    *string `json:"notes"`
 }
 
-// postingReadError is a failure the Python service reported in words that are
-// safe to show in the capture popup (its 502 detail); the job-capture
-// counterpart of displayReadError.
-type postingReadError struct{ detail string }
-
-func (e *postingReadError) Error() string { return e.detail }
-
 // extractJobPosting sends a page's text to the Python service and returns the
-// fields Claude picked out. It mirrors readRowingDisplay, including which
-// replies are relayed and which are only logged.
+// fields Claude picked out. Like readRowingDisplay it is a thin wrapper over
+// services.CallPython, which decides which replies are relayed (a
+// *services.PythonError) and which are only logged.
 func (store *Store) extractJobPosting(ctx context.Context, pageURL, title, text string) (ExtractedJobPosting, error) {
-	var posting ExtractedJobPosting
-
-	body, err := json.Marshal(struct {
+	return services.CallPython[ExtractedJobPosting](ctx, store.PythonURL, jobExtractPath, struct {
 		URL   string `json:"url"`
 		Title string `json:"title"`
 		Text  string `json:"text"`
 	}{pageURL, title, text})
-	if err != nil {
-		return posting, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, store.PythonURL+jobExtractPath, bytes.NewReader(body))
-	if err != nil {
-		return posting, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := jobExtractClient.Do(req)
-	if err != nil {
-		return posting, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		var failure struct {
-			Detail string `json:"detail"`
-		}
-		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		if resp.StatusCode == http.StatusBadGateway && json.Unmarshal(raw, &failure) == nil && failure.Detail != "" {
-			return posting, &postingReadError{detail: failure.Detail}
-		}
-		return posting, fmt.Errorf("job extractor returned %d: %s", resp.StatusCode, raw)
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&posting); err != nil {
-		return posting, fmt.Errorf("decoding job extractor response: %w", err)
-	}
-	return posting, nil
 }
 
 // truncateRunes cuts s to at most max runes, on a rune boundary so the result
@@ -344,9 +297,9 @@ func (store *Store) JobCaptureExtract(ctx *gin.Context) {
 		truncateRunes(input.URL, 2000), truncateRunes(input.Title, 500), truncateRunes(text, maxPageRunes))
 	if err != nil {
 		log.Println("Job extract failed:", err)
-		var readErr *postingReadError
+		var readErr *services.PythonError
 		if errors.As(err, &readErr) {
-			ctx.JSON(http.StatusBadGateway, gin.H{"error": readErr.detail})
+			ctx.JSON(http.StatusBadGateway, gin.H{"error": readErr.Detail})
 			return
 		}
 		ctx.JSON(http.StatusBadGateway, gin.H{"error": "failed to read the page"})

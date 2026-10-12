@@ -20,8 +20,9 @@ import (
 //     every subsequent query silently filters those rows out. Rows are never
 //     actually removed, and a uniqueIndex still sees deleted rows, so a
 //     soft-deleted username cannot be reused.
-//   - IDs are uint in Go but Int in GraphQL, which is why nearly every type
-//     has a hand-written ID resolver doing int(obj.ID).
+//   - IDs are uint here and the ID scalar in GraphQL. gqlgen.yml binds the
+//     two directly (graphql.UintID), so an `ID uint` field needs no resolver.
+//     On the wire an id is a quoted decimal string, "12".
 
 // User is an account. There is no public sign-up: users are created by an
 // existing admin through the createUser mutation, or by the dev seeder.
@@ -210,11 +211,15 @@ type Place struct {
 // through GraphQL, automatically by the email pipeline, or from the browser
 // by the capture userscript (handlers/handle_job_capture.go).
 //
-// Status is a free-form string, but only the values ranked in
-// services.statusOrder ("saved", "applied", "screening", "assessment",
-// "interviewing", "offer", "rejected", "withdrawn") can be advanced
-// automatically; the pipeline matches an existing application on
-// (Company, JobTitle) compared case-insensitively.
+// Status is a plain string column, but its vocabulary is fixed: the values
+// ranked in services.statusOrder ("saved", "applied", "screening",
+// "assessment", "interviewing", "offer", "rejected", "withdrawn"), which the
+// GraphQL schema repeats as `enum JobStatus`. Every writer keeps to it —
+// GraphQL refuses anything else, the email pipeline and the capture endpoint
+// coerce with services.NormalizeStatus — but the column predates that, so a
+// reader must not assume an old row conforms (services.MarshalJobStatus does
+// not). The pipeline matches an existing application on (Company, JobTitle)
+// compared case-insensitively.
 //
 // Description is the posting's text as captured from the page, kept because
 // postings are usually taken down long before the interview. It is large, so

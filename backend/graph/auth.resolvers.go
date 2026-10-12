@@ -121,6 +121,9 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*models.User, error) {
+	// Checked here rather than with @signedIn because the message differs:
+	// this query has always answered "unauthorized", and the directive's is
+	// "authentication required".
 	userID, ok := UserIDFromCtx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("unauthorized")

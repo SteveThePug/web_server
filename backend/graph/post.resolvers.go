@@ -15,10 +15,9 @@ import (
 
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (*models.Post, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
-
+	// @admin has already established that there is a session; the id is read
+	// here because the post needs an author, not as a second gate. The !ok
+	// branch is only reachable with a token that has admin but no usable id.
 	userID, ok := UserIDFromCtx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("unauthorized")
@@ -34,10 +33,6 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 
 // UpdatePost is the resolver for the updatePost field.
 func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.UpdatePostInput) (*models.Post, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
-
 	userID, ok := UserIDFromCtx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("unauthorized")
@@ -48,8 +43,9 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 		return nil, fmt.Errorf("post not found")
 	}
 
-	// Admin alone is not enough: a post may only be edited by its author, so
-	// one admin cannot rewrite another's posts.
+	// Admin alone (the @admin on the field) is not enough: a post may only be
+	// edited by its author, so one admin cannot rewrite another's posts. This
+	// is the kind of rule a directive cannot express, so it stays here.
 	if post.AuthorID != userID {
 		return nil, fmt.Errorf("you can only update your own posts")
 	}
@@ -67,10 +63,6 @@ func (r *mutationResolver) UpdatePost(ctx context.Context, id int, input model.U
 
 // DeletePost is the resolver for the deletePost field.
 func (r *mutationResolver) DeletePost(ctx context.Context, id int) (*models.Post, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
-
 	userID, ok := UserIDFromCtx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("unauthorized")
@@ -95,11 +87,6 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id int) (*models.Post
 	return &post, nil
 }
 
-// ID is the resolver for the id field.
-func (r *postResolver) ID(ctx context.Context, obj *models.Post) (int, error) {
-	return int(obj.ID), nil
-}
-
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*models.Post, error) {
 	// Preload issues a second query for the authors and fills in Post.Author.
@@ -120,8 +107,3 @@ func (r *queryResolver) Post(ctx context.Context, id int) (*models.Post, error) 
 	}
 	return &post, nil
 }
-
-// Post returns PostResolver implementation.
-func (r *Resolver) Post() PostResolver { return &postResolver{r} }
-
-type postResolver struct{ *Resolver }

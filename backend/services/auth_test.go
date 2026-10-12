@@ -18,7 +18,9 @@ import (
 
 func testAuth() *Auth {
 	return InitAuth(&AuthConfig{
-		Secret:               []byte("test-secret"),
+		// InitAuth panics on anything under 32 bytes, so the fixture has to be
+		// a realistic length even though nothing here depends on its value.
+		Secret:               []byte("test-secret-0123456789abcdef0123456789"),
 		Domain:               "example.test",
 		AccessTokenLifetime:  time.Hour,
 		RefreshTokenLifetime: 24 * time.Hour,

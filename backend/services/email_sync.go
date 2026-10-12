@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"adam-french.co.uk/backend/models"
-	"github.com/anthropics/anthropic-sdk-go"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )
@@ -27,6 +26,13 @@ import (
 // recruitment-related, asks Claude to turn each into structured data, and
 // creates or advances a models.JobApplication row. Every email it has looked
 // at is recorded as a models.ProcessedEmail so it is never handled twice.
+//
+// The Claude call itself is not made here: like the site's other two, it
+// lives in the Python service (python/app/email_classify.py, which owns the
+// prompt and the parsing of the model's reply) and is reached through
+// CallPython. Everything that needs the mailbox or the database — fetching,
+// the pre-filter, dedup and retry accounting, matching an email to an
+// application, the forward-only status rule — stays in this file.
 
 // MSGRAPH_TOKEN_JSON_PATH lives in a Docker volume so the OAuth refresh token
 // survives restarts, exactly like the Spotify token.
@@ -54,9 +60,12 @@ type EmailSyncService struct {
 	// handler refuse to run while it is nil. On the Graph backend it is a
 	// real token-injecting client; on the IMAP backend it is set to
 	// http.DefaultClient purely so this check passes (IMAP never uses it).
-	HTTPClient   *http.Client
-	DB           *gorm.DB
-	ClaudeClient *anthropic.Client
+	HTTPClient *http.Client
+	DB         *gorm.DB
+	// PythonURL is the Python service's base URL on the Docker network, no
+	// trailing slash: the same value as handlers.Store.PythonURL. The
+	// classifier is called there (see classifyEmail).
+	PythonURL string
 	// mu is used with TryLock, not Lock: it makes a sync a no-op while
 	// another one is running rather than queueing behind it, so the manual
 	// admin trigger cannot pile up on top of the scheduled run.
@@ -103,11 +112,15 @@ type graphBody struct {
 	Content     string `json:"content"`
 }
 
-// Claude response type
+// Classifier response type
 
-// EmailAnalysis is the JSON contract Claude is asked to return; the keys here
-// must stay in step with emailClassificationPrompt at the bottom of this file.
-// Pointer fields are the ones Claude is allowed to answer null for.
+// EmailAnalysis is the JSON contract with the Python service's
+// /internal/email/classify: the body of its 200 reply. The keys here must stay
+// in step with EmailAnalysis and the prompt in python/app/email_classify.py,
+// which asks Claude for exactly these. Pointer fields are the ones that may
+// come back null; the plain strings come back "" when the model had nothing
+// (or when the email is not a job email, in which case only IsJobEmail means
+// anything).
 type EmailAnalysis struct {
 	IsJobEmail bool    `json:"isJobEmail"`
 	Action     string  `json:"action"`
@@ -122,7 +135,7 @@ type EmailAnalysis struct {
 
 // Email filtering config
 
-// Cheap pre-filter, applied before any Claude call so that the bulk of a
+// Cheap pre-filter, applied before any classifier call so that the bulk of a
 // mailbox never costs an API request. It is intentionally over-inclusive:
 // false positives are cheap (Claude rejects them), false negatives are not
 // (the email is never looked at again once its window has passed).
@@ -155,6 +168,13 @@ var senderDomains = []string{
 // "saved" is the one status no email can produce: it marks a posting captured
 // from the browser but not applied to yet (handlers/handle_job_capture.go).
 // It ranks lowest so that the "thanks for applying" email advances the row.
+//
+// This map is the vocabulary. It is written down in four other places, which
+// must list the same statuses: `enum JobStatus` in
+// graph/schema/job_application.graphql (enforced —
+// TestJobStatusEnumMatchesStatusOrder fails on any difference), the
+// classifier prompt in python/app/email_classify.py (all but "saved"), the
+// tracker page and the capture userscript.
 var statusOrder = map[string]int{
 	"saved":        0,
 	"applied":      1,
@@ -263,11 +283,15 @@ func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 // while the rest of the backend starts normally. For Graph, the authorisation
 // URL is printed to the container log for a one-off manual sign-in that
 // lands on GET /email/callback.
-func InitEmailSync(config *EmailSyncConfig, db *gorm.DB, claudeClient *anthropic.Client) *EmailSyncService {
+//
+// pythonURL is where the classifier lives. It is not validated or probed: an
+// unreachable Python service shows up as each email failing and being
+// retried, the same way a bad API key used to.
+func InitEmailSync(config *EmailSyncConfig, db *gorm.DB, pythonURL string) *EmailSyncService {
 	svc := &EmailSyncService{
-		Config:       config,
-		DB:           db,
-		ClaudeClient: claudeClient,
+		Config:    config,
+		DB:        db,
+		PythonURL: pythonURL,
 	}
 
 	switch config.Backend {
@@ -618,48 +642,66 @@ func (s *EmailSyncService) matchesFilter(email graphMessage) bool {
 	return false
 }
 
-// processEmail sends a single email to Claude and creates/updates a JobApplication.
-// Returns the action taken ("created", "updated", "skipped") and the job application ID if applicable.
-func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage) (string, *uint, error) {
-	cleaned := cleanEmailBody(email.Body.Content, email.Body.ContentType)
+// emailClassifyPath is the Python route, internal in the same way as the
+// rowing and job-posting readers' (see python_call.go).
+const emailClassifyPath = "/internal/email/classify"
 
-	userMsg := fmt.Sprintf("Subject: %s\nFrom: %s <%s>\nDate: %s\n\n%s",
+// maxClassifyRunes mirrors MAX_MESSAGE_CHARS in python/app/email_classify.py,
+// which answers 422 to anything longer. cleanEmailBody already caps the body
+// far below this, so the limit only bites on a pathological subject or sender
+// — but a 422 would be recorded as a failed attempt and retried to the cap,
+// so the cut is made here rather than left to chance.
+const maxClassifyRunes = 200_000
+
+// classifierMessage formats one email as the classifier's user turn: Subject,
+// From and Date lines, a blank line, then the cleaned body. The Python side
+// passes the string to Claude unchanged, so this layout is part of what the
+// prompt there was written against.
+//
+// The result is cut to maxClassifyRunes on a rune boundary. The body comes
+// last, so it is what gives way first.
+func classifierMessage(email graphMessage) string {
+	msg := fmt.Sprintf("Subject: %s\nFrom: %s <%s>\nDate: %s\n\n%s",
 		email.Subject,
 		email.From.EmailAddress.Name,
 		email.From.EmailAddress.Address,
 		email.ReceivedDateTime,
-		cleaned,
+		cleanEmailBody(email.Body.Content, email.Body.ContentType),
 	)
+	// Counting runes means converting; skip it for the ordinary case, where
+	// even the byte length (never less than the rune count) is under the cap.
+	if len(msg) <= maxClassifyRunes {
+		return msg
+	}
+	runes := []rune(msg)
+	if len(runes) <= maxClassifyRunes {
+		return msg
+	}
+	return string(runes[:maxClassifyRunes])
+}
 
-	message, err := s.ClaudeClient.Messages.New(ctx, anthropic.MessageNewParams{
-		Model:     anthropic.ModelClaudeHaiku4_5,
-		MaxTokens: 512,
-		System: []anthropic.TextBlockParam{
-			{Text: emailClassificationPrompt},
-		},
-		Messages: []anthropic.MessageParam{
-			{
-				Role:    "user",
-				Content: []anthropic.ContentBlockParamUnion{anthropic.NewTextBlock(userMsg)},
-			},
-		},
-	})
+// classifyEmail asks the Python service what an email is. Every failure —
+// the service unreachable, Claude failing (502), no API key (503), a reply
+// that will not decode — comes back as an error, which SyncEmails records as
+// a retryable failure of this email.
+func (s *EmailSyncService) classifyEmail(ctx context.Context, email graphMessage) (EmailAnalysis, error) {
+	analysis, err := CallPython[EmailAnalysis](ctx, s.PythonURL, emailClassifyPath, struct {
+		Message string `json:"message"`
+	}{classifierMessage(email)})
 	if err != nil {
-		return "", nil, fmt.Errorf("Claude API error: %w", err)
+		// %w keeps context.Canceled visible to SyncEmails, which must not
+		// count an abandoned sync against the email.
+		return EmailAnalysis{}, fmt.Errorf("classifying email: %w", err)
 	}
+	return analysis, nil
+}
 
-	if len(message.Content) == 0 {
-		return "", nil, fmt.Errorf("empty response from Claude")
-	}
-
-	// Only the first content block is read, and the prompt asks for bare JSON,
-	// but models still wrap output in a markdown fence often enough that it is
-	// stripped defensively here.
-	raw := StripMarkdownFence(message.Content[0].Text)
-
-	var analysis EmailAnalysis
-	if err := json.Unmarshal([]byte(raw), &analysis); err != nil {
-		return "", nil, fmt.Errorf("parsing Claude response: %w (raw: %s)", err, raw)
+// processEmail has a single email classified and creates/updates a JobApplication.
+// Returns the action taken ("created", "updated", "skipped") and the job application ID if applicable.
+func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage) (string, *uint, error) {
+	analysis, err := s.classifyEmail(ctx, email)
+	if err != nil {
+		return "", nil, err
 	}
 
 	if !analysis.IsJobEmail {
@@ -708,6 +750,11 @@ func (s *EmailSyncService) processEmail(ctx context.Context, email graphMessage)
 // statusOrder. An unrecognised status stored verbatim would disable the
 // forward-only guard for that row (updateJobApplication allows any recognised
 // status over an unknown one), so the safe fallback is the pipeline's default.
+//
+// It is for values that arrive outside GraphQL: the classifier's answer and
+// the capture endpoint's body. The GraphQL mutations do not use it — their
+// status is a JobStatus, which UnmarshalJobStatus refuses outright when it is
+// not in the vocabulary rather than quietly storing "applied".
 func NormalizeStatus(s string) string {
 	lowered := strings.ToLower(strings.TrimSpace(s))
 	if _, ok := statusOrder[lowered]; ok {
@@ -798,7 +845,7 @@ func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication,
 }
 
 // cleanEmailBody reduces an email body to plain-ish text before it is sent to
-// Claude, cutting token cost and noise.
+// the classifier, cutting token cost and noise.
 //
 // The HTML handling is a regex tag-strip, not a parser: fine for extracting
 // prose, but it would mangle inline <script>/<style> content and mis-handle
@@ -859,7 +906,9 @@ func cleanEmailBody(content string, contentType string) string {
 	text = strings.Join(cleaned, "\n")
 
 	// Cap the prompt size. This slices by bytes, so a cut can land mid-rune
-	// and leave an invalid UTF-8 tail; harmless for a model prompt.
+	// and leave an invalid UTF-8 tail. That is harmless: the text travels to
+	// the classifier as JSON, and encoding/json replaces the broken tail with
+	// U+FFFD rather than emitting invalid UTF-8.
 	if len(text) > 4000 {
 		text = text[:4000]
 	}
@@ -874,44 +923,6 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen]
-}
-
-// emailClassificationPrompt must stay in sync with the EmailAnalysis struct:
-// every key it names is a field there, and the status values it lists are the
-// keys of statusOrder — all but "saved", which only the browser capture sets
-// and no email can mean.
-const emailClassificationPrompt = `You are an email classifier for job applications. You will receive the subject line, sender, and body of an email. Determine if this email is related to a job application, and if so, extract structured data.
-
-Return ONLY a JSON object with these exact keys:
-- "isJobEmail": boolean - true if this email is about a job application
-- "action": "create" | "update" | "none" - whether this represents a new application confirmation or an update to an existing one
-- "company": string - the company name
-- "jobTitle": string - the job title/position
-- "status": string - one of: "applied", "screening", "interviewing", "assessment", "offer", "rejected", "withdrawn"
-- "location": string or null - job location if mentioned
-- "url": string or null - any application portal URL
-- "appliedAt": string or null - ISO 8601 date if an application date is mentioned (YYYY-MM-DD format)
-- "notes": string or null - brief summary of what this email communicates (e.g. "Interview scheduled for March 15", "Application confirmed via Greenhouse")
-
-If isJobEmail is false, only include that field. No text, no markdown, no explanation. Just the JSON object.`
-
-// StripMarkdownFence removes a surrounding markdown code fence from a model's
-// response, so text that should have been bare JSON can be unmarshalled
-// whether or not the model wrapped it.
-//
-// The two TrimPrefix calls are ordered so that "```json" is removed first and
-// a plain "```" otherwise. It is deliberately forgiving: unfenced input is
-// returned unchanged apart from surrounding whitespace.
-//
-// python/app/rowing.py carries a port of this for the rowing photo reader,
-// which prompts for bare JSON in the same way and gets the same fenced output.
-func StripMarkdownFence(raw string) string {
-	raw = strings.TrimSpace(raw)
-	raw = strings.TrimPrefix(raw, "```json")
-	raw = strings.TrimPrefix(raw, "```")
-	raw = strings.TrimSuffix(raw, "```")
-
-	return strings.TrimSpace(raw)
 }
 
 // maxEmailAttempts caps how many times a failing email is reprocessed. Each

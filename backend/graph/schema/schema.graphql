@@ -16,5 +16,22 @@
 
 scalar Time
 
+# Authorisation. There is no middleware in front of /graphql, so a field is
+# PUBLIC unless it carries one of these. Each is implemented once, in
+# graph/directives.go, and runs before the field's resolver:
+#
+#   @admin     the request must carry an admin's access token
+#              (error: "admin access required")
+#   @signedIn  any valid access token will do
+#              (error: "authentication required")
+#
+# Every mutation needs one of them unless it is deliberately public (login,
+# logout, refreshToken); graph/directives_test.go fails otherwise, and pins
+# which queries are guarded. Rules that are not a plain gate stay in the
+# resolver: a post is only editable by its author, `me` answers for whoever is
+# signed in, and `messages` filters private rows rather than refusing.
+directive @admin on FIELD_DEFINITION
+directive @signedIn on FIELD_DEFINITION
+
 type Query
 type Mutation

@@ -7,22 +7,13 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
 )
 
-// ID is the resolver for the id field.
-func (r *bookmarkResolver) ID(ctx context.Context, obj *models.Bookmark) (int, error) {
-	return int(obj.ID), nil
-}
-
 // CreateBookmark is the resolver for the createBookmark field.
 func (r *mutationResolver) CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	bookmark := models.Bookmark{Category: input.Category, Name: input.Name, Link: input.Link}
 	if err := r.Store.DB.Create(&bookmark).Error; err != nil {
 		return nil, err
@@ -32,9 +23,6 @@ func (r *mutationResolver) CreateBookmark(ctx context.Context, input model.Creat
 
 // DeleteBookmark is the resolver for the deleteBookmark field.
 func (r *mutationResolver) DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error) {
-	if !IsAdminFromCtx(ctx) {
-		return nil, fmt.Errorf("admin access required")
-	}
 	// Loaded first so the deleted record can be returned to the client, and
 	// so a missing id is a clean "not found" rather than a silent no-op.
 	// Delete is a soft delete: deleted_at is set and the row stays.
@@ -56,8 +44,3 @@ func (r *queryResolver) Bookmarks(ctx context.Context) ([]*models.Bookmark, erro
 	}
 	return ptrs(bookmarks), nil
 }
-
-// Bookmark returns BookmarkResolver implementation.
-func (r *Resolver) Bookmark() BookmarkResolver { return &bookmarkResolver{r} }
-
-type bookmarkResolver struct{ *Resolver }

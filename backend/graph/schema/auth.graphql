@@ -7,10 +7,14 @@ type AuthPayload {
   user: User!
 }
 
+# `me` carries no directive although it needs a session: it answers
+# "unauthorized", not @signedIn's "authentication required", and the front end
+# relies on that query failing quietly for an anonymous visitor.
 extend type Query {
   me: User
 }
 
+# Deliberately public: these are how a session is obtained and given up.
 extend type Mutation {
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!

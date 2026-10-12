@@ -22,8 +22,10 @@ extend type Query {
   post(id: ID!): Post
 }
 
+# @admin is only the first half of the rule for updatePost and deletePost:
+# the resolver also requires the caller to be the post's author.
 extend type Mutation {
-  createPost(input: CreatePostInput!): Post!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
-  deletePost(id: ID!): Post!
+  createPost(input: CreatePostInput!): Post! @admin
+  updatePost(id: ID!, input: UpdatePostInput!): Post! @admin
+  deletePost(id: ID!): Post! @admin
 }

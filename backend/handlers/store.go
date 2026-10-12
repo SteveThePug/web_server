@@ -35,8 +35,10 @@ type Store struct {
 	EmailSync     *services.EmailSyncService
 
 	// Base URL of the Python service on the Docker network, no trailing
-	// slash. Used for the calls that bypass nginx: reading a rowing display
-	// photo (handle_rowing.go) and a job posting (handle_job_capture.go).
+	// slash. Used for the calls that bypass nginx, all through
+	// services.CallPython: reading a rowing display photo (handle_rowing.go)
+	// and a job posting (handle_job_capture.go). The email pipeline makes the
+	// third such call and holds its own copy of this value.
 	PythonURL string
 
 	// Bearer token for the browser capture routes (handle_job_capture.go),

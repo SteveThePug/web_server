@@ -27,7 +27,8 @@ const (
 
 // UserClaimsFromCtx returns the verified JWT claims, or nil when the request
 // is anonymous. nil means "not authenticated": a missing or invalid token is
-// not an error here, because many queries are public.
+// not an error here, because many queries are public. Turning "anonymous"
+// into a refusal is the job of the schema directives, per field.
 func UserClaimsFromCtx(ctx context.Context) *jwt.MapClaims {
 	claims, ok := ctx.Value(userClaimsKey).(*jwt.MapClaims)
 	if !ok {
@@ -38,6 +39,10 @@ func UserClaimsFromCtx(ctx context.Context) *jwt.MapClaims {
 
 // UserIDFromCtx returns the authenticated user's id. The claim arrives as a
 // float64 because claims are decoded by encoding/json, hence the conversion.
+//
+// ok is also the test behind the @signedIn directive. A resolver calls this
+// itself when it needs the id for more than a gate: to record a post's
+// author, or to compare the caller with a row's owner.
 func UserIDFromCtx(ctx context.Context) (uint, bool) {
 	claims := UserClaimsFromCtx(ctx)
 	if claims == nil {
@@ -50,11 +55,12 @@ func UserIDFromCtx(ctx context.Context) (uint, bool) {
 	return uint(idF), true
 }
 
-// IsAdminFromCtx reports whether the request carries an admin token. This is
-// the authorisation check for nearly every mutation — there is no middleware
-// in front of the GraphQL endpoint, so a resolver that forgets to call this
-// is public. Admin comes from the token, not the database, so a revoked admin
-// flag only bites once the access token expires.
+// IsAdminFromCtx reports whether the request carries an admin token. It is
+// what the @admin directive tests (directives.go), which is how nearly every
+// mutation is authorised; resolvers call it directly only for the softer
+// cases a directive cannot express, such as the messages query filtering
+// rather than refusing. Admin comes from the token, not the database, so a
+// revoked admin flag only bites once the access token expires.
 func IsAdminFromCtx(ctx context.Context) bool {
 	claims := UserClaimsFromCtx(ctx)
 	if claims == nil {
