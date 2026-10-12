@@ -260,7 +260,8 @@ Two distinct mechanisms read it, and services use both:
 `gitea` instead receives explicit `GITEA__section__KEY` variables (Gitea's own
 convention for overriding `app.ini` keys), and `python` receives an explicit
 allow-list, so it never sees the database password or any API key other than
-the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY`). The Python service
+the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY`, plus `CLAUDE_MODEL`,
+which picks the model). The Python service
 makes every Claude call in the stack — rowing photo reader, job posting reader,
 job lead scorer and email classifier — so it is the only container that reads `CLAUDE_API_KEY`;
 the backend receives it through `env_file` but no longer uses it. A new

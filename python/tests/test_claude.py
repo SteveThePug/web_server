@@ -1,6 +1,6 @@
-"""Tests for `ask_json`, the one Claude call the three callers share.
+"""Tests for `ask_json`, the one Claude call the four callers share.
 
-test_rowing, test_jobs and test_email_classify each cover their own prompt,
+test_rowing, test_jobs, test_job_score and test_email_classify each cover their own prompt,
 model and messages through this function; what is pinned here is the function's
 own contract - what it sends, which failure produces which of the caller's
 three messages, and where it gets its client from.
@@ -53,7 +53,59 @@ def test_sends_the_request_and_validates_the_reply():
     assert result == Count(n=3)
     # No system prompt was given, so the key is absent rather than None: the
     # SDK would send a null the API rejects.
-    assert call == {"model": claude.MODEL, "max_tokens": 64, "messages": MESSAGES}
+    assert call == {"model": claude.MODEL, "messages": MESSAGES, **claude._model_options(claude.MODEL, 64)}
+
+
+def test_a_thinking_model_gets_headroom_and_low_effort(monkeypatch):
+    """Thinking is billed against max_tokens, so the caller's reply ceiling alone would starve the answer."""
+    monkeypatch.setattr(claude, "MODEL", "claude-sonnet-5-5")
+    _, (call,) = ask(text_reply("{}"))
+
+    assert call["model"] == "claude-sonnet-5-5"
+    assert call["max_tokens"] == 64 + claude.THINKING_HEADROOM
+    assert call["output_config"] == {"effort": "low"}
+    # Nothing these models reject: no thinking override, sampling or forced tool.
+    assert not {"thinking", "temperature", "top_p", "top_k", "tool_choice"} & call.keys()
+
+
+def test_haiku_gets_the_plain_request(monkeypatch):
+    """Haiku 4.5 rejects output_config.effort and does not think unless asked to."""
+    monkeypatch.setattr(claude, "MODEL", "claude-haiku-4-5")
+    _, (call,) = ask(text_reply("{}"))
+
+    assert call == {"model": "claude-haiku-4-5", "max_tokens": 64, "messages": MESSAGES}
+
+
+def test_the_default_model_is_one_the_admin_panel_offers():
+    """CLAUDE_MODEL's options in the env registry are what the Environment tab lets an admin pick."""
+    import json
+    from pathlib import Path
+
+    registry = json.loads((Path(__file__).parents[2] / "backend/services/env_registry.json").read_text())
+    (entry,) = [v for v in registry if v["name"] == "CLAUDE_MODEL"]
+    assert claude.DEFAULT_MODEL in entry["options"]
+    assert "python" in entry["services"]
+
+
+def test_the_answer_is_found_after_a_thinking_block():
+    reply = SimpleNamespace(
+        stop_reason="end_turn",
+        content=[SimpleNamespace(type="thinking", thinking=""), SimpleNamespace(type="text", text='{"n": 7}')],
+    )
+    result, _ = ask(reply)
+    assert result == Count(n=7)
+
+
+def test_a_refusal_is_a_failed_call_not_an_empty_reply():
+    reply = SimpleNamespace(stop_reason="refusal", stop_details=SimpleNamespace(category="general_harms"), content=[])
+    with pytest.raises(claude.ReadError, match="call failed"):
+        ask(reply)
+
+
+def test_running_out_of_tokens_while_thinking_is_an_empty_reply():
+    reply = SimpleNamespace(stop_reason="max_tokens", content=[SimpleNamespace(type="thinking", thinking="")])
+    with pytest.raises(claude.ReadError, match="nothing came back"):
+        ask(reply)
 
 
 def test_passes_a_system_prompt_through():

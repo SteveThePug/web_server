@@ -1,8 +1,8 @@
 """The Anthropic client and the one call every Claude caller here makes.
 
 `rowing` (a photo in, three numbers out), `jobs` (page text in, a few fields
-out) and `email_classify` (an email in, a verdict out) are the same shape of
-call: one prompt asking for bare JSON, one reply to parse. That whole sequence
+out), `job_score` (a posting and a profile in, a score out) and
+`email_classify` (an email in, a verdict out) are the same shape of call: one prompt asking for bare JSON, one reply to parse. That whole sequence
 is `ask_json` below, so a caller is a prompt, a pydantic model and three error
 strings, and the handling around the call cannot drift between them. Also
 here: the lazily built client and the two exception types `main` maps to 502
@@ -23,7 +23,35 @@ log = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
-MODEL = "claude-haiku-4-5"
+# Which model every call uses. CLAUDE_MODEL is set from the admin panel's
+# Environment tab (it is in backend/services/env_registry.json, whose `options`
+# list is what the panel offers); changing it there recreates this container,
+# which is why reading it once at import is enough. Blank means the default.
+#
+# The registry's options are the ids this module has been written for. Another
+# id is passed through as it is, treated as a model that thinks (see below);
+# if the API does not know it, every call fails with its `failed` message and
+# the reason is in this service's log.
+DEFAULT_MODEL = "claude-sonnet-5-5"
+MODEL = os.environ.get("CLAUDE_MODEL", "").strip() or DEFAULT_MODEL
+
+# Models that take no `output_config.effort` and do not think unless asked to.
+# Everything newer thinks by default, and that changes two things in the
+# request - see _model_options.
+_NO_EFFORT_PREFIXES = ("claude-haiku-4-5",)
+
+# Thinking is billed against `max_tokens` like the reply is, and the callers'
+# ceilings are sized for the reply alone (a few hundred tokens of JSON). On a
+# model that thinks, this is added on top so that a posting worth a moment's
+# thought cannot use the whole allowance and leave no room for the answer.
+THINKING_HEADROOM = 4000
+
+# Every call here is extraction or classification: read something, return a
+# small JSON object. "low" is the level meant for that - the model skips
+# thinking on most simple requests - and it is set explicitly because the
+# default differs between models.
+EFFORT = "low"
+
 # Seconds per attempt. The SDK retries twice on top (429/5xx/connection), so
 # the worst case is roughly three of these plus backoff; the Go callers' own
 # timeout is set above that so they see this side's error, not their own.
@@ -69,6 +97,19 @@ def strip_markdown_fence(raw: str) -> str:
     return raw.strip()
 
 
+def _model_options(model: str, max_tokens: int) -> dict:
+    """The parts of the request that depend on which model is configured.
+
+    `max_tokens` is the caller's ceiling on the reply. A model that thinks
+    gets THINKING_HEADROOM on top and an explicit effort level; Haiku 4.5
+    gets neither, because it rejects `output_config.effort` and does not think
+    unless a budget is requested, which nothing here does.
+    """
+    if model.startswith(_NO_EFFORT_PREFIXES):
+        return {"max_tokens": max_tokens}
+    return {"max_tokens": max_tokens + THINKING_HEADROOM, "output_config": {"effort": EFFORT}}
+
+
 def ask_json(
     model_cls: type[T],
     *,
@@ -90,7 +131,8 @@ def ask_json(
     Args:
         model_cls: the pydantic model the reply must validate as; its field
             names are the keys the caller's prompt asks for.
-        max_tokens: ceiling on the reply.
+        max_tokens: ceiling on the reply; see _model_options for what is
+            actually sent.
         messages: the `messages` list, passed to the API as is.
         system: the system prompt, left out of the request when None.
         failed: ReadError text when the API call itself failed.
@@ -105,7 +147,7 @@ def ask_json(
         NotConfigured: no API key.
         ReadError: with one of the three messages above.
     """
-    request = {"model": MODEL, "max_tokens": max_tokens, "messages": messages}
+    request = {"model": MODEL, "messages": messages, **_model_options(MODEL, max_tokens)}
     if system is not None:
         request["system"] = system
 
@@ -121,8 +163,19 @@ def ask_json(
         log.warning("Claude API unreachable: %s", e)
         raise ReadError(failed) from e
 
+    # A refusal is an ordinary 200 whose content is not the answer. Say so in
+    # the log rather than letting it surface as an "empty" or "unparseable"
+    # reply, which would point at the prompt instead of at the classifier.
+    if getattr(message, "stop_reason", None) == "refusal":
+        log.warning("Claude declined the request: %s", getattr(message, "stop_details", None))
+        raise ReadError(failed)
+
+    # By type, not position: on a model that thinks, the first block can be a
+    # (possibly empty) thinking block.
     text = next((block.text for block in message.content if block.type == "text"), None)
     if text is None:
+        if getattr(message, "stop_reason", None) == "max_tokens":
+            log.warning("Claude ran out of tokens before answering (max_tokens=%s)", request["max_tokens"])
         raise ReadError(empty)
 
     try:

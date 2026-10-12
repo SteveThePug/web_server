@@ -16,7 +16,7 @@ import httpx2 as httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import email_classify, main
+from app import claude, email_classify, main
 
 ROUTE = "/internal/email/classify"
 MESSAGE = (
@@ -90,7 +90,9 @@ def test_classify_sends_the_email_unchanged_as_the_user_turn(fake_claude):
     assert analysis.model_dump() == ANALYSIS
     (call,) = fake_claude.calls
     assert call["model"] == email_classify.MODEL
-    assert call["max_tokens"] == 512
+    # 512 is the reply's ceiling; what is sent adds room for thinking on a
+    # model that thinks (claude._model_options).
+    assert call["max_tokens"] == claude._model_options(claude.MODEL, 512)["max_tokens"]
     # The instructions travel in the system prompt and the email in the user
     # turn, exactly as Go formatted it.
     assert call["system"] == email_classify.SYSTEM

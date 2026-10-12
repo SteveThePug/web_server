@@ -98,7 +98,15 @@ They share their plumbing, in two places:
   with a string `detail`. The guard runs as a dependency, so a request from
   outside is a 404 before its body is validated.
 
-All four use `claude-haiku-4-5` (`MODEL` in `claude.py`). The Go callers set
+All four use one model, `MODEL` in `claude.py`: the `CLAUDE_MODEL` variable,
+or `claude-sonnet-5-5` when it is blank. It is chosen on the admin panel's
+Environment tab from `claude-haiku-4-5`, `claude-sonnet-5-5` and
+`claude-opus-5-5`, and saving it there restarts this service. The request is
+shaped per model by `_model_options`: a model that thinks gets
+`output_config.effort: "low"` and 4,000 tokens of headroom on top of the
+caller's `max_tokens`, because thinking is billed against it; Haiku 4.5 gets
+neither, since it rejects the effort setting. A refusal (`stop_reason:
+"refusal"`) is reported as the route's `failed` message. The Go callers set
 their own timeout above this side's (30s per attempt, two SDK retries), so
 they see this service's error rather than their own.
 
@@ -237,7 +245,7 @@ braces version of the same thing. The internal deadlines in `travelodge.py`
 return partial results with `summary.truncated = true` instead of dying.
 
 Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
-`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the four internal Claude routes. Dev mode mounts `python/app` and runs
+`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` and `CLAUDE_MODEL` for the four internal Claude routes. Dev mode mounts `python/app` and runs
 uvicorn with `--reload`.
 
 ## Running locally

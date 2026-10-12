@@ -1,5 +1,6 @@
 [
   {"name": "CLAUDE_API_KEY", "group": "API keys", "purpose": "Claude calls, all made by the Python service: email classifier, rowing photo reader, job posting reader, job lead scorer", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://console.anthropic.com/settings/keys"},
+  {"name": "CLAUDE_MODEL", "group": "API keys", "purpose": "Model for every Claude call: lead scoring, email classifier, posting reader, rowing photo reader. Blank uses claude-sonnet-5-5. Rough cost per million tokens in/out: Haiku $1/$5, Sonnet $2/$10, Opus $4/$20", "kind": "enum", "options": ["claude-haiku-4-5", "claude-sonnet-5-5", "claude-opus-5-5"], "editable": true, "services": ["python"]},
   {"name": "STEAM_API_KEY", "group": "API keys", "purpose": "Steam status widget", "kind": "secret", "editable": true, "services": ["backend"], "docsUrl": "https://steamcommunity.com/dev/apikey"},
   {"name": "STEAM_ID", "group": "API keys", "purpose": "Steam account the widget reports on (64-bit ID)", "kind": "text", "editable": true, "services": ["backend"]},
   {"name": "TFL_APP_KEY", "group": "API keys", "purpose": "TfL Unified API, used by the hotel finder", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://api-portal.tfl.gov.uk/profile"},
