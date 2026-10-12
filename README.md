@@ -242,7 +242,7 @@ Create a `.env` file in the project root. All services read from this file.
 | `LIQUIDSOAP_HARBOR_PORT`          | Liquidsoap harbor port (e.g. `8005`)                                            |
 | `DOMAIN`                          | Production domain name                                                          |
 | `EMAIL`                           | Email for Let's Encrypt registration                                            |
-| `CLAUDE_API_KEY`                  | Anthropic Claude API key                                                        |
+| `CLAUDE_API_KEY`                  | Anthropic Claude API key (read by the Python service, which makes every Claude call) |
 | `STEAM_API_KEY`                   | Steam Web API key                                                               |
 | `STEAM_ID`                        | Steam user ID                                                                   |
 | `PYTHON_HOST`                     | Python API hostname (defaults to `python`)                                      |
@@ -321,7 +321,17 @@ Visit `http://localhost` to test.
 cd vue && npm run dev
 ```
 
-Vite dev server proxies `/api` to `localhost:8080`, `/gitea` to `localhost:3000`, `/radio` to `localhost:8000`.
+Vite dev server proxies `/api`, `/gitea`, `/py` and `/radio`. The targets default to `localhost:8080`, `:3000`, `:8000` and `:8000`; override them with `VITE_PROXY_API`, `VITE_PROXY_GITEA`, `VITE_PROXY_PY` and `VITE_PROXY_RADIO` (see the comment in `vue/vite.config.js` — compose does not publish the backend, Python or Icecast ports to the host).
+
+### Checks
+
+```sh
+make check
+```
+
+Runs the backend's `go vet` and tests, the Python tests (in a virtualenv created from `python/requirements-dev.txt`), a Vite build and `docker compose config` validation. `make help` lists the individual targets, plus `make generate` (regenerate the GraphQL code after a schema edit) and `make dev`.
+
+The same backend and Python checks run in containers on the Pi on every push; a push to `main` is only deployed if they pass.
 
 ## Untracked Files
 

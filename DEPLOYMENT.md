@@ -85,8 +85,8 @@ in one step — never change one without the other.**
   nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
   file *list*; direct `/.fs/` fetches and server-rendered page URLs still serve
   them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
-  adding it to the deny regex in both nginx templates publishes it. See the
-  comment above `location /notes/` in `nginx.conf.template`.
+  adding it to the deny regex in `nginx_routes.conf.template` publishes it. See the
+  comment above `location /notes/` in `nginx_routes.conf.template`.
 - **Uploads served directly.** `/uploads/` is an alias onto the shared `uploads`
   volume with `nosniff`, `Content-Disposition: inline` and a deny-all CSP, so
   user-supplied files cannot execute anything on our origin.
@@ -113,9 +113,30 @@ docker compose up --build
 4. Everything else comes up in parallel; `depends_on` here is the plain list
    form, which waits only for *start*, not readiness.
 
-On the Pi this is triggered automatically: `.gitea/workflows/deploy.yaml` runs on
-every push to `main`, fetches over `ssh://git@localhost:2222`, hard-resets the
-deploy checkout, and runs `docker compose up -d --build --remove-orphans`.
+On the Pi this is triggered automatically by `.gitea/workflows/deploy.yaml`,
+which has two jobs:
+
+- **`test`** runs on every push to any branch. It exports the pushed commit
+  (never the deploy checkout) and runs the backend's `go vet` + `go test` in
+  `golang:1.26` and the Python tests in `python:3.12-slim`. The Vue build is
+  not repeated here: the image build in the deploy step does it, and a failed
+  build leaves the old containers running.
+- **`deploy`** runs only on `main`, only after `test` passes, and only if the
+  tested commit is still the tip of `main` (so an older run cannot deploy a
+  newer, untested commit). It fetches over `ssh://git@localhost:2222`,
+  hard-resets the deploy checkout, and runs
+  `docker compose up -d --build --remove-orphans` under the
+  `env-apply/run/lock` flock.
+
+The test job keeps state on the Pi outside the deploy checkout: a bare
+repository cache at `/home/adamf/.cache/web_server-ci/` and three named
+volumes (`web_server_ci_gomod`, `web_server_ci_gobuild`, `web_server_ci_pip`).
+The weekly maintenance workflow's `docker image prune -af` removes the two
+toolchain images, so the first run after it pulls them again; the volumes
+survive. Maintenance takes the same flock around its compose steps.
+
+`make check` runs the same checks locally, plus the Vue build and compose
+validation — run it before pushing, since a red `test` job blocks the deploy.
 
 ### Development
 
@@ -239,8 +260,13 @@ Two distinct mechanisms read it, and services use both:
 `gitea` instead receives explicit `GITEA__section__KEY` variables (Gitea's own
 convention for overriding `app.ini` keys), and `python` receives an explicit
 allow-list, so it never sees the database password or any API key other than
-the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY` for the rowing photo and
-job posting readers).
+the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY`). The Python service
+makes every Claude call in the stack — rowing photo reader, job posting reader
+and email classifier — so it is the only container that reads `CLAUDE_API_KEY`;
+the backend receives it through `env_file` but no longer uses it. A new
+variable for the Python service has to be added to that allow-list as well as
+`.env.example` and `backend/services/env_registry.json`; backend tests fail if
+the three disagree.
 
 **`.env` reaches the Pi via `./sync-secrets.sh`**, which syncs exactly two
 things between this checkout and `adamf@stppi.local:~/deploy/web_server`:
@@ -445,8 +471,12 @@ Documented, not fixed — each would change deploy behaviour.
    mounted to the same in-container path as the real wrapper. It is currently
    shadowed by an explicit file mount — fragile. Deleting it would be safe but
    is a file removal.
-4. **The dev nginx template duplicates its `:80` and `:443` server blocks**
-   almost verbatim (~190 lines), so a routing fix must be made twice.
+4. **The two `/uploads/` location blocks are still written twice** — once in
+   `nginx.conf.template` and once in `nginx_dev_common.conf.template` —
+   because production adds security headers inside an auth-gated block. Every
+   other proxied route lives once in `nginx_routes.conf.template`, which both
+   configs include; the `auth_request` lines on `/uploads/private/` are the
+   one thing that must be kept in step by hand.
 5. **`nginx.conf.template` has a `/img/stamps/mine.gif` CORS header allowing
    only our own origin**, which defeats the point of having the header at all.
 6. **`certbot/entrypoint.sh` uses unquoted `${EMAIL}` and `${DOMAIN}`.** Inert

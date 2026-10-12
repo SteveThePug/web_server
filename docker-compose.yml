@@ -349,7 +349,7 @@ services:
       SB_REVISIONS: disabled
       # Newline separated (commas are silently ignored). Gitignore semantics,
       # so these match at any depth. Must match the folder list in the
-      # /notes/ deny regex in BOTH nginx templates, or a new entry here is
+      # /notes/ deny regex in nginx/nginx_routes.conf.template, or a new entry here is
       # hidden from the list but still publicly fetchable.
       SB_SPACE_IGNORE: |
         private/
