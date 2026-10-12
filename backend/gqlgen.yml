@@ -89,6 +89,18 @@ models:
     fields:
       deletedAt:
         resolver: false
+  JobSource:
+    model:
+      - adam-french.co.uk/backend/models.JobSource
+    fields:
+      deletedAt:
+        resolver: false
+  JobLead:
+    model:
+      - adam-french.co.uk/backend/models.JobLead
+  JobSearchProfile:
+    model:
+      - adam-french.co.uk/backend/models.JobSearchProfile
   Place:
     model:
       - adam-french.co.uk/backend/models.Place

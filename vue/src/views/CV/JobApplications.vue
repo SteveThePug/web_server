@@ -11,9 +11,10 @@
  * stores/jobApplications.js and stores/jobAppReferences.js; nothing here calls
  * gql() directly.
  *
- * Rows also arrive from two places that are not this page: the email pipeline,
- * and the browser userscript in `public/job-capture.user.js`, which the header
- * links to for installing.
+ * Rows also arrive from three places that are not this page: the email
+ * pipeline, the browser userscript in `public/job-capture.user.js`, which the
+ * header links to for installing, and the leads inbox at `/cv/leads`
+ * (JobLeads.vue), where tracking a lead adds it here as Saved.
  */
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
@@ -293,6 +294,9 @@ onMounted(fetchApplications);
         <h2 class="ja-heading">Job Applications</h2>
       </div>
       <div class="ja-header-right">
+        <!-- Postings the server found by itself; tracking one there adds it
+             to this page as Saved. -->
+        <RouterLink to="/cv/leads" class="cv-btn ja-btn-link">Leads</RouterLink>
         <!-- A plain link to a static file: Violentmonkey intercepts any
              navigation to a URL ending in .user.js and offers to install it.
              The token it then asks for is generated on the admin panel. -->
@@ -562,6 +566,10 @@ onMounted(fetchApplications);
 
 .ja-back:hover {
   color: var(--color-ink);
+}
+
+.ja-btn-link {
+  text-decoration: none;
 }
 
 .ja-heading {

@@ -108,6 +108,54 @@ type ComplexityRoot struct {
 		UpdatedAt   func(childComplexity int) int
 	}
 
+	JobLead struct {
+		Company      func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		Description  func(childComplexity int) int
+		ID           func(childComplexity int) int
+		JobAppID     func(childComplexity int) int
+		JobTitle     func(childComplexity int) int
+		LastSeenAt   func(childComplexity int) int
+		Location     func(childComplexity int) int
+		Matched      func(childComplexity int) int
+		PostedAt     func(childComplexity int) int
+		Score        func(childComplexity int) int
+		ScoreReasons func(childComplexity int) int
+		SourceKind   func(childComplexity int) int
+		State        func(childComplexity int) int
+		URL          func(childComplexity int) int
+	}
+
+	JobLeadSyncStatus struct {
+		LastError func(childComplexity int) int
+		LastRunAt func(childComplexity int) int
+		Running   func(childComplexity int) int
+	}
+
+	JobSearchProfile struct {
+		ExcludeKeywords func(childComplexity int) int
+		IncludeKeywords func(childComplexity int) int
+		Locations       func(childComplexity int) int
+		MinScore        func(childComplexity int) int
+		Profile         func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
+	}
+
+	JobSource struct {
+		CreatedAt     func(childComplexity int) int
+		Enabled       func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Kind          func(childComplexity int) int
+		Label         func(childComplexity int) int
+		LastCount     func(childComplexity int) int
+		LastError     func(childComplexity int) int
+		LastFetchedAt func(childComplexity int) int
+		Location      func(childComplexity int) int
+		Query         func(childComplexity int) int
+		Token         func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
 	Message struct {
 		AuthorID  func(childComplexity int) int
 		Content   func(childComplexity int) int
@@ -118,28 +166,36 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateActivity        func(childComplexity int, input model.CreateActivityInput) int
-		CreateBookmark        func(childComplexity int, input model.CreateBookmarkInput) int
-		CreateFavorite        func(childComplexity int, input model.CreateFavoriteInput) int
-		CreateJobAppReference func(childComplexity int, input model.CreateJobAppReferenceInput) int
-		CreateJobApplication  func(childComplexity int, input model.CreateJobApplicationInput) int
-		CreatePlace           func(childComplexity int, input model.CreatePlaceInput) int
-		CreatePost            func(childComplexity int, input model.CreatePostInput) int
-		CreateUser            func(childComplexity int, input model.CreateUserInput) int
-		DeleteBookmark        func(childComplexity int, id int) int
-		DeleteJobAppReference func(childComplexity int, id int) int
-		DeleteJobApplication  func(childComplexity int, id int) int
-		DeletePlace           func(childComplexity int, id int) int
-		DeletePost            func(childComplexity int, id int) int
-		DeleteUser            func(childComplexity int, id int) int
-		Login                 func(childComplexity int, input model.LoginInput) int
-		Logout                func(childComplexity int) int
-		RefreshToken          func(childComplexity int) int
-		SetUserAdmin          func(childComplexity int, id int, admin bool) int
-		UpdateJobAppReference func(childComplexity int, id int, input model.UpdateJobAppReferenceInput) int
-		UpdateJobApplication  func(childComplexity int, id int, input model.UpdateJobApplicationInput) int
-		UpdatePlace           func(childComplexity int, id int, input model.UpdatePlaceInput) int
-		UpdatePost            func(childComplexity int, id int, input model.UpdatePostInput) int
+		CreateActivity         func(childComplexity int, input model.CreateActivityInput) int
+		CreateBookmark         func(childComplexity int, input model.CreateBookmarkInput) int
+		CreateFavorite         func(childComplexity int, input model.CreateFavoriteInput) int
+		CreateJobAppReference  func(childComplexity int, input model.CreateJobAppReferenceInput) int
+		CreateJobApplication   func(childComplexity int, input model.CreateJobApplicationInput) int
+		CreateJobSource        func(childComplexity int, input model.CreateJobSourceInput) int
+		CreatePlace            func(childComplexity int, input model.CreatePlaceInput) int
+		CreatePost             func(childComplexity int, input model.CreatePostInput) int
+		CreateUser             func(childComplexity int, input model.CreateUserInput) int
+		DeleteBookmark         func(childComplexity int, id int) int
+		DeleteJobAppReference  func(childComplexity int, id int) int
+		DeleteJobApplication   func(childComplexity int, id int) int
+		DeleteJobSource        func(childComplexity int, id int) int
+		DeletePlace            func(childComplexity int, id int) int
+		DeletePost             func(childComplexity int, id int) int
+		DeleteUser             func(childComplexity int, id int) int
+		DismissJobLead         func(childComplexity int, id int) int
+		Login                  func(childComplexity int, input model.LoginInput) int
+		Logout                 func(childComplexity int) int
+		PromoteJobLead         func(childComplexity int, id int) int
+		RefreshToken           func(childComplexity int) int
+		RestoreJobLead         func(childComplexity int, id int) int
+		RunJobLeadSync         func(childComplexity int) int
+		SetUserAdmin           func(childComplexity int, id int, admin bool) int
+		UpdateJobAppReference  func(childComplexity int, id int, input model.UpdateJobAppReferenceInput) int
+		UpdateJobApplication   func(childComplexity int, id int, input model.UpdateJobApplicationInput) int
+		UpdateJobSearchProfile func(childComplexity int, input model.UpdateJobSearchProfileInput) int
+		UpdateJobSource        func(childComplexity int, id int, input model.UpdateJobSourceInput) int
+		UpdatePlace            func(childComplexity int, id int, input model.UpdatePlaceInput) int
+		UpdatePost             func(childComplexity int, id int, input model.UpdatePostInput) int
 	}
 
 	Place struct {
@@ -173,6 +229,11 @@ type ComplexityRoot struct {
 		JobAppReferences   func(childComplexity int) int
 		JobApplication     func(childComplexity int, id int) int
 		JobApplications    func(childComplexity int) int
+		JobLead            func(childComplexity int, id int) int
+		JobLeadSyncStatus  func(childComplexity int) int
+		JobLeads           func(childComplexity int, state *string, includeUnmatched *bool) int
+		JobSearchProfile   func(childComplexity int) int
+		JobSources         func(childComplexity int) int
 		Me                 func(childComplexity int) int
 		Messages           func(childComplexity int) int
 		Places             func(childComplexity int) int
@@ -269,6 +330,14 @@ type MutationResolver interface {
 	CreateJobApplication(ctx context.Context, input model.CreateJobApplicationInput) (*models.JobApplication, error)
 	UpdateJobApplication(ctx context.Context, id int, input model.UpdateJobApplicationInput) (*models.JobApplication, error)
 	DeleteJobApplication(ctx context.Context, id int) (bool, error)
+	CreateJobSource(ctx context.Context, input model.CreateJobSourceInput) (*models.JobSource, error)
+	UpdateJobSource(ctx context.Context, id int, input model.UpdateJobSourceInput) (*models.JobSource, error)
+	DeleteJobSource(ctx context.Context, id int) (bool, error)
+	DismissJobLead(ctx context.Context, id int) (*models.JobLead, error)
+	RestoreJobLead(ctx context.Context, id int) (*models.JobLead, error)
+	PromoteJobLead(ctx context.Context, id int) (*models.JobLead, error)
+	UpdateJobSearchProfile(ctx context.Context, input model.UpdateJobSearchProfileInput) (*models.JobSearchProfile, error)
+	RunJobLeadSync(ctx context.Context) (bool, error)
 	CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error)
 	UpdatePlace(ctx context.Context, id int, input model.UpdatePlaceInput) (*models.Place, error)
 	DeletePlace(ctx context.Context, id int) (*models.Place, error)
@@ -288,6 +357,11 @@ type QueryResolver interface {
 	JobAppReferences(ctx context.Context) ([]*models.JobAppReference, error)
 	JobApplications(ctx context.Context) ([]*models.JobApplication, error)
 	JobApplication(ctx context.Context, id int) (*models.JobApplication, error)
+	JobSources(ctx context.Context) ([]*models.JobSource, error)
+	JobLeads(ctx context.Context, state *string, includeUnmatched *bool) ([]*models.JobLead, error)
+	JobLead(ctx context.Context, id int) (*models.JobLead, error)
+	JobSearchProfile(ctx context.Context) (*models.JobSearchProfile, error)
+	JobLeadSyncStatus(ctx context.Context) (*model.JobLeadSyncStatus, error)
 	Messages(ctx context.Context) ([]*models.Message, error)
 	Places(ctx context.Context) ([]*models.Place, error)
 	Posts(ctx context.Context) ([]*models.Post, error)
@@ -588,6 +662,226 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.JobApplication.UpdatedAt(childComplexity), true
 
+	case "JobLead.company":
+		if e.ComplexityRoot.JobLead.Company == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.Company(childComplexity), true
+	case "JobLead.createdAt":
+		if e.ComplexityRoot.JobLead.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.CreatedAt(childComplexity), true
+	case "JobLead.description":
+		if e.ComplexityRoot.JobLead.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.Description(childComplexity), true
+	case "JobLead.id":
+		if e.ComplexityRoot.JobLead.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.ID(childComplexity), true
+	case "JobLead.jobAppId":
+		if e.ComplexityRoot.JobLead.JobAppID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.JobAppID(childComplexity), true
+	case "JobLead.jobTitle":
+		if e.ComplexityRoot.JobLead.JobTitle == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.JobTitle(childComplexity), true
+	case "JobLead.lastSeenAt":
+		if e.ComplexityRoot.JobLead.LastSeenAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.LastSeenAt(childComplexity), true
+	case "JobLead.location":
+		if e.ComplexityRoot.JobLead.Location == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.Location(childComplexity), true
+	case "JobLead.matched":
+		if e.ComplexityRoot.JobLead.Matched == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.Matched(childComplexity), true
+	case "JobLead.postedAt":
+		if e.ComplexityRoot.JobLead.PostedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.PostedAt(childComplexity), true
+	case "JobLead.score":
+		if e.ComplexityRoot.JobLead.Score == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.Score(childComplexity), true
+	case "JobLead.scoreReasons":
+		if e.ComplexityRoot.JobLead.ScoreReasons == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.ScoreReasons(childComplexity), true
+	case "JobLead.sourceKind":
+		if e.ComplexityRoot.JobLead.SourceKind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.SourceKind(childComplexity), true
+	case "JobLead.state":
+		if e.ComplexityRoot.JobLead.State == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.State(childComplexity), true
+	case "JobLead.url":
+		if e.ComplexityRoot.JobLead.URL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.URL(childComplexity), true
+
+	case "JobLeadSyncStatus.lastError":
+		if e.ComplexityRoot.JobLeadSyncStatus.LastError == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLeadSyncStatus.LastError(childComplexity), true
+	case "JobLeadSyncStatus.lastRunAt":
+		if e.ComplexityRoot.JobLeadSyncStatus.LastRunAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLeadSyncStatus.LastRunAt(childComplexity), true
+	case "JobLeadSyncStatus.running":
+		if e.ComplexityRoot.JobLeadSyncStatus.Running == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLeadSyncStatus.Running(childComplexity), true
+
+	case "JobSearchProfile.excludeKeywords":
+		if e.ComplexityRoot.JobSearchProfile.ExcludeKeywords == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.ExcludeKeywords(childComplexity), true
+	case "JobSearchProfile.includeKeywords":
+		if e.ComplexityRoot.JobSearchProfile.IncludeKeywords == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.IncludeKeywords(childComplexity), true
+	case "JobSearchProfile.locations":
+		if e.ComplexityRoot.JobSearchProfile.Locations == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.Locations(childComplexity), true
+	case "JobSearchProfile.minScore":
+		if e.ComplexityRoot.JobSearchProfile.MinScore == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.MinScore(childComplexity), true
+	case "JobSearchProfile.profile":
+		if e.ComplexityRoot.JobSearchProfile.Profile == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.Profile(childComplexity), true
+	case "JobSearchProfile.updatedAt":
+		if e.ComplexityRoot.JobSearchProfile.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSearchProfile.UpdatedAt(childComplexity), true
+
+	case "JobSource.createdAt":
+		if e.ComplexityRoot.JobSource.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.CreatedAt(childComplexity), true
+	case "JobSource.enabled":
+		if e.ComplexityRoot.JobSource.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Enabled(childComplexity), true
+	case "JobSource.id":
+		if e.ComplexityRoot.JobSource.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.ID(childComplexity), true
+	case "JobSource.kind":
+		if e.ComplexityRoot.JobSource.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Kind(childComplexity), true
+	case "JobSource.label":
+		if e.ComplexityRoot.JobSource.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Label(childComplexity), true
+	case "JobSource.lastCount":
+		if e.ComplexityRoot.JobSource.LastCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.LastCount(childComplexity), true
+	case "JobSource.lastError":
+		if e.ComplexityRoot.JobSource.LastError == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.LastError(childComplexity), true
+	case "JobSource.lastFetchedAt":
+		if e.ComplexityRoot.JobSource.LastFetchedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.LastFetchedAt(childComplexity), true
+	case "JobSource.location":
+		if e.ComplexityRoot.JobSource.Location == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Location(childComplexity), true
+	case "JobSource.query":
+		if e.ComplexityRoot.JobSource.Query == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Query(childComplexity), true
+	case "JobSource.token":
+		if e.ComplexityRoot.JobSource.Token == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.Token(childComplexity), true
+	case "JobSource.updatedAt":
+		if e.ComplexityRoot.JobSource.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobSource.UpdatedAt(childComplexity), true
+
 	case "Message.authorId":
 		if e.ComplexityRoot.Message.AuthorID == nil {
 			break
@@ -680,6 +974,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateJobApplication(childComplexity, args["input"].(model.CreateJobApplicationInput)), true
+	case "Mutation.createJobSource":
+		if e.ComplexityRoot.Mutation.CreateJobSource == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJobSource_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateJobSource(childComplexity, args["input"].(model.CreateJobSourceInput)), true
 	case "Mutation.createPlace":
 		if e.ComplexityRoot.Mutation.CreatePlace == nil {
 			break
@@ -746,6 +1051,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteJobApplication(childComplexity, args["id"].(int)), true
+	case "Mutation.deleteJobSource":
+		if e.ComplexityRoot.Mutation.DeleteJobSource == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteJobSource_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteJobSource(childComplexity, args["id"].(int)), true
 	case "Mutation.deletePlace":
 		if e.ComplexityRoot.Mutation.DeletePlace == nil {
 			break
@@ -779,6 +1095,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteUser(childComplexity, args["id"].(int)), true
+	case "Mutation.dismissJobLead":
+		if e.ComplexityRoot.Mutation.DismissJobLead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_dismissJobLead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DismissJobLead(childComplexity, args["id"].(int)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -796,12 +1123,40 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Logout(childComplexity), true
+	case "Mutation.promoteJobLead":
+		if e.ComplexityRoot.Mutation.PromoteJobLead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_promoteJobLead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.PromoteJobLead(childComplexity, args["id"].(int)), true
 	case "Mutation.refreshToken":
 		if e.ComplexityRoot.Mutation.RefreshToken == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Mutation.RefreshToken(childComplexity), true
+	case "Mutation.restoreJobLead":
+		if e.ComplexityRoot.Mutation.RestoreJobLead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_restoreJobLead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RestoreJobLead(childComplexity, args["id"].(int)), true
+	case "Mutation.runJobLeadSync":
+		if e.ComplexityRoot.Mutation.RunJobLeadSync == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.RunJobLeadSync(childComplexity), true
 	case "Mutation.setUserAdmin":
 		if e.ComplexityRoot.Mutation.SetUserAdmin == nil {
 			break
@@ -835,6 +1190,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateJobApplication(childComplexity, args["id"].(int), args["input"].(model.UpdateJobApplicationInput)), true
+	case "Mutation.updateJobSearchProfile":
+		if e.ComplexityRoot.Mutation.UpdateJobSearchProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateJobSearchProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateJobSearchProfile(childComplexity, args["input"].(model.UpdateJobSearchProfileInput)), true
+	case "Mutation.updateJobSource":
+		if e.ComplexityRoot.Mutation.UpdateJobSource == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateJobSource_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateJobSource(childComplexity, args["id"].(int), args["input"].(model.UpdateJobSourceInput)), true
 	case "Mutation.updatePlace":
 		if e.ComplexityRoot.Mutation.UpdatePlace == nil {
 			break
@@ -1010,6 +1387,46 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.JobApplications(childComplexity), true
+	case "Query.jobLead":
+		if e.ComplexityRoot.Query.JobLead == nil {
+			break
+		}
+
+		args, err := ec.field_Query_jobLead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.JobLead(childComplexity, args["id"].(int)), true
+	case "Query.jobLeadSyncStatus":
+		if e.ComplexityRoot.Query.JobLeadSyncStatus == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.JobLeadSyncStatus(childComplexity), true
+	case "Query.jobLeads":
+		if e.ComplexityRoot.Query.JobLeads == nil {
+			break
+		}
+
+		args, err := ec.field_Query_jobLeads_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.JobLeads(childComplexity, args["state"].(*string), args["includeUnmatched"].(*bool)), true
+	case "Query.jobSearchProfile":
+		if e.ComplexityRoot.Query.JobSearchProfile == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.JobSearchProfile(childComplexity), true
+	case "Query.jobSources":
+		if e.ComplexityRoot.Query.JobSources == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.JobSources(childComplexity), true
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
 			break
@@ -1296,12 +1713,15 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateFavoriteInput,
 		ec.unmarshalInputCreateJobAppReferenceInput,
 		ec.unmarshalInputCreateJobApplicationInput,
+		ec.unmarshalInputCreateJobSourceInput,
 		ec.unmarshalInputCreatePlaceInput,
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputUpdateJobAppReferenceInput,
 		ec.unmarshalInputUpdateJobApplicationInput,
+		ec.unmarshalInputUpdateJobSearchProfileInput,
+		ec.unmarshalInputUpdateJobSourceInput,
 		ec.unmarshalInputUpdatePlaceInput,
 		ec.unmarshalInputUpdatePostInput,
 	)
@@ -1378,7 +1798,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/job_app_reference.graphql" "schema/job_application.graphql" "schema/message.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/job_app_reference.graphql" "schema/job_application.graphql" "schema/job_lead.graphql" "schema/message.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1397,6 +1817,7 @@ var sources = []*ast.Source{
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
 	{Name: "schema/job_app_reference.graphql", Input: sourceData("schema/job_app_reference.graphql"), BuiltIn: false},
 	{Name: "schema/job_application.graphql", Input: sourceData("schema/job_application.graphql"), BuiltIn: false},
+	{Name: "schema/job_lead.graphql", Input: sourceData("schema/job_lead.graphql"), BuiltIn: false},
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
 	{Name: "schema/place.graphql", Input: sourceData("schema/place.graphql"), BuiltIn: false},
 	{Name: "schema/post.graphql", Input: sourceData("schema/post.graphql"), BuiltIn: false},
@@ -1538,6 +1959,102 @@ func (ec *executionContext) childFields_JobApplication(ctx context.Context, fiel
 		return ec.fieldContext_JobApplication_description(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
+}
+
+func (ec *executionContext) childFields_JobLead(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_JobLead_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_JobLead_createdAt(ctx, field)
+	case "sourceKind":
+		return ec.fieldContext_JobLead_sourceKind(ctx, field)
+	case "jobTitle":
+		return ec.fieldContext_JobLead_jobTitle(ctx, field)
+	case "company":
+		return ec.fieldContext_JobLead_company(ctx, field)
+	case "location":
+		return ec.fieldContext_JobLead_location(ctx, field)
+	case "url":
+		return ec.fieldContext_JobLead_url(ctx, field)
+	case "description":
+		return ec.fieldContext_JobLead_description(ctx, field)
+	case "postedAt":
+		return ec.fieldContext_JobLead_postedAt(ctx, field)
+	case "lastSeenAt":
+		return ec.fieldContext_JobLead_lastSeenAt(ctx, field)
+	case "matched":
+		return ec.fieldContext_JobLead_matched(ctx, field)
+	case "state":
+		return ec.fieldContext_JobLead_state(ctx, field)
+	case "score":
+		return ec.fieldContext_JobLead_score(ctx, field)
+	case "scoreReasons":
+		return ec.fieldContext_JobLead_scoreReasons(ctx, field)
+	case "jobAppId":
+		return ec.fieldContext_JobLead_jobAppId(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type JobLead", field.Name)
+}
+
+func (ec *executionContext) childFields_JobLeadSyncStatus(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "running":
+		return ec.fieldContext_JobLeadSyncStatus_running(ctx, field)
+	case "lastRunAt":
+		return ec.fieldContext_JobLeadSyncStatus_lastRunAt(ctx, field)
+	case "lastError":
+		return ec.fieldContext_JobLeadSyncStatus_lastError(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type JobLeadSyncStatus", field.Name)
+}
+
+func (ec *executionContext) childFields_JobSearchProfile(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "updatedAt":
+		return ec.fieldContext_JobSearchProfile_updatedAt(ctx, field)
+	case "profile":
+		return ec.fieldContext_JobSearchProfile_profile(ctx, field)
+	case "includeKeywords":
+		return ec.fieldContext_JobSearchProfile_includeKeywords(ctx, field)
+	case "excludeKeywords":
+		return ec.fieldContext_JobSearchProfile_excludeKeywords(ctx, field)
+	case "locations":
+		return ec.fieldContext_JobSearchProfile_locations(ctx, field)
+	case "minScore":
+		return ec.fieldContext_JobSearchProfile_minScore(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type JobSearchProfile", field.Name)
+}
+
+func (ec *executionContext) childFields_JobSource(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_JobSource_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_JobSource_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_JobSource_updatedAt(ctx, field)
+	case "kind":
+		return ec.fieldContext_JobSource_kind(ctx, field)
+	case "label":
+		return ec.fieldContext_JobSource_label(ctx, field)
+	case "token":
+		return ec.fieldContext_JobSource_token(ctx, field)
+	case "query":
+		return ec.fieldContext_JobSource_query(ctx, field)
+	case "location":
+		return ec.fieldContext_JobSource_location(ctx, field)
+	case "enabled":
+		return ec.fieldContext_JobSource_enabled(ctx, field)
+	case "lastFetchedAt":
+		return ec.fieldContext_JobSource_lastFetchedAt(ctx, field)
+	case "lastCount":
+		return ec.fieldContext_JobSource_lastCount(ctx, field)
+	case "lastError":
+		return ec.fieldContext_JobSource_lastError(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type JobSource", field.Name)
 }
 
 func (ec *executionContext) childFields_Message(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1910,6 +2427,20 @@ func (ec *executionContext) field_Mutation_createJobApplication_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createJobSource_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateJobSourceInput, error) {
+			return ec.unmarshalNCreateJobSourceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobSourceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createPlace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1994,6 +2525,20 @@ func (ec *executionContext) field_Mutation_deleteJobApplication_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteJobSource_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deletePlace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2036,6 +2581,20 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_dismissJobLead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2047,6 +2606,34 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_promoteJobLead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_restoreJobLead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -2108,6 +2695,42 @@ func (ec *executionContext) field_Mutation_updateJobApplication_args(ctx context
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateJobApplicationInput, error) {
 			return ec.unmarshalNUpdateJobApplicationInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobApplicationInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateJobSearchProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateJobSearchProfileInput, error) {
+			return ec.unmarshalNUpdateJobSearchProfileInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobSearchProfileInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateJobSource_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateJobSourceInput, error) {
+			return ec.unmarshalNUpdateJobSourceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobSourceInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -2185,6 +2808,42 @@ func (ec *executionContext) field_Query_jobApplication_args(ctx context.Context,
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jobLead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jobLeads_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "state",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["state"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "includeUnmatched",
+		func(ctx context.Context, v any) (*bool, error) {
+			return ec.unmarshalOBoolean2ᚖbool(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["includeUnmatched"] = arg1
 	return args, nil
 }
 
@@ -3274,6 +3933,834 @@ func (ec *executionContext) fieldContext_JobApplication_description(_ context.Co
 	return graphql.NewScalarFieldContext("JobApplication", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _JobLead_id(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_sourceKind(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_sourceKind(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.SourceKind, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_sourceKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_jobTitle(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_jobTitle(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.JobTitle, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_jobTitle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_company(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_company(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Company, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_company(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_location(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_location(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Location, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_location(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_url(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_url(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.URL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_description(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_postedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_postedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PostedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_postedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_lastSeenAt(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_lastSeenAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastSeenAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_lastSeenAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_matched(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_matched(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Matched, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_matched(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_state(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_state(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.State, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_score(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_score(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Score, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *int) graphql.Marshaler {
+			return ec.marshalOInt2ᚖint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_scoreReasons(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_scoreReasons(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScoreReasons, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_scoreReasons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobLead_jobAppId(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_jobAppId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.JobAppID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *uint) graphql.Marshaler {
+			return ec.marshalOID2ᚖuint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_jobAppId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _JobLeadSyncStatus_running(ctx context.Context, field graphql.CollectedField, obj *model.JobLeadSyncStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLeadSyncStatus_running(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Running, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLeadSyncStatus_running(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLeadSyncStatus", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _JobLeadSyncStatus_lastRunAt(ctx context.Context, field graphql.CollectedField, obj *model.JobLeadSyncStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLeadSyncStatus_lastRunAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastRunAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLeadSyncStatus_lastRunAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLeadSyncStatus", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobLeadSyncStatus_lastError(ctx context.Context, field graphql.CollectedField, obj *model.JobLeadSyncStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLeadSyncStatus_lastError(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastError, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobLeadSyncStatus_lastError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLeadSyncStatus", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_profile(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_profile(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Profile, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_includeKeywords(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_includeKeywords(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IncludeKeywords, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_includeKeywords(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_excludeKeywords(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_excludeKeywords(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ExcludeKeywords, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_excludeKeywords(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_locations(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_locations(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Locations, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_locations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSearchProfile_minScore(ctx context.Context, field graphql.CollectedField, obj *models.JobSearchProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSearchProfile_minScore(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MinScore, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSearchProfile_minScore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSearchProfile", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_id(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_kind(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_kind(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_label(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_token(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_token(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Token, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_query(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_query(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Query, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_query(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_location(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_location(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Location, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_location(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_enabled(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_enabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_lastFetchedAt(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_lastFetchedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastFetchedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_lastFetchedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_lastCount(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_lastCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_lastCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _JobSource_lastError(ctx context.Context, field graphql.CollectedField, obj *models.JobSource) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobSource_lastError(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastError, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_JobSource_lastError(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobSource", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Message_id(ctx context.Context, field graphql.CollectedField, obj *models.Message) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4079,6 +5566,441 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobApplication(ctx conte
 		return fc, err
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createJobSource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createJobSource(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateJobSource(ctx, fc.Args["input"].(model.CreateJobSourceInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobSource
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobSource) graphql.Marshaler {
+			return ec.marshalNJobSource2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSource(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createJobSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobSource(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createJobSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobSource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateJobSource(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobSource(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateJobSourceInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobSource
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobSource) graphql.Marshaler {
+			return ec.marshalNJobSource2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSource(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateJobSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobSource(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteJobSource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteJobSource(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteJobSource(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteJobSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteJobSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_dismissJobLead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_dismissJobLead(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DismissJobLead(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobLead
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+			return ec.marshalNJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_dismissJobLead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLead(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_dismissJobLead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_restoreJobLead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_restoreJobLead(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RestoreJobLead(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobLead
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+			return ec.marshalNJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_restoreJobLead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLead(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_restoreJobLead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_promoteJobLead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_promoteJobLead(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().PromoteJobLead(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobLead
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+			return ec.marshalNJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_promoteJobLead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLead(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_promoteJobLead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateJobSearchProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateJobSearchProfile(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateJobSearchProfile(ctx, fc.Args["input"].(model.UpdateJobSearchProfileInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobSearchProfile
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobSearchProfile) graphql.Marshaler {
+			return ec.marshalNJobSearchProfile2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSearchProfile(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateJobSearchProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobSearchProfile(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateJobSearchProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_runJobLeadSync(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_runJobLeadSync(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().RunJobLeadSync(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_runJobLeadSync(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Mutation", field, true, true, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _Mutation_createPlace(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5297,6 +7219,255 @@ func (ec *executionContext) fieldContext_Query_jobApplication(ctx context.Contex
 	if fc.Args, err = ec.field_Query_jobApplication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobSources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_jobSources(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobSources(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal []*models.JobSource
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.JobSource) graphql.Marshaler {
+			return ec.marshalNJobSource2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSourceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_jobSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobSource(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobLeads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_jobLeads(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().JobLeads(ctx, fc.Args["state"].(*string), fc.Args["includeUnmatched"].(*bool))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal []*models.JobLead
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.JobLead) graphql.Marshaler {
+			return ec.marshalNJobLead2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLeadᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_jobLeads(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLead(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_jobLeads_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobLead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_jobLead(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().JobLead(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobLead
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+			return ec.marshalOJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_jobLead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLead(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_jobLead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobSearchProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_jobSearchProfile(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobSearchProfile(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.JobSearchProfile
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.JobSearchProfile) graphql.Marshaler {
+			return ec.marshalNJobSearchProfile2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSearchProfile(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_jobSearchProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobSearchProfile(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_jobLeadSyncStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_jobLeadSyncStatus(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().JobLeadSyncStatus(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *model.JobLeadSyncStatus
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *model.JobLeadSyncStatus) graphql.Marshaler {
+			return ec.marshalNJobLeadSyncStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐJobLeadSyncStatus(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_jobLeadSyncStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_JobLeadSyncStatus(ctx, field)
+		},
 	}
 	return fc, nil
 }
@@ -7848,6 +10019,71 @@ func (ec *executionContext) unmarshalInputCreateJobApplicationInput(ctx context.
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateJobSourceInput(ctx context.Context, obj any) (model.CreateJobSourceInput, error) {
+	var it model.CreateJobSourceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"kind", "label", "token", "query", "location", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "label":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Label = data
+		case "token":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Token = data
+		case "query":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Query = data
+		case "location":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Location = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreatePlaceInput(ctx context.Context, obj any) (model.CreatePlaceInput, error) {
 	var it model.CreatePlaceInput
 	if obj == nil {
@@ -8163,6 +10399,129 @@ func (ec *executionContext) unmarshalInputUpdateJobApplicationInput(ctx context.
 				return it, err
 			}
 			it.Description = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateJobSearchProfileInput(ctx context.Context, obj any) (model.UpdateJobSearchProfileInput, error) {
+	var it model.UpdateJobSearchProfileInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"profile", "includeKeywords", "excludeKeywords", "locations", "minScore"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "profile":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profile"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Profile = data
+		case "includeKeywords":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeKeywords"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeKeywords = data
+		case "excludeKeywords":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("excludeKeywords"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExcludeKeywords = data
+		case "locations":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("locations"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Locations = data
+		case "minScore":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minScore"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinScore = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateJobSourceInput(ctx context.Context, obj any) (model.UpdateJobSourceInput, error) {
+	var it model.UpdateJobSourceInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"kind", "label", "token", "query", "location", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "label":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Label = data
+		case "token":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Token = data
+		case "query":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Query = data
+		case "location":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Location = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
 		}
 	}
 	return it, nil
@@ -8738,6 +11097,318 @@ func (ec *executionContext) _JobApplication(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var jobLeadImplementors = []string{"JobLead"}
+
+func (ec *executionContext) _JobLead(ctx context.Context, sel ast.SelectionSet, obj *models.JobLead) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobLeadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobLead")
+		case "id":
+			out.Values[i] = ec._JobLead_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._JobLead_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sourceKind":
+			out.Values[i] = ec._JobLead_sourceKind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "jobTitle":
+			out.Values[i] = ec._JobLead_jobTitle(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "company":
+			out.Values[i] = ec._JobLead_company(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "location":
+			out.Values[i] = ec._JobLead_location(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "url":
+			out.Values[i] = ec._JobLead_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._JobLead_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "postedAt":
+			out.Values[i] = ec._JobLead_postedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "lastSeenAt":
+			out.Values[i] = ec._JobLead_lastSeenAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "matched":
+			out.Values[i] = ec._JobLead_matched(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._JobLead_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "score":
+			out.Values[i] = ec._JobLead_score(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "scoreReasons":
+			out.Values[i] = ec._JobLead_scoreReasons(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "jobAppId":
+			out.Values[i] = ec._JobLead_jobAppId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var jobLeadSyncStatusImplementors = []string{"JobLeadSyncStatus"}
+
+func (ec *executionContext) _JobLeadSyncStatus(ctx context.Context, sel ast.SelectionSet, obj *model.JobLeadSyncStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobLeadSyncStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobLeadSyncStatus")
+		case "running":
+			out.Values[i] = ec._JobLeadSyncStatus_running(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastRunAt":
+			out.Values[i] = ec._JobLeadSyncStatus_lastRunAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "lastError":
+			out.Values[i] = ec._JobLeadSyncStatus_lastError(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var jobSearchProfileImplementors = []string{"JobSearchProfile"}
+
+func (ec *executionContext) _JobSearchProfile(ctx context.Context, sel ast.SelectionSet, obj *models.JobSearchProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobSearchProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobSearchProfile")
+		case "updatedAt":
+			out.Values[i] = ec._JobSearchProfile_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profile":
+			out.Values[i] = ec._JobSearchProfile_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "includeKeywords":
+			out.Values[i] = ec._JobSearchProfile_includeKeywords(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "excludeKeywords":
+			out.Values[i] = ec._JobSearchProfile_excludeKeywords(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "locations":
+			out.Values[i] = ec._JobSearchProfile_locations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minScore":
+			out.Values[i] = ec._JobSearchProfile_minScore(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var jobSourceImplementors = []string{"JobSource"}
+
+func (ec *executionContext) _JobSource(ctx context.Context, sel ast.SelectionSet, obj *models.JobSource) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jobSourceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JobSource")
+		case "id":
+			out.Values[i] = ec._JobSource_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._JobSource_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._JobSource_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._JobSource_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._JobSource_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "token":
+			out.Values[i] = ec._JobSource_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "query":
+			out.Values[i] = ec._JobSource_query(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "location":
+			out.Values[i] = ec._JobSource_location(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._JobSource_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastFetchedAt":
+			out.Values[i] = ec._JobSource_lastFetchedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "lastCount":
+			out.Values[i] = ec._JobSource_lastCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastError":
+			out.Values[i] = ec._JobSource_lastError(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *models.Message) graphql.Marshaler {
@@ -8941,6 +11612,62 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteJobApplication":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteJobApplication(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createJobSource":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createJobSource(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobSource":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobSource(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteJobSource":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteJobSource(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dismissJobLead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_dismissJobLead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "restoreJobLead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_restoreJobLead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "promoteJobLead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_promoteJobLead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateJobSearchProfile":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateJobSearchProfile(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runJobLeadSync":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_runJobLeadSync(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -9365,6 +12092,116 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_jobApplication(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobSources":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobSources(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobLeads":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobLeads(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobLead":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobLead(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobSearchProfile":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobSearchProfile(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "jobLeadSyncStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jobLeadSyncStatus(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -10694,6 +13531,11 @@ func (ec *executionContext) unmarshalNCreateJobApplicationInput2adamᚑfrenchᚗ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateJobSourceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateJobSourceInput(ctx context.Context, v any) (model.CreateJobSourceInput, error) {
+	res, err := ec.unmarshalInputCreateJobSourceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreatePlaceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreatePlaceInput(ctx context.Context, v any) (model.CreatePlaceInput, error) {
 	res, err := ec.unmarshalInputCreatePlaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10849,6 +13691,78 @@ func (ec *executionContext) marshalNJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋ
 		return graphql.Null
 	}
 	return ec._JobApplication(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNJobLead2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLeadᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.JobLead) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx context.Context, sel ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobLead(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNJobLeadSyncStatus2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐJobLeadSyncStatus(ctx context.Context, sel ast.SelectionSet, v *model.JobLeadSyncStatus) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobLeadSyncStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNJobSearchProfile2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSearchProfile(ctx context.Context, sel ast.SelectionSet, v *models.JobSearchProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobSearchProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNJobSource2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.JobSource) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNJobSource2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSource(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNJobSource2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobSource(ctx context.Context, sel ast.SelectionSet, v *models.JobSource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._JobSource(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNJobStatus2string(ctx context.Context, v any) (string, error) {
@@ -11126,6 +14040,16 @@ func (ec *executionContext) unmarshalNUpdateJobApplicationInput2adamᚑfrenchᚗ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateJobSearchProfileInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobSearchProfileInput(ctx context.Context, v any) (model.UpdateJobSearchProfileInput, error) {
+	res, err := ec.unmarshalInputUpdateJobSearchProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateJobSourceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateJobSourceInput(ctx context.Context, v any) (model.UpdateJobSourceInput, error) {
+	res, err := ec.unmarshalInputUpdateJobSourceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdatePlaceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdatePlaceInput(ctx context.Context, v any) (model.UpdatePlaceInput, error) {
 	res, err := ec.unmarshalInputUpdatePlaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11339,6 +14263,24 @@ func (ec *executionContext) marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋb
 	return ec._GiteaFeedItem(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOID2ᚖuint(ctx context.Context, v any) (*uint, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalUintID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖuint(ctx context.Context, sel ast.SelectionSet, v *uint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalUintID(*v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -11362,6 +14304,13 @@ func (ec *executionContext) marshalOJobApplication2ᚖadamᚑfrenchᚗcoᚗukᚋ
 		return graphql.Null
 	}
 	return ec._JobApplication(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOJobLead2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐJobLead(ctx context.Context, sel ast.SelectionSet, v *models.JobLead) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._JobLead(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOJobStatus2ᚖstring(ctx context.Context, v any) (*string, error) {

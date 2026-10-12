@@ -187,12 +187,17 @@ func TestSignedInMutationsArePinned(t *testing.T) {
 // `spotifyNeedsReauth` is false for non-admins.
 func TestGuardedQueriesArePinned(t *testing.T) {
 	want := map[string]string{
-		"users":            "admin",
-		"user":             "admin",
-		"jobApplications":  "admin",
-		"jobApplication":   "admin",
-		"jobAppReferences": "admin",
-		"places":           "signedIn",
+		"users":             "admin",
+		"user":              "admin",
+		"jobApplications":   "admin",
+		"jobApplication":    "admin",
+		"jobAppReferences":  "admin",
+		"jobSources":        "admin",
+		"jobLeads":          "admin",
+		"jobLead":           "admin",
+		"jobSearchProfile":  "admin",
+		"jobLeadSyncStatus": "admin",
+		"places":            "signedIn",
 	}
 	got := map[string]string{}
 	for _, field := range schemaUnderTest().Query.Fields {

@@ -1,0 +1,133 @@
+# Job leads: postings found automatically, as opposed to applications being
+# tracked (job_application.graphql). The fetcher in
+# backend/services/job_leads.go polls each JobSource, files what it finds as
+# JobLead rows and has Claude score them against the JobSearchProfile. A lead
+# reaches the tracker only when it is promoted from the leads page.
+#
+# All of it is private, so every field here is @admin, queries included.
+
+# One place to poll. `kind` is one of greenhouse, lever, ashby (a company's
+# board: `token` is its slug and `label` the company name) or adzuna, reed (a
+# keyword search: `query` and `location`, with `label` only a display name).
+# It is a String rather than an enum because the resolver validates it and
+# the list is the fetcher's to extend (services/job_sources.go).
+#
+# The last* fields are written by the fetcher, never by a mutation.
+type JobSource {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  kind: String!
+  label: String!
+  token: String!
+  query: String!
+  location: String!
+  enabled: Boolean!
+  lastFetchedAt: Time
+  lastCount: Int!
+  lastError: String!
+}
+
+input CreateJobSourceInput {
+  kind: String!
+  label: String!
+  token: String
+  query: String
+  location: String
+  enabled: Boolean
+}
+
+input UpdateJobSourceInput {
+  kind: String
+  label: String
+  token: String
+  query: String
+  location: String
+  enabled: Boolean
+}
+
+# description is the posting's full text, tens of kilobytes on some boards,
+# so the list query on the leads page leaves it out and asks per row — the
+# same arrangement as JobApplication.description.
+#
+# state is new, dismissed or promoted. score (0-100) and scoreReasons are
+# null until Claude has scored the lead, which only happens to matched ones.
+type JobLead {
+  id: ID!
+  createdAt: Time!
+  sourceKind: String!
+  jobTitle: String!
+  company: String!
+  location: String!
+  url: String!
+  description: String!
+  postedAt: Time
+  lastSeenAt: Time!
+  matched: Boolean!
+  state: String!
+  score: Int
+  scoreReasons: String
+  jobAppId: ID
+}
+
+# The single row a lead is judged against. profile is free text sent to
+# Claude with each posting; the three keyword lists hold one entry per line
+# and drive the pre-filter; minScore is the inbox's display threshold.
+type JobSearchProfile {
+  updatedAt: Time!
+  profile: String!
+  includeKeywords: String!
+  excludeKeywords: String!
+  locations: String!
+  minScore: Int!
+}
+
+input UpdateJobSearchProfileInput {
+  profile: String
+  includeKeywords: String
+  excludeKeywords: String
+  locations: String
+  minScore: Int
+}
+
+# lastRunAt and lastError describe the most recent run in this backend
+# process; both reset when it restarts.
+type JobLeadSyncStatus {
+  running: Boolean!
+  lastRunAt: Time
+  lastError: String!
+}
+
+extend type Query {
+  jobSources: [JobSource!]! @admin
+  # state filters to one of new, dismissed, promoted; omitted returns all.
+  # Leads that failed the pre-filter are left out unless includeUnmatched.
+  jobLeads(state: String, includeUnmatched: Boolean): [JobLead!]! @admin
+  jobLead(id: ID!): JobLead @admin
+  jobSearchProfile: JobSearchProfile! @admin
+  jobLeadSyncStatus: JobLeadSyncStatus! @admin
+}
+
+extend type Mutation {
+  createJobSource(input: CreateJobSourceInput!): JobSource! @admin
+  updateJobSource(id: ID!, input: UpdateJobSourceInput!): JobSource! @admin
+  # Errors on an id that does not exist, like the other deletes; the Boolean
+  # is only ever true. The source's leads are kept.
+  deleteJobSource(id: ID!): Boolean! @admin
+
+  dismissJobLead(id: ID!): JobLead! @admin
+  # Puts a dismissed lead back in the inbox. A promoted lead cannot be
+  # restored: its application exists, and is managed on the tracker.
+  restoreJobLead(id: ID!): JobLead! @admin
+  # Adds the lead to the tracker as a saved application — or, if the posting
+  # is already tracked, links to that row instead of making a second — and
+  # returns the lead, now promoted, with jobAppId set.
+  promoteJobLead(id: ID!): JobLead! @admin
+
+  updateJobSearchProfile(input: UpdateJobSearchProfileInput!): JobSearchProfile! @admin
+
+  # Starts a fetch-and-score run in the background and returns at once: true
+  # if it started, false if one was already running. Poll jobLeadSyncStatus
+  # to see it finish.
+  runJobLeadSync: Boolean! @admin
+}

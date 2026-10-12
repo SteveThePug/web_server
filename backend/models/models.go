@@ -208,8 +208,9 @@ type Place struct {
 }
 
 // JobApplication is a tracked job application. Rows are created by hand
-// through GraphQL, automatically by the email pipeline, or from the browser
-// by the capture userscript (handlers/handle_job_capture.go).
+// through GraphQL, automatically by the email pipeline, from the browser by
+// the capture userscript (handlers/handle_job_capture.go), or by promoting a
+// JobLead (services.PromoteJobLead).
 //
 // Status is a plain string column, but its vocabulary is fixed: the values
 // ranked in services.statusOrder ("saved", "applied", "screening",
@@ -237,4 +238,96 @@ type JobApplication struct {
 	Notes       *string        `json:"notes"`
 	AppliedAt   *time.Time     `json:"appliedAt"`
 	Description *string        `gorm:"type:text" json:"description"`
+}
+
+// JobSource is one place the lead fetcher (services/job_leads.go) polls for
+// postings. Kind decides which of the other fields mean anything:
+//
+//   - "greenhouse", "lever", "ashby": one company's public job board. Token is
+//     the board's slug (the "acme" in boards.greenhouse.io/acme) and Label is
+//     the company name every lead from it is filed under.
+//   - "adzuna", "reed": a keyword search. Query and Location are the search
+//     terms and Label is only a display name; the company comes from each
+//     result.
+//
+// The Last* fields are written by the fetcher after every poll and are what
+// the leads page shows beside the source. LastError is "" after a clean poll.
+type JobSource struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Kind      string         `gorm:"not null" json:"kind"`
+	Label     string         `gorm:"not null" json:"label"`
+	Token     string         `json:"token"`
+	Query     string         `json:"query"`
+	Location  string         `json:"location"`
+	// No `default:true` tag: GORM applies a default to a zero value on
+	// insert, which would make it impossible to create a source disabled.
+	Enabled       bool       `gorm:"not null" json:"enabled"`
+	LastFetchedAt *time.Time `json:"lastFetchedAt"`
+	LastCount     int        `gorm:"not null;default:0" json:"lastCount"`
+	LastError     string     `json:"lastError"`
+}
+
+// JobLead is a posting the fetcher found, waiting in the leads inbox to be
+// tracked or dismissed. It is deliberately not a JobApplication: a single
+// company board is hundreds of postings, almost all irrelevant, and the
+// tracker, its status vocabulary and the email matcher are about jobs
+// actually applied to.
+//
+// Like ProcessedEmail it has no DeletedAt and is NOT soft deleted. The
+// (SourceKind, ExternalID) unique index is the dedup that stops every poll
+// re-adding the same posting, and it only works if a dismissed lead is still
+// a row: dismissal is State "dismissed", never a delete.
+//
+// ExternalID is the source's own id for the posting. For the board kinds it
+// is "<token>/<id>", because ids are only unique within one board.
+//
+// State is "new", "dismissed" or "promoted" (see the LeadState constants in
+// services/job_leads.go). JobAppID is set on a promoted lead and is a plain
+// nullable column, not a GORM association.
+//
+// Matched says whether the lead passed the keyword pre-filter the last time
+// the fetcher ran; only matched leads are shown by default and only they are
+// scored. Score (0-100) and ScoreReasons are Claude's, and nil until scored.
+// ScoreAttempts counts failed tries, so a posting Claude can never score
+// stops costing a call per run.
+type JobLead struct {
+	ID            uint       `gorm:"primarykey" json:"id"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+	SourceID      uint       `gorm:"index" json:"sourceId"`
+	SourceKind    string     `gorm:"not null;uniqueIndex:idx_job_lead_external" json:"sourceKind"`
+	ExternalID    string     `gorm:"not null;uniqueIndex:idx_job_lead_external" json:"externalId"`
+	JobTitle      string     `gorm:"not null" json:"jobTitle"`
+	Company       string     `gorm:"not null" json:"company"`
+	Location      string     `json:"location"`
+	URL           string     `json:"url"`
+	Description   string     `gorm:"type:text" json:"description"`
+	PostedAt      *time.Time `json:"postedAt"`
+	LastSeenAt    time.Time  `json:"lastSeenAt"`
+	Matched       bool       `gorm:"not null;default:false;index" json:"matched"`
+	State         string     `gorm:"not null;default:new;index" json:"state"`
+	Score         *int       `json:"score"`
+	ScoreReasons  *string    `json:"scoreReasons"`
+	ScoreAttempts int        `gorm:"not null;default:0" json:"scoreAttempts"`
+	JobAppID      *uint      `json:"jobAppId"`
+}
+
+// JobSearchProfile is what a lead is judged against. There is exactly one
+// row, with ID 1, created on first read (services.LoadJobSearchProfile).
+//
+// Profile is free text about experience and what kind of job is wanted; it is
+// sent to Claude with each posting. The three keyword lists hold one entry
+// per line and drive the cheap pre-filter that runs before any Claude call.
+// MinScore is only a display threshold for the inbox.
+type JobSearchProfile struct {
+	ID              uint      `gorm:"primarykey" json:"id"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+	Profile         string    `gorm:"type:text" json:"profile"`
+	IncludeKeywords string    `gorm:"type:text" json:"includeKeywords"`
+	ExcludeKeywords string    `gorm:"type:text" json:"excludeKeywords"`
+	Locations       string    `gorm:"type:text" json:"locations"`
+	MinScore        int       `gorm:"not null;default:60" json:"minScore"`
 }

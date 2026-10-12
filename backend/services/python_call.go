@@ -12,8 +12,8 @@ import (
 
 // Every Claude call the site makes lives in the Python service, behind an
 // /internal/ route. This file is the one way the Go backend reaches those
-// routes: the rowing photo reader and the job posting reader (handlers), and
-// the email classifier (email_sync.go). It sits in services rather than
+// routes: the rowing photo reader and the job posting reader (handlers), the
+// email classifier (email_sync.go) and the job lead scorer (job_leads.go). It sits in services rather than
 // handlers because both packages need it and handlers already imports
 // services, not the other way round.
 //

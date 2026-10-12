@@ -48,6 +48,15 @@ type CreateJobApplicationInput struct {
 	Description *string    `json:"description,omitempty"`
 }
 
+type CreateJobSourceInput struct {
+	Kind     string  `json:"kind"`
+	Label    string  `json:"label"`
+	Token    *string `json:"token,omitempty"`
+	Query    *string `json:"query,omitempty"`
+	Location *string `json:"location,omitempty"`
+	Enabled  *bool   `json:"enabled,omitempty"`
+}
+
 type CreatePlaceInput struct {
 	Title    string  `json:"title"`
 	Location *string `json:"location,omitempty"`
@@ -76,6 +85,12 @@ type GiteaFeedItem struct {
 	OpType        string    `json:"opType"`
 	CommitMessage string    `json:"commitMessage"`
 	CreatedAt     time.Time `json:"createdAt"`
+}
+
+type JobLeadSyncStatus struct {
+	Running   bool       `json:"running"`
+	LastRunAt *time.Time `json:"lastRunAt,omitempty"`
+	LastError string     `json:"lastError"`
 }
 
 type LoginInput struct {
@@ -147,6 +162,23 @@ type UpdateJobApplicationInput struct {
 	Notes       *string    `json:"notes,omitempty"`
 	AppliedAt   *time.Time `json:"appliedAt,omitempty"`
 	Description *string    `json:"description,omitempty"`
+}
+
+type UpdateJobSearchProfileInput struct {
+	Profile         *string `json:"profile,omitempty"`
+	IncludeKeywords *string `json:"includeKeywords,omitempty"`
+	ExcludeKeywords *string `json:"excludeKeywords,omitempty"`
+	Locations       *string `json:"locations,omitempty"`
+	MinScore        *int    `json:"minScore,omitempty"`
+}
+
+type UpdateJobSourceInput struct {
+	Kind     *string `json:"kind,omitempty"`
+	Label    *string `json:"label,omitempty"`
+	Token    *string `json:"token,omitempty"`
+	Query    *string `json:"query,omitempty"`
+	Location *string `json:"location,omitempty"`
+	Enabled  *bool   `json:"enabled,omitempty"`
 }
 
 type UpdatePlaceInput struct {

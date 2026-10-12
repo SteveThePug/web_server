@@ -1,7 +1,8 @@
 # Job application tracker. Rows come from these mutations, automatically from
-# the email sync pipeline (backend/services/email_sync.go), or from the browser
-# capture userscript (backend/handlers/handle_job_capture.go). These are
-# private data, so the queries here are @admin as well as the mutations.
+# the email sync pipeline (backend/services/email_sync.go), from the browser
+# capture userscript (backend/handlers/handle_job_capture.go), or from
+# promoting a lead (job_lead.graphql). These are private data, so the queries
+# here are @admin as well as the mutations.
 #
 # description is the captured posting text. It can run to tens of kilobytes,
 # so the tracker's list query leaves it out and asks for it per row.

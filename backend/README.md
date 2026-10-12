@@ -245,9 +245,10 @@ the posting open in the browser to the job tracker.
   (`/internal/jobs/extract`, see [Calling the Python service](#calling-the-python-service)).
   Stores nothing.
 - `POST /jobs/capture` — an **upsert**. A posting is matched by its canonical
-  URL (`canonicalJobURL` strips tracking parameters and folds LinkedIn's
+  URL (`services.CanonicalJobURL` strips tracking parameters and folds LinkedIn's
   several URL shapes into one), then by `(company, job title)` the way the
-  email pipeline matches. A repeat capture only ever adds: status moves
+  email pipeline matches (`services.UpsertJobApplication`, shared with lead
+  promotion). A repeat capture only ever adds: status moves
   forwards, empty fields are filled, nothing is overwritten.
 
 The upsert is what keeps this and the email pipeline from making two rows for
@@ -255,10 +256,61 @@ one application. It is not watertight: the pipeline still matches on the exact
 title, so a posting captured as "Senior Engineer" whose confirmation email
 says "Senior Engineer (Platform)" becomes a second row.
 
+### Job leads
+
+Where the tracker records applications, this finds postings. It is GraphQL
+throughout (`graph/schema/job_lead.graphql`, all `@admin`) with the work in
+`services/job_leads.go` and `services/job_sources.go`; the page is `/cv/leads`.
+
+- **Three tables.** `JobSource` is one thing to poll: a company's board on
+  Greenhouse, Lever or Ashby (public JSON, no key), or a keyword search on
+  Adzuna or Reed (keys in `.env`). `JobLead` is one posting found. It is
+  **not soft deleted**, like `ProcessedEmail`: the unique index on
+  `(source_kind, external_id)` is the dedup, and it only keeps a dismissed
+  lead dismissed if that lead is still a row. `JobSearchProfile` is a single
+  row: the profile text, three keyword lists and a minimum score.
+- **A run** (`JobLeadService.Run`) is fetch → store → pre-filter → score.
+  Every enabled source is polled; one failing records its error on the source
+  and the rest carry on. Postings not seen before become leads; ones already
+  known only have `last_seen_at` moved. A posting whose canonical URL is
+  already in the tracker is filed as `promoted`, linked to that application,
+  so the inbox never offers it.
+- **The pre-filter** is keywords on the title and location, no Claude. It
+  exists because a company board is mostly irrelevant, and it decides which
+  leads are shown and which cost a call. `matched` is recomputed for every
+  inbox lead on each run, so editing the keywords applies to old leads too.
+- **Scoring** sends each matched, unscored lead and the profile text to the
+  Python service's `/internal/jobs/score`. At most 40 a run, newest first; a
+  lead Claude cannot score is retried on three runs and then left. With an
+  empty profile nothing is scored. If scoring is unavailable (no API key,
+  Python down) the run stops scoring without spending an attempt on any lead.
+- **When it runs.** `JOB_LEADS_ENABLED=true` starts a timer
+  (`JOB_LEADS_INTERVAL`, default `6h`); it does not run at start-up, so a
+  deploy spends nothing. The `runJobLeadSync` mutation starts a run in a
+  goroutine and returns at once, whether or not the timer is on, and
+  `jobLeadSyncStatus` reports on it — a run can take minutes, so unlike
+  `POST /email/sync` it does not hold the request open. The status is in
+  memory and resets on restart.
+- **Promotion** (`promoteJobLead`) is the only way a lead reaches the tracker.
+  It calls `services.UpsertJobApplication` with status `saved`, the lead's
+  text and a notes line carrying the score — the same upsert as the capture
+  endpoint, so a posting captured from the browser in the meantime is linked
+  to, not duplicated.
+
+The Adzuna and Reed response structs were written from the providers'
+documentation, not against live responses (they need keys). If one of those
+sources reports a decode error or zero results, compare its struct in
+`job_sources.go` with a real reply first. Adzuna only returns a snippet of
+each description, so its leads are scored on less text.
+
+Most of this needs Postgres and has no unit test: what is tested is the
+fetchers (against stub servers), the pre-filter, how a fetched posting becomes
+a row, and the scoring call.
+
 ## Calling the Python service
 
 Every Claude call the site makes lives in the Python service; this backend has
-no Anthropic client and does not read `CLAUDE_API_KEY`. It reaches three
+no Anthropic client and does not read `CLAUDE_API_KEY`. It reaches four
 internal routes directly over the Docker network
 (`http://$PYTHON_HOST:$PYTHON_PORT`, default `python:8000`), never through
 nginx, which answers 404 for `/py/internal/`:
@@ -267,9 +319,10 @@ nginx, which answers 404 for `/py/internal/`:
 | --- | --- | --- | --- |
 | `/internal/rowing/read` | `POST /rowing` (`handlers/handle_rowing.go`) | `{media_type, data}` (image, base64) | `{timeMinutes, timeSeconds, distance}` |
 | `/internal/jobs/extract` | `POST /jobs/capture/extract` (`handlers/handle_job_capture.go`) | `{url, title, text}` | `{jobTitle, company, location, notes}` |
+| `/internal/jobs/score` | the lead pipeline (`services/job_leads.go`) | `{profile, jobTitle, company, location, description}` | `{score, reasons}` |
 | `/internal/email/classify` | the email pipeline (`services/email_sync.go`) | `{message}` | `EmailAnalysis` (below) |
 
-All three go through one function, `services.CallPython[T]` in
+All four go through one function, `services.CallPython[T]` in
 `services/python_call.go`: marshal the body, POST it, decode a 200 into `T`.
 It has the one HTTP client (two-minute timeout, above the Python side's own
 worst case of a retried Claude call) and the one rule for failures:
@@ -320,6 +373,11 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   matching on (company, job title), and the forward-only status rule. Any
   failure of the call, whatever its status code, is a failed attempt at that
   email.
+- **job_leads.go** / **job_sources.go** — the job-lead pipeline. See
+  [Job leads](#job-leads).
+- **job_upsert.go** — `UpsertJobApplication`, the one way a posting is added
+  to the tracker without duplicating a row: used by the capture endpoint and
+  by promoting a lead.
 - **python_call.go** — `CallPython`, the one way to reach the Python service's
   internal routes. See [Calling the Python service](#calling-the-python-service).
 - **job_status.go** — how the `JobStatus` GraphQL enum is read and written.
@@ -460,10 +518,12 @@ warning block at the end of the file.
 | `SEED_DB` | seed dev test data (never in production) |
 | `GQL_INTROSPECTION` / `GQL_PLAYGROUND` | dev-only GraphQL extras |
 | `SPOTIFY_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` / `SPOTIFY_AUTH_STATE` | Spotify OAuth |
-| `PYTHON_HOST` / `PYTHON_PORT` | Python service, for the three Claude routes (default `python:8000`) |
+| `PYTHON_HOST` / `PYTHON_PORT` | Python service, for the four Claude routes (default `python:8000`) |
 | `GITEA_HOST` / `GITEA_PORT` | Gitea activity feed |
 | `STEAM_API_KEY` / `STEAM_ID` | Steam presence |
 | `EMAIL_SYNC_ENABLED` / `EMAIL_BACKEND` / `EMAIL_SYNC_INTERVAL` | email pipeline (`graph` or `imap`) |
+| `JOB_LEADS_ENABLED` / `JOB_LEADS_INTERVAL` | lead pipeline timer (default off, `6h`) |
+| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` / `REED_API_KEY` | keyword-search lead sources; optional |
 | `MSGRAPH_CLIENT_ID` / `_SECRET` / `_TENANT_ID` / `_REDIRECT_URI` | Microsoft Graph backend |
 | `IMAP_HOST` / `_PORT` / `_EMAIL` / `_PASSWORD` | IMAP backend |
 

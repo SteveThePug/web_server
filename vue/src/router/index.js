@@ -111,6 +111,12 @@ const router = createRouter({
                     component: () => import("@/views/CV/JobApplications.vue"),
                     meta: { requiresAdmin: true },
                 },
+                {
+                    path: "leads",
+                    name: "job-leads",
+                    component: () => import("@/views/CV/JobLeads.vue"),
+                    meta: { requiresAdmin: true },
+                },
             ],
         },
     ],

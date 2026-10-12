@@ -117,7 +117,7 @@ func main() {
 
 	// PYTHON SERVICE
 	// Called directly over the Docker network, not through nginx, for its
-	// three /internal/ Claude routes (services/python_call.go). The defaults
+	// four /internal/ Claude routes (services/python_call.go). The defaults
 	// mirror docker-compose.yml, where both variables are optional.
 	pythonHost := os.Getenv("PYTHON_HOST")
 	if pythonHost == "" {
@@ -155,6 +155,24 @@ func main() {
 	}
 	emailSync := services.InitEmailSync(&emailSyncConfig, db, pythonURL)
 
+	// JOB LEADS
+	// Like EMAIL_SYNC_INTERVAL, an unparseable JOB_LEADS_INTERVAL is ignored
+	// and the default stands. Six hours: boards change a few times a day at
+	// most, and every run can spend Claude calls.
+	jobLeadsInterval := 6 * time.Hour
+	if interval := os.Getenv("JOB_LEADS_INTERVAL"); interval != "" {
+		if parsed, err := time.ParseDuration(interval); err == nil && parsed > 0 {
+			jobLeadsInterval = parsed
+		}
+	}
+	jobLeads := services.InitJobLeads(&services.JobLeadConfig{
+		Enabled:      os.Getenv("JOB_LEADS_ENABLED") == "true",
+		Interval:     jobLeadsInterval,
+		AdzunaAppID:  os.Getenv("ADZUNA_APP_ID"),
+		AdzunaAppKey: os.Getenv("ADZUNA_APP_KEY"),
+		ReedAPIKey:   os.Getenv("REED_API_KEY"),
+	}, db, pythonURL)
+
 	// 5 login attempts per IP per minute, applied by both the REST handler
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
@@ -176,7 +194,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, CaptureToken: captureToken, Env: envManager}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, JobLeads: jobLeads, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, CaptureToken: captureToken, Env: envManager}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
@@ -302,6 +320,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go store.EmailSync.StartScheduler(ctx)
+	go store.JobLeads.StartScheduler(ctx)
 
 	port := os.Getenv("BACKEND_PORT")
 	// Blocks until the server stops. Any return is a failure — a port clash,

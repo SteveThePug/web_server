@@ -1,5 +1,5 @@
 [
-  {"name": "CLAUDE_API_KEY", "group": "API keys", "purpose": "Claude calls, all made by the Python service: email classifier, rowing photo reader, job posting reader", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://console.anthropic.com/settings/keys"},
+  {"name": "CLAUDE_API_KEY", "group": "API keys", "purpose": "Claude calls, all made by the Python service: email classifier, rowing photo reader, job posting reader, job lead scorer", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://console.anthropic.com/settings/keys"},
   {"name": "STEAM_API_KEY", "group": "API keys", "purpose": "Steam status widget", "kind": "secret", "editable": true, "services": ["backend"], "docsUrl": "https://steamcommunity.com/dev/apikey"},
   {"name": "STEAM_ID", "group": "API keys", "purpose": "Steam account the widget reports on (64-bit ID)", "kind": "text", "editable": true, "services": ["backend"]},
   {"name": "TFL_APP_KEY", "group": "API keys", "purpose": "TfL Unified API, used by the hotel finder", "kind": "secret", "editable": true, "services": ["python"], "docsUrl": "https://api-portal.tfl.gov.uk/profile"},
@@ -20,6 +20,12 @@
   {"name": "IMAP_PORT", "group": "Email ingest", "purpose": "IMAP fallback port (993)", "kind": "number", "editable": true, "services": ["backend"]},
   {"name": "IMAP_EMAIL", "group": "Email ingest", "purpose": "IMAP fallback account", "kind": "text", "editable": true, "services": ["backend"]},
   {"name": "IMAP_PASSWORD", "group": "Email ingest", "purpose": "App-specific password, not the account password", "kind": "secret", "editable": true, "services": ["backend"]},
+
+  {"name": "JOB_LEADS_ENABLED", "group": "Job leads", "purpose": "Run the periodic job-lead fetch; \"Check now\" on /cv/leads works either way", "kind": "bool", "editable": true, "services": ["backend"]},
+  {"name": "JOB_LEADS_INTERVAL", "group": "Job leads", "purpose": "Time between fetches, as a Go duration such as 6h (default 6h)", "kind": "duration", "editable": true, "services": ["backend"]},
+  {"name": "ADZUNA_APP_ID", "group": "Job leads", "purpose": "Adzuna job search, for adzuna lead sources", "kind": "text", "editable": true, "services": ["backend"], "docsUrl": "https://developer.adzuna.com/admin/access_details"},
+  {"name": "ADZUNA_APP_KEY", "group": "Job leads", "purpose": "Adzuna job search, for adzuna lead sources", "kind": "secret", "editable": true, "services": ["backend"], "docsUrl": "https://developer.adzuna.com/admin/access_details"},
+  {"name": "REED_API_KEY", "group": "Job leads", "purpose": "Reed job search, for reed lead sources", "kind": "secret", "editable": true, "services": ["backend"], "docsUrl": "https://www.reed.co.uk/developers/jobseeker"},
 
   {"name": "ICECAST_SOURCE_PASSWORD", "group": "Radio", "purpose": "Liquidsoap to Icecast, and live broadcasters to the harbor port", "kind": "generated", "editable": true, "services": ["icecast2"], "warning": "Live broadcasting clients must be given the new password."},
   {"name": "ICECAST_RELAY_PASSWORD", "group": "Radio", "purpose": "Icecast relay clients", "kind": "generated", "editable": true, "services": ["icecast2"]},
