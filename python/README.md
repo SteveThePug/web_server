@@ -1,8 +1,9 @@
 # Python API service
 
 A small FastAPI app (`app/main.py`) served by uvicorn on port 8000 inside the
-`python` container. It also hosts two internal routes, the **rowing display
-reader** and the **job posting reader** (see below). Most of it is one feature: **cheap Travelodge finder** —
+`python` container. It also hosts every Claude call the stack makes, as three
+internal routes: the **rowing display reader**, the **job posting reader** and
+the **email classifier** (see below). Most of it is one feature: **cheap Travelodge finder** —
 given a London location and dates it pulls live room prices from Travelodge and
 adds the cost of getting there from a chosen station on TfL, so you can rank
 hotels by what the night *actually* costs, not just the room.
@@ -15,11 +16,13 @@ hotels by what the night *actually* costs, not just the room.
 | `app/travelodge.py` | All the real work: upstream calls, caching, rate limiting, fare maths, the two search generators |
 | `app/rowing.py` | The Claude call that reads time and distance off a photo of a rowing machine display |
 | `app/jobs.py` | The Claude call that reads job title, company and location off a posting's page text |
-| `app/claude.py` | What those two share: the lazily built Anthropic client, fence stripping, the error types |
+| `app/email_classify.py` | The Claude call that decides whether an email is about a job application |
+| `app/claude.py` | What those three share: the lazily built Anthropic client, the error types, and `ask_json` — the call itself |
 | `app/__init__.py` | Empty; makes `app` a package so `app.main:app` resolves |
+| `tests/` | pytest suite; needs `requirements-dev.txt` (see *Tests*) |
 
-`travelodge.py`, `rowing.py`, `jobs.py` and `claude.py` never import FastAPI and can be driven from a
-plain script.
+`travelodge.py`, `rowing.py`, `jobs.py`, `email_classify.py` and `claude.py` never import FastAPI and can be
+driven from a plain script.
 
 ## Endpoints
 
@@ -37,6 +40,7 @@ Paths below are as the service sees them; from a browser prefix everything with
 | POST | `/hotels/scan/stream` | Cheapest night across a date range, NDJSON |
 | POST | `/internal/rowing/read` | **Internal.** Read a rowing display photo with Claude |
 | POST | `/internal/jobs/extract` | **Internal.** Read a job posting's page text with Claude |
+| POST | `/internal/email/classify` | **Internal.** Classify an email for the job tracker with Claude |
 
 Interactive schema: `/py/docs` (Swagger UI), `/py/openapi.json`.
 
@@ -66,22 +70,75 @@ already running and 502 on upstream failure.
 Only **one** live search or scan runs process-wide at a time (the TfL budget
 can't be shared), and identical requests are cached for 10 minutes.
 
+### Internal routes
+
+The three routes under `/internal/` are the only ones in this service that are
+**not public**. Each spends a paid Claude call and has no auth of its own — the
+admin or token check happens in the Go backend, which calls the container
+directly (`http://python:8000/...`). Two things keep them internal: nginx
+answers `/py/internal/` with a 404, and the route itself 404s any request
+carrying the `X-Real-IP` / `X-Forwarded-For` headers nginx adds to everything
+it proxies (the Go backend sends neither).
+
+They share their plumbing, in two places:
+
+- **`claude.ask_json`** (`app/claude.py`) is the whole Claude call: send one
+  prompt that asks for a bare JSON object, take the first text block, strip a
+  markdown fence, validate into a pydantic model. The caller supplies the model
+  class, the messages, an optional system prompt and three fixed error strings
+  (`failed`, `empty`, `unparseable`). It raises `NotConfigured` when
+  `CLAUDE_API_KEY` is unset and `ReadError` with one of those three strings
+  otherwise. The API's own error text and the model's reply go to the log,
+  never into the message, because the Go backend relays the message verbatim.
+- **`_internal_claude_route`** (`app/main.py`) is `app.post` plus the
+  internal-only guard and the 502/503 entries in the docs. An exception handler
+  beside it turns `ReadError` into a 502 and `NotConfigured` into a 503, both
+  with a string `detail`. The guard runs as a dependency, so a request from
+  outside is a 404 before its body is validated.
+
+All three use `claude-haiku-4-5` (`MODEL` in `claude.py`). The Go callers set
+their own timeout above this side's (30s per attempt, two SDK retries), so
+they see this service's error rather than their own.
+
+#### Adding another Claude-backed internal route
+
+1. **A module** `app/<thing>.py`, shaped like `jobs.py`: the prompt, a
+   pydantic model whose field names are the keys the prompt asks for (give
+   every field a default — the model leaves keys out), and one function that
+   returns `ask_json(Model, max_tokens=..., system=..., messages=[...],
+   failed="...", empty="...", unparseable="...", get_client=_client)`. Import
+   the client as `from .claude import client as _client`; that name is the
+   seam tests replace. No FastAPI imports.
+2. **A route** in `main.py`: a request model with length bounds, then
+
+   ```python
+   @_internal_claude_route("/internal/<thing>/<verb>", response_model=thing.Model, summary="...", description="...")
+   def thing_verb(req: ThingRequest) -> thing.Model:
+       return thing.do_it(req.field)
+   ```
+
+   A plain `def`, so the blocking call runs in the threadpool. No `try`, no
+   guard call — the wrapper supplies both. Add the route to the endpoint list
+   in `main.py`'s docstring and bump the FastAPI `version`.
+3. **Tests** `tests/test_<thing>.py`, copied from `test_jobs.py`: fake the
+   client with `monkeypatch.setattr(thing, "_client", ...)`.
+4. **Docs**: the endpoint table and a section here. Nothing to do in nginx —
+   it already 404s everything under `/py/internal/`.
+
+If third-party text goes into the prompt (a web page, an email), say in the
+system prompt that it is data and not instructions, as `jobs.py` and
+`email_classify.py` do — and keep the output to fields that are stored or
+shown, never acted on.
+
 ### Rowing display reader (internal)
 
 `POST /internal/rowing/read` takes `{"media_type": "image/jpeg", "data":
 "<base64>"}` and returns `{"timeMinutes", "timeSeconds", "distance"}` as read
-by Claude (`claude-haiku-4-5`). It is the image half of the Go backend's
+by Claude. It is the image half of the Go backend's
 admin-only `POST /api/rowing`: the Go handler does the admin check, the EXIF
 date, the duplicate check, the sanity bounds and the insert, and calls this
 only once it has decided the paid call is worth making. Nothing here judges
 whether the numbers are plausible.
-
-It and the job posting reader below are the only routes in this service that
-are **not public**. They have no auth of their own, so two things keep them
-internal: nginx answers `/py/internal/`
-with a 404, and the route 404s any request carrying the `X-Real-IP` /
-`X-Forwarded-For` headers nginx adds to everything it proxies. The Go backend
-calls the container directly (`http://python:8000/...`) and sends neither.
 
 Errors: 502 with a fixed `detail` (`failed to process image`, `empty response
 from image processor`, `failed to parse image data`) that the Go handler
@@ -91,9 +148,10 @@ relays to the admin; 503 if `CLAUDE_API_KEY` is unset.
 
 `POST /internal/jobs/extract` takes `{"url", "title", "text"}` — a page's
 address, `<title>` and visible text — and returns `{"jobTitle", "company",
-"location", "notes"}` as read by Claude (`claude-haiku-4-5`). It is the Claude
+"location", "notes"}` as read by Claude. It is the Claude
 half of the Go backend's token-guarded `POST /api/jobs/capture/extract`, which
-the browser userscript calls to pre-fill its popup.
+the browser userscript (`vue/public/job-capture.user.js`) calls to pre-fill
+its popup.
 
 Claude rather than selectors because the pages are LinkedIn, a dozen ATS
 products and arbitrary company sites. A page that is not a posting is a 200
@@ -105,6 +163,40 @@ output is only ever four form fields that are checked by eye before saving.
 to the same length first. Errors: 502 with a fixed `detail` (`failed to read
 the posting`, `empty response from the posting reader`, `failed to parse the
 posting`); 503 if `CLAUDE_API_KEY` is unset.
+
+### Email classifier (internal)
+
+`POST /internal/email/classify` takes `{"message": "..."}` — one email as the
+Go email pipeline (`backend/services/email_sync.go`) formats it: `Subject:`,
+`From:` and `Date:` lines, a blank line, then the cleaned body. The string is
+sent to Claude unchanged as the user turn, with the classification
+instructions in the system prompt, and `max_tokens` 512.
+
+It returns
+
+```
+{"isJobEmail", "action", "company", "jobTitle", "status",
+ "location", "url", "appliedAt", "notes"}
+```
+
+`isJobEmail` is a bool (default `false`); `action`, `company`, `jobTitle` and
+`status` are strings (default `""`, and a `null` from the model becomes `""`);
+the last four are a string or `null`. Every key is always present in the
+response. The prompt tells the model to send only `isJobEmail` when it is
+false, which is why nothing else is required — an email that is not about a
+job is a 200, not an error. `action` and `status` are not checked against the
+values the prompt lists; what to do with the verdict (match an application,
+create or update the row, record the email as processed) is the Go
+pipeline's job.
+
+The email is untrusted third-party content: the system prompt tells the model
+to treat it as data, and the output is only ever the fields of one job-tracker
+row.
+
+`message` is capped at 200,000 characters (`MAX_MESSAGE_CHARS`). Errors: 502
+with a fixed `detail` (`failed to classify the email`, `empty response from
+the email classifier`, `failed to parse the email classification`); 503 if
+`CLAUDE_API_KEY` is unset.
 
 ## Behind nginx
 
@@ -121,7 +213,7 @@ braces version of the same thing. The internal deadlines in `travelodge.py`
 return partial results with `summary.truncated = true` instead of dying.
 
 Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
-`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the rowing and job posting readers. Dev mode mounts `python/app` and runs
+`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the three internal Claude routes. Dev mode mounts `python/app` and runs
 uvicorn with `--reload`.
 
 ## Running locally
@@ -143,8 +235,27 @@ uvicorn app.main:app --reload --port 8000
 # http://localhost:8000/docs   (no /py prefix when run directly)
 ```
 
-Dependencies are `fastapi`, `uvicorn[standard]`, `requests` and `anthropic` —
-nothing else.
+Runtime dependencies are `fastapi`, `uvicorn[standard]`, `requests` and
+`anthropic` — nothing else. `requirements.txt` is all the Docker image
+installs.
+
+## Tests
+
+`requirements-dev.txt` is `requirements.txt` plus what the suite needs:
+`pytest`, and `httpx`, which FastAPI's `TestClient` will not import without.
+
+```
+cd python
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest tests -q
+```
+
+Nothing in the suite touches the network. The Claude tests replace the
+Anthropic client with a fake (`monkeypatch.setattr(<module>, "_client", ...)`),
+so they cover the request that is built, how the reply is parsed, the status
+code each failure maps to and the internal-only guard — not what the model
+actually answers. `test_claude.py` covers `ask_json` on its own.
 
 ## How the pricing works
 

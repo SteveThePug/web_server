@@ -1,0 +1,13 @@
+# What the test suite (python/tests) needs on top of the runtime dependencies.
+# Kept out of requirements.txt so the image stays slim: the Dockerfile installs
+# only that file. Locally:
+#
+#   pip install -r requirements-dev.txt
+#   python -m pytest tests -q
+-r requirements.txt
+
+pytest==9.0.3
+# fastapi.testclient.TestClient is built on httpx and refuses to import
+# without it. Nothing at runtime pulls it in: the Anthropic SDK brings httpx2,
+# a different package, which is what the tests import for request objects.
+httpx==0.28.1

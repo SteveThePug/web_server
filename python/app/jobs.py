@@ -2,7 +2,7 @@
 
 This is the Claude half of the Go backend's job capture endpoints
 (backend/handlers/handle_job_capture.go), which the browser userscript
-(userscripts/job-capture.user.js) calls with whatever page is open. The Go
+(vue/public/job-capture.user.js) calls with whatever page is open. The Go
 handler owns the token check and the database; this module turns a wall of
 page text into the four fields the capture popup pre-fills.
 
@@ -14,18 +14,16 @@ stable.
 Like `rowing`, it never imports FastAPI; `main` is the HTTP skin.
 """
 
-import logging
 from typing import Optional
 
-import anthropic
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, field_validator
 
-from .claude import MODEL, NotConfigured, ReadError, strip_markdown_fence
+# `_client` is the seam the tests replace to fake the API, which is why it is
+# handed to ask_json below rather than left to its default.
+from .claude import MODEL, NotConfigured, ReadError, ask_json
 from .claude import client as _client
 
-__all__ = ["JobPosting", "NotConfigured", "ReadError", "extract_posting"]
-
-log = logging.getLogger(__name__)
+__all__ = ["MODEL", "JobPosting", "NotConfigured", "ReadError", "extract_posting"]
 
 # Four short strings; a ceiling, not a target.
 MAX_TOKENS = 512
@@ -99,31 +97,18 @@ def extract_posting(url: str, title: str, text: str) -> JobPosting:
         ReadError: the API call failed, or the reply was empty or not the JSON
             object that was asked for.
     """
-    try:
-        message = _client().messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=SYSTEM,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"<url>{url}</url>\n<title>{title}</title>\n<page>\n{text}\n</page>",
-                }
-            ],
-        )
-    except anthropic.APIStatusError as e:
-        log.warning("Claude API error %s: %s", e.status_code, e.message)
-        raise ReadError("failed to read the posting") from e
-    except anthropic.APIConnectionError as e:
-        log.warning("Claude API unreachable: %s", e)
-        raise ReadError("failed to read the posting") from e
-
-    reply = next((block.text for block in message.content if block.type == "text"), None)
-    if reply is None:
-        raise ReadError("empty response from the posting reader")
-
-    try:
-        return JobPosting.model_validate_json(strip_markdown_fence(reply))
-    except ValidationError as e:
-        log.warning("unparseable model output %r: %s", reply, e)
-        raise ReadError("failed to parse the posting") from e
+    return ask_json(
+        JobPosting,
+        max_tokens=MAX_TOKENS,
+        system=SYSTEM,
+        messages=[
+            {
+                "role": "user",
+                "content": f"<url>{url}</url>\n<title>{title}</title>\n<page>\n{text}\n</page>",
+            }
+        ],
+        failed="failed to read the posting",
+        empty="empty response from the posting reader",
+        unparseable="failed to parse the posting",
+        get_client=_client,
+    )

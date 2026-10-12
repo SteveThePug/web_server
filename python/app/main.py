@@ -13,16 +13,20 @@ Endpoints
   POST /hotels/search         blocking cheapest-Travelodge search
   POST /hotels/search/stream  same search, streamed as NDJSON
   POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
-  POST /internal/rowing/read  read a rowing display photo with Claude
-  POST /internal/jobs/extract read a job posting's page text with Claude
-                              (both: Go backend only - not reachable through
-                              nginx)
+  POST /internal/rowing/read    read a rowing display photo with Claude
+  POST /internal/jobs/extract   read a job posting's page text with Claude
+  POST /internal/email/classify classify an email for the job tracker with
+                                Claude
+                                (all three: Go backend only - not reachable
+                                through nginx)
 
 All the hotel work lives in `travelodge`; this module is the HTTP skin around
 it - request validation, a response cache, the one-search-at-a-time guard, and
-the NDJSON framing. The rowing reader (`rowing`) and the job posting reader
-(`jobs`) are the routes here that are not public: see the "Internal" sections
-at the bottom. The hotel routes are consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
+the NDJSON framing. The rowing reader (`rowing`), the job posting reader
+(`jobs`) and the email classifier (`email_classify`) are the routes here that
+are not public: see the "Internal" sections at the bottom, which open with the
+wrapper they are all registered through. The hotel routes are consumed by
+vue/src/views/hotels/ (SingleStayPanel.vue,
 CheapestNightPanel.vue, useHotelForm.js), which fetch these paths with the /py
 prefix. Field names in the models below are part of that contract.
 """
@@ -34,15 +38,15 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Literal, Optional
 from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from . import jobs, rowing, travelodge
+from . import claude, email_classify, jobs, rowing, travelodge
 
 app = FastAPI(
     title="Python API",
-    version="0.4.0",
+    version="0.5.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
 )
@@ -649,6 +653,70 @@ def hotel_scan_stream(req: HotelScanRequest) -> StreamingResponse:
 
 
 # --------------------------------------------------------------------------- #
+# Internal: the routes the Go backend calls
+# --------------------------------------------------------------------------- #
+def _internal_only(request: Request) -> None:
+    """Refuse a request that arrived through nginx.
+
+    Every other route in this service is public, but the internal ones spend
+    a paid Claude call per request and have no auth of their own - the admin
+    or token check happens in the Go backend, which calls this container
+    directly over app-network. Two layers keep the outside world off it,
+    because either alone is one config edit away from being lost:
+
+      1. nginx answers /py/internal/ with a 404 (both templates).
+      2. nginx stamps X-Real-IP and X-Forwarded-For on everything it proxies
+         here, and a client cannot make it omit them; the Go backend sends
+         neither. So their presence means the request came from outside.
+
+    404 rather than 403, so the route is indistinguishable from one that does
+    not exist.
+    """
+    if "x-real-ip" in request.headers or "x-forwarded-for" in request.headers:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
+def _internal_claude_route(path: str, **kwargs):
+    """`app.post` for a route that makes a Claude call on the Go backend's behalf.
+
+    Adds the two things every such route needs, so a new one cannot forget
+    either: the `_internal_only` guard, and the 502/503 entries in the docs.
+    The handler itself then only calls its module and returns the result - the
+    errors it can raise are turned into those responses by `_claude_failed`
+    below.
+
+    The guard is a dependency rather than a call in the handler because
+    dependencies are resolved before the body is validated: a request from
+    outside gets the 404 whatever it posted, instead of a 422 that confirms
+    the route exists and describes its fields.
+    """
+    return app.post(
+        path,
+        dependencies=[Depends(_internal_only)],
+        responses={
+            502: {"description": "Claude failed, or its reply was not the expected JSON"},
+            503: {"description": "CLAUDE_API_KEY is not set"},
+        },
+        **kwargs,
+    )
+
+
+@app.exception_handler(claude.ReadError)
+def _claude_failed(request: Request, exc: claude.ReadError) -> JSONResponse:
+    """Turn a Claude module's failure into the response the Go backend expects.
+
+    503 when the API key is missing (NotConfigured, a ReadError subclass, so
+    one handler sees both), 502 for everything else. The body is the same
+    `{"detail": ...}` an HTTPException produces, and the detail is one of the
+    module's fixed messages - the Go handlers pass it on to their own caller
+    verbatim, which is why nothing from the API or the model's reply is ever
+    put in it.
+    """
+    status = 503 if isinstance(exc, claude.NotConfigured) else 502
+    return JSONResponse(status_code=status, content={"detail": str(exc)})
+
+
+# --------------------------------------------------------------------------- #
 # Internal: rowing display reader
 # --------------------------------------------------------------------------- #
 # 10MB of image (the Go handler's upload cap) once base64-encoded, rounded up.
@@ -664,28 +732,7 @@ class RowingReadRequest(BaseModel):
     data: str = Field(..., min_length=1, max_length=MAX_IMAGE_B64_CHARS, description="Base64 image bytes")
 
 
-def _internal_only(request: Request) -> None:
-    """Refuse a request that arrived through nginx.
-
-    Every other route in this service is public, but the internal ones spend
-    a paid Claude call per request and have no auth of their own - the admin
-    or token check happens in the Go backend, which calls this container
-    directly over app-network. Two layers keep the outside world off it, because either alone
-    is one config edit away from being lost:
-
-      1. nginx answers /py/internal/ with a 404 (both templates).
-      2. nginx stamps X-Real-IP and X-Forwarded-For on everything it proxies
-         here, and a client cannot make it omit them; the Go backend sends
-         neither. So their presence means the request came from outside.
-
-    404 rather than 403, so the route is indistinguishable from one that does
-    not exist.
-    """
-    if "x-real-ip" in request.headers or "x-forwarded-for" in request.headers:
-        raise HTTPException(status_code=404, detail="Not Found")
-
-
-@app.post(
+@_internal_claude_route(
     "/internal/rowing/read",
     response_model=rowing.RowingReading,
     summary="Read time and distance off a rowing machine display",
@@ -694,30 +741,19 @@ def _internal_only(request: Request) -> None:
         "Sends the image to Claude and returns the three numbers it read. No plausibility checking "
         "happens here - the caller owns the sanity bounds."
     ),
-    responses={
-        502: {"description": "Claude failed, or its reply was not the expected JSON"},
-        503: {"description": "CLAUDE_API_KEY is not set"},
-    },
 )
-def rowing_read(req: RowingReadRequest, request: Request) -> rowing.RowingReading:
+def rowing_read(req: RowingReadRequest) -> rowing.RowingReading:
     """Read a rowing display photo.
 
     A plain `def`, so FastAPI runs it in the threadpool and the blocking Claude
     call does not stall the event loop the hotel streams are served from.
 
-    Raises:
-        HTTPException: 404 (came through nginx), 503 (no API key) or 502
-            (Claude failed or returned something unparseable). The 502 detail
-            is one of rowing.ReadError's fixed messages, which the Go handler
-            passes on to the admin verbatim.
+    Responds 404 (came through nginx), 503 (no API key) or 502 (Claude failed
+    or returned something unparseable) by way of `_internal_claude_route`. The
+    502 detail is one of rowing.read_display's fixed messages, which the Go
+    handler passes on to the admin verbatim.
     """
-    _internal_only(request)
-    try:
-        return rowing.read_display(req.media_type, req.data)
-    except rowing.NotConfigured as e:
-        raise HTTPException(status_code=503, detail=str(e)) from None
-    except rowing.ReadError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from None
+    return rowing.read_display(req.media_type, req.data)
 
 
 # --------------------------------------------------------------------------- #
@@ -731,7 +767,7 @@ class JobExtractRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=jobs.MAX_TEXT_CHARS, description="The page's visible text")
 
 
-@app.post(
+@_internal_claude_route(
     "/internal/jobs/extract",
     response_model=jobs.JobPosting,
     summary="Read the job title, company and location off a posting",
@@ -740,27 +776,46 @@ class JobExtractRequest(BaseModel):
         "through nginx. Sends the page text to Claude and returns the fields it found. A page that is "
         "not a job posting is a 200 with empty strings, not an error."
     ),
-    responses={
-        502: {"description": "Claude failed, or its reply was not the expected JSON"},
-        503: {"description": "CLAUDE_API_KEY is not set"},
-    },
 )
-def jobs_extract(req: JobExtractRequest, request: Request) -> jobs.JobPosting:
+def jobs_extract(req: JobExtractRequest) -> jobs.JobPosting:
     """Read a job posting's page text.
 
-    A plain `def` for the same reason as `rowing_read`: the blocking Claude
-    call runs in the threadpool.
-
-    Raises:
-        HTTPException: 404 (came through nginx), 503 (no API key) or 502
-            (Claude failed or returned something unparseable). The 502 detail
-            is one of jobs.extract_posting's fixed messages, which the Go
-            handler passes on to the capture popup verbatim.
+    A plain `def` for the same reason as `rowing_read`, and the same error
+    responses. The 502 detail is one of jobs.extract_posting's fixed messages,
+    which the Go handler passes on to the capture popup verbatim.
     """
-    _internal_only(request)
-    try:
-        return jobs.extract_posting(req.url, req.title, req.text)
-    except jobs.NotConfigured as e:
-        raise HTTPException(status_code=503, detail=str(e)) from None
-    except jobs.ReadError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from None
+    return jobs.extract_posting(req.url, req.title, req.text)
+
+
+# --------------------------------------------------------------------------- #
+# Internal: email classifier
+# --------------------------------------------------------------------------- #
+class EmailClassifyRequest(BaseModel):
+    """One email for Claude to classify, as the Go backend sends it."""
+
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=email_classify.MAX_MESSAGE_CHARS,
+        description="Subject, From and Date lines, a blank line, then the cleaned body",
+    )
+
+
+@_internal_claude_route(
+    "/internal/email/classify",
+    response_model=email_classify.EmailAnalysis,
+    summary="Decide whether an email is about a job application",
+    description=(
+        "Internal to the Go backend's email sync; not reachable through nginx. Sends one pre-formatted "
+        "email to Claude and returns its verdict. An email that is not about a job is a 200 with "
+        "`isJobEmail` false and every other field at its default, not an error."
+    ),
+)
+def email_classify_route(req: EmailClassifyRequest) -> email_classify.EmailAnalysis:
+    """Classify one email for the job tracker.
+
+    A plain `def` for the same reason as `rowing_read`, and the same error
+    responses. The Go pipeline counts a 502 as a failed attempt at that email
+    and retries it on a later sync.
+    """
+    return email_classify.classify(req.message)

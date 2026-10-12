@@ -9,17 +9,16 @@ paying for. This module just turns pixels into three numbers.
 Like `travelodge`, it never imports FastAPI; `main` is the HTTP skin.
 """
 
-import logging
+from pydantic import BaseModel, Field
 
-import anthropic
-from pydantic import BaseModel, Field, ValidationError
-
-# Re-exported under the names this module has always had: `main` and the tests
-# reach the client and the exceptions through `rowing`.
-from .claude import MODEL, NotConfigured, ReadError, strip_markdown_fence
+# Re-exported under the names this module has always had: the tests reach the
+# exceptions and the fence stripping through `rowing`. `_client` is the seam
+# they replace to fake the API, which is why it is handed to ask_json below
+# rather than left to its default.
+from .claude import MODEL, NotConfigured, ReadError, ask_json, strip_markdown_fence
 from .claude import client as _client
 
-log = logging.getLogger(__name__)
+__all__ = ["MODEL", "NotConfigured", "ReadError", "RowingReading", "read_display", "strip_markdown_fence"]
 
 # The answer is a three-key JSON object, so this is a ceiling, not a target.
 MAX_TOKENS = 256
@@ -63,36 +62,23 @@ def read_display(media_type: str, data: str) -> RowingReading:
         ReadError: the API call failed, or the reply was empty or not the JSON
             object that was asked for.
     """
-    try:
-        message = _client().messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {"type": "base64", "media_type": media_type, "data": data},
-                        },
-                        {"type": "text", "text": PROMPT},
-                    ],
-                }
-            ],
-        )
-    except anthropic.APIStatusError as e:
-        log.warning("Claude API error %s: %s", e.status_code, e.message)
-        raise ReadError("failed to process image") from e
-    except anthropic.APIConnectionError as e:
-        log.warning("Claude API unreachable: %s", e)
-        raise ReadError("failed to process image") from e
-
-    text = next((block.text for block in message.content if block.type == "text"), None)
-    if text is None:
-        raise ReadError("empty response from image processor")
-
-    try:
-        return RowingReading.model_validate_json(strip_markdown_fence(text))
-    except ValidationError as e:
-        log.warning("unparseable model output %r: %s", text, e)
-        raise ReadError("failed to parse image data") from e
+    return ask_json(
+        RowingReading,
+        max_tokens=MAX_TOKENS,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {"type": "base64", "media_type": media_type, "data": data},
+                    },
+                    {"type": "text", "text": PROMPT},
+                ],
+            }
+        ],
+        failed="failed to process image",
+        empty="empty response from image processor",
+        unparseable="failed to parse image data",
+        get_client=_client,
+    )

@@ -48,7 +48,7 @@ def http():
     return TestClient(main.app)
 
 
-# --- fence stripping (must agree with services.StripMarkdownFence in Go) ---
+# --- fence stripping ---
 
 
 @pytest.mark.parametrize(

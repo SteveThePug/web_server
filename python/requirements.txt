@@ -3,7 +3,5 @@ uvicorn[standard]==0.34.0
 requests==2.32.3
 anthropic==1.12.1
 
-# Dev only, deliberately commented out so the image stays slim: the test suite
-# (python/tests) needs pytest. Install it with `pip install pytest` locally and
-# run `python -m pytest` from this directory.
-# pytest==9.0.3
+# Runtime only - this is all the Docker image installs. What the test suite
+# (python/tests) needs on top lives in requirements-dev.txt.

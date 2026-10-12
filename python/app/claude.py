@@ -1,18 +1,27 @@
-"""The Anthropic client and the reply handling every Claude caller here shares.
+"""The Anthropic client and the one call every Claude caller here makes.
 
-`rowing` (a photo in, three numbers out) and `jobs` (page text in, a few
-fields out) are the same shape of call: one prompt asking for bare JSON, one
-reply to parse. What they have in common lives here so the two cannot drift -
-the lazily built client, the fence stripping, and the two exception types
-`main` maps to 502 and 503.
+`rowing` (a photo in, three numbers out), `jobs` (page text in, a few fields
+out) and `email_classify` (an email in, a verdict out) are the same shape of
+call: one prompt asking for bare JSON, one reply to parse. That whole sequence
+is `ask_json` below, so a caller is a prompt, a pydantic model and three error
+strings, and the handling around the call cannot drift between them. Also
+here: the lazily built client and the two exception types `main` maps to 502
+and 503.
 
 Like the modules that use it, this never imports FastAPI.
 """
 
 import functools
+import logging
 import os
+from typing import Callable, Optional, TypeVar
 
 import anthropic
+from pydantic import BaseModel, ValidationError
+
+log = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
 
 MODEL = "claude-haiku-4-5"
 # Seconds per attempt. The SDK retries twice on top (429/5xx/connection), so
@@ -48,12 +57,76 @@ def strip_markdown_fence(raw: str) -> str:
     """Remove a surrounding markdown code fence from a model's response.
 
     The prompts ask for bare JSON and the model fences it anyway often enough
-    to matter. Mirrors services.StripMarkdownFence in the Go backend (still
-    used by the email pipeline): "```json" is tried before a plain "```", and
-    unfenced input comes back unchanged apart from surrounding whitespace.
+    to matter. "```json" is tried before a plain "```", and unfenced input
+    comes back unchanged apart from surrounding whitespace. This is the only
+    copy: the Go backend had its own while it still called Claude itself, and
+    every Claude call now goes through this service.
     """
     raw = raw.strip()
     raw = raw.removeprefix("```json")
     raw = raw.removeprefix("```")
     raw = raw.removesuffix("```")
     return raw.strip()
+
+
+def ask_json(
+    model_cls: type[T],
+    *,
+    max_tokens: int,
+    messages: list,
+    system: Optional[str] = None,
+    failed: str,
+    empty: str,
+    unparseable: str,
+    get_client: Optional[Callable[[], anthropic.Anthropic]] = None,
+) -> T:
+    """Send one prompt that asks for a bare JSON object and validate the reply.
+
+    The three message arguments are what the caller's user ends up reading:
+    the Go backend relays a ReadError's text verbatim, so each caller words
+    its own and nothing from the API or the model's reply leaks into it. The
+    detail goes to the log instead.
+
+    Args:
+        model_cls: the pydantic model the reply must validate as; its field
+            names are the keys the caller's prompt asks for.
+        max_tokens: ceiling on the reply.
+        messages: the `messages` list, passed to the API as is.
+        system: the system prompt, left out of the request when None.
+        failed: ReadError text when the API call itself failed.
+        empty: ReadError text when the reply has no text block.
+        unparseable: ReadError text when the reply is not JSON, or is JSON
+            that `model_cls` rejects.
+        get_client: returns the Anthropic client. Callers pass their own
+            module-level `_client` so that a test can replace the client for
+            one module; resolved here, per call, when not given.
+
+    Raises:
+        NotConfigured: no API key.
+        ReadError: with one of the three messages above.
+    """
+    request = {"model": MODEL, "max_tokens": max_tokens, "messages": messages}
+    if system is not None:
+        request["system"] = system
+
+    # Outside the try: NotConfigured is not an API failure and must reach
+    # `main` as itself, to become the 503.
+    api = (get_client or client)()
+    try:
+        message = api.messages.create(**request)
+    except anthropic.APIStatusError as e:
+        log.warning("Claude API error %s: %s", e.status_code, e.message)
+        raise ReadError(failed) from e
+    except anthropic.APIConnectionError as e:
+        log.warning("Claude API unreachable: %s", e)
+        raise ReadError(failed) from e
+
+    text = next((block.text for block in message.content if block.type == "text"), None)
+    if text is None:
+        raise ReadError(empty)
+
+    try:
+        return model_cls.model_validate_json(strip_markdown_fence(text))
+    except ValidationError as e:
+        log.warning("unparseable model output %r: %s", text, e)
+        raise ReadError(unparseable) from e
