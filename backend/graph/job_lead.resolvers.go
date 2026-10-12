@@ -144,7 +144,7 @@ func (r *mutationResolver) RunJobLeadSync(ctx context.Context) (bool, error) {
 	if r.Store.JobLeads == nil {
 		return false, fmt.Errorf("job leads are not configured")
 	}
-	return r.Store.JobLeads.RunInBackground(false), nil
+	return r.Store.JobLeads.RunInBackground(services.LeadJobSync), nil
 }
 
 // ScoreJobLeads is the resolver for the scoreJobLeads field.
@@ -152,7 +152,15 @@ func (r *mutationResolver) ScoreJobLeads(ctx context.Context) (bool, error) {
 	if r.Store.JobLeads == nil {
 		return false, fmt.Errorf("job leads are not configured")
 	}
-	return r.Store.JobLeads.RunInBackground(true), nil
+	return r.Store.JobLeads.RunInBackground(services.LeadJobScore), nil
+}
+
+// RescoreJobLeads is the resolver for the rescoreJobLeads field.
+func (r *mutationResolver) RescoreJobLeads(ctx context.Context) (bool, error) {
+	if r.Store.JobLeads == nil {
+		return false, fmt.Errorf("job leads are not configured")
+	}
+	return r.Store.JobLeads.RunInBackground(services.LeadJobRescore), nil
 }
 
 // JobSources is the resolver for the jobSources field.
@@ -176,7 +184,7 @@ func (r *queryResolver) JobLeads(ctx context.Context, state *string, includeUnma
 	if includeUnmatched == nil || !*includeUnmatched {
 		// A promoted or dismissed lead is shown whatever the filter now says
 		// about it; `matched` only decides what the inbox offers.
-		query = query.Where("matched = ? OR state <> ?", true, services.LeadNew)
+		query = query.Where("(matched = ? OR state <> ?)", true, services.LeadNew)
 	}
 	var leads []*models.JobLead
 	// Best first, unscored after scored, newest first within a score. The

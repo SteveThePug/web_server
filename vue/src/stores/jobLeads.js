@@ -18,7 +18,7 @@ import { gql } from "@/graphql";
 
 // `description` is deliberately not here: it is the full text of the posting
 // and is fetched per lead when asked for, as on the tracker.
-const LEAD_FIELDS = `id createdAt sourceKind jobTitle company location url postedAt lastSeenAt matched state score scoreReasons jobAppId`;
+const LEAD_FIELDS = `id createdAt sourceKind jobTitle company location url postedAt lastSeenAt matched state score scoreReasons scoredAt jobAppId`;
 
 export const useJobLeadsStore = defineStore("jobLeads", () => {
   const leads = ref([]);
@@ -107,5 +107,15 @@ export const useJobLeadsStore = defineStore("jobLeads", () => {
     return data.scoreJobLeads;
   }
 
-  return { leads, loading, error, status, fetch, dismiss, restore, promote, fetchDescription, fetchStatus, runSync, scoreAll };
+  /**
+   * Score every inbox lead again, scored or not — for after the profile or
+   * the model has changed. Same contract as runSync(). Each lead keeps its old
+   * score until its new one lands, so the list never goes blank.
+   */
+  async function rescoreAll() {
+    const data = await gql(`mutation RescoreJobLeads { rescoreJobLeads }`);
+    return data.rescoreJobLeads;
+  }
+
+  return { leads, loading, error, status, fetch, dismiss, restore, promote, fetchDescription, fetchStatus, runSync, scoreAll, rescoreAll };
 });

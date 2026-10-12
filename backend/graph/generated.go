@@ -121,6 +121,7 @@ type ComplexityRoot struct {
 		PostedAt     func(childComplexity int) int
 		Score        func(childComplexity int) int
 		ScoreReasons func(childComplexity int) int
+		ScoredAt     func(childComplexity int) int
 		SourceKind   func(childComplexity int) int
 		State        func(childComplexity int) int
 		URL          func(childComplexity int) int
@@ -187,6 +188,7 @@ type ComplexityRoot struct {
 		Logout                 func(childComplexity int) int
 		PromoteJobLead         func(childComplexity int, id int) int
 		RefreshToken           func(childComplexity int) int
+		RescoreJobLeads        func(childComplexity int) int
 		RestoreJobLead         func(childComplexity int, id int) int
 		RunJobLeadSync         func(childComplexity int) int
 		ScoreJobLeads          func(childComplexity int) int
@@ -340,6 +342,7 @@ type MutationResolver interface {
 	UpdateJobSearchProfile(ctx context.Context, input model.UpdateJobSearchProfileInput) (*models.JobSearchProfile, error)
 	RunJobLeadSync(ctx context.Context) (bool, error)
 	ScoreJobLeads(ctx context.Context) (bool, error)
+	RescoreJobLeads(ctx context.Context) (bool, error)
 	CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error)
 	UpdatePlace(ctx context.Context, id int, input model.UpdatePlaceInput) (*models.Place, error)
 	DeletePlace(ctx context.Context, id int) (*models.Place, error)
@@ -736,6 +739,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.JobLead.ScoreReasons(childComplexity), true
+	case "JobLead.scoredAt":
+		if e.ComplexityRoot.JobLead.ScoredAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobLead.ScoredAt(childComplexity), true
 	case "JobLead.sourceKind":
 		if e.ComplexityRoot.JobLead.SourceKind == nil {
 			break
@@ -1142,6 +1151,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RefreshToken(childComplexity), true
+	case "Mutation.rescoreJobLeads":
+		if e.ComplexityRoot.Mutation.RescoreJobLeads == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.RescoreJobLeads(childComplexity), true
 	case "Mutation.restoreJobLead":
 		if e.ComplexityRoot.Mutation.RestoreJobLead == nil {
 			break
@@ -1999,6 +2014,8 @@ func (ec *executionContext) childFields_JobLead(ctx context.Context, field graph
 		return ec.fieldContext_JobLead_score(ctx, field)
 	case "scoreReasons":
 		return ec.fieldContext_JobLead_scoreReasons(ctx, field)
+	case "scoredAt":
+		return ec.fieldContext_JobLead_scoredAt(ctx, field)
 	case "jobAppId":
 		return ec.fieldContext_JobLead_jobAppId(ctx, field)
 	}
@@ -4263,6 +4280,29 @@ func (ec *executionContext) fieldContext_JobLead_scoreReasons(_ context.Context,
 	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _JobLead_scoredAt(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobLead_scoredAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ScoredAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobLead_scoredAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobLead", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
 func (ec *executionContext) _JobLead_jobAppId(ctx context.Context, field graphql.CollectedField, obj *models.JobLead) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6044,6 +6084,42 @@ func (ec *executionContext) _Mutation_scoreJobLeads(ctx context.Context, field g
 	)
 }
 func (ec *executionContext) fieldContext_Mutation_scoreJobLeads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Mutation", field, true, true, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Mutation_rescoreJobLeads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_rescoreJobLeads(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().RescoreJobLeads(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_rescoreJobLeads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Mutation", field, true, true, errors.New("field of type Boolean does not have child fields"))
 }
 
@@ -11223,6 +11299,11 @@ func (ec *executionContext) _JobLead(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "scoredAt":
+			out.Values[i] = ec._JobLead_scoredAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "jobAppId":
 			out.Values[i] = ec._JobLead_jobAppId(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -11719,6 +11800,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "scoreJobLeads":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_scoreJobLeads(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rescoreJobLeads":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rescoreJobLeads(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

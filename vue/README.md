@@ -239,8 +239,9 @@ until **Track** is pressed on a lead, which adds it to `/cv/jobs` as Saved.
 
 Same conventions as the tracker: the children emit `fail` / `ok` for the
 parent's banner, and a lead's `description` is fetched per row. Two things
-differ. "Check now" (poll the sources, score up to forty) and "Score
-unscored" (poll nothing, score the whole backlog) do not wait for the job —
+differ. "Check now" (poll the sources, score up to forty), "Score unscored"
+(poll nothing, score the whole backlog) and "Rescore all" (score every inbox
+lead again) do not wait for the job —
 the mutation returns at once and the page polls `jobLeadSyncStatus` every
 three seconds, reloading the leads as it goes and the sources at the end. And the box styles the children share (`.jl-box`,
 `.jl-hint`, `.jl-warn`) are in an unscoped `<style>` block in `JobLeads.vue`,

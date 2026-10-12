@@ -162,18 +162,32 @@ func (s *JobLeadService) StartScheduler(ctx context.Context) {
 	}
 }
 
-// RunInBackground starts a run and returns at once, reporting false when one
-// was already going. It backs the page's two buttons — "Check now" (Run) and
-// "Score unscored" (ScoreAll, when scoreOnly is set). Either can take minutes,
-// far longer than a request should be held open, so the page polls Status
-// instead of waiting.
-func (s *JobLeadService) RunInBackground(scoreOnly bool) bool {
+// LeadJob names one of the pipeline's three jobs, for RunInBackground.
+type LeadJob int
+
+const (
+	// LeadJobSync is Run: poll the sources, then score up to a cap.
+	LeadJobSync LeadJob = iota
+	// LeadJobScore is ScoreAll: score every unscored lead, polling nothing.
+	LeadJobScore
+	// LeadJobRescore is RescoreAll: score every inbox lead again.
+	LeadJobRescore
+)
+
+// RunInBackground starts a job and returns at once, reporting false when one
+// was already going. It backs the page's buttons — "Check now", "Score
+// unscored" and "Rescore all". Any of them can take minutes, far longer than
+// a request should be held open, so the page polls Status instead of waiting.
+func (s *JobLeadService) RunInBackground(job LeadJob) bool {
 	if s.Status().Running {
 		return false
 	}
 	run := s.Run
-	if scoreOnly {
+	switch job {
+	case LeadJobScore:
 		run = s.ScoreAll
+	case LeadJobRescore:
+		run = s.RescoreAll
 	}
 	go func() {
 		// Not the request's context: the request is over long before this is.
@@ -199,6 +213,28 @@ func (s *JobLeadService) Run(ctx context.Context) error {
 // decide what gets scored. There is no cap on the count — the person pressed a
 // button that says "all" — only maxScoreAllDuration on the time.
 func (s *JobLeadService) ScoreAll(ctx context.Context) error {
+	return s.scoreAll(ctx, false)
+}
+
+// RescoreAll scores every matched lead in the inbox again, including the
+// ones that already have a score. It is for when what a score means has
+// changed: the profile was rewritten, or CLAUDE_MODEL was switched.
+//
+// Old scores are not wiped first. Each lead keeps the score it has until its
+// new one arrives, so the inbox stays sorted and readable while the job runs,
+// and a job that dies halfway (no API key, a restart) leaves every lead with
+// a score, some new and some old, rather than half of them blank. What is
+// left to do is told apart by ScoredAt: anything scored before this job
+// started is still due. Pressing the button again after a failure therefore
+// starts over rather than resuming, which costs calls but is never wrong.
+//
+// Leads that had used up their attempts get them back: a posting the old
+// model could not score may be fine on the new one.
+func (s *JobLeadService) RescoreAll(ctx context.Context) error {
+	return s.scoreAll(ctx, true)
+}
+
+func (s *JobLeadService) scoreAll(ctx context.Context, rescore bool) error {
 	return s.exclusive(ctx, maxScoreAllDuration, func(ctx context.Context) error {
 		profile, err := LoadJobSearchProfile(s.DB)
 		if err != nil {
@@ -211,7 +247,19 @@ func (s *JobLeadService) ScoreAll(ctx context.Context) error {
 			return fmt.Errorf("re-applying the filter: %w", err)
 		}
 
-		log.Println("[JobLeads] Scoring all unscored leads")
+		var due *time.Time
+		if rescore {
+			started := time.Now()
+			due = &started
+			if err := s.DB.Model(&models.JobLead{}).
+				Where("state = ? AND matched = ? AND score_attempts > 0", LeadNew, true).
+				UpdateColumn("score_attempts", 0).Error; err != nil {
+				return fmt.Errorf("resetting score attempts: %w", err)
+			}
+			log.Println("[JobLeads] Rescoring every inbox lead")
+		} else {
+			log.Println("[JobLeads] Scoring all unscored leads")
+		}
 		total := 0
 		var failed []uint
 		for {
@@ -220,7 +268,7 @@ func (s *JobLeadService) ScoreAll(ctx context.Context) error {
 			// it, not all three — a passing Claude hiccup should not write a
 			// lead off for good. That is also why the loop terminates: every
 			// lead a pass looks at is either scored or added to `failed`.
-			scored, tried, nowFailed, err := s.scoreLeads(ctx, profile, failed)
+			scored, tried, nowFailed, err := s.scoreLeads(ctx, profile, failed, due)
 			total += scored
 			failed = append(failed, nowFailed...)
 			if err != nil || tried == 0 {
@@ -302,7 +350,7 @@ func (s *JobLeadService) fetchAndScore(ctx context.Context) error {
 	if err := s.refilter(filter); err != nil {
 		return fmt.Errorf("re-applying the filter: %w", err)
 	}
-	scored, _, _, err := s.scoreLeads(ctx, profile, nil)
+	scored, _, _, err := s.scoreLeads(ctx, profile, nil, nil)
 	log.Printf("[JobLeads] Run finished: %d new leads, %d scored", added, scored)
 	return err
 }
@@ -678,13 +726,22 @@ type scoreRequest struct {
 // tried is zero once nothing is left to score, which is what ScoreAll loops
 // on.
 //
+// rescoreBefore, when set, widens "has no score yet" to "has no score from
+// this job": a lead whose score is older than that time is due again. Its old
+// score stays in place until the new one is saved, and through a failure.
+//
 // With no profile text there is nothing to score against, so it does nothing
 // — leads still arrive and can be read, they just carry no score.
-func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSearchProfile, skip []uint) (scored, tried int, failed []uint, err error) {
+func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSearchProfile, skip []uint, rescoreBefore *time.Time) (scored, tried int, failed []uint, err error) {
 	if strings.TrimSpace(profile.Profile) == "" {
 		return 0, 0, nil, nil
 	}
-	query := s.DB.Where("state = ? AND matched = ? AND score IS NULL AND score_attempts < ?", LeadNew, true, maxScoreAttempts)
+	query := s.DB.Where("state = ? AND matched = ? AND score_attempts < ?", LeadNew, true, maxScoreAttempts)
+	if rescoreBefore == nil {
+		query = query.Where("score IS NULL")
+	} else {
+		query = query.Where("(score IS NULL OR scored_at IS NULL OR scored_at < ?)", *rescoreBefore)
+	}
 	if len(skip) > 0 {
 		query = query.Where("id NOT IN ?", skip)
 	}
@@ -703,7 +760,7 @@ func (s *JobLeadService) scoreLeads(ctx context.Context, profile *models.JobSear
 		case err == nil:
 			reasons := strings.TrimSpace(result.Reasons)
 			score := min(max(result.Score, 0), 100)
-			if dbErr := s.DB.Model(lead).Updates(map[string]any{"score": score, "score_reasons": reasons}).Error; dbErr != nil {
+			if dbErr := s.DB.Model(lead).Updates(map[string]any{"score": score, "score_reasons": reasons, "scored_at": time.Now()}).Error; dbErr != nil {
 				return scored, tried, failed, fmt.Errorf("saving a score: %w", dbErr)
 			}
 			scored++

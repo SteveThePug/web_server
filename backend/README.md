@@ -290,12 +290,18 @@ throughout (`graph/schema/job_lead.graphql`, all `@admin`) with the work in
   for the backlog a first poll of several boards leaves behind, or leads
   that arrived before the profile was written. A lead that fails is tried
   once per press. It stops after an hour; pressing again continues.
+- **Rescoring.** The `rescoreJobLeads` mutation (`RescoreAll`, "Rescore all"
+  on the page) scores every matched inbox lead again, for after the profile
+  or `CLAUDE_MODEL` has changed. It does not wipe scores first: a lead keeps
+  its old score until the new one is saved, and `scored_at` is what marks a
+  lead as done by this job. A job that fails partway leaves a mix of old and
+  new scores, and pressing again starts over.
 - **When it runs.** `JOB_LEADS_ENABLED=true` starts a timer
   (`JOB_LEADS_INTERVAL`, default `6h`); it does not run at start-up, so a
   deploy spends nothing. The `runJobLeadSync` mutation starts a run in a
   goroutine and returns at once, whether or not the timer is on, and
-  `jobLeadSyncStatus` reports on it (and on `scoreJobLeads`; only one of
-  the two jobs runs at a time) — a run can take minutes, so unlike
+  `jobLeadSyncStatus` reports on it (and on `scoreJobLeads` and
+  `rescoreJobLeads`; only one of the three jobs runs at a time) — a run can take minutes, so unlike
   `POST /email/sync` it does not hold the request open. The status is in
   memory and resets on restart.
 - **Promotion** (`promoteJobLead`) is the only way a lead reaches the tracker.

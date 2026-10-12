@@ -291,8 +291,10 @@ type JobSource struct {
 // Matched says whether the lead passed the keyword pre-filter the last time
 // the fetcher ran; only matched leads are shown by default and only they are
 // scored. Score (0-100) and ScoreReasons are Claude's, and nil until scored.
-// ScoreAttempts counts failed tries, so a posting Claude can never score
-// stops costing a call per run.
+// ScoredAt is when that score was given, which is how a rescore tells the
+// leads it has redone from the ones it has yet to reach; it is nil on a lead
+// scored before the column existed. ScoreAttempts counts failed tries, so a
+// posting Claude can never score stops costing a call per run.
 type JobLead struct {
 	ID            uint       `gorm:"primarykey" json:"id"`
 	CreatedAt     time.Time  `json:"createdAt"`
@@ -311,6 +313,7 @@ type JobLead struct {
 	State         string     `gorm:"not null;default:new;index" json:"state"`
 	Score         *int       `json:"score"`
 	ScoreReasons  *string    `json:"scoreReasons"`
+	ScoredAt      *time.Time `json:"scoredAt"`
 	ScoreAttempts int        `gorm:"not null;default:0" json:"scoreAttempts"`
 	JobAppID      *uint      `json:"jobAppId"`
 }

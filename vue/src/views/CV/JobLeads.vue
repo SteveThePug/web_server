@@ -12,11 +12,12 @@
  * This view owns the page frame, the single error banner, the run button and
  * the list. Data access is in stores/jobLeads.js; nothing here calls gql().
  *
- * There are two server jobs. "Check now" polls the sources and scores up to
+ * There are three server jobs. "Check now" polls the sources and scores up to
  * forty new leads; "Score unscored" polls nothing and scores the whole
- * backlog. Either takes from seconds to many minutes, so the button does not
- * wait: the server starts the job and this page polls its status, then
- * reloads the list when it finishes.
+ * backlog; "Rescore all" scores every inbox lead again, for after the profile
+ * or the model has changed. Each takes from seconds to many minutes, so the
+ * button does not wait: the server starts the job and this page polls its
+ * status, then reloads the list when it finishes.
  */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { RouterLink } from "vue-router";
@@ -48,6 +49,9 @@ const search = ref("");
 // rejected (not loaded at all until asked for — that is most of every board).
 const showLowScores = ref(false);
 const showUnmatched = ref(false);
+// "score" is the order the server sends; "posted" re-sorts here by the
+// posting's own date.
+const sortBy = ref("score");
 const busyId = ref(null);
 const sourcesBox = ref(null);
 
@@ -88,16 +92,22 @@ const hiddenLow = computed(() =>
   tab.value === "new" && !showLowScores.value ? inTab.value.filter(isLow).length : 0,
 );
 
+/** When the posting went up; when we first saw it if the source gave no date. */
+const postedTime = (lead) => new Date(lead.postedAt ?? lead.createdAt).getTime();
+
 // The server already sorts best-first, unscored after scored, newest first
-// within a score, so this only filters.
+// within a score, so by score this only filters. By date it re-sorts a copy;
+// Array.sort is stable, so postings of the same day stay best-first.
 const visibleLeads = computed(() => {
   const needle = search.value.trim().toLowerCase();
-  return inTab.value.filter((lead) => {
+  const shown = inTab.value.filter((lead) => {
     if (tab.value === "new" && !showLowScores.value && isLow(lead)) return false;
     if (!needle) return true;
     return [lead.jobTitle, lead.company, lead.location, lead.scoreReasons]
       .some((field) => field?.toLowerCase().includes(needle));
   });
+  if (sortBy.value === "posted") shown.sort((a, b) => postedTime(b) - postedTime(a));
+  return shown;
 });
 
 function scoreClass(lead) {
@@ -105,6 +115,15 @@ function scoreClass(lead) {
   if (lead.score >= 80) return "jl-score-high";
   if (lead.score >= 60) return "jl-score-mid";
   return "jl-score-low";
+}
+
+/** The tooltip says when, which during a rescore is how to tell new from old. */
+function scoreTitle(lead) {
+  if (lead.score == null) return "Not scored";
+  const when = lead.scoredAt
+    ? `, scored ${new Date(lead.scoredAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
+    : "";
+  return `Fit score ${lead.score} out of 100${when}`;
 }
 
 function ageLabel(lead) {
@@ -172,7 +191,7 @@ async function pollStatus() {
   await Promise.all([fetchLeads(), sourcesBox.value?.refresh()]);
 }
 
-/** Start one of the two server jobs ("runSync" or "scoreAll") and wait on it. */
+/** Start one of the server jobs ("runSync", "scoreAll", "rescoreAll") and wait on it. */
 async function start(job) {
   try {
     // false means a job was already going (the scheduler's, say); either way
@@ -185,6 +204,19 @@ async function start(job) {
   } catch (err) {
     fail(err);
   }
+}
+
+// Matched inbox leads that have a score: what "Rescore all" would redo, on
+// top of the unscored ones.
+const scoredCount = computed(
+  () => leads.value.filter((lead) => lead.state === "new" && lead.matched && lead.score != null).length,
+);
+
+function rescore() {
+  const total = scoredCount.value + unscoredCount.value;
+  // One Claude call per lead, and it replaces scores that were paid for.
+  if (!confirm(`Score all ${total} inbox leads again? This makes one Claude call per lead.`)) return;
+  start("rescoreAll");
 }
 
 // Matched inbox leads with no score: what "Score unscored" would work
@@ -223,6 +255,15 @@ onBeforeUnmount(stopPolling);
       </div>
       <div class="jl-header-right">
         <span class="jl-hint">{{ lastRun }}</span>
+        <button
+          v-if="scoredCount"
+          class="cv-btn"
+          :disabled="running"
+          title="Score every inbox lead again, including ones already scored. Use after changing the profile or the model. Old scores stay until replaced."
+          @click="rescore"
+        >
+          Rescore all
+        </button>
         <button
           v-if="unscoredCount"
           class="cv-btn"
@@ -266,6 +307,10 @@ onBeforeUnmount(stopPolling);
 
     <div class="jl-filterbar">
       <input v-model="search" class="ja-input" type="search" placeholder="Search title, company, location, reasons…" />
+      <select v-model="sortBy" class="ja-input ja-select jl-sort" title="Order of the list">
+        <option value="score">Best score first</option>
+        <option value="posted">Newest posting first</option>
+      </select>
       <label v-if="tab === 'new'" class="jl-check">
         <input v-model="showLowScores" type="checkbox" />
         Below {{ minScore }}<template v-if="hiddenLow"> ({{ hiddenLow }} hidden)</template>
@@ -282,7 +327,7 @@ onBeforeUnmount(stopPolling);
       class="jl-lead"
       :class="{ 'jl-lead-unmatched': !lead.matched && lead.state === 'new' }"
     >
-      <div class="jl-score" :class="scoreClass(lead)" :title="lead.score == null ? 'Not scored' : `Fit score ${lead.score} out of 100`">
+      <div class="jl-score" :class="scoreClass(lead)" :title="scoreTitle(lead)">
         {{ lead.score ?? "–" }}
       </div>
       <div class="jl-lead-body">
@@ -466,6 +511,10 @@ onBeforeUnmount(stopPolling);
   align-items: center;
   gap: 1rem;
   margin-bottom: 0.75rem;
+}
+
+.jl-sort {
+  flex: 0 0 auto;
 }
 
 .jl-check {

@@ -67,6 +67,7 @@ type JobLead {
   state: String!
   score: Int
   scoreReasons: String
+  scoredAt: Time
   jobAppId: ID
 }
 
@@ -135,4 +136,10 @@ extend type Mutation {
   # source. Background and polled like runJobLeadSync, and refused (false)
   # while either is running.
   scoreJobLeads: Boolean! @admin
+
+  # Scores every matched inbox lead again, scored or not, for after the
+  # profile or the model has changed. A lead keeps its old score until its
+  # new one arrives. Background and polled like the two above, and refused
+  # (false) while any of the three is running.
+  rescoreJobLeads: Boolean! @admin
 }
