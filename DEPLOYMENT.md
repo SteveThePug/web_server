@@ -210,7 +210,7 @@ of deleting the directory:
 |---|---|---|
 | `./certbot/conf` | TLS certificates and **private keys** | Gitignored. Never commit. |
 | `./certbot/www` | ACME challenge webroot | Transient by nature |
-| `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild. |
+| `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) and the **job capture token hash** (`job_capture_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild, and the capture userscript a new token from the admin panel. |
 | `./gitea/data` | Git repositories, LFS objects, avatars, sessions | The actual git data |
 | `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
 | `./logs` | Backend logs | |

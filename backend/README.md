@@ -83,6 +83,7 @@ for the things GraphQL cannot do:
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
+| `/admin/config`, `/admin/logs`, `/admin/capture-token` | process environment and files on disk, not the data model |
 | `/jobs/capture`, `/jobs/capture/status`, `/jobs/capture/extract` | called by a userscript on other sites' origins, where the `SameSite=Lax` auth cookies are never sent; they take a bearer token instead |
 
 ### Job capture
@@ -91,10 +92,17 @@ for the things GraphQL cannot do:
 (`vue/public/job-capture.user.js`, installed from the tracker page) that adds
 the posting open in the browser to the job tracker.
 
-- **Auth** is `Authorization: Bearer $JOB_CAPTURE_TOKEN`, checked by
+- **Auth** is `Authorization: Bearer <token>`, checked by
   `CaptureTokenMiddleware`. The token opens these three routes and nothing
-  else — it cannot read the tracker or reach GraphQL. **An unset token turns
-  the routes off (503)**; it never means "no auth".
+  else — it cannot read the tracker or reach GraphQL. **With no token
+  generated the routes are off (503)**; that never means "no auth".
+- **The token is generated in the admin panel**, not set in `.env`
+  (`services/capture_token.go`; `GET`/`POST`/`DELETE /admin/capture-token`,
+  cookie-authenticated like the rest of the admin group). It is 32 random
+  bytes, shown once; only its SHA-256 is kept, in
+  `/backend/token/job_capture_token.json` beside the OAuth tokens, so it
+  survives restarts and rebuilds. There is one token at a time: generating
+  again replaces it, which is how a leaked one is rotated.
 - `GET /jobs/capture/status?url=` — is this posting already tracked, and at
   what status. Drives the script's badge.
 - `POST /jobs/capture/extract` — page text in, `{jobTitle, company, location,

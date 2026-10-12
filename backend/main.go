@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -162,11 +161,15 @@ func main() {
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
 	// JOB CAPTURE
-	// Trimmed because a stray newline in .env would otherwise make every
-	// request fail the comparison with nothing to show why.
-	jobCaptureToken := strings.TrimSpace(os.Getenv("JOB_CAPTURE_TOKEN"))
+	// The userscript's bearer token is generated in the admin panel and kept
+	// (hashed) beside the OAuth tokens. A damaged file is logged, not fatal:
+	// capture stays off until a new token is generated.
+	captureToken, err := services.InitCaptureToken(services.CAPTURE_TOKEN_JSON_PATH)
+	if err != nil {
+		log.Println("Job capture token not loaded:", err)
+	}
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, JobCaptureToken: jobCaptureToken}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, CaptureToken: captureToken}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
@@ -226,6 +229,11 @@ func main() {
 	// ADMIN DIAGNOSTICS: env-var checklist and log tail for the admin panel.
 	admin.GET("/admin/config", store.ConfigCheck)
 	admin.GET("/admin/logs", store.Logs)
+	// The job capture token is managed with the session cookie, never with
+	// the token itself.
+	admin.GET("/admin/capture-token", store.GetCaptureToken)
+	admin.POST("/admin/capture-token", store.GenerateCaptureToken)
+	admin.DELETE("/admin/capture-token", store.RevokeCaptureToken)
 
 	// GRAPHQL
 	// GraphQL is assembled by hand rather than with handler.NewDefaultServer

@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,23 +55,72 @@ const (
 // rowingReadClient for why two minutes.
 var jobExtractClient = &http.Client{Timeout: 2 * time.Minute}
 
-// CaptureTokenMiddleware guards the capture routes with JOB_CAPTURE_TOKEN,
-// presented as "Authorization: Bearer <token>".
+// CaptureTokenMiddleware guards the capture routes with the token generated
+// in the admin panel (services.CaptureToken), presented as
+// "Authorization: Bearer <token>".
 //
-// An unset token turns the routes off (503) rather than leaving them open:
-// an empty env var is the stack's failure mode for a forgotten secret (see
-// .env.example), and comparing "" to "" would otherwise let everyone in.
+// Until a token has been generated the routes are off (503) rather than
+// open; "no token" must never be satisfied by a request that sends none.
 func (store *Store) CaptureTokenMiddleware(ctx *gin.Context) {
-	if store.JobCaptureToken == "" {
+	if store.CaptureToken == nil {
 		ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "job capture is not configured"})
 		return
 	}
+	if set, _ := store.CaptureToken.Status(); !set {
+		ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "no capture token has been generated"})
+		return
+	}
 	presented, ok := strings.CutPrefix(ctx.GetHeader("Authorization"), "Bearer ")
-	if !ok || subtle.ConstantTimeCompare([]byte(presented), []byte(store.JobCaptureToken)) != 1 {
+	if !ok || !store.CaptureToken.Verify(presented) {
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 	ctx.Next()
+}
+
+// The three handlers below manage that token from the admin panel. They sit
+// in the cookie-authenticated admin group, not behind the token: the token
+// must not be able to replace itself.
+
+func captureTokenStatus(token *services.CaptureToken) gin.H {
+	set, createdAt := token.Status()
+	if !set {
+		return gin.H{"set": false}
+	}
+	return gin.H{"set": true, "createdAt": createdAt}
+}
+
+// GetCaptureToken backs GET /admin/capture-token: whether a token exists and
+// when it was made. The token itself is not recoverable — only its hash is
+// stored.
+func (store *Store) GetCaptureToken(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, captureTokenStatus(store.CaptureToken))
+}
+
+// GenerateCaptureToken backs POST /admin/capture-token. It replaces any
+// existing token, so the userscript must be reconfigured with the new one,
+// and its response is the only time the token is ever sent anywhere.
+func (store *Store) GenerateCaptureToken(ctx *gin.Context) {
+	token, createdAt, err := store.CaptureToken.Generate()
+	if err != nil {
+		log.Println("Generating capture token failed:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store the token"})
+		return
+	}
+	// The response carries a credential; keep it out of any cache.
+	ctx.Header("Cache-Control", "no-store")
+	ctx.JSON(http.StatusOK, gin.H{"token": token, "createdAt": createdAt})
+}
+
+// RevokeCaptureToken backs DELETE /admin/capture-token, switching the capture
+// routes off until a new token is generated.
+func (store *Store) RevokeCaptureToken(ctx *gin.Context) {
+	if err := store.CaptureToken.Revoke(); err != nil {
+		log.Println("Revoking capture token failed:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke the token"})
+		return
+	}
+	ctx.JSON(http.StatusOK, captureTokenStatus(store.CaptureToken))
 }
 
 // trackingParams are query parameters that say how the visitor arrived, not

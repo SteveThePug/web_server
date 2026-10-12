@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Job tracker capture
 // @namespace    https://www.adam-french.co.uk/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Add the job posting you are looking at to the tracker at /cv/jobs.
 // @match        *://*/*
 // @noframes
@@ -30,8 +30,8 @@
  *
  * CONFIGURE: Violentmonkey menu -> "Configure job capture". It asks for the
  * API base (default below; http://localhost/api for the dev stack) and the
- * token, which is the server's JOB_CAPTURE_TOKEN. Both are kept in
- * Violentmonkey's own storage. THE TOKEN MUST NEVER BE WRITTEN INTO THIS FILE:
+ * token, which is generated on the site's admin panel (/admin, "Job capture
+ * token") and shown there once. Both are kept in Violentmonkey's own storage. THE TOKEN MUST NEVER BE WRITTEN INTO THIS FILE:
  * it is served publicly.
  *
  * WHAT RUNS WHERE: the script matches every site so that the menu command
@@ -135,7 +135,7 @@
     );
     if (base === null) return false;
     const token = prompt(
-      "Capture token (the server's JOB_CAPTURE_TOKEN)",
+      "Capture token (generate one on the site's admin panel)",
       config.token,
     );
     if (token === null) return false;

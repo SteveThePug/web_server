@@ -1,10 +1,14 @@
 <script setup>
 /**
- * Admin panel: configuration checklist and log tail.
+ * Admin panel: configuration checklist, the job capture token, and log tail.
  *
- * Both come from the backend as JSON (GET /api/admin/config, GET
- * /api/admin/logs). Nothing here is GraphQL — the data is process
- * environment and filesystem, not the site's data model.
+ * All of it comes from the backend as JSON (GET /api/admin/config,
+ * /api/admin/capture-token, /api/admin/logs). Nothing here is GraphQL — the
+ * data is process environment and filesystem, not the site's data model.
+ *
+ * The capture token is the credential the job capture userscript
+ * (public/job-capture.user.js) sends. The server keeps only a hash, so the
+ * token can be shown exactly once, in the response to generating it.
  *
  * The log tail loads lazily (only when the Logs tab is selected first)
  * because reading the file on every /admin visit would be waste; an admin
@@ -45,6 +49,75 @@ async function fetchLogs() {
   }
 }
 
+// Job capture token. `newToken` holds a just-generated token and lives only in
+// this component's memory: leaving the tab is the end of it.
+const capture = ref(null);
+const captureError = ref("");
+const captureBusy = ref(false);
+const newToken = ref("");
+const copied = ref(false);
+
+async function fetchCaptureToken() {
+  try {
+    capture.value = (await axios.get("/api/admin/capture-token")).data;
+    captureError.value = "";
+  } catch (err) {
+    captureError.value =
+      err.response?.data?.error || "Failed to load the capture token state";
+  }
+}
+
+async function generateCaptureToken() {
+  // Generating replaces: an installed script stops working until it is
+  // given the new token, which is worth a pause when one already exists.
+  if (
+    capture.value?.set &&
+    !confirm(
+      "Replace the existing capture token? The installed userscript will stop working until you paste the new one into it.",
+    )
+  )
+    return;
+  captureBusy.value = true;
+  try {
+    const res = await axios.post("/api/admin/capture-token");
+    newToken.value = res.data.token;
+    capture.value = { set: true, createdAt: res.data.createdAt };
+    copied.value = false;
+    captureError.value = "";
+  } catch (err) {
+    captureError.value =
+      err.response?.data?.error || "Failed to generate a token";
+  } finally {
+    captureBusy.value = false;
+  }
+}
+
+async function revokeCaptureToken() {
+  if (!confirm("Revoke the capture token? The userscript will stop working."))
+    return;
+  captureBusy.value = true;
+  try {
+    capture.value = (await axios.delete("/api/admin/capture-token")).data;
+    newToken.value = "";
+    captureError.value = "";
+  } catch (err) {
+    captureError.value =
+      err.response?.data?.error || "Failed to revoke the token";
+  } finally {
+    captureBusy.value = false;
+  }
+}
+
+async function copyToken() {
+  try {
+    await navigator.clipboard.writeText(newToken.value);
+    copied.value = true;
+  } catch {
+    // Clipboard access can be refused; the token is on screen to select.
+    captureError.value = "Could not copy — select the token and copy it by hand.";
+  }
+}
+
 const blank = computed(() =>
   vars.value.filter((v) => !v.set),
 );
@@ -60,6 +133,7 @@ const shownLines = computed(() => {
 
 onMounted(() => {
   fetchConfig();
+  fetchCaptureToken();
   fetchLogs();
 });
 </script>
@@ -94,6 +168,44 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
+
+    <h1>Job capture token</h1>
+    <p class="hint">
+      The credential for the
+      <a href="/job-capture.user.js" target="_blank" rel="noopener"
+        >job capture userscript</a
+      >. Generate one, then paste it into the script's
+      <em>Configure job capture</em> menu command. Only a hash is stored, so a
+      token is shown once and cannot be recovered — generate again to replace
+      it.
+    </p>
+    <p v-if="captureError" class="error">{{ captureError }}</p>
+    <template v-if="capture">
+      <p v-if="capture.set">
+        A token is active, generated
+        {{ new Date(capture.createdAt).toLocaleString() }}.
+      </p>
+      <p v-else class="warn">
+        No token — the capture script cannot reach the tracker.
+      </p>
+      <div v-if="newToken" class="token-box">
+        <p class="hint">Copy this now. It will not be shown again.</p>
+        <code class="token">{{ newToken }}</code>
+        <Button @click="copyToken">{{ copied ? "Copied" : "Copy" }}</Button>
+      </div>
+      <div class="token-controls">
+        <Button :disabled="captureBusy" @click="generateCaptureToken">
+          {{ capture.set ? "Regenerate" : "Generate token" }}
+        </Button>
+        <Button
+          v-if="capture.set"
+          :disabled="captureBusy"
+          @click="revokeCaptureToken"
+        >
+          Revoke
+        </Button>
+      </div>
+    </template>
 
     <h1>Logs</h1>
     <p class="hint">
@@ -147,6 +259,30 @@ td {
 .hint {
   font-size: 0.85rem;
   opacity: 0.75;
+}
+
+.token-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-quaternary);
+}
+.token-box .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+.token {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  word-break: break-all;
+  user-select: all;
+}
+.token-controls {
+  display: flex;
+  gap: 12px;
 }
 
 .log-controls {

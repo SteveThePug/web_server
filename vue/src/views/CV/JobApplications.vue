@@ -481,13 +481,13 @@ onMounted(() => {
       <div class="ja-header-right">
         <!-- A plain link to a static file: Violentmonkey intercepts any
              navigation to a URL ending in .user.js and offers to install it.
-             The token it then asks for is the server's JOB_CAPTURE_TOKEN. -->
+             The token it then asks for is generated on the admin panel. -->
         <a
           class="cv-btn"
           href="/job-capture.user.js"
           target="_blank"
           rel="noopener"
-          title="Violentmonkey userscript that adds the job you are viewing. After installing, set the capture token from its menu: Configure job capture."
+          title="Violentmonkey userscript that adds the job you are viewing. After installing, generate a capture token on the admin panel and paste it into the script's menu: Configure job capture."
         >
           Install capture script
         </a>

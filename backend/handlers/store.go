@@ -39,9 +39,10 @@ type Store struct {
 	// photo (handle_rowing.go) and a job posting (handle_job_capture.go).
 	PythonURL string
 
-	// Bearer token for the browser capture routes (handle_job_capture.go).
-	// Empty means those routes are switched off, not open.
-	JobCaptureToken string
+	// Bearer token for the browser capture routes (handle_job_capture.go),
+	// generated from the admin panel. Nil, or holding no token, means those
+	// routes are switched off, not open.
+	CaptureToken *services.CaptureToken
 
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can
