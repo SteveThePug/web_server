@@ -38,6 +38,7 @@ var configVars = []ConfigVar{
 	{"STEAM_API_KEY", "Steam status widget", false},
 	{"STEAM_ID", "Steam status widget", false},
 	{"CLAUDE_API_KEY", "Email summarisation", false},
+	{"JOB_CAPTURE_TOKEN", "Job capture userscript", false},
 	{"EMAIL_BACKEND", "Email sync (graph/imap)", false},
 	{"MSGRAPH_CLIENT_ID", "Email sync (Microsoft Graph)", false},
 	{"MSGRAPH_CLIENT_SECRET", "Email sync (Microsoft Graph)", false},
@@ -81,6 +82,7 @@ func (store *Store) ConfigCheck(ctx *gin.Context) {
 		"SPOTIFY_CLIENT_SECRET": true,
 		"MSGRAPH_CLIENT_SECRET": true,
 		"CLAUDE_API_KEY":        true,
+		"JOB_CAPTURE_TOKEN":     true,
 		"STEAM_API_KEY":         true,
 		"IMAP_PASSWORD":         true,
 	}

@@ -83,6 +83,33 @@ for the things GraphQL cannot do:
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
+| `/jobs/capture`, `/jobs/capture/status`, `/jobs/capture/extract` | called by a userscript on other sites' origins, where the `SameSite=Lax` auth cookies are never sent; they take a bearer token instead |
+
+### Job capture
+
+`handlers/handle_job_capture.go` is the server half of the browser userscript
+(`vue/public/job-capture.user.js`, installed from the tracker page) that adds
+the posting open in the browser to the job tracker.
+
+- **Auth** is `Authorization: Bearer $JOB_CAPTURE_TOKEN`, checked by
+  `CaptureTokenMiddleware`. The token opens these three routes and nothing
+  else — it cannot read the tracker or reach GraphQL. **An unset token turns
+  the routes off (503)**; it never means "no auth".
+- `GET /jobs/capture/status?url=` — is this posting already tracked, and at
+  what status. Drives the script's badge.
+- `POST /jobs/capture/extract` — page text in, `{jobTitle, company, location,
+  notes}` out, read by Claude through the Python service
+  (`/internal/jobs/extract`). Stores nothing.
+- `POST /jobs/capture` — an **upsert**. A posting is matched by its canonical
+  URL (`canonicalJobURL` strips tracking parameters and folds LinkedIn's
+  several URL shapes into one), then by `(company, job title)` the way the
+  email pipeline matches. A repeat capture only ever adds: status moves
+  forwards, empty fields are filled, nothing is overwritten.
+
+The upsert is what keeps this and the email pipeline from making two rows for
+one application. It is not watertight: the pipeline still matches on the exact
+title, so a posting captured as "Senior Engineer" whose confirmation email
+says "Senior Engineer (Platform)" becomes a second row.
 
 ## Services
 
@@ -108,8 +135,9 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   it, ask Claude to extract structured data, create or advance a
   `JobApplication`. Runs on a timer and can be triggered by an admin.
 - **claude.go** — the Anthropic client, used by the email pipeline. (The
-  rowing photo reader's Claude call lives in the Python service; `POST /rowing`
-  reaches it directly at `http://$PYTHON_HOST:$PYTHON_PORT/internal/rowing/read`.)
+  rowing photo reader's and the job posting reader's Claude calls live in the
+  Python service; `POST /rowing` and `POST /jobs/capture/extract` reach it
+  directly at `http://$PYTHON_HOST:$PYTHON_PORT/internal/...`.)
 - **notes.go** — path-traversal-safe file lookup for the notes directory.
 - **seed.go** — dev-only test data. Creates an admin with the password
   `password`, so it must never run in production (`SEED_DB=true` is set only
@@ -122,6 +150,10 @@ The `.graphql` files are the source of truth.
 ```
 cd backend && go run github.com/99designs/gqlgen generate
 ```
+
+If that stops with `missing go.sum entry ... urfave/cli`, the generator's own
+dependencies are not in `go.sum`. `go get github.com/99designs/gqlgen@<the
+version in go.mod>` adds them.
 
 This rewrites `graph/generated.go` and `graph/model/models_gen.go` and adds
 stubs for new fields to the matching `*.resolvers.go`. Existing resolver bodies

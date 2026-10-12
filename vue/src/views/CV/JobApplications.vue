@@ -4,6 +4,10 @@
  * applications and for the reusable reference snippets that feed the CV copy.
  * Two independent CRUD tables over GraphQL; editing is inline via an `editingId`
  * plus a scratch copy of the row.
+ *
+ * Rows also arrive from two places that are not this page: the email pipeline,
+ * and the browser userscript in `public/job-capture.user.js`, which the header
+ * links to for installing.
  */
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
@@ -21,6 +25,8 @@ const error = ref("");
  * Labels are display-only.
  */
 const STATUS_OPTIONS = [
+  // Captured from the browser but not applied to yet. No email produces it.
+  { value: "saved", label: "Saved" },
   { value: "applied", label: "Applied" },
   { value: "screening", label: "Screening" },
   { value: "assessment", label: "Assessment" },
@@ -31,6 +37,7 @@ const STATUS_OPTIONS = [
 ];
 
 // Statuses still in play — used to decide whether a row is worth chasing.
+// "saved" is absent on purpose: nobody owes a reply on a job not applied to.
 const OPEN_STATUSES = ["applied", "screening", "assessment", "interviewing"];
 const STALE_DAYS = 14;
 
@@ -57,7 +64,14 @@ const editRefForm = ref({});
 const REF_CATEGORIES = ["profile", "experience"];
 const REF_FIELDS = `id category label value sortOrder createdAt`;
 
+// `description` is deliberately not here: it is the full text of the posting,
+// tens of kilobytes a row, and is fetched per row when asked for.
 const APP_FIELDS = `id jobTitle company location url status notes appliedAt createdAt updatedAt`;
+
+// The captured posting text for the one row whose description is open.
+// `undefined` in the cache means "not fetched", `""` means "fetched, none saved".
+const descriptionId = ref(null);
+const descriptions = ref({});
 
 // Filter/sort state. All of it runs over the already-loaded array — the query
 // has no arguments and the dataset is one person's applications.
@@ -206,6 +220,25 @@ async function setStatus(app, status) {
     if (idx !== -1) applications.value[idx] = data.updateJobApplication;
     error.value = "";
   } catch (err) {
+    fail(err);
+  }
+}
+
+async function toggleDescription(app) {
+  if (descriptionId.value === app.id) {
+    descriptionId.value = null;
+    return;
+  }
+  descriptionId.value = app.id;
+  if (descriptions.value[app.id] !== undefined) return;
+  try {
+    const data = await gql(
+      `query JobDescription($id: ID!) { jobApplication(id: $id) { description } }`,
+      { id: app.id },
+    );
+    descriptions.value[app.id] = data.jobApplication?.description ?? "";
+  } catch (err) {
+    descriptionId.value = null;
     fail(err);
   }
 }
@@ -445,13 +478,27 @@ onMounted(() => {
         <RouterLink to="/cv" class="ja-back">← CV</RouterLink>
         <h2 class="ja-heading">Job Applications</h2>
       </div>
-      <button
-        class="cv-btn"
-        @click="exportCsv"
-        :disabled="!applications.length"
-      >
-        Export CSV
-      </button>
+      <div class="ja-header-right">
+        <!-- A plain link to a static file: Violentmonkey intercepts any
+             navigation to a URL ending in .user.js and offers to install it.
+             The token it then asks for is the server's JOB_CAPTURE_TOKEN. -->
+        <a
+          class="cv-btn"
+          href="/job-capture.user.js"
+          target="_blank"
+          rel="noopener"
+          title="Violentmonkey userscript that adds the job you are viewing. After installing, set the capture token from its menu: Configure job capture."
+        >
+          Install capture script
+        </a>
+        <button
+          class="cv-btn"
+          @click="exportCsv"
+          :disabled="!applications.length"
+        >
+          Export CSV
+        </button>
+      </div>
     </div>
 
     <div v-if="error" class="ja-error" role="alert">
@@ -676,6 +723,13 @@ onMounted(() => {
               {{ app.notes ?? "" }}
             </td>
             <td class="ja-actions">
+              <button
+                class="cv-btn cv-btn-sm"
+                title="Posting text saved when the job was captured"
+                @click="toggleDescription(app)"
+              >
+                {{ descriptionId === app.id ? "Hide" : "Posting" }}
+              </button>
               <button class="cv-btn cv-btn-sm" @click="startEdit(app)">
                 Edit
               </button>
@@ -756,6 +810,20 @@ onMounted(() => {
               </button>
             </td>
           </tr>
+          <tr v-if="descriptionId === app.id" class="ja-desc-row">
+            <td colspan="7">
+              <p v-if="descriptions[app.id] === undefined" class="ja-empty">
+                Loading…
+              </p>
+              <pre v-else-if="descriptions[app.id]" class="ja-desc">{{
+                descriptions[app.id]
+              }}</pre>
+              <p v-else class="ja-empty">
+                No posting text saved — only jobs added with the capture script
+                have one.
+              </p>
+            </td>
+          </tr>
         </template>
       </tbody>
     </table>
@@ -785,6 +853,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.ja-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .ja-back {
@@ -978,6 +1054,25 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+/* The posting text is long, so it scrolls inside the row instead of pushing
+   the rest of the table off the screen. */
+.ja-desc {
+  max-height: 22rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: 4px;
+  background: var(--color-paper);
+  font-family: inherit;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+}
+
+.ja-desc-row:hover td {
+  background: transparent;
+}
+
 .ja-link {
   color: var(--color-ink-link);
   text-decoration: none;
@@ -1005,6 +1100,11 @@ onMounted(() => {
   appearance: none;
 }
 
+.ja-badge-saved {
+  background: var(--color-paper);
+  color: var(--color-ink-muted);
+  border-style: dashed;
+}
 .ja-badge-applied {
   background: #eef2ff;
   color: #3730a3;

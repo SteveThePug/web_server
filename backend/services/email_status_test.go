@@ -2,7 +2,7 @@ package services
 
 import "testing"
 
-// These tests cover the status progression rule only — statusAdvances, the
+// These tests cover the status progression rule only — StatusAdvances, the
 // predicate extracted out of updateJobApplication. The rest of
 // updateJobApplication (note appending, the DB.Save, the returned counters)
 // needs a live *gorm.DB and the only driver in go.mod is postgres, so it is
@@ -34,6 +34,10 @@ func TestStatusAdvances(t *testing.T) {
 		// ranks above rejected, so this single pair is allowed.
 		{"rejected may still become withdrawn because withdrawn ranks higher", "rejected", "withdrawn", true},
 
+		// saved is a browser capture that has not been applied to yet.
+		{"a saved posting advances once the application is confirmed", "saved", "applied", true},
+		{"an applied row cannot fall back to saved", "applied", "saved", false},
+
 		{"an unknown new status is never applied", "applied", "hired", false},
 		{"an empty new status is never applied", "applied", "", false},
 		{"an unknown new status cannot escape a terminal state either", "rejected", "ghosted", false},
@@ -43,8 +47,8 @@ func TestStatusAdvances(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got := statusAdvances(c.current, c.next); got != c.want {
-				t.Errorf("statusAdvances(%q, %q) = %v, want %v", c.current, c.next, got, c.want)
+			if got := StatusAdvances(c.current, c.next); got != c.want {
+				t.Errorf("StatusAdvances(%q, %q) = %v, want %v", c.current, c.next, got, c.want)
 			}
 		})
 	}
@@ -66,7 +70,7 @@ func TestTerminalStatusesRankHighest(t *testing.T) {
 
 // NormalizeStatus is the guard that keeps Claude's occasional casing drift
 // ("Interview", "on hold") out of the status column: an unrecognised value
-// stored verbatim makes statusAdvances treat the row's current status as
+// stored verbatim makes StatusAdvances treat the row's current status as
 // unknown, which switches the forward-only rule off for that row entirely.
 func TestNormalizeStatus(t *testing.T) {
 	cases := []struct {
@@ -75,6 +79,7 @@ func TestNormalizeStatus(t *testing.T) {
 		want string
 	}{
 		{"a tracked status passes through", "interviewing", "interviewing"},
+		{"saved is tracked, so a capture keeps it", "saved", "saved"},
 		{"casing drift is lowered, not rejected", "Interviewing", "interviewing"},
 		{"surrounding whitespace is trimmed", "  offer  ", "offer"},
 		{"an untracked status falls back to the pipeline default", "on hold", "applied"},

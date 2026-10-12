@@ -9,22 +9,20 @@ paying for. This module just turns pixels into three numbers.
 Like `travelodge`, it never imports FastAPI; `main` is the HTTP skin.
 """
 
-import functools
 import logging
-import os
 
 import anthropic
 from pydantic import BaseModel, Field, ValidationError
 
+# Re-exported under the names this module has always had: `main` and the tests
+# reach the client and the exceptions through `rowing`.
+from .claude import MODEL, NotConfigured, ReadError, strip_markdown_fence
+from .claude import client as _client
+
 log = logging.getLogger(__name__)
 
-MODEL = "claude-haiku-4-5"
 # The answer is a three-key JSON object, so this is a ceiling, not a target.
 MAX_TOKENS = 256
-# Seconds per attempt. The SDK retries twice on top (429/5xx/connection), so
-# the worst case is roughly three of these plus backoff; the Go caller's own
-# timeout is set above that so it sees this module's error, not its own.
-TIMEOUT_S = 30.0
 
 # The keys named here are the JSON contract: RowingReading's field names below
 # and ExtractedRowingData in backend/handlers/handle_rowing.go must match them.
@@ -50,43 +48,6 @@ class RowingReading(BaseModel):
     timeMinutes: int = Field(0, ge=0)
     timeSeconds: int = Field(0, ge=0)
     distance: int = Field(0, ge=0)
-
-
-class ReadError(Exception):
-    """The display could not be read; the message is safe to show the admin."""
-
-
-class NotConfigured(ReadError):
-    """CLAUDE_API_KEY is not set in this container."""
-
-
-@functools.lru_cache(maxsize=1)
-def _client() -> anthropic.Anthropic:
-    """Build the Anthropic client on first use.
-
-    Lazy so that a missing key only breaks this feature: the hotel finder must
-    still boot without it. The key is passed explicitly because the stack's
-    variable is CLAUDE_API_KEY, not the ANTHROPIC_API_KEY the SDK looks for.
-    """
-    key = os.environ.get("CLAUDE_API_KEY", "")
-    if not key:
-        raise NotConfigured("CLAUDE_API_KEY is not set")
-    return anthropic.Anthropic(api_key=key, timeout=TIMEOUT_S)
-
-
-def strip_markdown_fence(raw: str) -> str:
-    """Remove a surrounding markdown code fence from a model's response.
-
-    The prompt asks for bare JSON and the model fences it anyway often enough
-    to matter. Mirrors services.StripMarkdownFence in the Go backend (still
-    used by the email pipeline): "```json" is tried before a plain "```", and
-    unfenced input comes back unchanged apart from surrounding whitespace.
-    """
-    raw = raw.strip()
-    raw = raw.removeprefix("```json")
-    raw = raw.removeprefix("```")
-    raw = raw.removesuffix("```")
-    return raw.strip()
 
 
 def read_display(media_type: str, data: str) -> RowingReading:

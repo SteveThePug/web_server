@@ -1,10 +1,15 @@
-# Job application tracker. Rows come from these mutations or automatically
-# from the email sync pipeline (backend/services/email_sync.go). These are
+# Job application tracker. Rows come from these mutations, automatically from
+# the email sync pipeline (backend/services/email_sync.go), or from the browser
+# capture userscript (backend/handlers/handle_job_capture.go). These are
 # private data, so the queries here are admin-only as well as the mutations.
 #
 # status is a free-form String, but only the values ranked in
 # services.statusOrder can be advanced automatically by the email pipeline:
-# applied, screening, assessment, interviewing, offer, rejected, withdrawn.
+# saved, applied, screening, assessment, interviewing, offer, rejected,
+# withdrawn.
+#
+# description is the captured posting text. It can run to tens of kilobytes,
+# so the tracker's list query leaves it out and asks for it per row.
 
 type JobApplication {
   id: ID!
@@ -17,6 +22,7 @@ type JobApplication {
   status: String!
   notes: String
   appliedAt: Time
+  description: String
 }
 
 input CreateJobApplicationInput {
@@ -27,6 +33,7 @@ input CreateJobApplicationInput {
   status: String!
   notes: String
   appliedAt: Time
+  description: String
 }
 
 input UpdateJobApplicationInput {
@@ -37,6 +44,7 @@ input UpdateJobApplicationInput {
   status: String
   notes: String
   appliedAt: Time
+  description: String
 }
 
 extend type Query {

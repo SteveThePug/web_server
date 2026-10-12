@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -160,7 +161,12 @@ func main() {
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL}
+	// JOB CAPTURE
+	// Trimmed because a stray newline in .env would otherwise make every
+	// request fail the comparison with nothing to show why.
+	jobCaptureToken := strings.TrimSpace(os.Getenv("JOB_CAPTURE_TOKEN"))
+
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, JobCaptureToken: jobCaptureToken}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
@@ -168,6 +174,13 @@ func main() {
 	// Paths below have no /api prefix: nginx strips it before proxying.
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
+
+	// JOB CAPTURE: called by the browser userscript from other origins, so
+	// these authenticate with a bearer token instead of the session cookies.
+	capture := r.Group("/jobs/capture", store.CaptureTokenMiddleware)
+	capture.GET("/status", store.JobCaptureStatus)
+	capture.POST("/extract", store.JobCaptureExtract)
+	capture.POST("", store.JobCapture)
 
 	// ROWING
 	r.GET("/rowing", store.GetRowing)

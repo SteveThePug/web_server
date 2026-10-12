@@ -34,13 +34,14 @@ func (r *mutationResolver) CreateJobApplication(ctx context.Context, input model
 		return nil, fmt.Errorf("jobTitle and company are required")
 	}
 	app := models.JobApplication{
-		JobTitle:  jobTitle,
-		Company:   company,
-		Location:  input.Location,
-		URL:       input.URL,
-		Status:    services.NormalizeStatus(input.Status),
-		Notes:     input.Notes,
-		AppliedAt: input.AppliedAt,
+		JobTitle:    jobTitle,
+		Company:     company,
+		Location:    input.Location,
+		URL:         input.URL,
+		Status:      services.NormalizeStatus(input.Status),
+		Notes:       input.Notes,
+		AppliedAt:   input.AppliedAt,
+		Description: input.Description,
 	}
 	if err := r.Store.DB.Create(&app).Error; err != nil {
 		return nil, err
@@ -88,6 +89,9 @@ func (r *mutationResolver) UpdateJobApplication(ctx context.Context, id int, inp
 	}
 	if input.AppliedAt != nil {
 		app.AppliedAt = input.AppliedAt
+	}
+	if input.Description != nil {
+		app.Description = input.Description
 	}
 	if err := r.Store.DB.Save(&app).Error; err != nil {
 		return nil, err

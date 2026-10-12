@@ -100,16 +100,17 @@ type ComplexityRoot struct {
 	}
 
 	JobApplication struct {
-		AppliedAt func(childComplexity int) int
-		Company   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		JobTitle  func(childComplexity int) int
-		Location  func(childComplexity int) int
-		Notes     func(childComplexity int) int
-		Status    func(childComplexity int) int
-		URL       func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		AppliedAt   func(childComplexity int) int
+		Company     func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		JobTitle    func(childComplexity int) int
+		Location    func(childComplexity int) int
+		Notes       func(childComplexity int) int
+		Status      func(childComplexity int) int
+		URL         func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
 	}
 
 	Message struct {
@@ -571,6 +572,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.JobApplication.CreatedAt(childComplexity), true
+	case "JobApplication.description":
+		if e.ComplexityRoot.JobApplication.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.JobApplication.Description(childComplexity), true
 	case "JobApplication.id":
 		if e.ComplexityRoot.JobApplication.ID == nil {
 			break
@@ -1560,6 +1567,8 @@ func (ec *executionContext) childFields_JobApplication(ctx context.Context, fiel
 		return ec.fieldContext_JobApplication_notes(ctx, field)
 	case "appliedAt":
 		return ec.fieldContext_JobApplication_appliedAt(ctx, field)
+	case "description":
+		return ec.fieldContext_JobApplication_description(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type JobApplication", field.Name)
 }
@@ -3273,6 +3282,29 @@ func (ec *executionContext) _JobApplication_appliedAt(ctx context.Context, field
 }
 func (ec *executionContext) fieldContext_JobApplication_appliedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("JobApplication", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _JobApplication_description(ctx context.Context, field graphql.CollectedField, obj *models.JobApplication) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_JobApplication_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_JobApplication_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("JobApplication", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Message_id(ctx context.Context, field graphql.CollectedField, obj *models.Message) (ret graphql.Marshaler) {
@@ -7456,7 +7488,7 @@ func (ec *executionContext) unmarshalInputCreateJobApplicationInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt"}
+	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt", "description"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7512,6 +7544,13 @@ func (ec *executionContext) unmarshalInputCreateJobApplicationInput(ctx context.
 				return it, err
 			}
 			it.AppliedAt = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
 		}
 	}
 	return it, nil
@@ -7769,7 +7808,7 @@ func (ec *executionContext) unmarshalInputUpdateJobApplicationInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt"}
+	fieldsInOrder := [...]string{"jobTitle", "company", "location", "url", "status", "notes", "appliedAt", "description"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7825,6 +7864,13 @@ func (ec *executionContext) unmarshalInputUpdateJobApplicationInput(ctx context.
 				return it, err
 			}
 			it.AppliedAt = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
 		}
 	}
 	return it, nil
@@ -8536,6 +8582,11 @@ func (ec *executionContext) _JobApplication(ctx context.Context, sel ast.Selecti
 			}
 		case "appliedAt":
 			out.Values[i] = ec._JobApplication_appliedAt(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "description":
+			out.Values[i] = ec._JobApplication_description(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

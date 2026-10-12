@@ -14,12 +14,15 @@ Endpoints
   POST /hotels/search/stream  same search, streamed as NDJSON
   POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
   POST /internal/rowing/read  read a rowing display photo with Claude
-                              (Go backend only - not reachable through nginx)
+  POST /internal/jobs/extract read a job posting's page text with Claude
+                              (both: Go backend only - not reachable through
+                              nginx)
 
 All the hotel work lives in `travelodge`; this module is the HTTP skin around
 it - request validation, a response cache, the one-search-at-a-time guard, and
-the NDJSON framing. The rowing reader lives in `rowing` and is the one route
-here that is not public: see the "Internal" section at the bottom. Consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
+the NDJSON framing. The rowing reader (`rowing`) and the job posting reader
+(`jobs`) are the routes here that are not public: see the "Internal" sections
+at the bottom. The hotel routes are consumed by vue/src/views/hotels/ (SingleStayPanel.vue,
 CheapestNightPanel.vue, useHotelForm.js), which fetch these paths with the /py
 prefix. Field names in the models below are part of that contract.
 """
@@ -35,7 +38,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from . import rowing, travelodge
+from . import jobs, rowing, travelodge
 
 app = FastAPI(
     title="Python API",
@@ -664,10 +667,10 @@ class RowingReadRequest(BaseModel):
 def _internal_only(request: Request) -> None:
     """Refuse a request that arrived through nginx.
 
-    Every other route in this service is public, but this one spends a paid
-    Claude call per request and has no auth of its own - the admin check
-    happens in the Go backend, which calls this container directly over
-    app-network. Two layers keep the outside world off it, because either alone
+    Every other route in this service is public, but the internal ones spend
+    a paid Claude call per request and have no auth of their own - the admin
+    or token check happens in the Go backend, which calls this container
+    directly over app-network. Two layers keep the outside world off it, because either alone
     is one config edit away from being lost:
 
       1. nginx answers /py/internal/ with a 404 (both templates).
@@ -714,4 +717,50 @@ def rowing_read(req: RowingReadRequest, request: Request) -> rowing.RowingReadin
     except rowing.NotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e)) from None
     except rowing.ReadError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from None
+
+
+# --------------------------------------------------------------------------- #
+# Internal: job posting reader
+# --------------------------------------------------------------------------- #
+class JobExtractRequest(BaseModel):
+    """A page for Claude to read, as the Go backend sends it."""
+
+    url: str = Field("", max_length=2000, description="The page's address; a hint for the model")
+    title: str = Field("", max_length=500, description="The page's <title>; a hint for the model")
+    text: str = Field(..., min_length=1, max_length=jobs.MAX_TEXT_CHARS, description="The page's visible text")
+
+
+@app.post(
+    "/internal/jobs/extract",
+    response_model=jobs.JobPosting,
+    summary="Read the job title, company and location off a posting",
+    description=(
+        "Internal to the Go backend's token-guarded `POST /api/jobs/capture/extract`; not reachable "
+        "through nginx. Sends the page text to Claude and returns the fields it found. A page that is "
+        "not a job posting is a 200 with empty strings, not an error."
+    ),
+    responses={
+        502: {"description": "Claude failed, or its reply was not the expected JSON"},
+        503: {"description": "CLAUDE_API_KEY is not set"},
+    },
+)
+def jobs_extract(req: JobExtractRequest, request: Request) -> jobs.JobPosting:
+    """Read a job posting's page text.
+
+    A plain `def` for the same reason as `rowing_read`: the blocking Claude
+    call runs in the threadpool.
+
+    Raises:
+        HTTPException: 404 (came through nginx), 503 (no API key) or 502
+            (Claude failed or returned something unparseable). The 502 detail
+            is one of jobs.extract_posting's fixed messages, which the Go
+            handler passes on to the capture popup verbatim.
+    """
+    _internal_only(request)
+    try:
+        return jobs.extract_posting(req.url, req.title, req.text)
+    except jobs.NotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e)) from None
+    except jobs.ReadError as e:
         raise HTTPException(status_code=502, detail=str(e)) from None

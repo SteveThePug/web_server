@@ -207,23 +207,29 @@ type Place struct {
 }
 
 // JobApplication is a tracked job application. Rows are created by hand
-// through GraphQL or automatically by the email pipeline.
+// through GraphQL, automatically by the email pipeline, or from the browser
+// by the capture userscript (handlers/handle_job_capture.go).
 //
 // Status is a free-form string, but only the values ranked in
-// services.statusOrder ("applied", "screening", "assessment",
+// services.statusOrder ("saved", "applied", "screening", "assessment",
 // "interviewing", "offer", "rejected", "withdrawn") can be advanced
 // automatically; the pipeline matches an existing application on
 // (Company, JobTitle) compared case-insensitively.
+//
+// Description is the posting's text as captured from the page, kept because
+// postings are usually taken down long before the interview. It is large, so
+// list queries should not select it.
 type JobApplication struct {
-	ID        uint           `gorm:"primarykey" json:"id"`
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
-	JobTitle  string         `gorm:"not null" json:"jobTitle"`
-	Company   string         `gorm:"not null" json:"company"`
-	Location  *string        `json:"location"`
-	URL       *string        `json:"url"`
-	Status    string         `gorm:"not null" json:"status"`
-	Notes     *string        `json:"notes"`
-	AppliedAt *time.Time     `json:"appliedAt"`
+	ID          uint           `gorm:"primarykey" json:"id"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	JobTitle    string         `gorm:"not null" json:"jobTitle"`
+	Company     string         `gorm:"not null" json:"company"`
+	Location    *string        `json:"location"`
+	URL         *string        `json:"url"`
+	Status      string         `gorm:"not null" json:"status"`
+	Notes       *string        `json:"notes"`
+	AppliedAt   *time.Time     `json:"appliedAt"`
+	Description *string        `gorm:"type:text" json:"description"`
 }

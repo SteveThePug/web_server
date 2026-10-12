@@ -35,9 +35,13 @@ type Store struct {
 	EmailSync     *services.EmailSyncService
 
 	// Base URL of the Python service on the Docker network, no trailing
-	// slash. Used for the one call that bypasses nginx: reading a rowing
-	// display photo (see handle_rowing.go).
+	// slash. Used for the calls that bypass nginx: reading a rowing display
+	// photo (handle_rowing.go) and a job posting (handle_job_capture.go).
 	PythonURL string
+
+	// Bearer token for the browser capture routes (handle_job_capture.go).
+	// Empty means those routes are switched off, not open.
+	JobCaptureToken string
 
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can

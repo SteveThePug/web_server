@@ -48,7 +48,7 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 
 **Frontend** (`vue/`): Vue 3 SPA with Vite, Tailwind CSS v4, Pinia stores, Vue Router. Built in a separate container; assets served through Nginx (production) or proxied to Vite dev server (dev mode).
 
-**Python API** (`python/`): FastAPI app served by uvicorn on port 8000. Nginx proxies `/py/` to it and strips the prefix, so routes in `python/app/main.py` are written relative to `/`. Swagger UI at `/py/docs`. Dev mode mounts `python/app` and runs uvicorn with `--reload`. One route, `/internal/rowing/read` (the Claude call behind `POST /api/rowing`), is internal: the Go backend calls it directly over the Docker network and nginx 404s `/py/internal/`.
+**Python API** (`python/`): FastAPI app served by uvicorn on port 8000. Nginx proxies `/py/` to it and strips the prefix, so routes in `python/app/main.py` are written relative to `/`. Swagger UI at `/py/docs`. Dev mode mounts `python/app` and runs uvicorn with `--reload`. Two routes are internal — `/internal/rowing/read` (the Claude call behind `POST /api/rowing`) and `/internal/jobs/extract` (behind `POST /api/jobs/capture/extract`): the Go backend calls them directly over the Docker network and nginx 404s `/py/internal/`.
 
 **Nginx** (`nginx/`): Reverse proxy + SPA server. Config is templated (`nginx.conf.template`) and selected at runtime by `entrypoint.sh` based on `DEV_MODE` and certificate presence. Rate limiting on login (5/min), API (30/sec), uploads (5/min).
 
@@ -78,6 +78,7 @@ Dockerized multi-service personal website self-hosted on a Raspberry Pi.
 - **Auth flow**: Login sets `access_token` (7 days) and `refresh_token` (365 days) as HTTP-only cookies (`backend/main.go:96`). `AuthMiddleware` validates tokens and injects user into Gin context. `AuthContextMiddleware` passes Gin context into GraphQL resolver context. There is no token revocation — logout only clears cookies.
 - **GraphQL resolvers authorise themselves.** The `/api/graphql` endpoint has no guarding middleware; `AuthContextMiddleware` only makes the user *available*. Every resolver that needs auth must check it itself. See `backend/graph/doc.go`.
 - **Spotify tokens**: Persisted to `/backend/token/spotify_token.json` inside the container, surviving restarts.
+- **Job capture**: `vue/public/job-capture.user.js` is a Violentmonkey userscript, served by the site and installed from `/cv/jobs`, that adds the posting open in the browser to the tracker. It calls the three `/api/jobs/capture` REST routes with a bearer token (`JOB_CAPTURE_TOKEN`) because cookies do not travel from other origins. Bump its `@version` on every edit or installed copies will not update. See "Job capture" in `backend/README.md`.
 - **Gitea feed**: Backend proxies and caches (1 min TTL) the Gitea activity feed API.
 - **All GORM models use soft delete** (`gorm.DeletedAt` field) — except `ProcessedEmail`, whose dedup must see history. Note that a `uniqueIndex` still collides with soft-deleted rows.
 

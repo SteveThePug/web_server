@@ -1,8 +1,8 @@
 # Python API service
 
 A small FastAPI app (`app/main.py`) served by uvicorn on port 8000 inside the
-`python` container. It also hosts one internal route, the **rowing display
-reader** (see below). Most of it is one feature: **cheap Travelodge finder** —
+`python` container. It also hosts two internal routes, the **rowing display
+reader** and the **job posting reader** (see below). Most of it is one feature: **cheap Travelodge finder** —
 given a London location and dates it pulls live room prices from Travelodge and
 adds the cost of getting there from a chosen station on TfL, so you can rank
 hotels by what the night *actually* costs, not just the room.
@@ -14,9 +14,11 @@ hotels by what the night *actually* costs, not just the room.
 | `app/main.py` | HTTP skin: request models/validation, response cache, one-at-a-time guard, NDJSON framing, route handlers |
 | `app/travelodge.py` | All the real work: upstream calls, caching, rate limiting, fare maths, the two search generators |
 | `app/rowing.py` | The Claude call that reads time and distance off a photo of a rowing machine display |
+| `app/jobs.py` | The Claude call that reads job title, company and location off a posting's page text |
+| `app/claude.py` | What those two share: the lazily built Anthropic client, fence stripping, the error types |
 | `app/__init__.py` | Empty; makes `app` a package so `app.main:app` resolves |
 
-`travelodge.py` and `rowing.py` never import FastAPI and can be driven from a
+`travelodge.py`, `rowing.py`, `jobs.py` and `claude.py` never import FastAPI and can be driven from a
 plain script.
 
 ## Endpoints
@@ -34,6 +36,7 @@ Paths below are as the service sees them; from a browser prefix everything with
 | POST | `/hotels/search/stream` | Same search as NDJSON progress lines |
 | POST | `/hotels/scan/stream` | Cheapest night across a date range, NDJSON |
 | POST | `/internal/rowing/read` | **Internal.** Read a rowing display photo with Claude |
+| POST | `/internal/jobs/extract` | **Internal.** Read a job posting's page text with Claude |
 
 Interactive schema: `/py/docs` (Swagger UI), `/py/openapi.json`.
 
@@ -73,8 +76,9 @@ date, the duplicate check, the sanity bounds and the insert, and calls this
 only once it has decided the paid call is worth making. Nothing here judges
 whether the numbers are plausible.
 
-It is the only route in this service that is **not public**, and it has no
-auth of its own, so two things keep it internal: nginx answers `/py/internal/`
+It and the job posting reader below are the only routes in this service that
+are **not public**. They have no auth of their own, so two things keep them
+internal: nginx answers `/py/internal/`
 with a 404, and the route 404s any request carrying the `X-Real-IP` /
 `X-Forwarded-For` headers nginx adds to everything it proxies. The Go backend
 calls the container directly (`http://python:8000/...`) and sends neither.
@@ -82,6 +86,25 @@ calls the container directly (`http://python:8000/...`) and sends neither.
 Errors: 502 with a fixed `detail` (`failed to process image`, `empty response
 from image processor`, `failed to parse image data`) that the Go handler
 relays to the admin; 503 if `CLAUDE_API_KEY` is unset.
+
+### Job posting reader (internal)
+
+`POST /internal/jobs/extract` takes `{"url", "title", "text"}` — a page's
+address, `<title>` and visible text — and returns `{"jobTitle", "company",
+"location", "notes"}` as read by Claude (`claude-haiku-4-5`). It is the Claude
+half of the Go backend's token-guarded `POST /api/jobs/capture/extract`, which
+the browser userscript calls to pre-fill its popup.
+
+Claude rather than selectors because the pages are LinkedIn, a dozen ATS
+products and arbitrary company sites. A page that is not a posting is a 200
+with empty strings, so the popup can be filled in by hand. The page text is
+untrusted third-party content: the prompt fences it off as data, and the
+output is only ever four form fields that are checked by eye before saving.
+
+`text` is capped at 40,000 characters (`MAX_TEXT_CHARS`); the Go handler cuts
+to the same length first. Errors: 502 with a fixed `detail` (`failed to read
+the posting`, `empty response from the posting reader`, `failed to parse the
+posting`); 503 if `CLAUDE_API_KEY` is unset.
 
 ## Behind nginx
 
@@ -98,7 +121,7 @@ braces version of the same thing. The internal deadlines in `travelodge.py`
 return partial results with `summary.truncated = true` instead of dying.
 
 Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
-`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the rowing reader. Dev mode mounts `python/app` and runs
+`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` for the rowing and job posting readers. Dev mode mounts `python/app` and runs
 uvicorn with `--reload`.
 
 ## Running locally

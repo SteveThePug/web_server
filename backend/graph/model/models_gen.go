@@ -38,13 +38,14 @@ type CreateJobAppReferenceInput struct {
 }
 
 type CreateJobApplicationInput struct {
-	JobTitle  string     `json:"jobTitle"`
-	Company   string     `json:"company"`
-	Location  *string    `json:"location,omitempty"`
-	URL       *string    `json:"url,omitempty"`
-	Status    string     `json:"status"`
-	Notes     *string    `json:"notes,omitempty"`
-	AppliedAt *time.Time `json:"appliedAt,omitempty"`
+	JobTitle    string     `json:"jobTitle"`
+	Company     string     `json:"company"`
+	Location    *string    `json:"location,omitempty"`
+	URL         *string    `json:"url,omitempty"`
+	Status      string     `json:"status"`
+	Notes       *string    `json:"notes,omitempty"`
+	AppliedAt   *time.Time `json:"appliedAt,omitempty"`
+	Description *string    `json:"description,omitempty"`
 }
 
 type CreatePlaceInput struct {
@@ -138,13 +139,14 @@ type UpdateJobAppReferenceInput struct {
 }
 
 type UpdateJobApplicationInput struct {
-	JobTitle  *string    `json:"jobTitle,omitempty"`
-	Company   *string    `json:"company,omitempty"`
-	Location  *string    `json:"location,omitempty"`
-	URL       *string    `json:"url,omitempty"`
-	Status    *string    `json:"status,omitempty"`
-	Notes     *string    `json:"notes,omitempty"`
-	AppliedAt *time.Time `json:"appliedAt,omitempty"`
+	JobTitle    *string    `json:"jobTitle,omitempty"`
+	Company     *string    `json:"company,omitempty"`
+	Location    *string    `json:"location,omitempty"`
+	URL         *string    `json:"url,omitempty"`
+	Status      *string    `json:"status,omitempty"`
+	Notes       *string    `json:"notes,omitempty"`
+	AppliedAt   *time.Time `json:"appliedAt,omitempty"`
+	Description *string    `json:"description,omitempty"`
 }
 
 type UpdatePlaceInput struct {

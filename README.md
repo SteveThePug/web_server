@@ -243,6 +243,7 @@ Create a `.env` file in the project root. All services read from this file.
 | `DOMAIN`                          | Production domain name                                                          |
 | `EMAIL`                           | Email for Let's Encrypt registration                                            |
 | `CLAUDE_API_KEY`                  | Anthropic Claude API key                                                        |
+| `JOB_CAPTURE_TOKEN`               | Bearer token for the job capture userscript; empty disables it                  |
 | `STEAM_API_KEY`                   | Steam Web API key                                                               |
 | `STEAM_ID`                        | Steam user ID                                                                   |
 | `PYTHON_HOST`                     | Python API hostname (defaults to `python`)                                      |

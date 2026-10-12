@@ -151,14 +151,19 @@ var senderDomains = []string{
 // map is treated as unknown and never applied. Note that "rejected" and
 // "withdrawn" sit at the top, so once an application reaches them nothing can
 // move it back.
+//
+// "saved" is the one status no email can produce: it marks a posting captured
+// from the browser but not applied to yet (handlers/handle_job_capture.go).
+// It ranks lowest so that the "thanks for applying" email advances the row.
 var statusOrder = map[string]int{
-	"applied":      0,
-	"screening":    1,
-	"assessment":   2,
-	"interviewing": 3,
-	"offer":        4,
-	"rejected":     5,
-	"withdrawn":    6,
+	"saved":        0,
+	"applied":      1,
+	"screening":    2,
+	"assessment":   3,
+	"interviewing": 4,
+	"offer":        5,
+	"rejected":     6,
+	"withdrawn":    7,
 }
 
 // Token persistence
@@ -744,26 +749,35 @@ func (s *EmailSyncService) createJobApplication(analysis *EmailAnalysis) (string
 	return "created", &app.ID, nil
 }
 
-// statusAdvances reports whether next is a forward move from current through
+// StatusAdvances reports whether next is a forward move from current through
 // statusOrder. Emails commonly arrive out of order (a delayed "thanks for
 // applying" after an interview invite), and this is what stops a stale email
 // dragging an application backwards. An unknown next status is never applied;
 // an unknown current status is treated as "anywhere before the start", so any
 // recognised status can take over from it.
-func statusAdvances(current, next string) bool {
+//
+// Exported because the browser capture endpoint applies the same rule.
+func StatusAdvances(current, next string) bool {
 	nextOrder, nextExists := statusOrder[next]
 	currentOrder, currentExists := statusOrder[current]
 	return nextExists && (!currentExists || nextOrder > currentOrder)
 }
 
 // updateJobApplication advances an existing application's status, but only
-// ever forwards (see statusAdvances).
+// ever forwards (see StatusAdvances).
 func (s *EmailSyncService) updateJobApplication(existing *models.JobApplication, analysis *EmailAnalysis) (string, *uint, error) {
-	if !statusAdvances(existing.Status, analysis.Status) {
+	if !StatusAdvances(existing.Status, analysis.Status) {
 		return "skipped", &existing.ID, nil
 	}
 
 	existing.Status = analysis.Status
+
+	// A row captured as "saved" has no applied date; the email that moves it
+	// to "applied" is the best evidence of when that happened.
+	if existing.AppliedAt == nil && existing.Status == "applied" {
+		now := time.Now()
+		existing.AppliedAt = &now
+	}
 
 	// Append to notes if Claude provided any
 	if analysis.Notes != nil && *analysis.Notes != "" {
@@ -864,7 +878,8 @@ func truncate(s string, maxLen int) string {
 
 // emailClassificationPrompt must stay in sync with the EmailAnalysis struct:
 // every key it names is a field there, and the status values it lists are the
-// keys of statusOrder.
+// keys of statusOrder — all but "saved", which only the browser capture sets
+// and no email can mean.
 const emailClassificationPrompt = `You are an email classifier for job applications. You will receive the subject line, sender, and body of an email. Determine if this email is related to a job application, and if so, extract structured data.
 
 Return ONLY a JSON object with these exact keys:

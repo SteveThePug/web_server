@@ -232,8 +232,8 @@
         }
 
         # /py/internal/: routes the Go backend calls directly over app-network
-        # (the rowing photo reader, which spends a paid Claude call and has no
-        # auth of its own). Never proxied. ^~ so no regex location can claim
+        # (the rowing photo reader and the job posting reader, which spend a
+        # paid Claude call and have no auth of their own). Never proxied. ^~ so no regex location can claim
         # the path first. The Python side also refuses anything carrying the
         # X-Real-IP / X-Forwarded-For headers set below, as a second layer.
         location ^~ /py/internal/ {
