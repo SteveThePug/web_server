@@ -211,6 +211,7 @@ of deleting the directory:
 | `./certbot/conf` | TLS certificates and **private keys** | Gitignored. Never commit. |
 | `./certbot/www` | ACME challenge webroot | Transient by nature |
 | `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) and the **job capture token hash** (`job_capture_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild, and the capture userscript a new token from the admin panel. |
+| `./env-apply/run` | The admin panel's queued `.env` change (`request.json`) and the host's report on it (`status.json`) | Gitignored. Transient, but must be owned by the deploy user, not root — see §5. |
 | `./gitea/data` | Git repositories, LFS objects, avatars, sessions | The actual git data |
 | `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
 | `./logs` | Backend logs | |
@@ -250,6 +251,36 @@ both machines silently loses one side's edits. Run it before and after editing.
 An unset variable is not an error: `envsubst` renders it as an empty string,
 which for a password field means *no password*. After editing `.env`, confirm
 with `docker compose config`.
+
+### Editing from the admin panel
+
+The **Environment** tab at `/admin` edits `.env` on the Pi without SSH. API
+keys, OAuth client settings, the email settings and the generated secrets are
+editable; anything that would rename a container, move a port or lock the
+backend out of Postgres is shown read-only.
+
+The backend cannot write `.env` or reach Docker. It queues the change in
+`./env-apply/run/request.json`, and a systemd path unit on the host runs
+`env-apply/apply.py`, which:
+
+1. rewrites `.env` atomically, keeping comments and order, with the previous
+   version saved as **`.env.bak`**;
+2. runs `docker compose config -q` and restores the backup if compose rejects
+   the file;
+3. recreates only the services that read the changed variables, plus the
+   backend (`docker compose up -d --no-deps --force-recreate …`);
+4. writes the outcome to `status.json`, which the panel is polling.
+
+Only those services are recreated because nginx, db, icecast2 and certbot load
+the whole file too; a plain `up -d` would restart Postgres for a Steam key.
+They pick the new file up at the next deploy, which is harmless.
+
+**The watcher is installed once per host** — see the runbook. Without it the
+panel still queues the change and says nothing has picked it up.
+
+A change made this way makes the Pi's `.env` the newer copy, so the next
+`./sync-secrets.sh` pulls it down to the laptop. The newer-wins caveat above
+still applies: do not also edit the local copy before syncing.
 
 ---
 
@@ -293,6 +324,24 @@ it. By hand:
 
 ```
 git pull && docker compose up -d --build --remove-orphans
+```
+
+**Install the `.env` watcher** (once per host; lets the admin panel's
+Environment tab apply changes):
+
+```
+./env-apply/install.sh                              # asks for sudo
+systemctl status web-server-env-apply.path          # should be active (waiting)
+journalctl -u web-server-env-apply.service          # one entry per applied change
+```
+
+Run it as the user that owns the checkout. `env-apply/run` must belong to that
+user: if Docker created it first it is root-owned, and the script fixes that.
+To apply a queued change by hand, or undo one:
+
+```
+python3 env-apply/apply.py                          # apply what the panel queued
+cp .env.bak .env && docker compose up -d            # roll back the last change
 ```
 
 **Rebuild one service** (e.g. after changing only the backend):

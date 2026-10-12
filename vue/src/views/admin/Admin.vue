@@ -18,6 +18,7 @@ import CreateBookmark from "./CreateBookmark.vue";
 import CreatePlace from "./CreatePlace.vue";
 import ManageUsers from "./ManageUsers.vue";
 import ManageRadio from "./ManageRadio.vue";
+import Environment from "./Environment.vue";
 import Diagnostics from "./Diagnostics.vue";
 
 const auth = useAuthStore();
@@ -32,6 +33,7 @@ const sections = [
   { id: "place", label: "Place / Thing To Do", component: CreatePlace },
   { id: "users", label: "Manage Users", component: ManageUsers },
   { id: "radio", label: "Manage Radio", component: ManageRadio },
+  { id: "environment", label: "Environment", component: Environment },
   { id: "diagnostics", label: "Diagnostics", component: Diagnostics },
 ];
 

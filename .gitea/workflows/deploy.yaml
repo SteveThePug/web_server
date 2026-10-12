@@ -22,7 +22,10 @@ jobs:
               env:
                   DOCKER_API_VERSION: "1.41"
                   COMPOSE_BAKE: "false"
-              run: docker compose up -d --build --remove-orphans
+              # The lock is shared with env-apply/apply.py, so a deploy and a
+              # .env change made from the admin panel cannot run compose at
+              # the same time.
+              run: flock env-apply/run/lock docker compose up -d --build --remove-orphans
 
             - name: Prune unused Docker resources
               run: docker image prune -f

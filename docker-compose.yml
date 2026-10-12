@@ -176,6 +176,10 @@ services:
       # rebuild, forcing a manual re-authorisation of Spotify after each
       # deploy. Gitignored (it is a credential).
       - ./backend/token/:/backend/token
+      # Hand-off directory for the admin panel's Environment tab: the backend
+      # queues a change here and env-apply/apply.py on the host applies it.
+      # The backend gets this instead of .env itself or the Docker socket.
+      - ./env-apply/run:/backend/env-apply
       # The Obsidian vault on the host, read by the backend for the notes API.
       # Same directory is mounted read-write into silverbullet (the editor) and
       # read-only into silverbullet-public (the /notes/ site).

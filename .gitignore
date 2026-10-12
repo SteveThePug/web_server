@@ -4,6 +4,11 @@ certbot/conf
 certbot/www
 backend/token/
 .env
+.env.bak
+
+# Admin panel -> host hand-off (request and status files, holds secrets)
+env-apply/run/*
+!env-apply/run/.gitkeep
 
 gitea/data/*
 gitea/config/app.ini

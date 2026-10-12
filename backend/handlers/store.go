@@ -44,6 +44,10 @@ type Store struct {
 	// routes are switched off, not open.
 	CaptureToken *services.CaptureToken
 
+	// Registry of .env variables and the request/status hand-off with the
+	// host that applies changes to them (handle_env.go).
+	Env *services.EnvManager
+
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can
 	// mean "never fetched" distinctly from "fetched, empty".
