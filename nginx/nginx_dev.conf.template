@@ -54,7 +54,7 @@ http {
     # kept equal to production so a limit that would bite there bites here too.
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
     limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
-    limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=upload:10m rate=30r/m;
     limit_req_zone $binary_remote_addr zone=hotel_search:10m rate=3r/m;
 
     log_format compact

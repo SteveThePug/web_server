@@ -147,7 +147,7 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 **Protected (auth required)**
 | Method | Path | Description |
 | --- | --- | --- |
-| POST | `/api/messages/upload` | Upload message file (rate limited: 5/min) |
+| POST | `/api/messages/upload` | Upload a file for a chat message or a canvas box (rate limited: 30/min, burst 20) |
 
 **Admin (auth + admin required)**
 | Method | Path | Description |

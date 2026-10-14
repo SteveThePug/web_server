@@ -148,7 +148,7 @@
         }
 
         location $BACKEND_ENDPOINT/messages/upload {
-            limit_req zone=upload burst=3 nodelay;
+            limit_req zone=upload burst=20 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
             proxy_pass $upstream_backend;
             proxy_set_header Host $host;

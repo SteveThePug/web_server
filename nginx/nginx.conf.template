@@ -89,8 +89,12 @@ http {
     #                           (Production only; the dev template omits it.
     #                           Its location is at the bottom of this file,
     #                           not in the shared route table.)
-    #   upload 5r/m  burst=3  - uploads are 50MB-capable and hit disk; this
-    #                           bounds how fast one IP can fill the volume.
+    #   upload 30r/m burst=20 - uploads hit disk; this bounds how fast one IP
+    #                           can fill the volume. Generous because only a
+    #                           signed-in user can upload and accounts are
+    #                           admin-created, and because dropping a batch of
+    #                           pictures onto a canvas page uploads them all
+    #                           at once — the burst lets ~20 through together.
     #   hotel_search 3r/m burst=2 - each request holds an upstream call to
     #                           Travelodge/TfL for up to a few minutes and the
     #                           Python side has a single search slot, so this is
@@ -109,7 +113,7 @@ http {
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
     limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
     limit_req_zone $binary_remote_addr zone=graphql:10m rate=10r/s;
-    limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=upload:10m rate=30r/m;
     limit_req_zone $binary_remote_addr zone=hotel_search:10m rate=3r/m;
 
     log_format compact

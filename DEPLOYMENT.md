@@ -333,7 +333,7 @@ rate"*. Anything beyond the burst gets an immediate **503**.
 | `login` | 5/min | 3 | `/api/auth/login` | Brute-force defence. A human mistyping gets 3 tries then one per 12s; a credential-stuffing script gets nothing useful. |
 | `api` | 30/sec | 20 | `/api/`, `/py/` | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota. |
 | `graphql` | 10/sec | 10 | `/api/graphql` | Tighter than REST because one query can be arbitrarily expensive. **Production config only**; dev folds GraphQL into `api`. |
-| `upload` | 5/min | 3 | `/api/messages/upload` | Uploads can be 50MB and hit disk; bounds how fast one IP fills the volume. |
+| `upload` | 30/min | 20 | `/api/messages/upload` | Uploads hit disk; bounds how fast one IP fills the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
 | `hotel_search` | 3/min | 2 | `/py/hotels/(search\|scan)` | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection. |
 
 The WebSocket endpoint is deliberately unlimited: a socket is one long-lived
