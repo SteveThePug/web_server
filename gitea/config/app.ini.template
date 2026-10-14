@@ -20,6 +20,10 @@
 ;     22 and cannot use the host's sshd, so Gitea runs its own Go SSH server.
 ;     2222 is published in docker-compose.yml; the deploy workflow clones over
 ;     ssh://git@localhost:2222.
+;   SSH_DOMAIN is the Pi's Tailscale MagicDNS name, not the public domain: SSH
+;     (22 and 2222) is not forwarded by the router, so the SSH clone URL Gitea
+;     shows only works from a device on the tailnet. HTTPS clones go through
+;     nginx at ROOT_URL and stay public.
 ;   REVERSE_PROXY_LIMIT = 1 / TRUSTED_PROXIES = * : trust exactly one hop of
 ;     X-Forwarded-For, i.e. our nginx, so Gitea logs real client IPs. This is
 ;     only safe because nginx is the sole edge.
@@ -46,7 +50,7 @@ TEMP_PATH = /tmp/gitea/uploads
 
 [server]
 APP_DATA_PATH = /var/lib/gitea
-SSH_DOMAIN = adam-french.co.uk
+SSH_DOMAIN = stppi.tailf20278.ts.net
 HTTP_PORT = 3000
 ROOT_URL = https://adam-french.co.uk/gitea/
 DISABLE_SSH = false
