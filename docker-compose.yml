@@ -115,6 +115,7 @@ services:
       - silverbullet-public
       - python
       - jobs
+      - activity-tracker
     networks:
       - app-network
     ports:
@@ -472,6 +473,29 @@ services:
       - REED_API_KEY=${REED_API_KEY:-}
     volumes:
       - ./jobs-data:/data
+
+  # The activity tracker (time spent per app, site, walk...), served at
+  # /tracker/ with the prefix stripped. Built and published by its own repo
+  # (adamf/ccp on this Gitea), whose CI pulls :latest into this service on
+  # every push to main; pin ACTIVITY_TRACKER_IMAGE_TAG to hold a version.
+  #
+  # Same shape as jobs: an explicit `environment:` list and a database role of
+  # its own, created by hand once (the ccp README has the command). It applies
+  # its own migrations on start. Collectors authenticate with per-device
+  # bearer keys made by `docker exec activity-tracker tracker apikey create`;
+  # nothing here touches the site's login. No state outside Postgres.
+  activity-tracker:
+    image: adam-french.co.uk/adamf/activity-tracker:${ACTIVITY_TRACKER_IMAGE_TAG:-latest}
+    container_name: activity-tracker
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_TRACKER_USER:-tracker}:${POSTGRES_TRACKER_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_TRACKER_DB:-tracker}?sslmode=disable
+      - TRACKER_TZ=${TRACKER_TZ:-}
 
   # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
   # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to

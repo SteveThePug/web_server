@@ -77,6 +77,8 @@
         # The job tracker's container name is fixed in docker-compose.yml, so
         # it needs no variable (and no ENVSUBST_VARS entry).
         set $upstream_jobs http://jobs:8080;
+        # Likewise the activity tracker's.
+        set $upstream_tracker http://activity-tracker:8080;
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -357,6 +359,28 @@
             # answering.
             proxy_read_timeout 300s;
             proxy_pass $upstream_jobs;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # ---- Activity tracker (/tracker/) ----
+        # Its own container (the adamf/ccp repo): an ingest API for device
+        # collectors, which send batches of events with a per-device bearer
+        # key. The app does its own auth, so no auth_request. Unlike /jobs/
+        # the prefix IS stripped: the server serves /api/v1/... and /readyz
+        # from /. Collectors must use the www host: the apex 301 would turn
+        # their POSTs into GETs. Health Auto Export bodies can be several MB;
+        # the server-wide 50M client_max_body_size covers them.
+        location = /tracker {
+            return 301 /tracker/;
+        }
+
+        location ^~ /tracker/ {
+            limit_req zone=api burst=20 nodelay;
+            rewrite ^/tracker/(.*)$ /$1 break;
+            proxy_pass $upstream_tracker;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

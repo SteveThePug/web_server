@@ -45,6 +45,7 @@
   {"name": "BACKEND_ENDPOINT", "group": "Infrastructure", "purpose": "URL prefix nginx mounts the API at", "kind": "text", "editable": false, "lockedReason": "The Vue app assumes /api."},
   {"name": "PYTHON_HOST", "group": "Infrastructure", "purpose": "Python container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},
   {"name": "PYTHON_PORT", "group": "Infrastructure", "purpose": "Python listen port", "kind": "text", "editable": false, "lockedReason": "Renames a container or repoints nginx."},
+  {"name": "ACTIVITY_TRACKER_IMAGE_TAG", "group": "Infrastructure", "purpose": "Activity tracker image tag to run (default latest)", "kind": "text", "editable": false, "lockedReason": "Changing it needs a pull: docker compose pull activity-tracker && docker compose up -d activity-tracker."},
   {"name": "JOBS_IMAGE_TAG", "group": "Infrastructure", "purpose": "Job tracker image tag to run (default latest)", "kind": "text", "editable": false, "lockedReason": "Changing it needs a pull: docker compose pull jobs && docker compose up -d jobs."},
   {"name": "ICECAST_HOST", "group": "Infrastructure", "purpose": "Icecast container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},
   {"name": "ICECAST_PORT", "group": "Infrastructure", "purpose": "Icecast listen port", "kind": "text", "editable": false, "lockedReason": "Renames a container or repoints nginx."},
@@ -65,6 +66,10 @@
   {"name": "POSTGRES_JOBS_DB", "group": "Database", "purpose": "Job tracker database name", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; see the job-tracker README."},
   {"name": "POSTGRES_JOBS_USER", "group": "Database", "purpose": "Job tracker database role", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; changing it here locks the tracker out."},
   {"name": "POSTGRES_JOBS_PASSWORD", "group": "Database", "purpose": "Job tracker database password", "kind": "secret", "editable": false, "lockedReason": "Set on the role by hand; changing it here locks the tracker out."},
+  {"name": "POSTGRES_TRACKER_DB", "group": "Database", "purpose": "Activity tracker database name", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; see the ccp README."},
+  {"name": "POSTGRES_TRACKER_USER", "group": "Database", "purpose": "Activity tracker database role", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; changing it here locks the activity tracker out."},
+  {"name": "POSTGRES_TRACKER_PASSWORD", "group": "Database", "purpose": "Activity tracker database password", "kind": "secret", "editable": false, "lockedReason": "Set on the role by hand; changing it here locks the activity tracker out."},
+  {"name": "TRACKER_TZ", "group": "Activity tracker", "purpose": "Timezone where the activity tracker's day starts, e.g. Europe/London (blank is UTC)", "kind": "text", "editable": true, "services": ["activity-tracker"]},
 
   {"name": "GITEA_HOST", "group": "Gitea", "purpose": "Gitea container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},
   {"name": "GITEA_PORT", "group": "Gitea", "purpose": "Gitea HTTP port", "kind": "text", "editable": false, "lockedReason": "Renames a container or repoints nginx."},
