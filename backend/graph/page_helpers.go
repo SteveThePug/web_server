@@ -36,8 +36,7 @@ var reservedFirstSegments = map[string]bool{
 
 // reservedSlugs are individual paths the SPA routes itself.
 var reservedSlugs = map[string]bool{
-	"shrines":         true,
-	"shrines/demoman": true,
+	"shrines": true,
 }
 
 func validPageKey(key string) bool {

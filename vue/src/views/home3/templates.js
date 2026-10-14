@@ -131,11 +131,11 @@ const galleryHtml = (srcs) => `<style>
 ${srcs.map((src) => `  <img src="${src}" alt="">`).join("\n")}
 </div>`;
 
-const VIDEO = `<style>
+const videoHtml = (src) => `<style>
   body { padding: 0; overflow: hidden; background: #000; }
   video { display: block; width: 100%; height: 100%; object-fit: contain; }
 </style>
-<video src="/img/demoman/1760582395316219.webm" controls loop muted></video>`;
+<video src="${src}" controls loop muted></video>`;
 
 /**
  * Menu entries; `size` is [w, h] in canvas px. `adminOnly` sets the new
@@ -147,10 +147,10 @@ export const TEMPLATES = [
   { label: "Text", title: "Text", html: TEXT, size: [400, 260] },
   { label: "Image / GIF", title: "Image", html: imageHtml("/img/memes/fire-woman.gif"), size: [240, 240], framed: false },
   { label: "Image gallery", title: "Gallery", html: galleryHtml(["/img/memes/fire-woman.gif", "/img/memes/epic.jpeg"]), size: [460, 320] },
-  { label: "Video", title: "Video", html: VIDEO, size: [400, 260], framed: false },
+  { label: "Video", title: "Video", html: videoHtml("/img/demoman/1760582395316219.webm"), size: [400, 260], framed: false },
   { label: "Clock", title: "Clock", html: CLOCK, size: [240, 120] },
   { label: "Weather", title: "Weather", html: WEATHER, size: [240, 170] },
   { label: "Empty HTML", title: "HTML", html: EMPTY, size: [300, 200] },
 ];
 
-export { imageHtml, galleryHtml };
+export { imageHtml, galleryHtml, videoHtml };

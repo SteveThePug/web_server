@@ -65,14 +65,9 @@ const router = createRouter({
                     name: "shrine links",
                     component: () => import("@/views/home/shrines/Shrines.vue"),
                 },
-                // The GTO, Evangelion and Skipskipbenben shrines were <Wip />
-                // placeholders; they are canvas pages now, made from /shrines
-                // and served by the catch-all below.
-                {
-                    path: "shrines/demoman",
-                    name: "demoman shrine",
-                    component: () => import("@/views/home/shrines/Demoman.vue"),
-                },
+                // Individual shrines are canvas pages, made from /shrines and
+                // served by the catch-all below. The old hand-written ones
+                // (views/home/shrines/) are unrouted.
                 // Anything else is an admin-created canvas page if one exists
                 // at that address (the Page GraphQL type), else the 404.
                 {

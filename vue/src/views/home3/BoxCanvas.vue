@@ -19,7 +19,8 @@
  * Admins get an Edit toggle. In edit mode boxes drag and resize (BoxFrame),
  * changes save on release, and the selected box opens in BoxEditor. Boxes
  * marked adminOnly are never sent to anyone else (the server filters them);
- * admins see them outlined.
+ * admins see them outlined. Image and video files dropped onto the canvas in
+ * edit mode are uploaded and each becomes a box where it was dropped.
  *
  * `overlay` lays the canvas over whatever the parent already renders instead
  * of taking space of its own — the landing page uses it to pin notes over its
@@ -38,7 +39,8 @@ import BoxEditor from "./BoxEditor.vue";
 import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
-import { TEMPLATES } from "./templates";
+import { TEMPLATES, imageHtml, videoHtml } from "./templates";
+import { mediaSize, uploadFile } from "./upload";
 
 const props = defineProps({
   page: { type: String, required: true },
@@ -218,6 +220,55 @@ async function importStarter() {
   }
 }
 
+// ---- Dropping files -----------------------------------------------------
+const DROP_MAX = 400; // longest side of a dropped picture's box, canvas px
+const dragOver = ref(false);
+const uploading = ref(0);
+
+function isMedia(file) {
+  return file.type.startsWith("image/") || file.type.startsWith("video/");
+}
+
+// Each file is uploaded and placed at the drop point, sized to its own
+// aspect ratio so nothing is cropped, then cascaded like visibleOrigin().
+async function onDrop(event) {
+  dragOver.value = false;
+  const files = [...(event.dataTransfer?.files ?? [])].filter(isMedia);
+  if (!files.length) return;
+  const rect = canvasEl.value.getBoundingClientRect();
+  const snap = (n) => Math.max(0, Math.round(n / 5) * 5);
+  let x = snap((event.clientX - rect.left) / scale.value);
+  let y = snap((event.clientY - rect.top) / scale.value);
+  uploading.value += files.length;
+  for (const file of files) {
+    try {
+      const [url, size] = await Promise.all([uploadFile(file), mediaSize(file)]);
+      const fit = size ? Math.min(1, DROP_MAX / Math.max(size.w, size.h)) : 1;
+      const w = size ? Math.max(40, Math.round(size.w * fit)) : 300;
+      const h = size ? Math.max(40, Math.round(size.h * fit)) : 300;
+      const video = file.type.startsWith("video/");
+      const created = await store.create({
+        kind: "html",
+        title: file.name,
+        html: video ? videoHtml(url) : imageHtml(url),
+        framed: false,
+        x,
+        y,
+        w,
+        h,
+        z: store.topZ(),
+      });
+      selectedId.value = created.id;
+      x += 20;
+      y += 20;
+    } catch (err) {
+      report(err);
+    } finally {
+      uploading.value--;
+    }
+  }
+}
+
 // ---- Selection -----------------------------------------------------------
 function select(box) {
   if (selectedId.value === box.id) return;
@@ -271,6 +322,9 @@ function toggleEdit() {
           {{ importing ? "Importing…" : starterLabel }}
         </button>
       </template>
+      <span v-if="inEditMode" class="hint">
+        {{ uploading ? `Uploading ${uploading}…` : "Drop images or videos onto the canvas to add them" }}
+      </span>
       <slot name="admin-bar" :editing="inEditMode" />
       <span v-if="errorMsg" class="error">{{ errorMsg }}</span>
     </div>
@@ -303,9 +357,12 @@ function toggleEdit() {
         <div
           ref="canvasEl"
           class="canvas"
-          :class="{ editing: inEditMode }"
+          :class="{ editing: inEditMode, 'drag-over': dragOver }"
           :style="{ width: `${CANVAS_W}px`, height: `${canvasH}px`, transform: `scale(${scale})` }"
           @pointerdown.self="selectedId = null"
+          @dragover.prevent="dragOver = inEditMode"
+          @dragleave.self="dragOver = false"
+          @drop.prevent="inEditMode && onDrop($event)"
         >
           <BoxFrame
             v-for="box in store.boxes"
@@ -405,6 +462,10 @@ function toggleEdit() {
 .error {
   color: var(--color-tertiary);
 }
+.hint {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
 .state {
   text-align: center;
   color: var(--color-muted);
@@ -428,6 +489,9 @@ function toggleEdit() {
   outline: 1px dashed var(--color-quaternary);
   background-image: radial-gradient(var(--color-quaternary) 1px, transparent 1px);
   background-size: 20px 20px;
+}
+.canvas.drag-over {
+  outline: 3px dashed var(--color-primary);
 }
 
 .stack {

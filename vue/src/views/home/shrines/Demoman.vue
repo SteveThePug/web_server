@@ -1,6 +1,10 @@
 <script setup>
 /**
- * Route `/shrines/demoman` — a wall of TF2 Demoman clips via <VideoTable>.
+ * STATUS: no route points here — removed so /shrines/demoman can be made
+ * again as a canvas page (views/canvas/CanvasPage.vue). The clips are still
+ * in public/img/demoman/.
+ *
+ * Was route `/shrines/demoman` — a wall of TF2 Demoman clips via <VideoTable>.
  */
 import VideoTable from "@/components/util/VideoTable.vue";
 import Link from "@/components/text/Link.vue";

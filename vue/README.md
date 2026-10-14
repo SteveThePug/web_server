@@ -68,7 +68,7 @@ Two layout shells, defined in `src/router/index.js`:
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint), with a canvas overlay for pinned notes (page key `index`) |
 | `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
-| `/automata`, `/hotels`, `/shrines`, `/shrines/demoman` | DefaultLayout | Every other shrine is a canvas page |
+| `/automata`, `/hotels`, `/shrines` | DefaultLayout | Each shrine under `/shrines/` is a canvas page |
 | `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
 | `:pathMatch(.*)*` | DefaultLayout | `views/canvas/CanvasPage.vue`: an admin-created canvas page if one exists at the path, else the 404 (with a "create a page here" form for admins) |
@@ -243,7 +243,10 @@ renders any page's boxes.
   saves on pointer release, and the box is moved locally first and put back if
   the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
   HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S.
-  CodeMirror is loaded only when that panel opens. "Insert upload" stores a
+  CodeMirror is loaded only when that panel opens; the panel is teleported to
+  `<body>` so the landing overlay's `pointer-events: none` doesn't reach it.
+  Image and video files dropped onto the canvas in edit mode are uploaded and
+  each becomes an unframed box at the drop point. "Insert upload" stores a
   file through the chat's public upload endpoint and puts an `<img>`/`<video>`
   tag for it at the cursor. Starter HTML is in `templates.js`. On `/stp`,
   "Import current layout" (shown only on an empty canvas) recreates the old
@@ -295,7 +298,7 @@ in its header comment; the summary:
 | File | Status |
 | --- | --- |
 | `views/home3/Home3.vue` | live (`/stp`) — the box canvas; its widget boxes use **Intro3** and **Gym2** |
-| `views/home/shrines/{GTO,Evangelion,Skipskipbenben}.vue` | `<Wip />` placeholders, unrouted; those shrines are canvas pages now |
+| `views/home/shrines/{Demoman,GTO,Evangelion,Skipskipbenben}.vue` | the old hand-written shrines (Demoman a video wall, the rest `<Wip />`), unrouted; shrines are canvas pages now |
 | `views/home/Home.vue` | legacy fixed grid that `/stp` used to be; no route. Its widgets are still live through `home3/widgetRegistry.js` |
 | `views/home/Intro.vue` | superseded by `Intro2.vue`; not imported |
 | `views/home/Gym.vue` | superseded by `Gym2.vue`; not imported |
