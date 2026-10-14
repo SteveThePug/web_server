@@ -1,4 +1,5 @@
 icecast2/fallback_music/*
+.claude/
 !icecast2/fallback_music/.gitkeep
 certbot/conf
 certbot/www
