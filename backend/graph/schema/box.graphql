@@ -1,0 +1,60 @@
+# Boxes on the home page canvas (/stp). Anyone may read the layout — it is
+# the page — but only an admin may change it. x/y/w/h are px on a fixed
+# 1400px-wide design canvas; see models.Box.
+#
+# kind is "widget" (a built-in Vue component named by `widget`) or "html"
+# (`html` rendered in a sandboxed iframe on the front end).
+
+type Box {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  kind: String!
+  widget: String
+  html: String
+  title: String
+  x: Int!
+  y: Int!
+  w: Int!
+  h: Int!
+  z: Int!
+  framed: Boolean!
+  hideOnMobile: Boolean!
+}
+
+input CreateBoxInput {
+  kind: String!
+  widget: String
+  html: String
+  title: String
+  x: Int
+  y: Int
+  w: Int
+  h: Int
+  z: Int
+  framed: Boolean
+  hideOnMobile: Boolean
+}
+
+input UpdateBoxInput {
+  widget: String
+  html: String
+  title: String
+  x: Int
+  y: Int
+  w: Int
+  h: Int
+  z: Int
+  framed: Boolean
+  hideOnMobile: Boolean
+}
+
+extend type Query {
+  boxes: [Box!]!
+}
+
+extend type Mutation {
+  createBox(input: CreateBoxInput!): Box! @admin
+  updateBox(id: ID!, input: UpdateBoxInput!): Box! @admin
+  deleteBox(id: ID!): Box! @admin
+}

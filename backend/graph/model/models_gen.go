@@ -24,6 +24,20 @@ type CreateBookmarkInput struct {
 	Link     string `json:"link"`
 }
 
+type CreateBoxInput struct {
+	Kind         string  `json:"kind"`
+	Widget       *string `json:"widget,omitempty"`
+	HTML         *string `json:"html,omitempty"`
+	Title        *string `json:"title,omitempty"`
+	X            *int    `json:"x,omitempty"`
+	Y            *int    `json:"y,omitempty"`
+	W            *int    `json:"w,omitempty"`
+	H            *int    `json:"h,omitempty"`
+	Z            *int    `json:"z,omitempty"`
+	Framed       *bool   `json:"framed,omitempty"`
+	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
+}
+
 type CreateFavoriteInput struct {
 	Type string  `json:"type"`
 	Name string  `json:"name"`
@@ -111,6 +125,19 @@ type SteamGame struct {
 type SteamStatus struct {
 	Online      bool         `json:"online"`
 	RecentGames []*SteamGame `json:"recentGames"`
+}
+
+type UpdateBoxInput struct {
+	Widget       *string `json:"widget,omitempty"`
+	HTML         *string `json:"html,omitempty"`
+	Title        *string `json:"title,omitempty"`
+	X            *int    `json:"x,omitempty"`
+	Y            *int    `json:"y,omitempty"`
+	W            *int    `json:"w,omitempty"`
+	H            *int    `json:"h,omitempty"`
+	Z            *int    `json:"z,omitempty"`
+	Framed       *bool   `json:"framed,omitempty"`
+	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
 }
 
 type UpdatePlaceInput struct {

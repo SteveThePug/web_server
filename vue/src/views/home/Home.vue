@@ -1,6 +1,10 @@
 <script setup>
 /**
- * Route `/stp` — the personal home page: an A4-shaped widget grid flanked by two
+ * STATUS: legacy — no route points here. `/stp` is now views/home3/Home3.vue,
+ * the admin-editable box canvas; views/home3/defaultLayout.js is this page's
+ * arrangement redrawn as boxes. Kept for reference.
+ *
+ * Was route `/stp` — the personal home page: an A4-shaped widget grid flanked by two
  * sidebars.
  *
  * Layout is entirely CSS `grid-template-areas`: each child gets a `grid-area`

@@ -33,7 +33,7 @@ const router = createRouter({
                 {
                     path: "stp",
                     name: "home",
-                    component: () => import("@/views/home/Home.vue"),
+                    component: () => import("@/views/home3/Home3.vue"),
                 },
                 {
                     path: "admin/login",

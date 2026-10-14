@@ -66,7 +66,7 @@ Two layout shells, defined in `src/router/index.js`:
 | Path | Layout | Notes |
 | --- | --- | --- |
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint) |
-| `/stp` | DefaultLayout | The personal home page: the widget grid |
+| `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
 | `/automata`, `/hotels`, `/shrines/*` | DefaultLayout | |
 | `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
@@ -169,6 +169,7 @@ true only once a fetch has succeeded, meaning the data is real. Waiting on
 | `auth` | current user (`ensureLoaded()`, see Routing), plus login/logout mutations |
 | `posts`, `favorites`, `activity`, `songs`, `steam` | mirror one slice of `homeData` via an `immediate` watch, and keep a placeholder value until real data arrives |
 | `places` | CRUD via `createCrudStore`; sign-in only, so it is fetched lazily |
+| `boxes` | CRUD via `createCrudStore`; the `/stp` canvas layout. Public read, admin write |
 | `messages` | the chat WebSocket — not GraphQL at all |
 | `models` | dormant; not imported anywhere |
 
@@ -192,6 +193,40 @@ Two factories keep the repeated shapes in one place:
   The error contract is deliberate: `fetch()` never throws and records the
   failure on `error`; the mutations throw, so the form that called them can
   show the message and keep what was typed.
+
+## The /stp canvas
+
+`/stp` is a set of **boxes** (`Box` in GraphQL, `stores/boxes.js`) that an admin
+creates, drags, resizes and edits in the browser. Changes save to the database,
+so every visitor sees the saved layout. All of it lives in `views/home3/`:
+
+- **Coordinates.** `x`/`y`/`w`/`h` are px on a fixed 1400px-wide design canvas.
+  `Home3.vue` draws the canvas at that width and shrinks it with
+  `transform: scale()` to fit the window, so the arrangement is identical at
+  every desktop width. `BoxFrame.vue` divides pointer deltas by that scale.
+  `z` is the CSS z-index.
+- **Two kinds of box.** `kind: "widget"` shows a built-in Vue widget by name
+  from `widgetRegistry.js`. The registry keys are stored data, so don't rename
+  them. `kind: "html"` shows admin-written HTML (`HtmlBox.vue`) in an
+  `<iframe sandbox="allow-scripts">` **without `allow-same-origin`**. Its
+  scripts run, but they have an opaque origin: they can't read cookies, call
+  `/api` as the visitor, or touch the page. That sandbox is what makes storing
+  script in the database acceptable, so never add `allow-same-origin`.
+  `fetch()` from a box only reaches keyless APIs that answer
+  `Access-Control-Allow-Origin: *` (the Weather template uses Open-Meteo).
+- **Site look inside the iframe.** `frameStyles.js` copies the colour tokens in
+  and inlines the two fonts as `data:` URLs. An opaque origin can't load
+  `/fonts/` without CORS headers.
+- **Editing.** Admins get an "Edit layout" toggle at desktop width. Geometry
+  saves on pointer release, and the box is moved locally first and put back if
+  the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
+  HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S.
+  CodeMirror is loaded only when that panel opens. Starter HTML is in
+  `templates.js`. "Import current layout" (shown only on an empty canvas)
+  recreates the old `Home.vue` grid from `defaultLayout.js`.
+- **Phones (≤700px)** get no canvas: boxes stack full-width in `(y, x)` order at
+  their saved height, skipping any with `hideOnMobile`. There is no separate
+  mobile layout. To change the order, move boxes on the desktop canvas.
 
 ## Component conventions
 
@@ -235,7 +270,8 @@ in its header comment; the summary:
 
 | File | Status |
 | --- | --- |
-| `views/home/Home.vue` | live (`/stp`) — imports **Intro2** and **Gym2** |
+| `views/home3/Home3.vue` | live (`/stp`) — the box canvas; its widget boxes use **Intro3** and **Gym2** |
+| `views/home/Home.vue` | legacy fixed grid that `/stp` used to be; no route. Its widgets are still live through `home3/widgetRegistry.js` |
 | `views/home/Intro.vue` | superseded by `Intro2.vue`; not imported |
 | `views/home/Gym.vue` | superseded by `Gym2.vue`; not imported |
 | `views/home2/Home2.vue` | reachable at `/stp2`, but a static mock and unlinked |
