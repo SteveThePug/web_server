@@ -1,6 +1,6 @@
 <script setup>
 /**
- * Layout shell for /cv and /cv/jobs. It renders nothing but the RouterView —
+ * Layout shell for everything under /cv. It renders nothing but the RouterView —
  * its whole job is the UNSCOPED <style> block below, which re-points the site's
  * design tokens from the dark palette in assets/styles.css to ink-on-paper
  * values for everything inside .cv-layout.
@@ -18,7 +18,7 @@ import { RouterView } from "vue-router";
 </template>
 
 <!--
-  Light theme for /cv and /cv/jobs.
+  Light theme for everything under /cv.
 
   Unscoped on purpose. It re-points the site's colour tokens (defined in
   src/assets/styles.css) to ink-on-paper values so the global element styles

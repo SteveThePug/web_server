@@ -69,7 +69,7 @@ Two layout shells, defined in `src/router/index.js`:
 | `/stp` | DefaultLayout | The personal home page: the widget grid |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
 | `/automata`, `/hotels`, `/shrines/*` | DefaultLayout | |
-| `/cv`, `/cv/jobs`, `/cv/leads` | CVLayout | Light print theme; `/cv/jobs` and `/cv/leads` are admin-only |
+| `/cv`, `/cv/pipeline`, `/cv/jobs`, `/cv/leads` | CVLayout | Light print theme; `/cv/jobs` and `/cv/leads` are admin-only, `/cv/pipeline` is the public write-up of them |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
 | `:pathMatch(.*)*` | DefaultLayout | 404 |
 
@@ -301,6 +301,7 @@ in its header comment; the summary:
 | `views/CV/CV{General,Backend,Frontend,Security,Electrical,Hospitality,Analyst,Temp}.vue` | commented out of `CV.vue`'s list; unreachable |
 | `views/CV/JobApplications.vue`, `JobApplicationForm.vue`, `JobReferences.vue` | live (`/cv/jobs`) — the route and its two child components |
 | `views/CV/JobLeads.vue`, `JobSearchProfile.vue`, `JobSources.vue` | live (`/cv/leads`) — the route and its two child components |
+| `views/CV/JobPipeline.vue` | live (`/cv/pipeline`) — static, public write-up of the tracker and leads inbox, linked from the CV; keep it in step with the behaviour it describes |
 | `views/unused/CoverLetters.vue` | **live** despite the directory — it is the "Cover Letter" tab on `/cv` |
 | `views/unused/Notes.vue` | no route points at it; not imported |
 | `components/util/wasm/AutoScroll.vue` | Rust port of the JS AutoScroll; not imported |

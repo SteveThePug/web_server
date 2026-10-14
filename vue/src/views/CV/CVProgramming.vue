@@ -169,8 +169,10 @@ import Project from "./Project.vue";
                         authentication and WebSockets, Vue 3 + Pinia frontend,
                         and PostgreSQL, containerised behind Nginx on a
                         Raspberry Pi. A git push builds, tests, and releases to
-                        production with no manual steps; the Nginx layer adds
-                        per-route rate limiting and automated TLS renewal.
+                        production with no manual steps. Includes a
+                        <a href="/cv/pipeline">job-search pipeline</a> that
+                        finds postings, scores them with Claude and tracks
+                        applications from email.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">

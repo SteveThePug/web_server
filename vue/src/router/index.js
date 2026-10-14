@@ -106,6 +106,13 @@ const router = createRouter({
                     component: () => import("@/views/CV/CV.vue"),
                 },
                 {
+                    // Public on purpose: the write-up of the two admin-only
+                    // pages below, linked from the CV.
+                    path: "pipeline",
+                    name: "job-pipeline",
+                    component: () => import("@/views/CV/JobPipeline.vue"),
+                },
+                {
                     path: "jobs",
                     name: "job-applications",
                     component: () => import("@/views/CV/JobApplications.vue"),
