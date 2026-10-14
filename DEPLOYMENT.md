@@ -57,7 +57,7 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | silverbullet-git | n/a | n/a | none (timer loop) | no |
 | python (FastAPI) | `${PYTHON_HOST}` | `${PYTHON_PORT}` | `/py/`, docs at `/py/docs` | no |
 | jobs (job tracker, published image) | `jobs` | 8080 | `/jobs/` (admin-gated by the app itself) | no |
-| activity-tracker (published image, adamf/ccp) | `activity-tracker` | 8080 | `/tracker/`, prefix stripped (per-device bearer keys) | no |
+| activity-tracker (published image, adamf/ccp) | `activity-tracker` | 8080 | `/tracker/`, prefix stripped (collectors: per-device bearer keys; pages: admin-gated by the app itself) | no |
 | icecast2 + liquidsoap | `${ICECAST_HOST}` | `${ICECAST_PORT}` | `/radio/` | **harbor port only** |
 | gitea | `${GITEA_HOST}` | 3000, 2222 | `/gitea/` | **3000, 2222** |
 | vue | `vue` | 5173 (dev only) | `/` (dev only) | no |

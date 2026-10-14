@@ -481,9 +481,14 @@ services:
   #
   # Same shape as jobs: an explicit `environment:` list and a database role of
   # its own, created by hand once (the ccp README has the command). It applies
-  # its own migrations on start. Collectors authenticate with per-device
-  # bearer keys made by `docker exec activity-tracker tracker apikey create`;
-  # nothing here touches the site's login. No state outside Postgres.
+  # its own migrations on start. No state outside Postgres.
+  #
+  # Two kinds of auth. Collectors send per-device bearer keys, made on the
+  # tracker's /tracker/setup page or with `docker exec activity-tracker
+  # tracker apikey create`. The dashboard and setup pages have no login of
+  # their own: like jobs, the tracker asks AUTH_VALIDATE_URL (the backend's
+  # validate-admin) with the visitor's cookies and sends anyone else to
+  # /admin/login.
   activity-tracker:
     image: adam-french.co.uk/adamf/activity-tracker:${ACTIVITY_TRACKER_IMAGE_TAG:-latest}
     container_name: activity-tracker
@@ -496,6 +501,7 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_TRACKER_USER:-tracker}:${POSTGRES_TRACKER_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_TRACKER_DB:-tracker}?sslmode=disable
       - TRACKER_TZ=${TRACKER_TZ:-}
+      - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
 
   # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
   # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to

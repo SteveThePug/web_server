@@ -368,7 +368,10 @@
         # ---- Activity tracker (/tracker/) ----
         # Its own container (the adamf/ccp repo): an ingest API for device
         # collectors, which send batches of events with a per-device bearer
-        # key. The app does its own auth, so no auth_request. Unlike /jobs/
+        # key, plus a dashboard and setup page. The app does its own auth, so
+        # no auth_request: the pages check the site session by asking the
+        # backend's validate-admin with the visitor's cookies, as /jobs/
+        # does, and /tracker.user.js is public. Unlike /jobs/
         # the prefix IS stripped: the server serves /api/v1/... and /readyz
         # from /. Collectors must use the www host: the apex 301 would turn
         # their POSTs into GETs. Health Auto Export bodies can be several MB;
