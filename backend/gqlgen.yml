@@ -26,13 +26,6 @@ models:
     model:
       - github.com/99designs/gqlgen/graphql.IntID
       - github.com/99designs/gqlgen/graphql.UintID
-  # Bound to MarshalJobStatus / UnmarshalJobStatus in services, so the Go
-  # type stays `string` (models.JobApplication.Status binds as it is) and the
-  # marshaller, not a generated enum type, decides what is accepted and what
-  # is emitted. See services/job_status.go for why.
-  JobStatus:
-    model:
-      - adam-french.co.uk/backend/services.JobStatus
   User:
     model:
       - adam-french.co.uk/backend/models.User
@@ -77,30 +70,6 @@ models:
     fields:
       deletedAt:
         resolver: false
-  JobApplication:
-    model:
-      - adam-french.co.uk/backend/models.JobApplication
-    fields:
-      deletedAt:
-        resolver: false
-  JobAppReference:
-    model:
-      - adam-french.co.uk/backend/models.JobAppReference
-    fields:
-      deletedAt:
-        resolver: false
-  JobSource:
-    model:
-      - adam-french.co.uk/backend/models.JobSource
-    fields:
-      deletedAt:
-        resolver: false
-  JobLead:
-    model:
-      - adam-french.co.uk/backend/models.JobLead
-  JobSearchProfile:
-    model:
-      - adam-french.co.uk/backend/models.JobSearchProfile
   Place:
     model:
       - adam-french.co.uk/backend/models.Place

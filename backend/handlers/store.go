@@ -32,23 +32,11 @@ type Store struct {
 	Auth          *services.Auth
 	Notes         *services.Notes
 	LoginLimiter  *services.RateLimiter
-	EmailSync     *services.EmailSyncService
-	// JobLeads is the lead fetcher (services/job_leads.go). The GraphQL
-	// resolvers use it to start a run and report on one.
-	JobLeads *services.JobLeadService
 
 	// Base URL of the Python service on the Docker network, no trailing
 	// slash. Used for the calls that bypass nginx, all through
-	// services.CallPython: reading a rowing display photo (handle_rowing.go)
-	// and a job posting (handle_job_capture.go). The email pipeline and the
-	// lead pipeline make the other two such calls and hold their own copies
-	// of this value.
+	// services.CallPython: reading a rowing display photo (handle_rowing.go).
 	PythonURL string
-
-	// Bearer token for the browser capture routes (handle_job_capture.go),
-	// generated from the admin panel. Nil, or holding no token, means those
-	// routes are switched off, not open.
-	CaptureToken *services.CaptureToken
 
 	// Registry of .env variables and the request/status hand-off with the
 	// host that applies changes to them (handle_env.go).

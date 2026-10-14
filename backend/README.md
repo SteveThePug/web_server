@@ -112,8 +112,7 @@ test can see.
   and ends.
 - `createPlace`, `updatePlace`, `deletePlace` and the `places` query —
   `@signedIn`. Places are a shared list with no per-user ownership.
-- `users`, `user`, `jobApplications`, `jobApplication`, `jobAppReferences` —
-  queries, but `@admin`: private data.
+- `users`, `user` — queries, but `@admin`: private data.
 
 **What a directive cannot say stays in the resolver**, using `IsAdminFromCtx` /
 `UserIDFromCtx` from `graph/context.go`:
@@ -172,13 +171,12 @@ for the things GraphQL cannot do:
 | REST endpoint | why it is not GraphQL |
 | --- | --- |
 | `/auth/*` | cookie handling and the status-code-only admin probe |
-| `/spotify/callback`, `/email/callback` | OAuth providers redirect a *browser* here |
+| `/spotify/callback` | OAuth providers redirect a *browser* here |
 | `/messages/upload`, `/radio/upload`, `/rowing` (POST) | multipart file uploads |
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
-| `/admin/env`, `/admin/logs`, `/admin/capture-token` | process environment and files on disk, not the data model |
-| `/jobs/capture`, `/jobs/capture/status`, `/jobs/capture/extract` | called by a userscript on other sites' origins, where the `SameSite=Lax` auth cookies are never sent; they take a bearer token instead |
+| `/admin/env`, `/admin/logs` | process environment and files on disk, not the data model |
 
 ### Environment tab
 
@@ -192,14 +190,14 @@ host, which is the part trusted to act.
   read it. It is embedded in the binary and read from the checkout by the host
   script, so one file decides what the panel offers and what the host accepts.
   A test fails if it and `.env.example` disagree.
-- **The `python` service is a third place.** It is the one container given an
+- **The `python` and `jobs` services are a third place.** They are given an
   explicit `environment:` list in `docker-compose.yml` instead of the whole
-  `.env`, so that it never holds the database password or the JWT secret. A
-  new Python variable therefore goes in the registry (with `python` in its
-  `services`), in `.env.example`, *and* in that list.
+  `.env`, so that they never hold the site's database password or the JWT
+  secret. A new variable for either therefore goes in the registry (with the
+  service in its `services`), in `.env.example`, *and* in that list.
   `TestEnvRegistryMatchesComposePythonEnvironment` reads the compose file and
-  fails if a variable the registry says python reads is not passed to it, or
-  if an editable variable passed to it does not list `python`. Locked
+  fails if a variable the registry says one of them reads is not passed to
+  it, or if an editable variable passed to it does not list that service. Locked
   variables carry no `services` and are exempt (`PYTHON_PORT` is one).
 - `GET /admin/env` — the registry plus state from this process's own
   environment. A secret's value is never sent, only "set" and, for values of
@@ -221,109 +219,11 @@ host, which is the part trusted to act.
 The backend is always among the recreated services, because the values the
 panel shows are the ones this process started with.
 
-### Job capture
-
-`handlers/handle_job_capture.go` is the server half of the browser userscript
-(`vue/public/job-capture.user.js`, installed from the tracker page) that adds
-the posting open in the browser to the job tracker.
-
-- **Auth** is `Authorization: Bearer <token>`, checked by
-  `CaptureTokenMiddleware`. The token opens these three routes and nothing
-  else — it cannot read the tracker or reach GraphQL. **With no token
-  generated the routes are off (503)**; that never means "no auth".
-- **The token is generated in the admin panel**, not set in `.env`
-  (`services/capture_token.go`; `GET`/`POST`/`DELETE /admin/capture-token`,
-  cookie-authenticated like the rest of the admin group). It is 32 random
-  bytes, shown once; only its SHA-256 is kept, in
-  `/backend/token/job_capture_token.json` beside the OAuth tokens, so it
-  survives restarts and rebuilds. There is one token at a time: generating
-  again replaces it, which is how a leaked one is rotated.
-- `GET /jobs/capture/status?url=` — is this posting already tracked, and at
-  what status. Drives the script's badge.
-- `POST /jobs/capture/extract` — page text in, `{jobTitle, company, location,
-  notes}` out, read by Claude through the Python service
-  (`/internal/jobs/extract`, see [Calling the Python service](#calling-the-python-service)).
-  Stores nothing.
-- `POST /jobs/capture` — an **upsert**. A posting is matched by its canonical
-  URL (`services.CanonicalJobURL` strips tracking parameters and folds LinkedIn's
-  several URL shapes into one), then by `(company, job title)` the way the
-  email pipeline matches (`services.UpsertJobApplication`, shared with lead
-  promotion). A repeat capture only ever adds: status moves
-  forwards, empty fields are filled, nothing is overwritten.
-
-The upsert is what keeps this and the email pipeline from making two rows for
-one application. It is not watertight: the pipeline still matches on the exact
-title, so a posting captured as "Senior Engineer" whose confirmation email
-says "Senior Engineer (Platform)" becomes a second row.
-
-### Job leads
-
-Where the tracker records applications, this finds postings. It is GraphQL
-throughout (`graph/schema/job_lead.graphql`, all `@admin`) with the work in
-`services/job_leads.go` and `services/job_sources.go`; the page is `/cv/leads`.
-
-- **Three tables.** `JobSource` is one thing to poll: a company's board on
-  Greenhouse, Lever or Ashby (public JSON, no key), or a keyword search on
-  Adzuna or Reed (keys in `.env`). `JobLead` is one posting found. It is
-  **not soft deleted**, like `ProcessedEmail`: the unique index on
-  `(source_kind, external_id)` is the dedup, and it only keeps a dismissed
-  lead dismissed if that lead is still a row. `JobSearchProfile` is a single
-  row: the profile text, three keyword lists and a minimum score.
-- **A run** (`JobLeadService.Run`) is fetch → store → pre-filter → score.
-  Every enabled source is polled; one failing records its error on the source
-  and the rest carry on. Postings not seen before become leads; ones already
-  known only have `last_seen_at` moved. A posting whose canonical URL is
-  already in the tracker is filed as `promoted`, linked to that application,
-  so the inbox never offers it.
-- **The pre-filter** is keywords on the title and location, no Claude. It
-  exists because a company board is mostly irrelevant, and it decides which
-  leads are shown and which cost a call. `matched` is recomputed for every
-  inbox lead on each run, so editing the keywords applies to old leads too.
-- **Scoring** sends each matched, unscored lead and the profile text to the
-  Python service's `/internal/jobs/score`. At most 40 a run, newest first; a
-  lead Claude cannot score is retried on three runs and then left. With an
-  empty profile nothing is scored. If scoring is unavailable (no API key,
-  Python down) the run stops scoring without spending an attempt on any lead.
-- **Scoring the backlog.** The `scoreJobLeads` mutation
-  (`JobLeadService.ScoreAll`, "Score unscored" on the page) scores every
-  matched, unscored lead with no cap and without polling any source. It is
-  for the backlog a first poll of several boards leaves behind, or leads
-  that arrived before the profile was written. A lead that fails is tried
-  once per press. It stops after an hour; pressing again continues.
-- **Rescoring.** The `rescoreJobLeads` mutation (`RescoreAll`, "Rescore all"
-  on the page) scores every matched inbox lead again, for after the profile
-  or `CLAUDE_MODEL` has changed. It does not wipe scores first: a lead keeps
-  its old score until the new one is saved, and `scored_at` is what marks a
-  lead as done by this job. A job that fails partway leaves a mix of old and
-  new scores, and pressing again starts over.
-- **When it runs.** `JOB_LEADS_ENABLED=true` starts a timer
-  (`JOB_LEADS_INTERVAL`, default `6h`); it does not run at start-up, so a
-  deploy spends nothing. The `runJobLeadSync` mutation starts a run in a
-  goroutine and returns at once, whether or not the timer is on, and
-  `jobLeadSyncStatus` reports on it (and on `scoreJobLeads` and
-  `rescoreJobLeads`; only one of the three jobs runs at a time) — a run can take minutes, so unlike
-  `POST /email/sync` it does not hold the request open. The status is in
-  memory and resets on restart.
-- **Promotion** (`promoteJobLead`) is the only way a lead reaches the tracker.
-  It calls `services.UpsertJobApplication` with status `saved`, the lead's
-  text and a notes line carrying the score — the same upsert as the capture
-  endpoint, so a posting captured from the browser in the meantime is linked
-  to, not duplicated.
-
-The Adzuna and Reed response structs were written from the providers'
-documentation, not against live responses (they need keys). If one of those
-sources reports a decode error or zero results, compare its struct in
-`job_sources.go` with a real reply first. Adzuna only returns a snippet of
-each description, so its leads are scored on less text.
-
-Most of this needs Postgres and has no unit test: what is tested is the
-fetchers (against stub servers), the pre-filter, how a fetched posting becomes
-a row, and the scoring call.
-
 ## Calling the Python service
 
 Every Claude call the site makes lives in the Python service; this backend has
-no Anthropic client and does not read `CLAUDE_API_KEY`. It reaches four
+no Anthropic client and does not read `CLAUDE_API_KEY`. (The job tracker at
+`/jobs/` is a separate app with its own Claude calls.) It reaches the
 internal routes directly over the Docker network
 (`http://$PYTHON_HOST:$PYTHON_PORT`, default `python:8000`), never through
 nginx, which answers 404 for `/py/internal/`:
@@ -331,31 +231,27 @@ nginx, which answers 404 for `/py/internal/`:
 | route | caller | sends | gets back |
 | --- | --- | --- | --- |
 | `/internal/rowing/read` | `POST /rowing` (`handlers/handle_rowing.go`) | `{media_type, data}` (image, base64) | `{timeMinutes, timeSeconds, distance}` |
-| `/internal/jobs/extract` | `POST /jobs/capture/extract` (`handlers/handle_job_capture.go`) | `{url, title, text}` | `{jobTitle, company, location, notes}` |
-| `/internal/jobs/score` | the lead pipeline (`services/job_leads.go`) | `{profile, jobTitle, company, location, description}` | `{score, reasons}` |
-| `/internal/email/classify` | the email pipeline (`services/email_sync.go`) | `{message}` | `EmailAnalysis` (below) |
-
-All four go through one function, `services.CallPython[T]` in
+Every route goes through one function, `services.CallPython[T]` in
 `services/python_call.go`: marshal the body, POST it, decode a 200 into `T`.
 It has the one HTTP client (two-minute timeout, above the Python side's own
 worst case of a retried Claude call) and the one rule for failures:
 
 - a **502 whose `detail` is a string** is a message the route wrote for a
   person ("failed to parse image data"). It comes back as a
-  `*services.PythonError`, and the two HTTP handlers relay it to the browser;
+  `*services.PythonError`, and the HTTP handler relays it to the browser;
 - **anything else** — connection refused, a 422 (its `detail` is a list), a
   503 for an unset `CLAUDE_API_KEY`, a reply that will not decode — is an
   ordinary error. Callers log it and show something generic.
 
-It lives in `services` because both `handlers` and `services` need it and
-`handlers` already imports `services`. A new internal route needs only a
+It lives in `services` so that a background job there could use it as well
+as a handler. A new internal route needs only a
 request struct, a reply struct and a one-line call.
 
 ## Services
 
 Everything is constructed in `main` from environment variables and handed to
-`handlers.Store`. Nothing here fails start-up: a missing Spotify token, an
-unconfigured mailbox or an absent Steam key all just leave that feature
+`handlers.Store`. Nothing here fails start-up: a missing Spotify token or an
+absent Steam key all just leave that feature
 dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
 
 - **database.go** — Postgres via GORM. There are no migration files:
@@ -370,74 +266,12 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
 - **spotify.go**, **steam.go**, **gitea.go** — third-party reads. Results are
   cached on `Store` with TTLs of 1 min (Spotify recent, Gitea) and 5 min
   (Steam).
-- **email_sync.go** / **email_imap.go** — the job-application pipeline: fetch
-  recent mail (Microsoft Graph *or* a hand-rolled IMAP client), keyword-filter
-  it, have each survivor classified, create or advance a `JobApplication`.
-  Runs on a timer and can be triggered by an admin.
-
-  The classification is the Python service's `/internal/email/classify`,
-  which owns the prompt, the Claude call and the parsing of the model's
-  reply. Go sends one string — `Subject:`, `From:` and `Date:` lines, a blank
-  line, the cleaned body (capped at 4,000 bytes; the whole message at the
-  200,000 characters Python accepts) — and gets back `EmailAnalysis`:
-  `isJobEmail`, `action`, `company`, `jobTitle`, `status`, and the nullable
-  `location`, `url`, `appliedAt`, `notes`. Everything either side of that
-  call is unchanged and still here: the pre-filter, dedup, retry accounting,
-  matching on (company, job title), and the forward-only status rule. Any
-  failure of the call, whatever its status code, is a failed attempt at that
-  email.
-- **job_leads.go** / **job_sources.go** — the job-lead pipeline. See
-  [Job leads](#job-leads).
-- **job_upsert.go** — `UpsertJobApplication`, the one way a posting is added
-  to the tracker without duplicating a row: used by the capture endpoint and
-  by promoting a lead.
 - **python_call.go** — `CallPython`, the one way to reach the Python service's
   internal routes. See [Calling the Python service](#calling-the-python-service).
-- **job_status.go** — how the `JobStatus` GraphQL enum is read and written.
-  See [Job status](#job-status).
 - **notes.go** — path-traversal-safe file lookup for the notes directory.
 - **seed.go** — dev-only test data. Creates an admin with the password
   `password`, so it must never run in production (`SEED_DB=true` is set only
   in `docker-compose.dev.yml`).
-
-## Job status
-
-A job application's status is one of eight lowercase strings: `saved`,
-`applied`, `screening`, `assessment`, `interviewing`, `offer`, `rejected`,
-`withdrawn`. The list is `statusOrder` in `services/email_sync.go`, which also
-ranks them — the email pipeline and the capture endpoint only ever move a row
-forwards through it (`services.StatusAdvances`).
-
-GraphQL knows the same list as `enum JobStatus`
-(`graph/schema/job_application.graphql`), used for `JobApplication.status` and
-both inputs. `TestJobStatusEnumMatchesStatusOrder` in
-`services/job_status_test.go` parses the schema file and fails unless the enum
-and the map hold the same statuses in the same order, so adding a status means
-editing both. (The classifier prompt in the Python service, the tracker page
-and the userscript list them too, and nothing checks those.)
-
-The enum is bound in `gqlgen.yml` to `services.MarshalJobStatus` /
-`UnmarshalJobStatus` instead of a generated Go type, for two reasons:
-
-- **The column stays a `string`.** `models.JobApplication.Status` binds as it
-  is; there is no migration and no conversion in the pipeline.
-- **Input is strict, output is lenient.** A mutation with a status outside the
-  list is refused (`"hired" is not a valid JobStatus`) — nothing is coerced to
-  `applied` any more. But a row already holding something else, such as the
-  Title Case values the tracker once wrote, must not break reads: `status` is
-  non-null, so a serialisation error on one row would null the entire
-  `jobApplications` list. On the way out a value that matches once trimmed and
-  lowercased is sent in its canonical form, and anything else is sent exactly
-  as stored for the tracker to display and correct.
-
-On the wire nothing changed from when the field was a `String`: the client
-sends `"applied"` as a JSON string variable and reads back `"applied"`. (An
-enum does differ for a status written *inline* in a query document, which must
-now be `status: applied`, unquoted. The front end only uses variables.)
-
-`services.NormalizeStatus`, which trims, lowercases and falls back to
-`applied`, is still what the email pipeline and `POST /jobs/capture` use on
-values that do not come through GraphQL.
 
 ## Regenerating gqlgen
 
@@ -461,9 +295,8 @@ the end of it — which is why shared helpers live in `*_helpers.go` instead.
 to the schema without a corresponding entry in `gqlgen.yml` gets you a fresh
 generated struct rather than the model you expected.
 
-Two scalar-level bindings in `gqlgen.yml` are worth knowing about: `ID` lists
-both `graphql.IntID` and `graphql.UintID` (see IDs under Gotchas), and
-`JobStatus` points at the hand-written marshaller described above.
+One scalar-level binding in `gqlgen.yml` is worth knowing about: `ID` lists
+both `graphql.IntID` and `graphql.UintID` (see IDs under Gotchas).
 
 If you delete a field or stop needing a resolver, delete the resolver function
 by hand before regenerating; otherwise gqlgen keeps it, commented out, in a
@@ -471,8 +304,7 @@ warning block at the end of the file.
 
 ## Gotchas
 
-- **Soft delete everywhere.** Every model except `ProcessedEmail` has a
-  `gorm.DeletedAt`, so `Delete` sets a timestamp and later queries filter the
+- **Soft delete everywhere.** Every model has a `gorm.DeletedAt`, so `Delete` sets a timestamp and later queries filter the
   row out. Rows are never actually removed, and a `uniqueIndex` still collides
   with deleted rows — a soft-deleted username cannot be reused.
 - **`Preload` is not lazy.** `Post.Author` is nil unless the query preloads it;
@@ -486,9 +318,7 @@ warning block at the end of the file.
   unsigned fields are not IDs and still have resolvers: `Message.authorId`,
   `Rowing.time`, `Rowing.distance`.
 - **Deletes error on a missing id.** Every delete mutation loads the row
-  first. `deleteJobApplication` and `deleteJobAppReference` return `Boolean!`
-  rather than the row, so the only value they ever return is `true`; a wrong
-  id is a `record not found` error, not `false`.
+  first, so a wrong id is a `record not found` error.
 - **`Message.AuthorID` is not a user id.** It is a per-process counter handed
   out by the chat hub on connect, meaningless across restarts.
 - **The chat table is capped.** Every insert soft-deletes all but the newest
@@ -500,19 +330,6 @@ warning block at the end of the file.
   stripping and the JSON parsing are all in the Python service; this side
   receives typed JSON or an error (see
   [Calling the Python service](#calling-the-python-service)).
-- **The email pipeline retries a failure up to `maxEmailAttempts` (3) times.**
-  A failed email is recorded with action `"error"` and an attempt counter;
-  while it has attempts left the next sync reprocesses it and updates the same
-  row. Because the fetch window is anchored to *processing* time, which has
-  already moved past the failure, the sync also rewinds the window to the
-  oldest retryable row's `ReceivedAt` — otherwise the email could never be
-  re-fetched. Once the cap is reached the row is terminal, so an email Claude
-  can never parse stops costing API calls. A failure is any error from the
-  classify call — Python down, a 502, a 503 because `CLAUDE_API_KEY` is unset
-  — so an outage of the Python service uses up attempts just as an Anthropic
-  outage does. The one exception is a cancelled sync, which records nothing.
-- **Authenticating email after start-up does not start the scheduler**, which
-  only checks readiness once — restart, or trigger syncs by hand.
 - **Introspection and the playground are off** unless `DEV_MODE=true` *and*
   `GQL_INTROSPECTION` / `GQL_PLAYGROUND` are set.
 - **No graceful shutdown.** `r.Run` blocks forever and its error is ignored;
@@ -531,20 +348,15 @@ warning block at the end of the file.
 | `SEED_DB` | seed dev test data (never in production) |
 | `GQL_INTROSPECTION` / `GQL_PLAYGROUND` | dev-only GraphQL extras |
 | `SPOTIFY_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` / `SPOTIFY_AUTH_STATE` | Spotify OAuth |
-| `PYTHON_HOST` / `PYTHON_PORT` | Python service, for the four Claude routes (default `python:8000`) |
+| `PYTHON_HOST` / `PYTHON_PORT` | Python service, for the rowing photo reader (default `python:8000`) |
 | `GITEA_HOST` / `GITEA_PORT` | Gitea activity feed |
 | `STEAM_API_KEY` / `STEAM_ID` | Steam presence |
-| `EMAIL_SYNC_ENABLED` / `EMAIL_BACKEND` / `EMAIL_SYNC_INTERVAL` | email pipeline (`graph` or `imap`) |
-| `JOB_LEADS_ENABLED` / `JOB_LEADS_INTERVAL` | lead pipeline timer (default off, `6h`) |
-| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` / `REED_API_KEY` | keyword-search lead sources; optional |
-| `MSGRAPH_CLIENT_ID` / `_SECRET` / `_TENANT_ID` / `_REDIRECT_URI` | Microsoft Graph backend |
-| `IMAP_HOST` / `_PORT` / `_EMAIL` / `_PASSWORD` | IMAP backend |
 
 Paths baked into the code, all inside mounted volumes so they survive a
 container restart: `/backend/logs`, `/backend/notes`, `/backend/uploads`,
-`/backend/fallback_music`, `/backend/token/` (Spotify and Microsoft Graph
-OAuth tokens).
+`/backend/fallback_music`, `/backend/token/` (the Spotify OAuth token).
 
 `CLAUDE_API_KEY` is not in the table: the backend does not read it. It is in
-the registry with `services: ["python"]`, because the Python service is the
-only container that uses it.
+the registry with `services: ["python", "jobs"]`, the two containers that use
+it. The email and job-lead variables still in `.env` belong to the job
+tracker (`jobs`), which has its own repo and README.

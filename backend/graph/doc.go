@@ -14,8 +14,6 @@
 //     needed for it. A field resolver is only written where the Go type has
 //     no binding (Message.authorId and Rowing's time/distance are unsigned in
 //     Go and Int in the schema).
-//   - The JobStatus enum is bound to a custom marshaller in
-//     services/job_status.go rather than a generated type; see that file.
 //   - Resolvers reach the database and the third-party caches through
 //     Resolver.Store, the same handlers.Store the REST endpoints use.
 //   - context.go and middleware.go carry the caller's identity from Gin into
@@ -36,8 +34,8 @@
 //
 // The rule of thumb in this schema is that queries are public and mutations
 // are @admin, with these exceptions: login, logout and refreshToken are
-// public; the places mutations and query are @signedIn; and the users, job
-// application and job reference queries are @admin (they are private data).
+// public; the places mutations and query are @signedIn; and the users
+// queries are @admin (they are private data).
 // directives_test.go holds that list and fails when the schema departs from
 // it — in particular when a mutation is added with no directive.
 //

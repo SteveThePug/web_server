@@ -1,9 +1,10 @@
 # Python API service
 
 A small FastAPI app (`app/main.py`) served by uvicorn on port 8000 inside the
-`python` container. It also hosts every Claude call the stack makes, as four
-internal routes: the **rowing display reader**, the **job posting reader**, the
-**job lead scorer** and the **email classifier** (see below). Most of it is one feature: **cheap Travelodge finder** —
+`python` container. It also hosts the site's one Claude call, as an internal
+route: the **rowing display reader** (see below). (The job tracker at `/jobs/`
+is a separate app, `adamf/job-tracker`, with its own Claude calls.) Most of it
+is one feature: **cheap Travelodge finder** —
 given a London location and dates it pulls live room prices from Travelodge and
 adds the cost of getting there from a chosen station on TfL, so you can rank
 hotels by what the night *actually* costs, not just the room.
@@ -15,14 +16,11 @@ hotels by what the night *actually* costs, not just the room.
 | `app/main.py` | HTTP skin: request models/validation, response cache, one-at-a-time guard, NDJSON framing, route handlers |
 | `app/travelodge.py` | All the real work: upstream calls, caching, rate limiting, fare maths, the two search generators |
 | `app/rowing.py` | The Claude call that reads time and distance off a photo of a rowing machine display |
-| `app/jobs.py` | The Claude call that reads job title, company and location off a posting's page text |
-| `app/job_score.py` | The Claude call that scores a discovered posting against the search profile |
-| `app/email_classify.py` | The Claude call that decides whether an email is about a job application |
-| `app/claude.py` | What those four share: the lazily built Anthropic client, the error types, and `ask_json` — the call itself |
+| `app/claude.py` | What a Claude caller needs: the lazily built Anthropic client, the error types, and `ask_json` — the call itself |
 | `app/__init__.py` | Empty; makes `app` a package so `app.main:app` resolves |
 | `tests/` | pytest suite; needs `requirements-dev.txt` (see *Tests*) |
 
-`travelodge.py`, `rowing.py`, `jobs.py`, `job_score.py`, `email_classify.py` and `claude.py` never import FastAPI and can be
+`travelodge.py`, `rowing.py` and `claude.py` never import FastAPI and can be
 driven from a plain script.
 
 ## Endpoints
@@ -40,9 +38,6 @@ Paths below are as the service sees them; from a browser prefix everything with
 | POST | `/hotels/search/stream` | Same search as NDJSON progress lines |
 | POST | `/hotels/scan/stream` | Cheapest night across a date range, NDJSON |
 | POST | `/internal/rowing/read` | **Internal.** Read a rowing display photo with Claude |
-| POST | `/internal/jobs/extract` | **Internal.** Read a job posting's page text with Claude |
-| POST | `/internal/jobs/score` | **Internal.** Score a job posting against the search profile with Claude |
-| POST | `/internal/email/classify` | **Internal.** Classify an email for the job tracker with Claude |
 
 Interactive schema: `/py/docs` (Swagger UI), `/py/openapi.json`.
 
@@ -74,15 +69,15 @@ can't be shared), and identical requests are cached for 10 minutes.
 
 ### Internal routes
 
-The four routes under `/internal/` are the only ones in this service that are
-**not public**. Each spends a paid Claude call and has no auth of its own — the
-admin or token check happens in the Go backend, which calls the container
+Routes under `/internal/` (today only the rowing reader) are the only ones in
+this service that are **not public**. Each spends a paid Claude call and has no
+auth of its own — the admin check happens in the Go backend, which calls the container
 directly (`http://python:8000/...`). Two things keep them internal: nginx
 answers `/py/internal/` with a 404, and the route itself 404s any request
 carrying the `X-Real-IP` / `X-Forwarded-For` headers nginx adds to everything
 it proxies (the Go backend sends neither).
 
-They share their plumbing, in two places:
+Their plumbing is in two places, shared by any route added later:
 
 - **`claude.ask_json`** (`app/claude.py`) is the whole Claude call: send one
   prompt that asks for a bare JSON object, take the first text block, strip a
@@ -98,7 +93,7 @@ They share their plumbing, in two places:
   with a string `detail`. The guard runs as a dependency, so a request from
   outside is a 404 before its body is validated.
 
-All four use one model, `MODEL` in `claude.py`: the `CLAUDE_MODEL` variable,
+Every route uses one model, `MODEL` in `claude.py`: the `CLAUDE_MODEL` variable,
 or `claude-sonnet-5-5` when it is blank. It is chosen on the admin panel's
 Environment tab from `claude-haiku-4-5`, `claude-sonnet-5-5` and
 `claude-opus-5-5`, and saving it there restarts this service. The request is
@@ -112,7 +107,7 @@ they see this service's error rather than their own.
 
 #### Adding another Claude-backed internal route
 
-1. **A module** `app/<thing>.py`, shaped like `jobs.py`: the prompt, a
+1. **A module** `app/<thing>.py`, shaped like `rowing.py`: the prompt, a
    pydantic model whose field names are the keys the prompt asks for (give
    every field a default — the model leaves keys out), and one function that
    returns `ask_json(Model, max_tokens=..., system=..., messages=[...],
@@ -130,14 +125,14 @@ they see this service's error rather than their own.
    A plain `def`, so the blocking call runs in the threadpool. No `try`, no
    guard call — the wrapper supplies both. Add the route to the endpoint list
    in `main.py`'s docstring and bump the FastAPI `version`.
-3. **Tests** `tests/test_<thing>.py`, copied from `test_jobs.py`: fake the
+3. **Tests** `tests/test_<thing>.py`, copied from `test_rowing.py`: fake the
    client with `monkeypatch.setattr(thing, "_client", ...)`.
 4. **Docs**: the endpoint table and a section here. Nothing to do in nginx —
    it already 404s everything under `/py/internal/`.
 
 If third-party text goes into the prompt (a web page, an email), say in the
-system prompt that it is data and not instructions, as `jobs.py` and
-`email_classify.py` do — and keep the output to fields that are stored or
+system prompt that it is data and not instructions (the job tracker's
+prompts, in its own repo, are examples) — and keep the output to fields that are stored or
 shown, never acted on.
 
 ### Rowing display reader (internal)
@@ -154,82 +149,6 @@ Errors: 502 with a fixed `detail` (`failed to process image`, `empty response
 from image processor`, `failed to parse image data`) that the Go handler
 relays to the admin; 503 if `CLAUDE_API_KEY` is unset.
 
-### Job posting reader (internal)
-
-`POST /internal/jobs/extract` takes `{"url", "title", "text"}` — a page's
-address, `<title>` and visible text — and returns `{"jobTitle", "company",
-"location", "notes"}` as read by Claude. It is the Claude
-half of the Go backend's token-guarded `POST /api/jobs/capture/extract`, which
-the browser userscript (`vue/public/job-capture.user.js`) calls to pre-fill
-its popup.
-
-Claude rather than selectors because the pages are LinkedIn, a dozen ATS
-products and arbitrary company sites. A page that is not a posting is a 200
-with empty strings, so the popup can be filled in by hand. The page text is
-untrusted third-party content: the prompt fences it off as data, and the
-output is only ever four form fields that are checked by eye before saving.
-
-`text` is capped at 40,000 characters (`MAX_TEXT_CHARS`); the Go handler cuts
-to the same length first. Errors: 502 with a fixed `detail` (`failed to read
-the posting`, `empty response from the posting reader`, `failed to parse the
-posting`); 503 if `CLAUDE_API_KEY` is unset.
-
-### Job lead scorer (internal)
-
-`POST /internal/jobs/score` takes `{"profile", "jobTitle", "company",
-"location", "description"}` and returns `{"score", "reasons"}`: a 0-100 fit
-score and a sentence or two saying why. It is the Claude half of the Go
-backend's job-lead pipeline (`backend/services/job_leads.go`), which polls job
-boards, pre-filters by keyword and calls this once per surviving lead. The
-profile is the free text edited on `/cv/leads`.
-
-Unlike the other models here, `LeadScore.score` has no default: a reply
-without a usable number between 0 and 100 is a 502, not a score of zero, so
-the pipeline retries the lead instead of filing it at the bottom of the inbox.
-Both the posting and the profile are fenced off as data in the prompt, and the
-output is only ever shown beside the posting for a person to act on.
-
-`description` is capped at 40,000 characters (`MAX_DESCRIPTION_CHARS`) and
-`profile` at 12,000 (`MAX_PROFILE_CHARS`); the Go pipeline cuts to the same
-lengths first. Errors: 502 with a fixed `detail` (`failed to score the
-posting`, `empty response from the posting scorer`, `failed to parse the
-score`), which the pipeline counts as a failed attempt at that lead; 503 if
-`CLAUDE_API_KEY` is unset, which stops its scoring for the run.
-
-### Email classifier (internal)
-
-`POST /internal/email/classify` takes `{"message": "..."}` — one email as the
-Go email pipeline (`backend/services/email_sync.go`) formats it: `Subject:`,
-`From:` and `Date:` lines, a blank line, then the cleaned body. The string is
-sent to Claude unchanged as the user turn, with the classification
-instructions in the system prompt, and `max_tokens` 512.
-
-It returns
-
-```
-{"isJobEmail", "action", "company", "jobTitle", "status",
- "location", "url", "appliedAt", "notes"}
-```
-
-`isJobEmail` is a bool (default `false`); `action`, `company`, `jobTitle` and
-`status` are strings (default `""`, and a `null` from the model becomes `""`);
-the last four are a string or `null`. Every key is always present in the
-response. The prompt tells the model to send only `isJobEmail` when it is
-false, which is why nothing else is required — an email that is not about a
-job is a 200, not an error. `action` and `status` are not checked against the
-values the prompt lists; what to do with the verdict (match an application,
-create or update the row, record the email as processed) is the Go
-pipeline's job.
-
-The email is untrusted third-party content: the system prompt tells the model
-to treat it as data, and the output is only ever the fields of one job-tracker
-row.
-
-`message` is capped at 200,000 characters (`MAX_MESSAGE_CHARS`). Errors: 502
-with a fixed `detail` (`failed to classify the email`, `empty response from
-the email classifier`, `failed to parse the email classification`); 503 if
-`CLAUDE_API_KEY` is unset.
-
 ## Behind nginx
 
 `nginx/nginx.conf.template` proxies `/py/` to this container and **strips the
@@ -245,7 +164,7 @@ braces version of the same thing. The internal deadlines in `travelodge.py`
 return partial results with `summary.truncated = true` instead of dying.
 
 Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
-`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` and `CLAUDE_MODEL` for the four internal Claude routes. Dev mode mounts `python/app` and runs
+`TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` and `CLAUDE_MODEL` for the internal Claude route. Dev mode mounts `python/app` and runs
 uvicorn with `--reload`.
 
 ## Running locally

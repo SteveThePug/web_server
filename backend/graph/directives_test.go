@@ -187,17 +187,9 @@ func TestSignedInMutationsArePinned(t *testing.T) {
 // `spotifyNeedsReauth` is false for non-admins.
 func TestGuardedQueriesArePinned(t *testing.T) {
 	want := map[string]string{
-		"users":             "admin",
-		"user":              "admin",
-		"jobApplications":   "admin",
-		"jobApplication":    "admin",
-		"jobAppReferences":  "admin",
-		"jobSources":        "admin",
-		"jobLeads":          "admin",
-		"jobLead":           "admin",
-		"jobSearchProfile":  "admin",
-		"jobLeadSyncStatus": "admin",
-		"places":            "signedIn",
+		"users":  "admin",
+		"user":   "admin",
+		"places": "signedIn",
 	}
 	got := map[string]string{}
 	for _, field := range schemaUnderTest().Query.Fields {
@@ -283,8 +275,8 @@ func TestGuardedFieldsRefuseOverTheWire(t *testing.T) {
 		want  string
 	}{
 		{"anonymous admin query", context.Background(), `{ users { id } }`, "admin access required"},
-		{"non-admin admin query", withClaims(2, false), `{ jobApplications { id } }`, "admin access required"},
-		{"anonymous admin mutation", context.Background(), `mutation { deleteJobApplication(id: 1) }`, "admin access required"},
+		{"non-admin admin query", withClaims(2, false), `{ users { id } }`, "admin access required"},
+		{"anonymous admin mutation", context.Background(), `mutation { deleteBookmark(id: 1) { id } }`, "admin access required"},
 		{"non-admin admin mutation", withClaims(2, false), `mutation { deleteUser(id: 1) { id } }`, "admin access required"},
 		{"anonymous signed-in query", context.Background(), `{ places { id } }`, "authentication required"},
 		{"anonymous signed-in mutation", context.Background(), `mutation { deletePlace(id: 1) { id } }`, "authentication required"},
@@ -298,40 +290,6 @@ func TestGuardedFieldsRefuseOverTheWire(t *testing.T) {
 				t.Fatalf("errors = %q, want exactly %q", got, c.want)
 			}
 		})
-	}
-}
-
-// The JobStatus enum over the wire, from the side the tracker page uses it:
-// status sent as a JSON string variable. A value in the vocabulary reaches the
-// resolver (shown by the resolver's own validation error, which comes before
-// any database access); one outside it is refused before the resolver runs.
-func TestJobStatusInputOverTheWire(t *testing.T) {
-	const mutation = `mutation ($input: CreateJobApplicationInput!) { createJobApplication(input: $input) { id status } }`
-	admin := withClaims(1, true)
-	input := func(status any) map[string]any {
-		// A blank title makes the resolver return early, so no test here
-		// needs a database.
-		return map[string]any{"input": map[string]any{"jobTitle": " ", "company": "Acme", "status": status}}
-	}
-
-	for _, status := range []string{"saved", "applied", "screening", "assessment", "interviewing", "offer", "rejected", "withdrawn"} {
-		got := execute(t, admin, mutation, input(status))
-		if !slices.Equal(got, []string{"jobTitle and company are required"}) {
-			t.Errorf("status %q: errors = %q, want it accepted and the resolver reached", status, got)
-		}
-	}
-
-	for _, status := range []any{"hired", "Applied", "", " applied", 3} {
-		got := execute(t, admin, mutation, input(status))
-		if len(got) != 1 || got[0] == "jobTitle and company are required" {
-			t.Errorf("status %#v: errors = %q, want it refused before the resolver", status, got)
-		}
-	}
-
-	// The guard still comes first: an anonymous caller learns nothing about
-	// the vocabulary from a valid input.
-	if got := execute(t, context.Background(), mutation, input("applied")); !slices.Equal(got, []string{"admin access required"}) {
-		t.Errorf("anonymous: errors = %q", got)
 	}
 }
 

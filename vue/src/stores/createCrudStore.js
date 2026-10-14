@@ -1,8 +1,7 @@
 /**
- * Factory for the "CRUD store" pattern shared by stores/places.js,
- * jobApplications.js and jobAppReferences.js.
+ * Factory for the "CRUD store" pattern, used by stores/places.js.
  *
- * Each of those is one GraphQL type with the schema's standard quartet — a list
+ * A store built with it is one GraphQL type with the schema's standard quartet — a list
  * query, `create<Type>(input:)`, `update<Type>(id:, input:)` and
  * `delete<Type>(id:)` — plus a local array that is patched after each mutation
  * instead of being refetched. The operation and input-type names are derived

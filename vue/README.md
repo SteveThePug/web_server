@@ -69,7 +69,7 @@ Two layout shells, defined in `src/router/index.js`:
 | `/stp` | DefaultLayout | The personal home page: the widget grid |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
 | `/automata`, `/hotels`, `/shrines/*` | DefaultLayout | |
-| `/cv`, `/cv/jobs`, `/cv/leads` | CVLayout | Light print theme; `/cv/jobs` and `/cv/leads` are admin-only |
+| `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
 | `:pathMatch(.*)*` | DefaultLayout | 404 |
 
@@ -101,7 +101,7 @@ guard first awaits `auth.ensureLoaded()` and then reads `auth.user.admin`.
 
 The guard deliberately does not wait on the home query. It used to, via
 `homeData.loaded`, which is only set on success — so when that query failed
-(it fans out to Spotify, Steam and Gitea) navigation to `/admin` or `/cv/jobs`
+(it fans out to Spotify, Steam and Gitea) navigation to `/admin`
 never resolved. The auth store does not import `homeData` at all; the
 dependency runs the other way.
 
@@ -169,11 +169,6 @@ true only once a fetch has succeeded, meaning the data is real. Waiting on
 | `auth` | current user (`ensureLoaded()`, see Routing), plus login/logout mutations |
 | `posts`, `favorites`, `activity`, `songs`, `steam` | mirror one slice of `homeData` via an `immediate` watch, and keep a placeholder value until real data arrives |
 | `places` | CRUD via `createCrudStore`; sign-in only, so it is fetched lazily |
-| `jobApplications` | CRUD via `createCrudStore` for `/cv/jobs`, plus `fetchDescription(id)` |
-| `jobAppReferences` | CRUD via `createCrudStore` for the Quick Reference box on `/cv/jobs` |
-| `jobSources` | CRUD via `createCrudStore` for the watch list on `/cv/leads` |
-| `jobLeads` | the leads inbox: list, dismiss / restore / promote, `fetchDescription(id)`, and the fetcher's run and status |
-| `jobSearchProfile` | the single profile row on `/cv/leads`: fetch and save |
 | `messages` | the chat WebSocket — not GraphQL at all |
 | `models` | dormant; not imported anywhere |
 
@@ -189,66 +184,14 @@ Two factories keep the repeated shapes in one place:
   `update`, `remove` and `loaded` / `loading` / `error`, and patches the local
   array after each mutation rather than refetching. `fields` is interpolated
   into every operation so the selection sets cannot drift. Options cover the
-  real differences between the three users: `itemsKey` (the name the array is
+  differences between types: `itemsKey` (the name the array is
   exposed under), `insert` (`"prepend"` or `"append"`), `deleteReturns`
-  (`"object"` for `deletePlace`, `"boolean"` for the job tracker's deletes — a
-  scalar must not be given a selection set) and `extend` for extra actions.
+  (`"object"` for `deletePlace`, `"boolean"` for a delete that returns a
+  scalar — a scalar must not be given a selection set) and `extend` for extra actions.
 
   The error contract is deliberate: `fetch()` never throws and records the
   failure on `error`; the mutations throw, so the form that called them can
   show the message and keep what was typed.
-
-## The job tracker (`/cv/jobs`)
-
-| File | Holds |
-| --- | --- |
-| `views/CV/JobApplications.vue` | the route: page frame, the one error banner, pipeline bar, filter/sort, the applications table and its inline editing |
-| `views/CV/JobApplicationForm.vue` | the "add an application" form |
-| `views/CV/JobReferences.vue` | the Quick Reference box — a separate table |
-| `views/CV/jobStatus.js` | `STATUS_OPTIONS` and `OPEN_STATUSES` |
-| `views/CV/jobs-shared.css` | the input classes all three use (see Styling) |
-| `stores/jobApplications.js`, `stores/jobAppReferences.js` | all the GraphQL |
-
-The two child components have no error display. They emit `fail` (with the
-error) and `ok`, and the parent's banner shows or clears the message — one
-banner for the page, as before the split.
-
-The list query leaves out `description`, the captured posting text, because it
-is tens of kilobytes a row. It is fetched for one row when its "Posting" button
-is pressed, and cached in the view for that visit only.
-
-**The status list is a copy.** The source of truth is `enum JobStatus` in
-`backend/graph/schema/job_application.graphql`, ranked by `statusOrder` in
-`backend/services/email_sync.go`; the server rejects anything outside it. A
-third copy lives in `public/job-capture.user.js`, which is a single installed
-file and cannot import `jobStatus.js`. Change all three together — and bump the
-userscript's `@version`, or installed copies will not update.
-
-## The leads inbox (`/cv/leads`)
-
-Postings the backend found by polling job boards (`backend/README.md`, "Job
-leads"), scored by Claude against a profile. Nothing here is in the tracker
-until **Track** is pressed on a lead, which adds it to `/cv/jobs` as Saved.
-
-| File | Holds |
-| --- | --- |
-| `views/CV/JobLeads.vue` | the route: page frame, the one error banner, "Check now" and its status polling, the tabs and the list of leads |
-| `views/CV/JobSearchProfile.vue` | the profile text, keyword lists and minimum score |
-| `views/CV/JobSources.vue` | the watch list: company boards and keyword searches |
-| `stores/jobLeads.js`, `stores/jobSources.js`, `stores/jobSearchProfile.js` | all the GraphQL |
-
-Same conventions as the tracker: the children emit `fail` / `ok` for the
-parent's banner, and a lead's `description` is fetched per row. Two things
-differ. "Check now" (poll the sources, score up to forty), "Score unscored"
-(poll nothing, score the whole backlog) and "Rescore all" (score every inbox
-lead again) do not wait for the job —
-the mutation returns at once and the page polls `jobLeadSyncStatus` every
-three seconds, reloading the leads as it goes and the sources at the end. And the box styles the children share (`.jl-box`,
-`.jl-hint`, `.jl-warn`) are in an unscoped `<style>` block in `JobLeads.vue`,
-under `.jl-root`, for the reason `jobs-shared.css` exists.
-
-The source kinds in `JobSources.vue` are a copy of the list in
-`backend/services/job_sources.go`; the server rejects any other.
 
 ## Component conventions
 
@@ -299,8 +242,6 @@ in its header comment; the summary:
 | `views/home/BadApple.vue` | unfinished ASCII video player; not imported |
 | `views/CV/CVProgramming.vue` | live — the only CV template listed in `CV.vue` |
 | `views/CV/CV{General,Backend,Frontend,Security,Electrical,Hospitality,Analyst,Temp}.vue` | commented out of `CV.vue`'s list; unreachable |
-| `views/CV/JobApplications.vue`, `JobApplicationForm.vue`, `JobReferences.vue` | live (`/cv/jobs`) — the route and its two child components |
-| `views/CV/JobLeads.vue`, `JobSearchProfile.vue`, `JobSources.vue` | live (`/cv/leads`) — the route and its two child components |
 | `views/unused/CoverLetters.vue` | **live** despite the directory — it is the "Cover Letter" tab on `/cv` |
 | `views/unused/Notes.vue` | no route points at it; not imported |
 | `components/util/wasm/AutoScroll.vue` | Rust port of the JS AutoScroll; not imported |
@@ -319,9 +260,9 @@ Everything visual is defined in a handful of places:
 | File | What it holds |
 | --- | --- |
 | `src/assets/styles.css` | Fonts, **design tokens**, default element styles (dark theme), reusable classes (`bdr-1`, `bdr-2`, `page-a4`, `halftone`), the `slide` and `fade` transitions, print rules |
-| `src/layouts/CVLayout.vue` | The **light theme** for `/cv`, `/cv/jobs` and `/cv/leads`: re-points the colour tokens to ink-on-paper values and holds the shared `.cv-btn` styles |
+| `src/layouts/CVLayout.vue` | The **light theme** for `/cv`: re-points the colour tokens to ink-on-paper values and holds the shared `.cv-btn` styles |
 | `src/views/CV/cv-shared.css` | Typography and page layout for the CV templates (`.cv-template`, `.cv-page`, `--cv-*` size variables) |
-| `src/views/CV/jobs-shared.css` | The job tracker's input classes (`.ja-input`, `.ja-input-sm`, `.ja-select`), shared by `JobApplications.vue` and its two child components, and by the leads page, whose root carries the class too; every selector is prefixed with the page's `.ja-root` class |
+
 | `src/views/hotels/hotels-shared.css` | Panels, forms, tables and tab strip for `/hotels`, shared by the single-stay and cheapest-night panels; every selector is prefixed with the page's `.hotels` root class |
 
 ### Tokens

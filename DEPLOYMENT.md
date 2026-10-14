@@ -56,6 +56,7 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | silverbullet-public (notes site) | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only) | no |
 | silverbullet-git | n/a | n/a | none (timer loop) | no |
 | python (FastAPI) | `${PYTHON_HOST}` | `${PYTHON_PORT}` | `/py/`, docs at `/py/docs` | no |
+| jobs (job tracker, published image) | `jobs` | 8080 | `/jobs/` (admin-gated by the app itself) | no |
 | icecast2 + liquidsoap | `${ICECAST_HOST}` | `${ICECAST_PORT}` | `/radio/` | **harbor port only** |
 | gitea | `${GITEA_HOST}` | 3000, 2222 | `/gitea/` | **3000, 2222** |
 | vue | `vue` | 5173 (dev only) | `/` (dev only) | no |
@@ -231,7 +232,8 @@ of deleting the directory:
 |---|---|---|
 | `./certbot/conf` | TLS certificates and **private keys** | Gitignored. Never commit. |
 | `./certbot/www` | ACME challenge webroot | Transient by nature |
-| `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) and the **job capture token hash** (`job_capture_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild, and the capture userscript a new token from the admin panel. |
+| `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild. |
+| `./jobs-data` | The job tracker's **capture token hash** and Graph OAuth session | Gitignored. Must be owned by uid 1000, the user the `jobs` image runs as. |
 | `./env-apply/run` | The admin panel's queued `.env` change (`request.json`) and the host's report on it (`status.json`) | Gitignored. Transient, but must be owned by the deploy user, not root — see §5. |
 | `./gitea/data` | Git repositories, LFS objects, avatars, sessions | The actual git data |
 | `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
@@ -262,10 +264,11 @@ convention for overriding `app.ini` keys), and `python` receives an explicit
 allow-list, so it never sees the database password or any API key other than
 the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY`, plus `CLAUDE_MODEL`,
 which picks the model). The Python service
-makes every Claude call in the stack — rowing photo reader, job posting reader,
-job lead scorer and email classifier — so it is the only container that reads `CLAUDE_API_KEY`;
-the backend receives it through `env_file` but no longer uses it. A new
-variable for the Python service has to be added to that allow-list as well as
+makes the site's one Claude call (the rowing photo reader); the `jobs` container
+(the job tracker, built from its own repo) makes its own, and gets a similar
+allow-list with its own database role. The backend receives `CLAUDE_API_KEY`
+through `env_file` but does not use it. A new variable for either service has
+to be added to its allow-list as well as
 `.env.example` and `backend/services/env_registry.json`; backend tests fail if
 the three disagree.
 

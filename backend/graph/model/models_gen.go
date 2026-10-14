@@ -30,33 +30,6 @@ type CreateFavoriteInput struct {
 	Link *string `json:"link,omitempty"`
 }
 
-type CreateJobAppReferenceInput struct {
-	Category  string `json:"category"`
-	Label     string `json:"label"`
-	Value     string `json:"value"`
-	SortOrder *int   `json:"sortOrder,omitempty"`
-}
-
-type CreateJobApplicationInput struct {
-	JobTitle    string     `json:"jobTitle"`
-	Company     string     `json:"company"`
-	Location    *string    `json:"location,omitempty"`
-	URL         *string    `json:"url,omitempty"`
-	Status      string     `json:"status"`
-	Notes       *string    `json:"notes,omitempty"`
-	AppliedAt   *time.Time `json:"appliedAt,omitempty"`
-	Description *string    `json:"description,omitempty"`
-}
-
-type CreateJobSourceInput struct {
-	Kind     string  `json:"kind"`
-	Label    string  `json:"label"`
-	Token    *string `json:"token,omitempty"`
-	Query    *string `json:"query,omitempty"`
-	Location *string `json:"location,omitempty"`
-	Enabled  *bool   `json:"enabled,omitempty"`
-}
-
 type CreatePlaceInput struct {
 	Title    string  `json:"title"`
 	Location *string `json:"location,omitempty"`
@@ -85,12 +58,6 @@ type GiteaFeedItem struct {
 	OpType        string    `json:"opType"`
 	CommitMessage string    `json:"commitMessage"`
 	CreatedAt     time.Time `json:"createdAt"`
-}
-
-type JobLeadSyncStatus struct {
-	Running   bool       `json:"running"`
-	LastRunAt *time.Time `json:"lastRunAt,omitempty"`
-	LastError string     `json:"lastError"`
 }
 
 type LoginInput struct {
@@ -144,41 +111,6 @@ type SteamGame struct {
 type SteamStatus struct {
 	Online      bool         `json:"online"`
 	RecentGames []*SteamGame `json:"recentGames"`
-}
-
-type UpdateJobAppReferenceInput struct {
-	Category  *string `json:"category,omitempty"`
-	Label     *string `json:"label,omitempty"`
-	Value     *string `json:"value,omitempty"`
-	SortOrder *int    `json:"sortOrder,omitempty"`
-}
-
-type UpdateJobApplicationInput struct {
-	JobTitle    *string    `json:"jobTitle,omitempty"`
-	Company     *string    `json:"company,omitempty"`
-	Location    *string    `json:"location,omitempty"`
-	URL         *string    `json:"url,omitempty"`
-	Status      *string    `json:"status,omitempty"`
-	Notes       *string    `json:"notes,omitempty"`
-	AppliedAt   *time.Time `json:"appliedAt,omitempty"`
-	Description *string    `json:"description,omitempty"`
-}
-
-type UpdateJobSearchProfileInput struct {
-	Profile         *string `json:"profile,omitempty"`
-	IncludeKeywords *string `json:"includeKeywords,omitempty"`
-	ExcludeKeywords *string `json:"excludeKeywords,omitempty"`
-	Locations       *string `json:"locations,omitempty"`
-	MinScore        *int    `json:"minScore,omitempty"`
-}
-
-type UpdateJobSourceInput struct {
-	Kind     *string `json:"kind,omitempty"`
-	Label    *string `json:"label,omitempty"`
-	Token    *string `json:"token,omitempty"`
-	Query    *string `json:"query,omitempty"`
-	Location *string `json:"location,omitempty"`
-	Enabled  *bool   `json:"enabled,omitempty"`
 }
 
 type UpdatePlaceInput struct {

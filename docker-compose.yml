@@ -401,9 +401,9 @@ services:
   # Note this service uses `environment:` with an explicit allow-list rather
   # than `env_file: ./.env` — it only gets the variables it needs and never
   # sees the database password, Spotify secrets, or the other API keys.
-  # CLAUDE_API_KEY is the one secret on the list: the rowing photo reader and
-  # the job posting reader (POST /internal/rowing/read and /internal/jobs/extract,
-  # called by the backend, blocked at nginx) make their Claude calls here.
+  # CLAUDE_API_KEY is the one secret on the list: the rowing photo reader
+  # (POST /internal/rowing/read, called by the backend, blocked at nginx)
+  # makes its Claude call here.
   python:
     build:
       context: ./python

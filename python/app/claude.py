@@ -1,10 +1,9 @@
 """The Anthropic client and the one call every Claude caller here makes.
 
-`rowing` (a photo in, three numbers out), `jobs` (page text in, a few fields
-out), `job_score` (a posting and a profile in, a score out) and
-`email_classify` (an email in, a verdict out) are the same shape of call: one prompt asking for bare JSON, one reply to parse. That whole sequence
-is `ask_json` below, so a caller is a prompt, a pydantic model and three error
-strings, and the handling around the call cannot drift between them. Also
+`rowing` (a photo in, three numbers out) is a call of a general shape: one
+prompt asking for bare JSON, one reply to parse. That whole sequence is
+`ask_json` below, so a caller is a prompt, a pydantic model and three error
+strings, and another caller would get the same handling around the call. Also
 here: the lazily built client and the two exception types `main` maps to 502
 and 503.
 

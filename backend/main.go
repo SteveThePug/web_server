@@ -89,10 +89,10 @@ func main() {
 	spotifyConfig := services.SpotifyConfig{RedirectURL: spotifyRedirectURL, ClientID: spotifyClientID, ClientSecret: spotifyClientSecret}
 	spotifyAuth, spotifyClient := services.InitSpotifyAuth(&spotifyConfig)
 
-	// No Claude client here: every Claude call — the rowing photo reader, the
-	// job posting reader and the email classifier — is made by the Python
-	// service, which is the only container that reads CLAUDE_API_KEY. The
-	// backend reaches those routes at pythonURL, below.
+	// No Claude client here: the site's one Claude call, the rowing photo
+	// reader, is made by the Python service, which is the only container of
+	// the site's own that reads CLAUDE_API_KEY. The backend reaches it at
+	// pythonURL, below. (The job tracker, a separate container, makes its own.)
 
 	authSecret := os.Getenv("BACKEND_SECRET")
 	backendEndpoint := os.Getenv("BACKEND_ENDPOINT")
@@ -116,7 +116,7 @@ func main() {
 
 	// PYTHON SERVICE
 	// Called directly over the Docker network, not through nginx, for its
-	// four /internal/ Claude routes (services/python_call.go). The defaults
+	// /internal/ Claude route (services/python_call.go). The defaults
 	// mirror docker-compose.yml, where both variables are optional.
 	pythonHost := os.Getenv("PYTHON_HOST")
 	if pythonHost == "" {
@@ -128,62 +128,9 @@ func main() {
 	}
 	pythonURL := fmt.Sprintf("http://%s:%s", pythonHost, pythonPort)
 
-	// EMAIL SYNC
-	// An unparseable EMAIL_SYNC_INTERVAL is silently ignored and the 30
-	// minute default stands — a typo here fails quietly.
-	emailSyncInterval := 30 * time.Minute
-	if interval := os.Getenv("EMAIL_SYNC_INTERVAL"); interval != "" {
-		if parsed, err := time.ParseDuration(interval); err == nil {
-			emailSyncInterval = parsed
-		}
-	}
-	emailSyncConfig := services.EmailSyncConfig{
-		Backend:      os.Getenv("EMAIL_BACKEND"),
-		ClientID:     os.Getenv("MSGRAPH_CLIENT_ID"),
-		ClientSecret: os.Getenv("MSGRAPH_CLIENT_SECRET"),
-		TenantID:     os.Getenv("MSGRAPH_TENANT_ID"),
-		RedirectURI:  os.Getenv("MSGRAPH_REDIRECT_URI"),
-		IMAP: &services.IMAPConfig{
-			Host:     os.Getenv("IMAP_HOST"),
-			Port:     os.Getenv("IMAP_PORT"),
-			Email:    os.Getenv("IMAP_EMAIL"),
-			Password: os.Getenv("IMAP_PASSWORD"),
-		},
-		SyncInterval: emailSyncInterval,
-		Enabled:      os.Getenv("EMAIL_SYNC_ENABLED") == "true",
-	}
-	emailSync := services.InitEmailSync(&emailSyncConfig, db, pythonURL)
-
-	// JOB LEADS
-	// Like EMAIL_SYNC_INTERVAL, an unparseable JOB_LEADS_INTERVAL is ignored
-	// and the default stands. Six hours: boards change a few times a day at
-	// most, and every run can spend Claude calls.
-	jobLeadsInterval := 6 * time.Hour
-	if interval := os.Getenv("JOB_LEADS_INTERVAL"); interval != "" {
-		if parsed, err := time.ParseDuration(interval); err == nil && parsed > 0 {
-			jobLeadsInterval = parsed
-		}
-	}
-	jobLeads := services.InitJobLeads(&services.JobLeadConfig{
-		Enabled:      os.Getenv("JOB_LEADS_ENABLED") == "true",
-		Interval:     jobLeadsInterval,
-		AdzunaAppID:  os.Getenv("ADZUNA_APP_ID"),
-		AdzunaAppKey: os.Getenv("ADZUNA_APP_KEY"),
-		ReedAPIKey:   os.Getenv("REED_API_KEY"),
-	}, db, pythonURL)
-
 	// 5 login attempts per IP per minute, applied by both the REST handler
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
-
-	// JOB CAPTURE
-	// The userscript's bearer token is generated in the admin panel and kept
-	// (hashed) beside the OAuth tokens. A damaged file is logged, not fatal:
-	// capture stays off until a new token is generated.
-	captureToken, err := services.InitCaptureToken(services.CAPTURE_TOKEN_JSON_PATH)
-	if err != nil {
-		log.Println("Job capture token not loaded:", err)
-	}
 
 	// ENVIRONMENT
 	// The registry is embedded, so the only way this fails is a malformed
@@ -193,7 +140,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, EmailSync: emailSync, JobLeads: jobLeads, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, CaptureToken: captureToken, Env: envManager}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, Env: envManager}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
@@ -201,12 +148,6 @@ func main() {
 	// Paths below have no /api prefix: nginx strips it before proxying.
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
-
-	// JOB CAPTURE and EMAIL SYNC routes moved to the job tracker app
-	// (adamf/job-tracker, served at /jobs/). They are no longer registered
-	// here, so an old userscript gets a 404 instead of writing into tables
-	// the tracker no longer reads. The handlers are deleted in a later
-	// commit, once the tracker has run for a while.
 
 	// ROWING
 	r.GET("/rowing", store.GetRowing)
@@ -252,11 +193,6 @@ func main() {
 	admin.PUT("/admin/env", store.UpdateEnv)
 	admin.GET("/admin/env/status", store.GetEnvStatus)
 	admin.DELETE("/admin/env/pending", store.CancelEnv)
-	// The job capture token is managed with the session cookie, never with
-	// the token itself.
-	admin.GET("/admin/capture-token", store.GetCaptureToken)
-	admin.POST("/admin/capture-token", store.GenerateCaptureToken)
-	admin.DELETE("/admin/capture-token", store.RevokeCaptureToken)
 
 	// GRAPHQL
 	// GraphQL is assembled by hand rather than with handler.NewDefaultServer
@@ -307,11 +243,6 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
-
-	// The email sync and job-lead schedulers are NOT started: the job tracker
-	// runs them now, and it reads the same EMAIL_SYNC_ENABLED and
-	// JOB_LEADS_ENABLED from .env, so starting them here as well would
-	// process every email and board twice.
 
 	port := os.Getenv("BACKEND_PORT")
 	// Blocks until the server stops. Any return is a failure — a port clash,

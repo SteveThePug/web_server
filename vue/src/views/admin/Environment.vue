@@ -19,7 +19,6 @@ import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { api } from "@/api";
 import Button from "@/components/input/Button.vue";
 import SecretReveal from "@/components/admin/SecretReveal.vue";
-import CaptureToken from "./CaptureToken.vue";
 import "./env.css";
 
 const groups = ref([]);
@@ -366,8 +365,6 @@ onUnmounted(stopPolling);
         </p>
       </div>
     </section>
-
-    <CaptureToken v-if="!loading" />
 
     <footer v-if="changes.length && !applying" class="env-apply-bar">
       <p>

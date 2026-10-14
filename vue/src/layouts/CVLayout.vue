@@ -91,7 +91,7 @@ import { RouterView } from "vue-router";
   padding: 0;
 }
 
-/* Buttons shared by the CV selector bar and the job-applications page */
+/* Buttons on the CV selector bar */
 .cv-btn {
   padding: 0.4rem 1rem;
   border: 1px solid var(--color-ink-soft);

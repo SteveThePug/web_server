@@ -13,21 +13,14 @@ Endpoints
   POST /hotels/search         blocking cheapest-Travelodge search
   POST /hotels/search/stream  same search, streamed as NDJSON
   POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
-  POST /internal/rowing/read    read a rowing display photo with Claude
-  POST /internal/jobs/extract   read a job posting's page text with Claude
-  POST /internal/jobs/score     score a job posting against a profile with
-                                Claude
-  POST /internal/email/classify classify an email for the job tracker with
-                                Claude
-                                (all four: Go backend only - not reachable
-                                through nginx)
+  POST /internal/rowing/read  read a rowing display photo with Claude
+                              (Go backend only - not reachable through nginx)
 
 All the hotel work lives in `travelodge`; this module is the HTTP skin around
 it - request validation, a response cache, the one-search-at-a-time guard, and
-the NDJSON framing. The rowing reader (`rowing`), the job posting reader
-(`jobs`), the job lead scorer (`job_score`) and the email classifier
-(`email_classify`) are the routes here that are not public: see the "Internal" sections at the bottom, which open with the
-wrapper they are all registered through. The hotel routes are consumed by
+the NDJSON framing. The rowing reader (`rowing`) is the one route here that
+is not public: see the "Internal" sections at the bottom, which open with the
+wrapper it is registered through. The hotel routes are consumed by
 vue/src/views/hotels/ (SingleStayPanel.vue,
 CheapestNightPanel.vue, useHotelForm.js), which fetch these paths with the /py
 prefix. Field names in the models below are part of that contract.
@@ -44,7 +37,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from . import claude, email_classify, job_score, jobs, rowing, travelodge
+from . import claude, rowing, travelodge
 
 app = FastAPI(
     title="Python API",
@@ -756,102 +749,3 @@ def rowing_read(req: RowingReadRequest) -> rowing.RowingReading:
     handler passes on to the admin verbatim.
     """
     return rowing.read_display(req.media_type, req.data)
-
-
-# --------------------------------------------------------------------------- #
-# Internal: job posting reader
-# --------------------------------------------------------------------------- #
-class JobExtractRequest(BaseModel):
-    """A page for Claude to read, as the Go backend sends it."""
-
-    url: str = Field("", max_length=2000, description="The page's address; a hint for the model")
-    title: str = Field("", max_length=500, description="The page's <title>; a hint for the model")
-    text: str = Field(..., min_length=1, max_length=jobs.MAX_TEXT_CHARS, description="The page's visible text")
-
-
-@_internal_claude_route(
-    "/internal/jobs/extract",
-    response_model=jobs.JobPosting,
-    summary="Read the job title, company and location off a posting",
-    description=(
-        "Internal to the Go backend's token-guarded `POST /api/jobs/capture/extract`; not reachable "
-        "through nginx. Sends the page text to Claude and returns the fields it found. A page that is "
-        "not a job posting is a 200 with empty strings, not an error."
-    ),
-)
-def jobs_extract(req: JobExtractRequest) -> jobs.JobPosting:
-    """Read a job posting's page text.
-
-    A plain `def` for the same reason as `rowing_read`, and the same error
-    responses. The 502 detail is one of jobs.extract_posting's fixed messages,
-    which the Go handler passes on to the capture popup verbatim.
-    """
-    return jobs.extract_posting(req.url, req.title, req.text)
-
-
-# --------------------------------------------------------------------------- #
-# Internal: job lead scorer
-# --------------------------------------------------------------------------- #
-class JobScoreRequest(BaseModel):
-    """A posting and the profile to judge it against, as the Go backend sends them."""
-
-    profile: str = Field(..., min_length=1, max_length=job_score.MAX_PROFILE_CHARS, description="What the person has done and wants")
-    jobTitle: str = Field(..., min_length=1, max_length=500, description="The role advertised")
-    company: str = Field("", max_length=500, description="The company hiring")
-    location: str = Field("", max_length=500, description="Where the job is based")
-    description: str = Field("", max_length=job_score.MAX_DESCRIPTION_CHARS, description="The posting's text; may be a snippet or empty")
-
-
-@_internal_claude_route(
-    "/internal/jobs/score",
-    response_model=job_score.LeadScore,
-    summary="Score a job posting against a profile",
-    description=(
-        "Internal to the Go backend's job-lead pipeline; not reachable through nginx. Sends one posting "
-        "and the profile to Claude and returns a 0-100 fit score with a sentence of reasons. A reply "
-        "without a usable score is a 502, not a score of zero."
-    ),
-)
-def jobs_score(req: JobScoreRequest) -> job_score.LeadScore:
-    """Score one lead.
-
-    A plain `def` for the same reason as `rowing_read`, and the same error
-    responses. The Go pipeline counts a 502 as a failed attempt at that lead
-    and retries it on a later run; any other failure stops its scoring for the
-    run.
-    """
-    return job_score.score_posting(req.profile, req.jobTitle, req.company, req.location, req.description)
-
-
-# --------------------------------------------------------------------------- #
-# Internal: email classifier
-# --------------------------------------------------------------------------- #
-class EmailClassifyRequest(BaseModel):
-    """One email for Claude to classify, as the Go backend sends it."""
-
-    message: str = Field(
-        ...,
-        min_length=1,
-        max_length=email_classify.MAX_MESSAGE_CHARS,
-        description="Subject, From and Date lines, a blank line, then the cleaned body",
-    )
-
-
-@_internal_claude_route(
-    "/internal/email/classify",
-    response_model=email_classify.EmailAnalysis,
-    summary="Decide whether an email is about a job application",
-    description=(
-        "Internal to the Go backend's email sync; not reachable through nginx. Sends one pre-formatted "
-        "email to Claude and returns its verdict. An email that is not about a job is a 200 with "
-        "`isJobEmail` false and every other field at its default, not an error."
-    ),
-)
-def email_classify_route(req: EmailClassifyRequest) -> email_classify.EmailAnalysis:
-    """Classify one email for the job tracker.
-
-    A plain `def` for the same reason as `rowing_read`, and the same error
-    responses. The Go pipeline counts a 502 as a failed attempt at that email
-    and retries it on a later sync.
-    """
-    return email_classify.classify(req.message)

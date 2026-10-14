@@ -1,6 +1,6 @@
-"""Tests for `ask_json`, the one Claude call the four callers share.
+"""Tests for `ask_json`, the Claude call every caller goes through.
 
-test_rowing, test_jobs, test_job_score and test_email_classify each cover their own prompt,
+test_rowing covers its own prompt,
 model and messages through this function; what is pinned here is the function's
 own contract - what it sends, which failure produces which of the caller's
 three messages, and where it gets its client from.

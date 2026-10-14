@@ -28,7 +28,7 @@ export const usePlacesStore = createCrudStore("places", {
   fields: PLACE_FIELDS,
   // The list query returns newest first, so a new place goes on top.
   insert: "prepend",
-  // deletePlace returns the deleted Place, unlike the job tracker's deletes.
+  // deletePlace returns the deleted Place rather than a Boolean.
   deleteReturns: "object",
   extend: ({ update }) => ({
     /** Flip a place's `done` flag. */
