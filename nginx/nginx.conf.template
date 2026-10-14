@@ -170,7 +170,38 @@ http {
 
 		add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
-        return 301 https://www.$DOMAIN$request_uri;
+        # Gitea's container registry, which publishes images such as
+        # $DOMAIN/adamf/job-tracker. Docker always talks to /v2/ at the root
+        # of the host, whatever Gitea's ROOT_URL says, and Gitea advertises
+        # its token endpoint at https://$DOMAIN/v2/token: on the apex, not
+        # under /gitea/ and not on www. So the apex serves /v2/ itself rather
+        # than redirecting it; a redirect on a blob upload is not something
+        # every Docker client follows. Everything else still goes to www.
+        #
+        # The redirect is a `location /` rather than the server-level return
+        # it used to be, because a server-level return runs before any
+        # location is chosen. The HSTS add_header above is inherited by both
+        # locations, which declare none of their own.
+        location /v2/ {
+            # Image layers are far larger than the http block's 50M, and are
+            # streamed to Gitea rather than spooled to disk first.
+            client_max_body_size 0;
+            proxy_request_buffering off;
+            proxy_read_timeout 900s;
+            proxy_send_timeout 900s;
+            # $upstream_gitea is set in nginx_routes.conf, which only the www
+            # server includes.
+            set $upstream_gitea http://$GITEA_HOST:$GITEA_PORT;
+            proxy_pass $upstream_gitea;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location / {
+            return 301 https://www.$DOMAIN$request_uri;
+        }
     }
 
 	server {
