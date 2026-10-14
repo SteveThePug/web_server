@@ -474,6 +474,37 @@ services:
     volumes:
       - ./jobs-data:/data
 
+  # The USACO practice log, served at /usaco/. Built and published by the
+  # usaco repo's CI (adamf/usaco on this Gitea; the server is in its site/
+  # directory), which pulls :latest into this service on every push to main
+  # that touches the site. Pin USACO_IMAGE_TAG to hold a version.
+  #
+  # It has no database: git is its store. It keeps a clone of adamf/usaco in
+  # ./usaco-data, pulled over the Docker network when Gitea's push webhook
+  # fires (USACO_WEBHOOK_SECRET signs it), and commits the admin's edits
+  # (status, link, notes) back with USACO_GIT_TOKEN. ./usaco-data holds only
+  # that clone, so deleting it is safe; the image runs as uid 1000, so the
+  # directory must be owned by it.
+  #
+  # Same explicit `environment:` list as jobs. Like the tracker it has no
+  # login: visitors see solved problems, and AUTH_VALIDATE_URL decides who
+  # is the admin from the visitor's cookies.
+  usaco:
+    image: adam-french.co.uk/adamf/usaco:${USACO_IMAGE_TAG:-latest}
+    container_name: usaco
+    restart: always
+    depends_on:
+      - gitea
+    networks:
+      - app-network
+    environment:
+      - GIT_REMOTE_URL=http://${GITEA_HOST}:${GITEA_PORT}/adamf/usaco.git
+      - GIT_TOKEN=${USACO_GIT_TOKEN:-}
+      - WEBHOOK_SECRET=${USACO_WEBHOOK_SECRET:-}
+      - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
+    volumes:
+      - ./usaco-data:/data
+
   # The activity tracker (time spent per app, site, walk...), served at
   # /tracker/ with the prefix stripped. Built and published by its own repo
   # (adamf/ccp on this Gitea), whose CI pulls :latest into this service on
@@ -534,6 +565,10 @@ services:
       - GITEA__server__LFS_JWT_SECRET=${GITEA_LFS_JWT_SECRET}
       - GITEA__security__INTERNAL_TOKEN=${GITEA_INTERNAL_TOKEN}
       - GITEA__oauth2__JWT_SECRET=${GITEA_OAUTH2_JWT_SECRET}
+      # Webhooks are refused to private addresses by default ("external").
+      # The usaco site's push hook targets http://usaco:8080 on the Docker
+      # network, so that one host is allowed by name.
+      - GITEA__webhook__ALLOWED_HOST_LIST=external,usaco
       - USER_UID=1000
       - USER_GID=1000
     restart: always

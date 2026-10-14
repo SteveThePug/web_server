@@ -5,6 +5,7 @@ certbot/conf
 certbot/www
 backend/token/
 jobs-data/
+usaco-data/
 .env
 .env.bak
 

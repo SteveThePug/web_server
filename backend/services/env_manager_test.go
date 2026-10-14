@@ -110,12 +110,13 @@ func composeServiceEnv(t *testing.T, service string) []string {
 
 // explicitEnvServices are the containers given an explicit `environment:`
 // list instead of the whole .env, so that they never hold the database
-// password or the JWT secret: the Python service, and the job and activity
-// trackers (images from their own repos, each with its own database role). The
+// password or the JWT secret: the Python service, the job and activity
+// trackers (images from their own repos, each with its own database role) and
+// the USACO site (an image from its own repo, with no database at all). The
 // cost is a third place a new variable for one of them has to be added — the
 // registry, .env.example and that list — and forgetting the third is silent:
 // the variable is simply empty inside the container.
-var explicitEnvServices = []string{"python", "jobs", "activity-tracker"}
+var explicitEnvServices = []string{"python", "jobs", "activity-tracker", "usaco"}
 
 // So the registry's claim "this service reads this" and the compose list must
 // agree, in both directions:

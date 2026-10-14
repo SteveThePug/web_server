@@ -46,6 +46,7 @@
   {"name": "PYTHON_HOST", "group": "Infrastructure", "purpose": "Python container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},
   {"name": "PYTHON_PORT", "group": "Infrastructure", "purpose": "Python listen port", "kind": "text", "editable": false, "lockedReason": "Renames a container or repoints nginx."},
   {"name": "ACTIVITY_TRACKER_IMAGE_TAG", "group": "Infrastructure", "purpose": "Activity tracker image tag to run (default latest)", "kind": "text", "editable": false, "lockedReason": "Changing it needs a pull: docker compose pull activity-tracker && docker compose up -d activity-tracker."},
+  {"name": "USACO_IMAGE_TAG", "group": "Infrastructure", "purpose": "USACO site image tag to run (default latest)", "kind": "text", "editable": false, "lockedReason": "Changing it needs a pull: docker compose pull usaco && docker compose up -d usaco."},
   {"name": "JOBS_IMAGE_TAG", "group": "Infrastructure", "purpose": "Job tracker image tag to run (default latest)", "kind": "text", "editable": false, "lockedReason": "Changing it needs a pull: docker compose pull jobs && docker compose up -d jobs."},
   {"name": "ICECAST_HOST", "group": "Infrastructure", "purpose": "Icecast container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},
   {"name": "ICECAST_PORT", "group": "Infrastructure", "purpose": "Icecast listen port", "kind": "text", "editable": false, "lockedReason": "Renames a container or repoints nginx."},
@@ -69,6 +70,8 @@
   {"name": "POSTGRES_TRACKER_DB", "group": "Database", "purpose": "Activity tracker database name", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; see the ccp README."},
   {"name": "POSTGRES_TRACKER_USER", "group": "Database", "purpose": "Activity tracker database role", "kind": "text", "editable": false, "lockedReason": "Created by hand on first install; changing it here locks the activity tracker out."},
   {"name": "POSTGRES_TRACKER_PASSWORD", "group": "Database", "purpose": "Activity tracker database password", "kind": "secret", "editable": false, "lockedReason": "Set on the role by hand; changing it here locks the activity tracker out."},
+  {"name": "USACO_GIT_TOKEN", "group": "USACO site", "purpose": "Gitea token (repository read and write on adamf/usaco) the site clones and pushes edits with", "kind": "secret", "editable": false, "lockedReason": "Made in Gitea (Settings, Applications); rotate it there, then set it here and run docker compose up -d usaco.", "docsUrl": "https://adam-french.co.uk/gitea/user/settings/applications"},
+  {"name": "USACO_WEBHOOK_SECRET", "group": "USACO site", "purpose": "Shared secret of the usaco repo's Gitea push webhook", "kind": "secret", "editable": false, "lockedReason": "Must match the secret on the webhook in Gitea; change both together by hand."},
   {"name": "TRACKER_TZ", "group": "Activity tracker", "purpose": "Timezone where the activity tracker's day starts, e.g. Europe/London (blank is UTC)", "kind": "text", "editable": true, "services": ["activity-tracker"]},
 
   {"name": "GITEA_HOST", "group": "Gitea", "purpose": "Gitea container name and nginx upstream", "kind": "text", "editable": false, "lockedReason": "Renames a container and repoints nginx."},

@@ -79,6 +79,8 @@
         set $upstream_jobs http://jobs:8080;
         # Likewise the activity tracker's.
         set $upstream_tracker http://activity-tracker:8080;
+        # And the USACO site's.
+        set $upstream_usaco http://usaco:8080;
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -359,6 +361,28 @@
             # answering.
             proxy_read_timeout 300s;
             proxy_pass $upstream_jobs;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # ---- USACO practice log (/usaco/) ----
+        # Its own container (the usaco repo's site/), shaped like /jobs/: SPA
+        # and API under one prefix that is NOT stripped, and no
+        # auth_request, because most of it is public and the app checks the
+        # session itself for the admin's edits. Gitea's push webhook does not
+        # come through here: it calls the container directly on the Docker
+        # network. ^~ so no regex location can claim a /usaco/ path.
+        location = /usaco {
+            return 301 /usaco/;
+        }
+
+        location ^~ /usaco/ {
+            limit_req zone=api burst=20 nodelay;
+            # An admin edit commits and pushes to Gitea before answering.
+            proxy_read_timeout 120s;
+            proxy_pass $upstream_usaco;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
