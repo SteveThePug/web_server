@@ -1,8 +1,8 @@
 <script setup>
 /**
  * A free-form canvas of boxes the admin arranges in the browser, for one page
- * key (see stores/boxes.js). Home3.vue (/stp), the landing page's overlay and
- * every admin-created page (views/canvas/CanvasPage.vue) are this component.
+ * key (see stores/boxes.js). Home3.vue (/stp), the landing page and every
+ * admin-created page (views/canvas/CanvasPage.vue) are this component.
  *
  * Every box (the `Box` GraphQL type) has a position, size and z-index in px
  * on a fixed CANVAS_W-wide design canvas. The canvas is drawn at that width
@@ -21,14 +21,6 @@
  * marked adminOnly are never sent to anyone else (the server filters them);
  * admins see them outlined. Image and video files dropped onto the canvas in
  * edit mode are uploaded and each becomes a box where it was dropped.
- *
- * `overlay` lays the canvas over whatever the parent already renders instead
- * of taking space of its own — the landing page uses it to pin notes over its
- * fixed content. The parent must be position: relative; the canvas covers it
- * from the top, lets clicks through everywhere except on boxes (until edit
- * mode, which owns the whole area), and reports its height through `height`
- * so the parent can grow to contain it. On a phone the overlay's boxes stack
- * below the parent's content like any other canvas.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useMediaQuery } from "@vueuse/core";
@@ -44,13 +36,11 @@ import { mediaSize, uploadFile } from "./upload";
 
 const props = defineProps({
   page: { type: String, required: true },
-  overlay: { type: Boolean, default: false },
-  // Layout offered by "Import starter layout" on an empty canvas: a function
-  // returning box inputs, or null for no button.
+  // Layout offered by the "Import starter layout" button in edit mode: a
+  // function returning box inputs, or null for no button.
   starter: { type: Function, default: null },
   starterLabel: { type: String, default: "Import starter layout" },
 });
-const emit = defineEmits(["height"]);
 
 const CANVAS_W = 1400;
 const MOBILE_QUERY = "(max-width: 700px)";
@@ -98,17 +88,8 @@ watch(viewport, (el, old) => {
 const scale = computed(() => Math.min(1, availableW.value / CANVAS_W));
 const contentH = computed(() => Math.max(0, ...store.boxes.map((b) => b.y + b.h)));
 // Spare room below the lowest box while editing, so there is somewhere to
-// drag to. An overlay has no floor of its own: empty, it should take no room.
-const canvasH = computed(() => {
-  const floor = props.overlay && !inEditMode.value ? 0 : 400;
-  return Math.max(floor, contentH.value + (inEditMode.value ? 400 : 40));
-});
-
-watch(
-  () => (props.overlay && !isMobile.value ? canvasH.value * scale.value : 0),
-  (h) => emit("height", h),
-  { immediate: true },
-);
+// drag to.
+const canvasH = computed(() => Math.max(400, contentH.value + (inEditMode.value ? 400 : 40)));
 
 // ---- Mobile ordering -----------------------------------------------------
 const stacked = computed(() =>
@@ -207,8 +188,13 @@ function addBox() {
   });
 }
 
+// Offered on a canvas that already has boxes too — the landing page had notes
+// pinned over its old content before that content became boxes — but then
+// it asks first, since importing twice doubles every box.
 const importing = ref(false);
 async function importStarter() {
+  const count = store.boxes.length;
+  if (count && !confirm(`This page already has ${count} box${count === 1 ? "" : "es"}. Add the starter layout on top?`)) return;
   importing.value = true;
   try {
     // Sequential, so the boxes come back in z order without a refetch.
@@ -292,15 +278,11 @@ function toggleEdit() {
 <template>
   <div
     class="box-canvas"
-    :class="{
-      'with-editor': inEditMode && selected && !overlay,
-      overlay: overlay && !isMobile,
-      'overlay-editing': overlay && inEditMode,
-    }"
+    :class="{ 'with-editor': inEditMode && selected }"
   >
     <div v-if="canEdit" class="admin-bar">
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
-        {{ editing ? "Done" : overlay ? "Edit notes" : "Edit layout" }}
+        {{ editing ? "Done" : "Edit layout" }}
       </button>
       <template v-if="inEditMode">
         <select v-model="newChoice" class="bar-btn" @change="addBox">
@@ -313,7 +295,7 @@ function toggleEdit() {
           </optgroup>
         </select>
         <button
-          v-if="starter && store.loaded && store.boxes.length === 0"
+          v-if="starter && store.loaded"
           type="button"
           class="bar-btn"
           :disabled="importing"
@@ -330,7 +312,7 @@ function toggleEdit() {
     </div>
 
     <p v-if="store.error" class="state">Couldn't load the page layout.</p>
-    <p v-else-if="!overlay && store.loaded && store.boxes.length === 0 && !canEdit" class="state">
+    <p v-else-if="store.loaded && store.boxes.length === 0 && !canEdit" class="state">
       Nothing here yet.
     </p>
 
@@ -404,36 +386,9 @@ function toggleEdit() {
   box-sizing: border-box;
 }
 /* Leave room for the fixed editor panel so the canvas rescales beside it
-   instead of disappearing under it. Not for an overlay: rescaling it would
-   pull its boxes off the content they are pinned over, so the panel just
-   covers the right of the page instead. */
+   instead of disappearing under it. */
 .box-canvas.with-editor {
   padding-right: calc(min(460px, 100vw) + 16px);
-}
-
-/* Over the parent's content: only the boxes take clicks, so the page
-   underneath stays usable. In edit mode the whole area does, so a click on
-   empty canvas deselects rather than following a link underneath. */
-.box-canvas.overlay {
-  position: absolute;
-  inset: 0 0 auto 0;
-  z-index: 20;
-  pointer-events: none;
-}
-.box-canvas.overlay :deep(.box),
-.box-canvas.overlay .admin-bar,
-.box-canvas.overlay-editing .canvas {
-  pointer-events: auto;
-}
-/* An overlay's bar must not push the canvas down off the content it is
-   aligned with, so it floats in the corner of the window — above the
-   layout's footer bar. */
-.box-canvas.overlay .admin-bar {
-  position: fixed;
-  left: 16px;
-  bottom: 56px;
-  z-index: 70;
-  margin: 0;
 }
 
 .admin-bar {

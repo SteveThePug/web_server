@@ -14,9 +14,8 @@
  * "Insert upload" uploads a file (upload.js) and puts a tag for it at the
  * cursor — the way to add pictures to an existing box, e.g. a gallery.
  *
- * The panel is teleported to <body>. On the landing page the canvas is an
- * overlay with pointer-events: none, which a panel rendered inside it would
- * inherit — it would show but ignore every click and keystroke.
+ * The panel is teleported to <body>, so it is fixed to the window whatever
+ * transform or stacking context the page puts around the canvas.
  */
 import { computed, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";

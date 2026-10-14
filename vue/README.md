@@ -65,7 +65,7 @@ Two layout shells, defined in `src/router/index.js`:
 
 | Path | Layout | Notes |
 | --- | --- | --- |
-| `/` | DefaultLayout | Landing page (statically imported — it's the first paint), with a canvas overlay for pinned notes (page key `index`) |
+| `/` | DefaultLayout | Landing page (statically imported — it's the first paint): a box canvas, page key `index`; the old fixed page is its starter layout, `views/landing/landingLayout.js` |
 | `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
 | `/automata`, `/hotels`, `/shrines` | DefaultLayout | Each shrine under `/shrines/` is a canvas page |
@@ -205,10 +205,8 @@ so every visitor sees the saved layout. The canvas is `views/home3/BoxCanvas.vue
 and it is not only `/stp`: every box has a `page` key, and the same component
 renders any page's boxes.
 
-- **Pages.** `"stp"` is `/stp` (`Home3.vue`). `"index"` is the landing page,
-  where the canvas is an `overlay` over the page's own content: it takes no
-  room when empty, lets clicks through except on boxes, and reports its height
-  so the page grows to fit. Any other key is the slug of a **`Page`** (GraphQL
+- **Pages.** `"stp"` is `/stp` (`Home3.vue`). `"index"` is the landing page
+  (`Landing.vue`), which is nothing but the canvas. Any other key is the slug of a **`Page`** (GraphQL
   type, `stores/pages.js`), an admin-created page served at `/<slug>` by the
   router's catch-all (`views/canvas/CanvasPage.vue`). Pages are created from
   the admin panel's Pages tab, from `/shrines`, or from the 404 of the address
@@ -244,13 +242,16 @@ renders any page's boxes.
   the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
   HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S.
   CodeMirror is loaded only when that panel opens; the panel is teleported to
-  `<body>` so the landing overlay's `pointer-events: none` doesn't reach it.
+  `<body>`.
   Image and video files dropped onto the canvas in edit mode are uploaded and
   each becomes an unframed box at the drop point. "Insert upload" stores a
   file through the chat's public upload endpoint and puts an `<img>`/`<video>`
-  tag for it at the cursor. Starter HTML is in `templates.js`. On `/stp`,
-  "Import current layout" (shown only on an empty canvas) recreates the old
-  `Home.vue` grid from `defaultLayout.js`.
+  tag for it at the cursor. Starter HTML is in `templates.js`; links in a box
+  need `target="_top"` or `_blank` (the Link templates set it), or they open
+  inside the frame. A canvas given a `starter` has an import button in edit
+  mode (it confirms first if the page isn't empty): on `/stp`, "Import current
+  layout" recreates the old `Home.vue` grid from `defaultLayout.js`; on `/`,
+  "Import old landing page" recreates the old bio and links.
 - **Phones (≤700px)** get no canvas: boxes stack full-width in `(y, x)` order at
   their saved height, skipping any with `hideOnMobile`. There is no separate
   mobile layout. To change the order, move boxes on the desktop canvas.

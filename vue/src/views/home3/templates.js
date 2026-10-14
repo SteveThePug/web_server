@@ -121,6 +121,26 @@ const TEXT = `<h3>Heading</h3>
 </p>
 <blockquote>“A quote you like.”</blockquote>`;
 
+// Links. An HTML box is its own document in a sandboxed frame, so a link
+// must name where it opens: target="_top" replaces the site page (a full
+// load, not a router navigation — fine for leaving the page), and
+// target="_blank" a new tab. Without a target it would load inside the box.
+const LINK_STYLE = `<style>
+  body { display: grid; place-items: center; padding: 4px; }
+  .links { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 1rem; }
+  a {
+    padding: .5rem 1rem; border: 1px solid currentColor;
+    color: var(--color-primary); text-decoration: none; font-size: 16px;
+    transition: color .15s ease;
+  }
+  a:hover { color: var(--color-tertiary); }
+</style>`;
+
+const linkHtml = (links) => `${LINK_STYLE}
+<nav class="links">
+${links.map(({ name, href }) => `  <a href="${href}" target="${href.startsWith("/") ? "_top" : "_blank"}">${name}</a>`).join("\n")}
+</nav>`;
+
 // A scrolling grid of images. "Insert upload" in the editor adds more.
 const galleryHtml = (srcs) => `<style>
   body { padding: 4px; }
@@ -145,6 +165,17 @@ export const TEMPLATES = [
   { label: "Note (admin only)", title: "Note", html: NOTE, size: [260, 200], framed: false, adminOnly: true },
   { label: "Heading", title: "Heading", html: HEADING, size: [600, 140], framed: false },
   { label: "Text", title: "Text", html: TEXT, size: [400, 260] },
+  { label: "Link", title: "Link", html: linkHtml([{ name: "CV", href: "/cv" }]), size: [120, 60], framed: false },
+  {
+    label: "Link row",
+    title: "Links",
+    html: linkHtml([
+      { name: "CV", href: "/cv" },
+      { name: "GitHub", href: "https://github.com/SteveThePug" },
+    ]),
+    size: [400, 70],
+    framed: false,
+  },
   { label: "Image / GIF", title: "Image", html: imageHtml("/img/memes/fire-woman.gif"), size: [240, 240], framed: false },
   { label: "Image gallery", title: "Gallery", html: galleryHtml(["/img/memes/fire-woman.gif", "/img/memes/epic.jpeg"]), size: [460, 320] },
   { label: "Video", title: "Video", html: videoHtml("/img/demoman/1760582395316219.webm"), size: [400, 260], framed: false },
@@ -153,4 +184,4 @@ export const TEMPLATES = [
   { label: "Empty HTML", title: "HTML", html: EMPTY, size: [300, 200] },
 ];
 
-export { imageHtml, galleryHtml, videoHtml };
+export { imageHtml, galleryHtml, videoHtml, linkHtml };
