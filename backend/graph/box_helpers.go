@@ -24,6 +24,9 @@ func setInt(dst *int, src *int) {
 // rather than rejecting it, because a drag that overshoots the canvas edge
 // should land at the edge, not fail.
 func validateBox(box *models.Box) error {
+	if !validPageKey(box.Page) {
+		return errors.New("a box needs a valid page")
+	}
 	switch box.Kind {
 	case "widget":
 		if box.Widget == nil || *box.Widget == "" {

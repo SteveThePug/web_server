@@ -10,9 +10,16 @@
  *     `preview` event, so the parent can render the draft without touching the
  *     store) and is saved only by Save or Ctrl/Cmd+S. Saving every keystroke
  *     would push half-written markup to every visitor.
+ *
+ * "Insert upload" stores a file through the chat's upload endpoint (public,
+ * unguessable URLs under /uploads/) and puts a tag for it at the cursor —
+ * the quick way to fill a shrine with images. It is never the private upload
+ * directory: that one is behind a cookie check, and the sandboxed frame
+ * loads as an opaque origin, so its requests may not carry the cookie.
  */
 import { computed, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";
+import { api } from "@/api";
 import CodeEditor from "./CodeEditor.vue";
 import { WIDGETS } from "./widgetRegistry";
 
@@ -21,7 +28,11 @@ const props = defineProps({
 });
 const emit = defineEmits(["preview", "close", "error"]);
 
-const store = useBoxesStore();
+// A box only ever moves within its own page's store.
+const store = useBoxesStore(props.box.page);
+const codeEditor = ref(null);
+const fileInput = ref(null);
+const uploading = ref(false);
 
 const draftHtml = ref(props.box.html ?? "");
 const saving = ref(false);
@@ -73,6 +84,33 @@ function saveNumber(field, event) {
   save({ [field]: value });
 }
 
+// The markup an upload is inserted as, by file type. Anything else (a PDF,
+// a text file) becomes a link.
+function tagFor(url) {
+  if (/\.(jpe?g|png|gif|webp)$/i.test(url)) return `<img src="${url}" alt="">`;
+  if (/\.(mp4|webm)$/i.test(url)) return `<video src="${url}" controls loop muted></video>`;
+  if (/\.(mp3|ogg)$/i.test(url)) return `<audio src="${url}" controls></audio>`;
+  return `<a href="${url}" target="_blank">${url.split("/").pop()}</a>`;
+}
+
+async function upload(event) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file) return;
+  uploading.value = true;
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    const { url } = await api.post("/messages/upload", body, { fallback: "Upload failed" });
+    const tag = tagFor(url);
+    if (!codeEditor.value?.insert(tag)) draftHtml.value += `\n${tag}`;
+  } catch (err) {
+    emit("error", err);
+  } finally {
+    uploading.value = false;
+  }
+}
+
 function close() {
   if (dirty.value && !confirm("Discard unsaved HTML changes?")) return;
   emit("preview", null);
@@ -120,7 +158,7 @@ defineExpose({ close });
       </label>
     </div>
 
-    <div class="flex gap-4">
+    <div class="flex flex-wrap gap-x-4 gap-y-1">
       <label class="check">
         <input type="checkbox" :checked="box.framed" @change="save({ framed: $event.target.checked })" />
         Frame
@@ -133,15 +171,35 @@ defineExpose({ close });
         />
         Hide on mobile
       </label>
+      <label class="check" title="Only signed-in admins are sent this box">
+        <input type="checkbox" :checked="box.adminOnly" @change="save({ adminOnly: $event.target.checked })" />
+        Admin only
+      </label>
     </div>
 
     <template v-if="box.kind === 'html'">
-      <CodeEditor v-model="draftHtml" class="flex-1" @save="saveHtml" />
+      <CodeEditor ref="codeEditor" v-model="draftHtml" class="flex-1" @save="saveHtml" />
       <footer class="flex items-center justify-between gap-2">
         <small class="text-muted">
           Runs sandboxed: scripts work, cookies and /api don't. fetch() only reaches
           keyless CORS-open APIs. Ctrl+S saves.
         </small>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*,video/mp4,video/webm,audio/mpeg,audio/ogg"
+          hidden
+          @change="upload"
+        />
+        <button
+          type="button"
+          class="save"
+          :disabled="uploading"
+          title="Upload a file and insert it at the cursor"
+          @click="fileInput.click()"
+        >
+          {{ uploading ? "Uploading…" : "Insert upload" }}
+        </button>
         <button type="button" class="save" :disabled="!dirty || saving" @click="saveHtml">
           {{ saving ? "Saving…" : dirty ? "Save" : "Saved" }}
         </button>

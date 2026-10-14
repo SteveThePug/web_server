@@ -16,6 +16,7 @@ import CreateActivity from "./CreateActivity.vue";
 import CreateRowing from "./CreateRowing.vue";
 import CreateBookmark from "./CreateBookmark.vue";
 import CreatePlace from "./CreatePlace.vue";
+import ManagePages from "./ManagePages.vue";
 import ManageUsers from "./ManageUsers.vue";
 import ManageRadio from "./ManageRadio.vue";
 import Environment from "./Environment.vue";
@@ -31,6 +32,7 @@ const sections = [
   { id: "rowing", label: "Rowing", component: CreateRowing },
   { id: "bookmark", label: "Bookmark", component: CreateBookmark },
   { id: "place", label: "Place / Thing To Do", component: CreatePlace },
+  { id: "pages", label: "Pages", component: ManagePages },
   { id: "users", label: "Manage Users", component: ManageUsers },
   { id: "radio", label: "Manage Radio", component: ManageRadio },
   { id: "environment", label: "Environment", component: Environment },

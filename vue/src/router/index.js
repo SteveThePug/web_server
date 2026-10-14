@@ -5,6 +5,9 @@
  * theme) and holds most routes; `/cv` mounts CVLayout (light print theme).
  * `/stp2` is deliberately outside both — it is a bare full-bleed mock.
  *
+ * Pages made in the browser (views/canvas/) have no entries here: the
+ * catch-all at the end looks the path up and renders the page if one exists.
+ *
  * Only the landing page is statically imported; every other view is a dynamic
  * import so Vite code-splits it into its own chunk.
  *
@@ -62,32 +65,20 @@ const router = createRouter({
                     name: "shrine links",
                     component: () => import("@/views/home/shrines/Shrines.vue"),
                 },
-                {
-                    path: "shrines/gto",
-                    name: "gto shrine",
-                    component: () => import("@/views/home/shrines/GTO.vue"),
-                },
-                {
-                    path: "shrines/skipskipbenben",
-                    name: "skipskipbenben shrine",
-                    component: () =>
-                        import("@/views/home/shrines/Skipskipbenben.vue"),
-                },
-                {
-                    path: "shrines/evangelion",
-                    name: "evangelion shrine",
-                    component: () =>
-                        import("@/views/home/shrines/Evangelion.vue"),
-                },
+                // The GTO, Evangelion and Skipskipbenben shrines were <Wip />
+                // placeholders; they are canvas pages now, made from /shrines
+                // and served by the catch-all below.
                 {
                     path: "shrines/demoman",
                     name: "demoman shrine",
                     component: () => import("@/views/home/shrines/Demoman.vue"),
                 },
+                // Anything else is an admin-created canvas page if one exists
+                // at that address (the Page GraphQL type), else the 404.
                 {
                     path: ":pathMatch(.*)*",
                     name: "404",
-                    component: () => import("@/views/404/404.vue"),
+                    component: () => import("@/views/canvas/CanvasPage.vue"),
                 },
             ],
         },

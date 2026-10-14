@@ -156,29 +156,52 @@ type Place struct {
 	Done      bool           `gorm:"default:false" json:"done"`
 }
 
-// Box is one panel on the home page canvas (/stp). Its position and size are
-// in px on a fixed 1400px-wide design canvas, which the page scales down on
-// narrower screens — so the stored numbers mean the same thing for every
-// visitor. Kind "widget" renders a built-in Vue component named by Widget;
+// Box is one panel on a canvas page. Page names the canvas it belongs to:
+// "stp" for the home page, "index" for the landing page's overlay, or a
+// Page.Slug for an admin-created page — it is a key, not a foreign key, so the
+// built-in canvases need no Page row. Its position and size are in px on a
+// fixed 1400px-wide design canvas, which the page scales down on narrower
+// screens — so the stored numbers mean the same thing for every visitor. Kind "widget" renders a built-in Vue component named by Widget;
 // kind "html" renders HTML in a sandboxed iframe on the front end, which is
 // what makes storing admin-authored script here acceptable.
 type Box struct {
-	ID           uint           `gorm:"primarykey" json:"id"`
-	CreatedAt    time.Time      `json:"createdAt"`
-	UpdatedAt    time.Time      `json:"updatedAt"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deletedAt"`
-	Kind         string         `gorm:"not null" json:"kind"`
-	Widget       *string        `json:"widget"`
-	HTML         *string        `json:"html"`
-	Title        *string        `json:"title"`
-	X            int            `gorm:"not null;default:0" json:"x"`
-	Y            int            `gorm:"not null;default:0" json:"y"`
-	W            int            `gorm:"not null;default:300" json:"w"`
-	H            int            `gorm:"not null;default:200" json:"h"`
-	Z            int            `gorm:"not null;default:0" json:"z"`
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	// default:stp is what the boxes that predate pages are migrated to.
+	Page   string  `gorm:"not null;default:stp;index" json:"page"`
+	Kind   string  `gorm:"not null" json:"kind"`
+	Widget *string `json:"widget"`
+	HTML   *string `json:"html"`
+	Title  *string `json:"title"`
+	X      int     `gorm:"not null;default:0" json:"x"`
+	Y      int     `gorm:"not null;default:0" json:"y"`
+	W      int     `gorm:"not null;default:300" json:"w"`
+	H      int     `gorm:"not null;default:200" json:"h"`
+	Z      int     `gorm:"not null;default:0" json:"z"`
 	// No gorm default on Framed: GORM omits zero values for defaulted columns
 	// on insert, so default:true would turn an explicit false into true.
 	// CreateBox applies the true default itself.
-	Framed       bool           `gorm:"not null" json:"framed"`
-	HideOnMobile bool           `gorm:"not null;default:false" json:"hideOnMobile"`
+	Framed       bool `gorm:"not null" json:"framed"`
+	HideOnMobile bool `gorm:"not null;default:false" json:"hideOnMobile"`
+	// AdminOnly boxes are never sent to anyone but an admin (the boxes
+	// resolver filters them out), so they suit private notes.
+	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
+}
+
+// Page is an admin-created canvas page, served by the SPA's catch-all route
+// at /<Slug> (e.g. "shrines/evangelion"). Its content is the Boxes whose Page
+// equals Slug. The unique index is partial so that a deleted page's slug can
+// be reused — a plain uniqueIndex would still collide with the soft-deleted
+// row.
+type Page struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Slug      string         `gorm:"not null;index:idx_pages_slug,unique,where:deleted_at IS NULL" json:"slug"`
+	Title     string         `gorm:"not null" json:"title"`
+	// AdminOnly hides the whole page, boxes included, from everyone else.
+	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
 }

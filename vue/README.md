@@ -65,13 +65,13 @@ Two layout shells, defined in `src/router/index.js`:
 
 | Path | Layout | Notes |
 | --- | --- | --- |
-| `/` | DefaultLayout | Landing page (statically imported — it's the first paint) |
+| `/` | DefaultLayout | Landing page (statically imported — it's the first paint), with a canvas overlay for pinned notes (page key `index`) |
 | `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
-| `/automata`, `/hotels`, `/shrines/*` | DefaultLayout | |
+| `/automata`, `/hotels`, `/shrines`, `/shrines/demoman` | DefaultLayout | Every other shrine is a canvas page |
 | `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
-| `:pathMatch(.*)*` | DefaultLayout | 404 |
+| `:pathMatch(.*)*` | DefaultLayout | `views/canvas/CanvasPage.vue`: an admin-created canvas page if one exists at the path, else the 404 (with a "create a page here" form for admins) |
 
 Everything except the landing page is a dynamic `import()`, so Vite gives each
 view its own chunk.
@@ -169,7 +169,8 @@ true only once a fetch has succeeded, meaning the data is real. Waiting on
 | `auth` | current user (`ensureLoaded()`, see Routing), plus login/logout mutations |
 | `posts`, `favorites`, `activity`, `songs`, `steam` | mirror one slice of `homeData` via an `immediate` watch, and keep a placeholder value until real data arrives |
 | `places` | CRUD via `createCrudStore`; sign-in only, so it is fetched lazily |
-| `boxes` | CRUD via `createCrudStore`; the `/stp` canvas layout. Public read, admin write |
+| `boxes` | CRUD via `createCrudStore`, one store per canvas page: `useBoxesStore(page)`. Public read (admin-only boxes excepted), admin write |
+| `pages` | CRUD via `createCrudStore`; the admin-created canvas pages. Public read (admin-only pages excepted), admin write |
 | `messages` | the chat WebSocket — not GraphQL at all |
 | `models` | dormant; not imported anywhere |
 
@@ -188,7 +189,9 @@ Two factories keep the repeated shapes in one place:
   differences between types: `itemsKey` (the name the array is
   exposed under), `insert` (`"prepend"` or `"append"`), `deleteReturns`
   (`"object"` for `deletePlace`, `"boolean"` for a delete that returns a
-  scalar — a scalar must not be given a selection set) and `extend` for extra actions.
+  scalar — a scalar must not be given a selection set), `args` (fixed
+  arguments for the list query, e.g. the boxes store's `page`) and `extend`
+  for extra actions.
 
   The error contract is deliberate: `fetch()` never throws and records the
   failure on `error`; the mutations throw, so the form that called them can
@@ -198,10 +201,29 @@ Two factories keep the repeated shapes in one place:
 
 `/stp` is a set of **boxes** (`Box` in GraphQL, `stores/boxes.js`) that an admin
 creates, drags, resizes and edits in the browser. Changes save to the database,
-so every visitor sees the saved layout. All of it lives in `views/home3/`:
+so every visitor sees the saved layout. The canvas is `views/home3/BoxCanvas.vue`,
+and it is not only `/stp`: every box has a `page` key, and the same component
+renders any page's boxes.
 
+- **Pages.** `"stp"` is `/stp` (`Home3.vue`). `"index"` is the landing page,
+  where the canvas is an `overlay` over the page's own content: it takes no
+  room when empty, lets clicks through except on boxes, and reports its height
+  so the page grows to fit. Any other key is the slug of a **`Page`** (GraphQL
+  type, `stores/pages.js`), an admin-created page served at `/<slug>` by the
+  router's catch-all (`views/canvas/CanvasPage.vue`). Pages are created from
+  the admin panel's Pages tab, from `/shrines`, or from the 404 of the address
+  you want; each can start from a layout in `views/canvas/pageStarters.js`
+  (Blank, Shrine, Notes board). Title, address and visibility are under "Page
+  settings" on the page; renaming moves its boxes, deleting takes them too.
+  The server refuses slugs that an SPA or nginx route would answer first
+  (`validateSlug` in `backend/graph/page_helpers.go`) — add to that list when
+  adding a route.
+- **Admin only.** A box or a page can be marked admin-only. The server never
+  sends those to anyone else, so they are fit for private notes; admins see
+  such boxes outlined, with a 🔒 in edit mode. The "Note" template starts
+  admin-only.
 - **Coordinates.** `x`/`y`/`w`/`h` are px on a fixed 1400px-wide design canvas.
-  `Home3.vue` draws the canvas at that width and shrinks it with
+  `BoxCanvas.vue` draws the canvas at that width and shrinks it with
   `transform: scale()` to fit the window, so the arrangement is identical at
   every desktop width. `BoxFrame.vue` divides pointer deltas by that scale.
   `z` is the CSS z-index.
@@ -221,9 +243,11 @@ so every visitor sees the saved layout. All of it lives in `views/home3/`:
   saves on pointer release, and the box is moved locally first and put back if
   the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
   HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S.
-  CodeMirror is loaded only when that panel opens. Starter HTML is in
-  `templates.js`. "Import current layout" (shown only on an empty canvas)
-  recreates the old `Home.vue` grid from `defaultLayout.js`.
+  CodeMirror is loaded only when that panel opens. "Insert upload" stores a
+  file through the chat's public upload endpoint and puts an `<img>`/`<video>`
+  tag for it at the cursor. Starter HTML is in `templates.js`. On `/stp`,
+  "Import current layout" (shown only on an empty canvas) recreates the old
+  `Home.vue` grid from `defaultLayout.js`.
 - **Phones (≤700px)** get no canvas: boxes stack full-width in `(y, x)` order at
   their saved height, skipping any with `hideOnMobile`. There is no separate
   mobile layout. To change the order, move boxes on the desktop canvas.
@@ -271,6 +295,7 @@ in its header comment; the summary:
 | File | Status |
 | --- | --- |
 | `views/home3/Home3.vue` | live (`/stp`) — the box canvas; its widget boxes use **Intro3** and **Gym2** |
+| `views/home/shrines/{GTO,Evangelion,Skipskipbenben}.vue` | `<Wip />` placeholders, unrouted; those shrines are canvas pages now |
 | `views/home/Home.vue` | legacy fixed grid that `/stp` used to be; no route. Its widgets are still live through `home3/widgetRegistry.js` |
 | `views/home/Intro.vue` | superseded by `Intro2.vue`; not imported |
 | `views/home/Gym.vue` | superseded by `Gym2.vue`; not imported |

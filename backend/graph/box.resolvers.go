@@ -18,6 +18,7 @@ func (r *mutationResolver) CreateBox(ctx context.Context, input model.CreateBoxI
 	// comment on models.Box.Framed. Sizes not supplied fall back to the
 	// same 300x200 the column defaults use.
 	box := models.Box{
+		Page:   input.Page,
 		Kind:   input.Kind,
 		Widget: input.Widget,
 		HTML:   input.HTML,
@@ -36,6 +37,9 @@ func (r *mutationResolver) CreateBox(ctx context.Context, input model.CreateBoxI
 	}
 	if input.HideOnMobile != nil {
 		box.HideOnMobile = *input.HideOnMobile
+	}
+	if input.AdminOnly != nil {
+		box.AdminOnly = *input.AdminOnly
 	}
 	if err := validateBox(&box); err != nil {
 		return nil, err
@@ -76,6 +80,9 @@ func (r *mutationResolver) UpdateBox(ctx context.Context, id int, input model.Up
 	if input.HideOnMobile != nil {
 		box.HideOnMobile = *input.HideOnMobile
 	}
+	if input.AdminOnly != nil {
+		box.AdminOnly = *input.AdminOnly
+	}
 	if err := validateBox(&box); err != nil {
 		return nil, err
 	}
@@ -98,13 +105,27 @@ func (r *mutationResolver) DeleteBox(ctx context.Context, id int) (*models.Box, 
 }
 
 // Boxes is the resolver for the boxes field.
-func (r *queryResolver) Boxes(ctx context.Context) ([]*models.Box, error) {
+func (r *queryResolver) Boxes(ctx context.Context, page string) ([]*models.Box, error) {
 	// Public: this is the page layout every visitor loads. Ordered by z so
 	// DOM order matches stacking order, which keeps tab order sensible.
+	//
+	// What is admin-only is filtered here rather than hidden in the browser,
+	// so a private note never reaches anyone else: an adminOnly page answers
+	// with no boxes at all, and adminOnly boxes are left out of the rest.
+	hidden, err := pageHiddenFrom(ctx, r.Store.DB, page)
+	if err != nil {
+		return nil, err
+	}
+	if hidden {
+		return []*models.Box{}, nil
+	}
+	query := r.Store.DB.Where("page = ?", page)
+	if !IsAdminFromCtx(ctx) {
+		query = query.Where("admin_only = ?", false)
+	}
 	var boxes []models.Box
-	if err := r.Store.DB.Order("z ASC, id ASC").Find(&boxes).Error; err != nil {
+	if err := query.Order("z ASC, id ASC").Find(&boxes).Error; err != nil {
 		return nil, err
 	}
 	return ptrs(boxes), nil
 }
-

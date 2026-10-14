@@ -1,6 +1,9 @@
 <script setup>
 /**
- * Route `/shrines/evangelion` — placeholder, renders <Wip>.
+ * STATUS: no route points here — /shrines/<name> is a canvas page now
+ * (views/canvas/CanvasPage.vue), created from the /shrines index.
+ *
+ * Was route `/shrines/evangelion` — placeholder, renders <Wip>.
  */
 import Wip from "@/components/util/Wip.vue";
 </script>

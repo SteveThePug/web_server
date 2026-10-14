@@ -37,6 +37,10 @@ import { gql } from "@/graphql";
  *   one, so the mutation text differs; the schema has both kinds.
  * @param {(ctx: object) => object} [options.extend]  extra state/actions merged
  *   into the store; receives the base members
+ * @param {Record<string, {type: string, value: *}>} [options.args]  arguments
+ *   for the list query, e.g. `{ page: { type: "String!", value: "stp" } }`.
+ *   Fixed for the store's lifetime, so a list that varies needs one store per
+ *   value (stores/boxes.js does this per page).
  */
 export function createCrudStore(
   id,
@@ -48,9 +52,19 @@ export function createCrudStore(
     insert = "prepend",
     deleteReturns = "object",
     extend,
+    args = {},
   },
 ) {
   const deleteSelection = deleteReturns === "object" ? "{ id }" : "";
+
+  const argNames = Object.keys(args);
+  const listVarDecl = argNames.length
+    ? `(${argNames.map((n) => `$${n}: ${args[n].type}`).join(", ")})`
+    : "";
+  const listArgs = argNames.length
+    ? `(${argNames.map((n) => `${n}: $${n}`).join(", ")})`
+    : "";
+  const listVars = Object.fromEntries(argNames.map((n) => [n, args[n].value]));
 
   return defineStore(id, () => {
     const items = ref([]);
@@ -62,7 +76,10 @@ export function createCrudStore(
     async function fetch() {
       loading.value = true;
       try {
-        const data = await gql(`query ${type}List { ${list} { ${fields} } }`);
+        const data = await gql(
+          `query ${type}List${listVarDecl} { ${list}${listArgs} { ${fields} } }`,
+          listVars,
+        );
         items.value = data[list] || [];
         loaded.value = true;
         error.value = null;

@@ -82,3 +82,9 @@ models:
     fields:
       deletedAt:
         resolver: false
+  Page:
+    model:
+      - adam-french.co.uk/backend/models.Page
+    fields:
+      deletedAt:
+        resolver: false

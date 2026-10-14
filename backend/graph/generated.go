@@ -66,6 +66,7 @@ type ComplexityRoot struct {
 	}
 
 	Box struct {
+		AdminOnly    func(childComplexity int) int
 		CreatedAt    func(childComplexity int) int
 		Framed       func(childComplexity int) int
 		H            func(childComplexity int) int
@@ -73,6 +74,7 @@ type ComplexityRoot struct {
 		HideOnMobile func(childComplexity int) int
 		ID           func(childComplexity int) int
 		Kind         func(childComplexity int) int
+		Page         func(childComplexity int) int
 		Title        func(childComplexity int) int
 		UpdatedAt    func(childComplexity int) int
 		W            func(childComplexity int) int
@@ -114,11 +116,13 @@ type ComplexityRoot struct {
 		CreateBookmark func(childComplexity int, input model.CreateBookmarkInput) int
 		CreateBox      func(childComplexity int, input model.CreateBoxInput) int
 		CreateFavorite func(childComplexity int, input model.CreateFavoriteInput) int
+		CreatePage     func(childComplexity int, input model.CreatePageInput) int
 		CreatePlace    func(childComplexity int, input model.CreatePlaceInput) int
 		CreatePost     func(childComplexity int, input model.CreatePostInput) int
 		CreateUser     func(childComplexity int, input model.CreateUserInput) int
 		DeleteBookmark func(childComplexity int, id int) int
 		DeleteBox      func(childComplexity int, id int) int
+		DeletePage     func(childComplexity int, id int) int
 		DeletePlace    func(childComplexity int, id int) int
 		DeletePost     func(childComplexity int, id int) int
 		DeleteUser     func(childComplexity int, id int) int
@@ -127,8 +131,18 @@ type ComplexityRoot struct {
 		RefreshToken   func(childComplexity int) int
 		SetUserAdmin   func(childComplexity int, id int, admin bool) int
 		UpdateBox      func(childComplexity int, id int, input model.UpdateBoxInput) int
+		UpdatePage     func(childComplexity int, id int, input model.UpdatePageInput) int
 		UpdatePlace    func(childComplexity int, id int, input model.UpdatePlaceInput) int
 		UpdatePost     func(childComplexity int, id int, input model.UpdatePostInput) int
+	}
+
+	Page struct {
+		AdminOnly func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Slug      func(childComplexity int) int
+		Title     func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	Place struct {
@@ -157,11 +171,13 @@ type ComplexityRoot struct {
 	Query struct {
 		Activities         func(childComplexity int) int
 		Bookmarks          func(childComplexity int) int
-		Boxes              func(childComplexity int) int
+		Boxes              func(childComplexity int, page string) int
 		Favorites          func(childComplexity int) int
 		GiteaFeed          func(childComplexity int) int
 		Me                 func(childComplexity int) int
 		Messages           func(childComplexity int) int
+		Page               func(childComplexity int, slug string) int
+		Pages              func(childComplexity int) int
 		Places             func(childComplexity int) int
 		Post               func(childComplexity int, id int) int
 		Posts              func(childComplexity int) int
@@ -253,6 +269,9 @@ type MutationResolver interface {
 	UpdateBox(ctx context.Context, id int, input model.UpdateBoxInput) (*models.Box, error)
 	DeleteBox(ctx context.Context, id int) (*models.Box, error)
 	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
+	CreatePage(ctx context.Context, input model.CreatePageInput) (*models.Page, error)
+	UpdatePage(ctx context.Context, id int, input model.UpdatePageInput) (*models.Page, error)
+	DeletePage(ctx context.Context, id int) (*models.Page, error)
 	CreatePlace(ctx context.Context, input model.CreatePlaceInput) (*models.Place, error)
 	UpdatePlace(ctx context.Context, id int, input model.UpdatePlaceInput) (*models.Place, error)
 	DeletePlace(ctx context.Context, id int) (*models.Place, error)
@@ -267,10 +286,12 @@ type QueryResolver interface {
 	Activities(ctx context.Context) ([]*models.Activity, error)
 	Me(ctx context.Context) (*models.User, error)
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
-	Boxes(ctx context.Context) ([]*models.Box, error)
+	Boxes(ctx context.Context, page string) ([]*models.Box, error)
 	Favorites(ctx context.Context) ([]*models.Favorite, error)
 	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
 	Messages(ctx context.Context) ([]*models.Message, error)
+	Pages(ctx context.Context) ([]*models.Page, error)
+	Page(ctx context.Context, slug string) (*models.Page, error)
 	Places(ctx context.Context) ([]*models.Place, error)
 	Posts(ctx context.Context) ([]*models.Post, error)
 	Post(ctx context.Context, id int) (*models.Post, error)
@@ -386,6 +407,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Bookmark.UpdatedAt(childComplexity), true
 
+	case "Box.adminOnly":
+		if e.ComplexityRoot.Box.AdminOnly == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Box.AdminOnly(childComplexity), true
 	case "Box.createdAt":
 		if e.ComplexityRoot.Box.CreatedAt == nil {
 			break
@@ -428,6 +455,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Box.Kind(childComplexity), true
+	case "Box.page":
+		if e.ComplexityRoot.Box.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Box.Page(childComplexity), true
 	case "Box.title":
 		if e.ComplexityRoot.Box.Title == nil {
 			break
@@ -626,6 +659,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateFavorite(childComplexity, args["input"].(model.CreateFavoriteInput)), true
+	case "Mutation.createPage":
+		if e.ComplexityRoot.Mutation.CreatePage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createPage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreatePage(childComplexity, args["input"].(model.CreatePageInput)), true
 	case "Mutation.createPlace":
 		if e.ComplexityRoot.Mutation.CreatePlace == nil {
 			break
@@ -681,6 +725,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteBox(childComplexity, args["id"].(int)), true
+	case "Mutation.deletePage":
+		if e.ComplexityRoot.Mutation.DeletePage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deletePage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeletePage(childComplexity, args["id"].(int)), true
 	case "Mutation.deletePlace":
 		if e.ComplexityRoot.Mutation.DeletePlace == nil {
 			break
@@ -759,6 +814,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateBox(childComplexity, args["id"].(int), args["input"].(model.UpdateBoxInput)), true
+	case "Mutation.updatePage":
+		if e.ComplexityRoot.Mutation.UpdatePage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updatePage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdatePage(childComplexity, args["id"].(int), args["input"].(model.UpdatePageInput)), true
 	case "Mutation.updatePlace":
 		if e.ComplexityRoot.Mutation.UpdatePlace == nil {
 			break
@@ -781,6 +847,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdatePost(childComplexity, args["id"].(int), args["input"].(model.UpdatePostInput)), true
+
+	case "Page.adminOnly":
+		if e.ComplexityRoot.Page.AdminOnly == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.AdminOnly(childComplexity), true
+	case "Page.createdAt":
+		if e.ComplexityRoot.Page.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.CreatedAt(childComplexity), true
+	case "Page.id":
+		if e.ComplexityRoot.Page.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.ID(childComplexity), true
+	case "Page.slug":
+		if e.ComplexityRoot.Page.Slug == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.Slug(childComplexity), true
+	case "Page.title":
+		if e.ComplexityRoot.Page.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.Title(childComplexity), true
+	case "Page.updatedAt":
+		if e.ComplexityRoot.Page.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Page.UpdatedAt(childComplexity), true
 
 	case "Place.category":
 		if e.ComplexityRoot.Place.Category == nil {
@@ -903,7 +1006,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.ComplexityRoot.Query.Boxes(childComplexity), true
+		args, err := ec.field_Query_boxes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Boxes(childComplexity, args["page"].(string)), true
 	case "Query.favorites":
 		if e.ComplexityRoot.Query.Favorites == nil {
 			break
@@ -929,6 +1037,23 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Messages(childComplexity), true
+	case "Query.page":
+		if e.ComplexityRoot.Query.Page == nil {
+			break
+		}
+
+		args, err := ec.field_Query_page_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Page(childComplexity, args["slug"].(string)), true
+	case "Query.pages":
+		if e.ComplexityRoot.Query.Pages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Pages(childComplexity), true
 	case "Query.places":
 		if e.ComplexityRoot.Query.Places == nil {
 			break
@@ -1202,11 +1327,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateBoxInput,
 		ec.unmarshalInputCreateFavoriteInput,
+		ec.unmarshalInputCreatePageInput,
 		ec.unmarshalInputCreatePlaceInput,
 		ec.unmarshalInputCreatePostInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputUpdateBoxInput,
+		ec.unmarshalInputUpdatePageInput,
 		ec.unmarshalInputUpdatePlaceInput,
 		ec.unmarshalInputUpdatePostInput,
 	)
@@ -1283,7 +1410,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1302,6 +1429,7 @@ var sources = []*ast.Source{
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
+	{Name: "schema/page.graphql", Input: sourceData("schema/page.graphql"), BuiltIn: false},
 	{Name: "schema/place.graphql", Input: sourceData("schema/place.graphql"), BuiltIn: false},
 	{Name: "schema/post.graphql", Input: sourceData("schema/post.graphql"), BuiltIn: false},
 	{Name: "schema/rowing.graphql", Input: sourceData("schema/rowing.graphql"), BuiltIn: false},
@@ -1368,6 +1496,8 @@ func (ec *executionContext) childFields_Box(ctx context.Context, field graphql.C
 		return ec.fieldContext_Box_createdAt(ctx, field)
 	case "updatedAt":
 		return ec.fieldContext_Box_updatedAt(ctx, field)
+	case "page":
+		return ec.fieldContext_Box_page(ctx, field)
 	case "kind":
 		return ec.fieldContext_Box_kind(ctx, field)
 	case "widget":
@@ -1390,6 +1520,8 @@ func (ec *executionContext) childFields_Box(ctx context.Context, field graphql.C
 		return ec.fieldContext_Box_framed(ctx, field)
 	case "hideOnMobile":
 		return ec.fieldContext_Box_hideOnMobile(ctx, field)
+	case "adminOnly":
+		return ec.fieldContext_Box_adminOnly(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Box", field.Name)
 }
@@ -1446,6 +1578,24 @@ func (ec *executionContext) childFields_Message(ctx context.Context, field graph
 		return ec.fieldContext_Message_createdAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
+}
+
+func (ec *executionContext) childFields_Page(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Page_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_Page_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_Page_updatedAt(ctx, field)
+	case "slug":
+		return ec.fieldContext_Page_slug(ctx, field)
+	case "title":
+		return ec.fieldContext_Page_title(ctx, field)
+	case "adminOnly":
+		return ec.fieldContext_Page_adminOnly(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Page", field.Name)
 }
 
 func (ec *executionContext) childFields_Place(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1786,6 +1936,20 @@ func (ec *executionContext) field_Mutation_createFavorite_args(ctx context.Conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createPage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreatePageInput, error) {
+			return ec.unmarshalNCreatePageInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreatePageInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createPlace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1843,6 +2007,20 @@ func (ec *executionContext) field_Mutation_deleteBookmark_args(ctx context.Conte
 }
 
 func (ec *executionContext) field_Mutation_deleteBox_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deletePage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -1956,6 +2134,28 @@ func (ec *executionContext) field_Mutation_updateBox_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updatePage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdatePageInput, error) {
+			return ec.unmarshalNUpdatePageInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdatePageInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updatePlace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2011,6 +2211,34 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_boxes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_page_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "slug",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["slug"] = arg0
 	return args, nil
 }
 
@@ -2479,6 +2707,29 @@ func (ec *executionContext) fieldContext_Box_updatedAt(_ context.Context, field 
 	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
+func (ec *executionContext) _Box_page(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Box_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Box_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Box_kind(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2729,6 +2980,29 @@ func (ec *executionContext) _Box_hideOnMobile(ctx context.Context, field graphql
 	)
 }
 func (ec *executionContext) fieldContext_Box_hideOnMobile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Box_adminOnly(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Box_adminOnly(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AdminOnly, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Box_adminOnly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
@@ -3644,6 +3918,177 @@ func (ec *executionContext) fieldContext_Mutation_createFavorite(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createPage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createPage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreatePage(ctx, fc.Args["input"].(model.CreatePageInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Page
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Page) graphql.Marshaler {
+			return ec.marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Page(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createPage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updatePage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updatePage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdatePage(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdatePageInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Page
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Page) graphql.Marshaler {
+			return ec.marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updatePage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Page(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updatePage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deletePage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deletePage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeletePage(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Page
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Page) graphql.Marshaler {
+			return ec.marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deletePage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Page(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deletePage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createPlace(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4157,6 +4602,144 @@ func (ec *executionContext) fieldContext_Mutation_setUserAdmin(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Page_id(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Page_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _Page_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _Page_slug(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_slug(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Slug, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_slug(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Page_title(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Page_adminOnly(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Page_adminOnly(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AdminOnly, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Page_adminOnly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
 func (ec *executionContext) _Place_id(ctx context.Context, field graphql.CollectedField, obj *models.Place) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4662,7 +5245,8 @@ func (ec *executionContext) _Query_boxes(ctx context.Context, field graphql.Coll
 			return ec.fieldContext_Query_boxes(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().Boxes(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Boxes(ctx, fc.Args["page"].(string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []*models.Box) graphql.Marshaler {
@@ -4672,7 +5256,7 @@ func (ec *executionContext) _Query_boxes(ctx context.Context, field graphql.Coll
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_Query_boxes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_boxes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -4681,6 +5265,17 @@ func (ec *executionContext) fieldContext_Query_boxes(_ context.Context, field gr
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Box(ctx, field)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_boxes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4777,6 +5372,82 @@ func (ec *executionContext) fieldContext_Query_messages(_ context.Context, field
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Message(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_pages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_pages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Pages(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.Page) graphql.Marshaler {
+			return ec.marshalNPage2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPageᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_pages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Page(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_page(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Page(ctx, fc.Args["slug"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Page) graphql.Marshaler {
+			return ec.marshalOPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_page(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Page(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_page_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -7133,13 +7804,20 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile"}
+	fieldsInOrder := [...]string{"page", "kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "page":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
 		case "kind":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -7217,6 +7895,13 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HideOnMobile = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
 		}
 	}
 	return it, nil
@@ -7261,6 +7946,50 @@ func (ec *executionContext) unmarshalInputCreateFavoriteInput(ctx context.Contex
 				return it, err
 			}
 			it.Link = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreatePageInput(ctx context.Context, obj any) (model.CreatePageInput, error) {
+	var it model.CreatePageInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"slug", "title", "adminOnly"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
 		}
 	}
 	return it, nil
@@ -7467,7 +8196,7 @@ func (ec *executionContext) unmarshalInputUpdateBoxInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile"}
+	fieldsInOrder := [...]string{"widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7544,6 +8273,57 @@ func (ec *executionContext) unmarshalInputUpdateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HideOnMobile = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdatePageInput(ctx context.Context, obj any) (model.UpdatePageInput, error) {
+	var it model.UpdatePageInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"slug", "title", "adminOnly"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
 		}
 	}
 	return it, nil
@@ -7864,6 +8644,11 @@ func (ec *executionContext) _Box(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "page":
+			out.Values[i] = ec._Box_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "kind":
 			out.Values[i] = ec._Box_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7916,6 +8701,11 @@ func (ec *executionContext) _Box(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "hideOnMobile":
 			out.Values[i] = ec._Box_hideOnMobile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "adminOnly":
+			out.Values[i] = ec._Box_adminOnly(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8252,6 +9042,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createPage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createPage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatePage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updatePage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deletePage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deletePage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createPlace":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createPlace(ctx, field)
@@ -8312,6 +9123,69 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setUserAdmin(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var pageImplementors = []string{"Page"}
+
+func (ec *executionContext) _Page(ctx context.Context, sel ast.SelectionSet, obj *models.Page) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Page")
+		case "id":
+			out.Values[i] = ec._Page_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Page_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Page_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slug":
+			out.Values[i] = ec._Page_slug(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._Page_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "adminOnly":
+			out.Values[i] = ec._Page_adminOnly(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8650,6 +9524,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_messages(ctx, field)
 				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "pages":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pages(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "page":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_page(ctx, field)
+				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -9978,6 +10896,11 @@ func (ec *executionContext) unmarshalNCreateFavoriteInput2adamᚑfrenchᚗcoᚗu
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreatePageInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreatePageInput(ctx context.Context, v any) (model.CreatePageInput, error) {
+	res, err := ec.unmarshalInputCreatePageInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreatePlaceInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreatePlaceInput(ctx context.Context, v any) (model.CreatePlaceInput, error) {
 	res, err := ec.unmarshalInputCreatePlaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10112,6 +11035,32 @@ func (ec *executionContext) marshalNMessage2ᚖadamᚑfrenchᚗcoᚗukᚋbackend
 		return graphql.Null
 	}
 	return ec._Message(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPage2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPageᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Page) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx context.Context, sel ast.SelectionSet, v *models.Page) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Page(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPlace2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPlaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Place) graphql.Marshaler {
@@ -10334,6 +11283,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 
 func (ec *executionContext) unmarshalNUpdateBoxInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateBoxInput(ctx context.Context, v any) (model.UpdateBoxInput, error) {
 	res, err := ec.unmarshalInputUpdateBoxInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdatePageInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdatePageInput(ctx context.Context, v any) (model.UpdatePageInput, error) {
+	res, err := ec.unmarshalInputUpdatePageInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -10566,6 +11520,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPage(ctx context.Context, sel ast.SelectionSet, v *models.Page) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Page(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPost2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPost(ctx context.Context, sel ast.SelectionSet, v *models.Post) graphql.Marshaler {

@@ -1,6 +1,8 @@
-# Boxes on the home page canvas (/stp). Anyone may read the layout — it is
-# the page — but only an admin may change it. x/y/w/h are px on a fixed
-# 1400px-wide design canvas; see models.Box.
+# Boxes on a canvas page: the home page (/stp, page "stp"), the landing
+# page's overlay (page "index") or an admin-created Page (page = its slug).
+# Anyone may read a page's layout — it is the page — but only an admin may
+# change it, and adminOnly boxes are only ever returned to an admin. x/y/w/h
+# are px on a fixed 1400px-wide design canvas; see models.Box.
 #
 # kind is "widget" (a built-in Vue component named by `widget`) or "html"
 # (`html` rendered in a sandboxed iframe on the front end).
@@ -9,6 +11,7 @@ type Box {
   id: ID!
   createdAt: Time!
   updatedAt: Time!
+  page: String!
   kind: String!
   widget: String
   html: String
@@ -20,9 +23,11 @@ type Box {
   z: Int!
   framed: Boolean!
   hideOnMobile: Boolean!
+  adminOnly: Boolean!
 }
 
 input CreateBoxInput {
+  page: String!
   kind: String!
   widget: String
   html: String
@@ -34,6 +39,7 @@ input CreateBoxInput {
   z: Int
   framed: Boolean
   hideOnMobile: Boolean
+  adminOnly: Boolean
 }
 
 input UpdateBoxInput {
@@ -47,10 +53,11 @@ input UpdateBoxInput {
   z: Int
   framed: Boolean
   hideOnMobile: Boolean
+  adminOnly: Boolean
 }
 
 extend type Query {
-  boxes: [Box!]!
+  boxes(page: String!): [Box!]!
 }
 
 extend type Mutation {

@@ -25,6 +25,7 @@ type CreateBookmarkInput struct {
 }
 
 type CreateBoxInput struct {
+	Page         string  `json:"page"`
 	Kind         string  `json:"kind"`
 	Widget       *string `json:"widget,omitempty"`
 	HTML         *string `json:"html,omitempty"`
@@ -36,12 +37,19 @@ type CreateBoxInput struct {
 	Z            *int    `json:"z,omitempty"`
 	Framed       *bool   `json:"framed,omitempty"`
 	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
+	AdminOnly    *bool   `json:"adminOnly,omitempty"`
 }
 
 type CreateFavoriteInput struct {
 	Type string  `json:"type"`
 	Name string  `json:"name"`
 	Link *string `json:"link,omitempty"`
+}
+
+type CreatePageInput struct {
+	Slug      string `json:"slug"`
+	Title     string `json:"title"`
+	AdminOnly *bool  `json:"adminOnly,omitempty"`
 }
 
 type CreatePlaceInput struct {
@@ -138,6 +146,13 @@ type UpdateBoxInput struct {
 	Z            *int    `json:"z,omitempty"`
 	Framed       *bool   `json:"framed,omitempty"`
 	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
+	AdminOnly    *bool   `json:"adminOnly,omitempty"`
+}
+
+type UpdatePageInput struct {
+	Slug      *string `json:"slug,omitempty"`
+	Title     *string `json:"title,omitempty"`
+	AdminOnly *bool   `json:"adminOnly,omitempty"`
 }
 
 type UpdatePlaceInput struct {

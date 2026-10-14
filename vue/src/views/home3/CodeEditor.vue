@@ -71,6 +71,17 @@ watch(
 );
 
 onBeforeUnmount(() => view?.destroy());
+
+/** Put text at the cursor (replacing any selection); false if the editor
+ *  isn't loaded, so the caller can fall back to appending it. */
+function insert(text) {
+  if (!view) return false;
+  view.dispatch(view.state.replaceSelection(text));
+  view.focus();
+  return true;
+}
+
+defineExpose({ insert });
 </script>
 
 <template>

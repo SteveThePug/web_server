@@ -1,0 +1,41 @@
+# Admin-created canvas pages. A page is just a slug and a title; its content
+# is the boxes whose `page` is the slug (see box.graphql). The SPA serves it
+# at /<slug> through its catch-all route, so a slug may not start with a path
+# the site already uses — see validateSlug in page_helpers.go.
+#
+# adminOnly pages, and their boxes, are invisible to everyone but an admin:
+# `page` answers null and `pages` leaves them out.
+
+type Page {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  slug: String!
+  title: String!
+  adminOnly: Boolean!
+}
+
+input CreatePageInput {
+  slug: String!
+  title: String!
+  adminOnly: Boolean
+}
+
+input UpdatePageInput {
+  slug: String
+  title: String
+  adminOnly: Boolean
+}
+
+extend type Query {
+  pages: [Page!]!
+  page(slug: String!): Page
+}
+
+extend type Mutation {
+  createPage(input: CreatePageInput!): Page! @admin
+  # Renaming a page moves its boxes with it.
+  updatePage(id: ID!, input: UpdatePageInput!): Page! @admin
+  # Deletes the page's boxes too.
+  deletePage(id: ID!): Page! @admin
+}

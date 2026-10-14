@@ -14,13 +14,15 @@ func TestValidateBox(t *testing.T) {
 		box     models.Box
 		wantErr bool
 	}{
-		{"widget with a name", models.Box{Kind: "widget", Widget: str("Chat")}, false},
-		{"widget without a name", models.Box{Kind: "widget"}, true},
-		{"widget with an empty name", models.Box{Kind: "widget", Widget: str("")}, true},
-		{"html with html", models.Box{Kind: "html", HTML: str("<p>hi</p>")}, false},
-		{"html with empty html", models.Box{Kind: "html", HTML: str("")}, false},
-		{"html without html", models.Box{Kind: "html"}, true},
-		{"unknown kind", models.Box{Kind: "iframe", HTML: str("x")}, true},
+		{"widget with a name", models.Box{Page: "stp", Kind: "widget", Widget: str("Chat")}, false},
+		{"widget without a name", models.Box{Page: "stp", Kind: "widget"}, true},
+		{"widget with an empty name", models.Box{Page: "stp", Kind: "widget", Widget: str("")}, true},
+		{"html with html", models.Box{Page: "stp", Kind: "html", HTML: str("<p>hi</p>")}, false},
+		{"html with empty html", models.Box{Page: "stp", Kind: "html", HTML: str("")}, false},
+		{"html without html", models.Box{Page: "stp", Kind: "html"}, true},
+		{"no page", models.Box{Kind: "widget", Widget: str("Chat")}, true},
+		{"bad page", models.Box{Page: "Shrines/GTO", Kind: "widget", Widget: str("Chat")}, true},
+		{"unknown kind", models.Box{Page: "stp", Kind: "iframe", HTML: str("x")}, true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			err := validateBox(&c.box)
@@ -32,7 +34,7 @@ func TestValidateBox(t *testing.T) {
 
 	// Geometry is clamped, not rejected: a drag past the canvas edge lands
 	// at the edge, and a box can never shrink below a grabbable size.
-	box := models.Box{Kind: "widget", Widget: str("Chat"), X: -30, Y: -1, W: 5, H: 0}
+	box := models.Box{Page: "stp", Kind: "widget", Widget: str("Chat"), X: -30, Y: -1, W: 5, H: 0}
 	if err := validateBox(&box); err != nil {
 		t.Fatal(err)
 	}

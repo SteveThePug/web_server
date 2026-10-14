@@ -85,12 +85,72 @@ const imageHtml = (src) => `<style>
 const EMPTY = `<h3>New box</h3>
 <p>Edit me.</p>`;
 
-/** Menu entries; `size` is [w, h] in canvas px. */
+// A sticky note for reminders to self. Unframed, since the note is its own
+// frame; the menu entry makes it adminOnly.
+const NOTE = `<style>
+  body { padding: 0; }
+  .note {
+    box-sizing: border-box; height: 100%; padding: .75rem 1rem;
+    background: #f6e27a; color: #2b2610; transform: rotate(-1deg);
+    box-shadow: 2px 3px 0 rgba(0, 0, 0, .35); overflow: auto;
+  }
+  .note h3 { margin: 0 0 .3rem; color: inherit; font-family: var(--font-heading); }
+  .note ul { margin: 0; padding-left: 1.1rem; }
+</style>
+<div class="note">
+  <h3>TODO</h3>
+  <ul>
+    <li>Something to implement</li>
+  </ul>
+</div>`;
+
+const HEADING = `<style>
+  body { display: grid; place-items: center; text-align: center; }
+  h1 { margin: 0; font-family: var(--font-heading); color: var(--color-primary); font-size: 3.5rem; line-height: 1; }
+  p { margin: .25rem 0 0; color: var(--color-tertiary); }
+</style>
+<div>
+  <h1>Title</h1>
+  <p>subtitle</p>
+</div>`;
+
+const TEXT = `<h3>Heading</h3>
+<p>
+  A paragraph about it. <b>Bold</b>, <i>italic</i> and
+  <a href="https://example.com" target="_blank">links</a> all work.
+</p>
+<blockquote>“A quote you like.”</blockquote>`;
+
+// A scrolling grid of images. "Insert upload" in the editor adds more.
+const galleryHtml = (srcs) => `<style>
+  body { padding: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
+  .grid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+</style>
+<div class="grid">
+${srcs.map((src) => `  <img src="${src}" alt="">`).join("\n")}
+</div>`;
+
+const VIDEO = `<style>
+  body { padding: 0; overflow: hidden; background: #000; }
+  video { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+<video src="/img/demoman/1760582395316219.webm" controls loop muted></video>`;
+
+/**
+ * Menu entries; `size` is [w, h] in canvas px. `adminOnly` sets the new
+ * box's flag, which can be changed afterwards in the editor.
+ */
 export const TEMPLATES = [
+  { label: "Note (admin only)", title: "Note", html: NOTE, size: [260, 200], framed: false, adminOnly: true },
+  { label: "Heading", title: "Heading", html: HEADING, size: [600, 140], framed: false },
+  { label: "Text", title: "Text", html: TEXT, size: [400, 260] },
+  { label: "Image / GIF", title: "Image", html: imageHtml("/img/memes/fire-woman.gif"), size: [240, 240], framed: false },
+  { label: "Image gallery", title: "Gallery", html: galleryHtml(["/img/memes/fire-woman.gif", "/img/memes/epic.jpeg"]), size: [460, 320] },
+  { label: "Video", title: "Video", html: VIDEO, size: [400, 260], framed: false },
   { label: "Clock", title: "Clock", html: CLOCK, size: [240, 120] },
   { label: "Weather", title: "Weather", html: WEATHER, size: [240, 170] },
-  { label: "Image / GIF", title: "Image", html: imageHtml("/img/memes/fire-woman.gif"), size: [240, 240], framed: false },
   { label: "Empty HTML", title: "HTML", html: EMPTY, size: [300, 200] },
 ];
 
-export { imageHtml };
+export { imageHtml, galleryHtml };

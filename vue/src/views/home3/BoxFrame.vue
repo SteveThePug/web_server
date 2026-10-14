@@ -105,7 +105,7 @@ function end() {
 <template>
   <div
     class="box"
-    :class="{ framed: box.framed, editing, selected }"
+    :class="{ framed: box.framed, editing, selected, 'admin-only': box.adminOnly }"
     :style="style"
   >
     <slot />
@@ -145,6 +145,12 @@ function end() {
 .box.framed {
   background-color: var(--color-surface);
   border: 2px solid var(--color-quaternary);
+}
+/* Only admins are ever sent an adminOnly box; the outline reminds them that
+   nobody else can see it. */
+.box.admin-only:not(.editing) {
+  outline: 2px dashed var(--color-tertiary);
+  outline-offset: -2px;
 }
 
 .overlay {
