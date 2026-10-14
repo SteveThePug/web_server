@@ -1,13 +1,22 @@
 <script setup>
 /**
  * Route `/` — the professional front door. Deliberately plain: a short bio and a
- * row of links out to the CV, the personal home page (/stp) and social profiles.
+ * row of links out to the CV, the personal home page (/stp), the projects that
+ * run as their own containers, and social profiles.
  * Statically imported by the router (it is the first paint).
  */
 import Link from "@/components/text/Link.vue";
 import InlineLink from "@/components/text/InlineLink.vue";
 import Header from "@/components/text/Header.vue";
 import Paragraph from "@/components/text/Paragraph.vue";
+
+// The projects are nginx routes to other containers, not SPA routes, so they
+// must be plain hrefs: a RouterLink would resolve them client-side to the 404.
+const projects = [
+  { name: "Jobs", href: "/jobs/" },
+  { name: "Tracker", href: "/tracker/" },
+  { name: "USACO", href: "/usaco/" },
+];
 
 const links = [
   { name: "GitHub", href: "https://github.com/SteveThePug" },
@@ -43,6 +52,9 @@ const links = [
       <nav class="navRow flex flex-row flex-wrap gap-4 justify-around">
         <Link to="/cv"> CV </Link>
         <Link to="/stp"> STP </Link>
+        <Link v-for="p in projects" :key="p.name" :href="p.href">
+          {{ p.name }}
+        </Link>
         <Link href="mailto:adam.a.french@outlook.com"> Email </Link>
         <Link v-for="link in links" :key="link.name" :href="link.href">
           {{ link.name }}
