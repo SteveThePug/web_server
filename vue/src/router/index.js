@@ -105,18 +105,8 @@ const router = createRouter({
                     name: "cv",
                     component: () => import("@/views/CV/CV.vue"),
                 },
-                {
-                    path: "jobs",
-                    name: "job-applications",
-                    component: () => import("@/views/CV/JobApplications.vue"),
-                    meta: { requiresAdmin: true },
-                },
-                {
-                    path: "leads",
-                    name: "job-leads",
-                    component: () => import("@/views/CV/JobLeads.vue"),
-                    meta: { requiresAdmin: true },
-                },
+                // /cv/jobs and /cv/leads moved to the job tracker app at
+                // /jobs/; nginx redirects the old paths.
             ],
         },
     ],

@@ -75,6 +75,16 @@ services:
         command: ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PYTHON_PORT:-8000} --root-path /py --reload"]
         volumes:
             - ./python/app:/app/app
+    # The tracker's image ships no hot reload; for that, run its own repo's
+    # `npm run dev`. Seeded like the backend, with the GraphQL playground at
+    # /jobs/api/graphql. Login still goes through the backend's seeded admin.
+    jobs:
+        environment:
+            - DEV_MODE=true
+            - SEED_DB=true
+            - GQL_PLAYGROUND=true
+            - GQL_INTROSPECTION=true
+            - MSGRAPH_REDIRECT_URI=https://localhost/jobs/api/email/callback
     certbot:
         # Profiles are opt-in: a service with a profile is only started when
         # that profile is explicitly requested. Nothing ever requests

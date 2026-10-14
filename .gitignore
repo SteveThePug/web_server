@@ -3,6 +3,7 @@ icecast2/fallback_music/*
 certbot/conf
 certbot/www
 backend/token/
+jobs-data/
 .env
 .env.bak
 

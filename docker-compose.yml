@@ -114,6 +114,7 @@ services:
       - silverbullet
       - silverbullet-public
       - python
+      - jobs
     networks:
       - app-network
     ports:
@@ -423,6 +424,54 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # The job application tracker, served at /jobs/. Built and published by its
+  # own repo (adamf/job-tracker on this Gitea), whose README covers the
+  # first-time database setup and the cutover from the old in-backend tracker.
+  #
+  # Like python, it gets an explicit `environment:` list rather than the whole
+  # .env: it never sees the site's database password or JWT secret, and has a
+  # database role of its own. backend/services/env_manager_test.go checks the
+  # list against env_registry.json.
+  #
+  # It has no login. AUTH_VALIDATE_URL is the backend's validate-admin route
+  # (the one nginx's auth_request uses), which the tracker asks with the
+  # visitor's cookies on each admin request.
+  #
+  # ./jobs-data holds the Microsoft Graph session and the capture token. The
+  # image runs as uid 1000, so the directory must be owned by it.
+  jobs:
+    image: adam-french.co.uk/adamf/job-tracker:${JOBS_IMAGE_TAG:-latest}
+    container_name: jobs
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_JOBS_USER:-jobs}:${POSTGRES_JOBS_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_JOBS_DB:-jobs}?sslmode=disable
+      - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-}
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-}
+      - EMAIL_SYNC_ENABLED=${EMAIL_SYNC_ENABLED:-}
+      - EMAIL_SYNC_INTERVAL=${EMAIL_SYNC_INTERVAL:-}
+      - MSGRAPH_CLIENT_ID=${MSGRAPH_CLIENT_ID:-}
+      - MSGRAPH_CLIENT_SECRET=${MSGRAPH_CLIENT_SECRET:-}
+      - MSGRAPH_TENANT_ID=${MSGRAPH_TENANT_ID:-}
+      - MSGRAPH_REDIRECT_URI=${MSGRAPH_REDIRECT_URI:-}
+      - IMAP_HOST=${IMAP_HOST:-}
+      - IMAP_PORT=${IMAP_PORT:-}
+      - IMAP_EMAIL=${IMAP_EMAIL:-}
+      - IMAP_PASSWORD=${IMAP_PASSWORD:-}
+      - JOB_LEADS_ENABLED=${JOB_LEADS_ENABLED:-}
+      - JOB_LEADS_INTERVAL=${JOB_LEADS_INTERVAL:-}
+      - ADZUNA_APP_ID=${ADZUNA_APP_ID:-}
+      - ADZUNA_APP_KEY=${ADZUNA_APP_KEY:-}
+      - REED_API_KEY=${REED_API_KEY:-}
+    volumes:
+      - ./jobs-data:/data
 
   # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
   # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to

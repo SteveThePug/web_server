@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -203,12 +202,11 @@ func main() {
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
 
-	// JOB CAPTURE: called by the browser userscript from other origins, so
-	// these authenticate with a bearer token instead of the session cookies.
-	capture := r.Group("/jobs/capture", store.CaptureTokenMiddleware)
-	capture.GET("/status", store.JobCaptureStatus)
-	capture.POST("/extract", store.JobCaptureExtract)
-	capture.POST("", store.JobCapture)
+	// JOB CAPTURE and EMAIL SYNC routes moved to the job tracker app
+	// (adamf/job-tracker, served at /jobs/). They are no longer registered
+	// here, so an old userscript gets a 404 instead of writing into tables
+	// the tracker no longer reads. The handlers are deleted in a later
+	// commit, once the tracker has run for a while.
 
 	// ROWING
 	r.GET("/rowing", store.GetRowing)
@@ -220,10 +218,6 @@ func main() {
 	r.GET("/auth/check", store.CheckToken)
 	r.POST("/auth/logout", store.Logout)
 	r.GET("/auth/validate-admin", store.ValidateAdmin)
-
-	// EMAIL SYNC
-	r.GET("/email/callback", store.CompleteEmailAuth)
-	admin.POST("/email/sync", store.TriggerEmailSync)
 
 	// SPOTIFY
 	// The callback must be open — Spotify redirects a logged-out browser to
@@ -314,13 +308,10 @@ func main() {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	// The scheduler runs until ctx is cancelled, which in practice only
-	// happens if r.Run returns — there is no signal handling or graceful
-	// shutdown, so the container is simply killed.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go store.EmailSync.StartScheduler(ctx)
-	go store.JobLeads.StartScheduler(ctx)
+	// The email sync and job-lead schedulers are NOT started: the job tracker
+	// runs them now, and it reads the same EMAIL_SYNC_ENABLED and
+	// JOB_LEADS_ENABLED from .env, so starting them here as well would
+	// process every email and board twice.
 
 	port := os.Getenv("BACKEND_PORT")
 	// Blocks until the server stops. Any return is a failure — a port clash,

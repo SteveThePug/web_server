@@ -74,6 +74,9 @@
         set $upstream_silverbullet http://$SILVERBULLET_HOST:$SILVERBULLET_PORT;
         set $upstream_silverbullet_public http://$SILVERBULLET_PUBLIC_HOST:$SILVERBULLET_PUBLIC_PORT;
         set $upstream_python http://$PYTHON_HOST:$PYTHON_PORT;
+        # The job tracker's container name is fixed in docker-compose.yml, so
+        # it needs no variable (and no ENVSUBST_VARS entry).
+        set $upstream_jobs http://jobs:8080;
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -335,6 +338,43 @@
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # ---- Job tracker (/jobs/) ----
+        # Its own container (the adamf/job-tracker repo), which serves its SPA
+        # and its API from the same prefix. The prefix is NOT stripped: the
+        # app is built to live at /jobs/. There is no auth_request here: the
+        # SPA's files are public, and every API route that is not checks the
+        # session itself, by asking the backend's validate-admin with the
+        # visitor's cookies. ^~ so no regex location can claim a /jobs/ path.
+        location = /jobs {
+            return 301 /jobs/;
+        }
+
+        location ^~ /jobs/ {
+            limit_req zone=api burst=20 nodelay;
+            # "Sync now" on the Settings page runs a whole email sync before
+            # answering.
+            proxy_read_timeout 300s;
+            proxy_pass $upstream_jobs;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Where the tracker used to be. The SPA routes were client-side, so
+        # these only catch bookmarks and typed URLs. The userscript's old
+        # @updateURL lands on the third, which is how installed copies find
+        # version 2.0.0 and its new API base.
+        location = /cv/jobs {
+            return 301 /jobs/;
+        }
+        location = /cv/leads {
+            return 301 /jobs/leads;
+        }
+        location = /job-capture.user.js {
+            return 301 /jobs/job-capture.user.js;
         }
 
         # ---- Admin gate (/sb/, /radio/admin/, /uploads/private/) ----

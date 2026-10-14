@@ -12,7 +12,6 @@
  * the chrome, and cv-shared.css sizes the pages.
  */
 import { ref, shallowRef } from "vue";
-import { RouterLink } from "vue-router";
 // import CVGeneral from "./CVGeneral.vue";
 import CVProgramming from "./CVProgramming.vue";
 import CoverLetters from "./CoverLetters.vue";
@@ -67,9 +66,9 @@ function print() {
                 {{ t.label }}
             </button>
             <button class="cv-btn cv-print-btn" @click="print()">Print</button>
-            <RouterLink to="/cv/jobs" class="cv-btn cv-jobs-btn"
-                >Jobs</RouterLink
-            >
+            <!-- The tracker is its own app (adamf/job-tracker) at /jobs/,
+                 so this is a full page load, not a RouterLink. -->
+            <a href="/jobs/" class="cv-btn cv-jobs-btn">Jobs</a>
         </div>
         <Transition name="cv-fade" mode="out-in">
             <component :is="currentComponent" :key="selected" />
