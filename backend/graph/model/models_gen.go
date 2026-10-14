@@ -12,6 +12,12 @@ type AuthPayload struct {
 	User *models.User `json:"user"`
 }
 
+type BackgroundInput struct {
+	Color string `json:"color"`
+	Image string `json:"image"`
+	Fit   string `json:"fit"`
+}
+
 type CreateActivityInput struct {
 	Type string  `json:"type"`
 	Name string  `json:"name"`

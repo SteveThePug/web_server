@@ -45,8 +45,9 @@ func (r *mutationResolver) CreatePage(ctx context.Context, input model.CreatePag
 
 // UpdatePage is the resolver for the updatePage field.
 func (r *mutationResolver) UpdatePage(ctx context.Context, id int, input model.UpdatePageInput) (*models.Page, error) {
-	// Partial update, like updateBox. A new slug moves the page's boxes with
-	// it in the same transaction, since boxes find their page by slug.
+	// Partial update, like updateBox. A new slug moves the page's boxes and
+	// background with it in the same transaction, since both find their page
+	// by slug.
 	var page models.Page
 	if err := r.Store.DB.First(&page, id).Error; err != nil {
 		return nil, err
@@ -81,6 +82,9 @@ func (r *mutationResolver) UpdatePage(ctx context.Context, id int, input model.U
 			if err := tx.Model(&models.Box{}).Where("page = ?", oldSlug).Update("page", page.Slug).Error; err != nil {
 				return err
 			}
+			if err := tx.Model(&models.Background{}).Where("page = ?", oldSlug).Update("page", page.Slug).Error; err != nil {
+				return err
+			}
 		}
 		return tx.Save(&page).Error
 	})
@@ -92,14 +96,17 @@ func (r *mutationResolver) UpdatePage(ctx context.Context, id int, input model.U
 
 // DeletePage is the resolver for the deletePage field.
 func (r *mutationResolver) DeletePage(ctx context.Context, id int) (*models.Page, error) {
-	// The boxes go too: left behind, they would reappear on any page later
-	// created at the same address.
+	// The boxes and background go too: left behind, they would reappear on
+	// any page later created at the same address.
 	var page models.Page
 	if err := r.Store.DB.First(&page, id).Error; err != nil {
 		return nil, err
 	}
 	err := r.Store.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("page = ?", page.Slug).Delete(&models.Box{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("page = ?", page.Slug).Delete(&models.Background{}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&page).Error

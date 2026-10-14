@@ -205,3 +205,22 @@ type Page struct {
 	// AdminOnly hides the whole page, boxes included, from everyone else.
 	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
 }
+
+// Background is the page background behind one canvas (Page is the same page
+// key a Box has: "index" for the landing page, "stp", or a Page's slug), so
+// built-in canvases and admin-created pages are set the same way. A page with
+// no row shows the theme's halftone; deleting the row is "reset to default".
+// The unique index is partial for the same reason as Page's.
+type Background struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Page      string         `gorm:"not null;index:idx_backgrounds_page,unique,where:deleted_at IS NULL" json:"page"`
+	// Color is a CSS colour, or "" for the theme's page colour.
+	Color string `gorm:"not null;default:''" json:"color"`
+	// Image is a URL, or "" for none. Drawn over Color.
+	Image string `gorm:"not null;default:''" json:"image"`
+	// Fit is how Image fills the window: "cover", "contain" or "tile".
+	Fit string `gorm:"not null;default:cover" json:"fit"`
+}

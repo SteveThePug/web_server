@@ -216,6 +216,14 @@ renders any page's boxes.
   The server refuses slugs that an SPA or nginx route would answer first
   (`validateSlug` in `backend/graph/page_helpers.go`) — add to that list when
   adding a route.
+- **Backgrounds.** Each page key can have its own background (`Background` in
+  GraphQL, `stores/background.js`): a colour, an image, and whether the image
+  fills the window, fits inside it or tiles. Admins set it with the
+  "Background" button next to "Edit layout" (`BackgroundEditor.vue`), which
+  previews live and takes an uploaded or dropped image. `DefaultLayout` paints
+  it behind the whole window, navbar included, while that canvas is mounted,
+  and falls back to the halftone. Renaming or deleting a page carries its
+  background along; an admin-only page's background is hidden with it.
 - **Admin only.** A box or a page can be marked admin-only. The server never
   sends those to anyone else, so they are fit for private notes; admins see
   such boxes outlined, with a 🔒 in edit mode. The "Note" template starts

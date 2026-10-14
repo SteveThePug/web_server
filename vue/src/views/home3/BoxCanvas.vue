@@ -21,11 +21,17 @@
  * marked adminOnly are never sent to anyone else (the server filters them);
  * admins see them outlined. Image and video files dropped onto the canvas in
  * edit mode are uploaded and each becomes a box where it was dropped.
+ *
+ * The canvas also owns its page's background (stores/background.js), which
+ * DefaultLayout paints behind the whole window while the canvas is mounted;
+ * admins change it with the Background button.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useMediaQuery } from "@vueuse/core";
 import { useAuthStore } from "@/stores/auth";
 import { useBoxesStore } from "@/stores/boxes";
+import { useBackgroundStore } from "@/stores/background";
+import BackgroundEditor from "./BackgroundEditor.vue";
 import BoxFrame from "./BoxFrame.vue";
 import BoxEditor from "./BoxEditor.vue";
 import HtmlBox from "./HtmlBox.vue";
@@ -54,10 +60,19 @@ auth.ensureLoaded();
 
 store.fetch();
 
+const background = useBackgroundStore();
+background.show(props.page);
+onBeforeUnmount(() => background.hide(props.page));
+const backgroundOpen = ref(false);
+
 const isMobile = useMediaQuery(MOBILE_QUERY);
 const isAdmin = computed(() => auth.loggedIn && !!auth.user.admin);
-// adminOnly boxes come and go with the session.
-watch(isAdmin, () => store.fetch());
+// adminOnly boxes come and go with the session, and so does an adminOnly
+// page's background.
+watch(isAdmin, () => {
+  store.fetch();
+  background.load(props.page);
+});
 
 const editing = ref(false);
 const canEdit = computed(() => isAdmin.value && !isMobile.value);
@@ -284,6 +299,9 @@ function toggleEdit() {
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
         {{ editing ? "Done" : "Edit layout" }}
       </button>
+      <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="backgroundOpen = !backgroundOpen">
+        Background
+      </button>
       <template v-if="inEditMode">
         <select v-model="newChoice" class="bar-btn" @change="addBox">
           <option value="" disabled>+ New box…</option>
@@ -368,6 +386,8 @@ function toggleEdit() {
         </div>
       </div>
     </div>
+
+    <BackgroundEditor v-if="backgroundOpen && canEdit" :page="page" @close="backgroundOpen = false" />
 
     <BoxEditor
       v-if="inEditMode && selected"

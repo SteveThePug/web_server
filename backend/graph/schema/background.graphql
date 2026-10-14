@@ -1,0 +1,37 @@
+# The background behind a canvas page, keyed by the same page key as its
+# boxes ("index" for the landing page, "stp", or a Page's slug), so the
+# landing page and every shrine are set the same way. Edited from the
+# canvas's "Background" button; see models.Background.
+#
+# Anyone may read it, as part of the page, except that an adminOnly page's
+# background is null to everyone but an admin.
+
+type Background {
+  id: ID!
+  updatedAt: Time!
+  page: String!
+  # A CSS colour, or "" for the theme's page colour.
+  color: String!
+  # An image URL, or "" for none.
+  image: String!
+  # "cover", "contain" or "tile".
+  fit: String!
+}
+
+input BackgroundInput {
+  color: String!
+  image: String!
+  fit: String!
+}
+
+extend type Query {
+  # Null when the page has none, i.e. shows the theme's default.
+  background(page: String!): Background
+}
+
+extend type Mutation {
+  # Creates or replaces the page's background.
+  setBackground(page: String!, input: BackgroundInput!): Background! @admin
+  # Back to the theme's default. True if there was one to remove.
+  clearBackground(page: String!): Boolean! @admin
+}

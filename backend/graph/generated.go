@@ -56,6 +56,15 @@ type ComplexityRoot struct {
 		User func(childComplexity int) int
 	}
 
+	Background struct {
+		Color     func(childComplexity int) int
+		Fit       func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Image     func(childComplexity int) int
+		Page      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
 	Bookmark struct {
 		Category  func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
@@ -112,28 +121,30 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateActivity func(childComplexity int, input model.CreateActivityInput) int
-		CreateBookmark func(childComplexity int, input model.CreateBookmarkInput) int
-		CreateBox      func(childComplexity int, input model.CreateBoxInput) int
-		CreateFavorite func(childComplexity int, input model.CreateFavoriteInput) int
-		CreatePage     func(childComplexity int, input model.CreatePageInput) int
-		CreatePlace    func(childComplexity int, input model.CreatePlaceInput) int
-		CreatePost     func(childComplexity int, input model.CreatePostInput) int
-		CreateUser     func(childComplexity int, input model.CreateUserInput) int
-		DeleteBookmark func(childComplexity int, id int) int
-		DeleteBox      func(childComplexity int, id int) int
-		DeletePage     func(childComplexity int, id int) int
-		DeletePlace    func(childComplexity int, id int) int
-		DeletePost     func(childComplexity int, id int) int
-		DeleteUser     func(childComplexity int, id int) int
-		Login          func(childComplexity int, input model.LoginInput) int
-		Logout         func(childComplexity int) int
-		RefreshToken   func(childComplexity int) int
-		SetUserAdmin   func(childComplexity int, id int, admin bool) int
-		UpdateBox      func(childComplexity int, id int, input model.UpdateBoxInput) int
-		UpdatePage     func(childComplexity int, id int, input model.UpdatePageInput) int
-		UpdatePlace    func(childComplexity int, id int, input model.UpdatePlaceInput) int
-		UpdatePost     func(childComplexity int, id int, input model.UpdatePostInput) int
+		ClearBackground func(childComplexity int, page string) int
+		CreateActivity  func(childComplexity int, input model.CreateActivityInput) int
+		CreateBookmark  func(childComplexity int, input model.CreateBookmarkInput) int
+		CreateBox       func(childComplexity int, input model.CreateBoxInput) int
+		CreateFavorite  func(childComplexity int, input model.CreateFavoriteInput) int
+		CreatePage      func(childComplexity int, input model.CreatePageInput) int
+		CreatePlace     func(childComplexity int, input model.CreatePlaceInput) int
+		CreatePost      func(childComplexity int, input model.CreatePostInput) int
+		CreateUser      func(childComplexity int, input model.CreateUserInput) int
+		DeleteBookmark  func(childComplexity int, id int) int
+		DeleteBox       func(childComplexity int, id int) int
+		DeletePage      func(childComplexity int, id int) int
+		DeletePlace     func(childComplexity int, id int) int
+		DeletePost      func(childComplexity int, id int) int
+		DeleteUser      func(childComplexity int, id int) int
+		Login           func(childComplexity int, input model.LoginInput) int
+		Logout          func(childComplexity int) int
+		RefreshToken    func(childComplexity int) int
+		SetBackground   func(childComplexity int, page string, input model.BackgroundInput) int
+		SetUserAdmin    func(childComplexity int, id int, admin bool) int
+		UpdateBox       func(childComplexity int, id int, input model.UpdateBoxInput) int
+		UpdatePage      func(childComplexity int, id int, input model.UpdatePageInput) int
+		UpdatePlace     func(childComplexity int, id int, input model.UpdatePlaceInput) int
+		UpdatePost      func(childComplexity int, id int, input model.UpdatePostInput) int
 	}
 
 	Page struct {
@@ -170,6 +181,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Activities         func(childComplexity int) int
+		Background         func(childComplexity int, page string) int
 		Bookmarks          func(childComplexity int) int
 		Boxes              func(childComplexity int, page string) int
 		Favorites          func(childComplexity int) int
@@ -263,6 +275,8 @@ type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	Logout(ctx context.Context) (bool, error)
 	RefreshToken(ctx context.Context) (*model.AuthPayload, error)
+	SetBackground(ctx context.Context, page string, input model.BackgroundInput) (*models.Background, error)
+	ClearBackground(ctx context.Context, page string) (bool, error)
 	CreateBookmark(ctx context.Context, input model.CreateBookmarkInput) (*models.Bookmark, error)
 	DeleteBookmark(ctx context.Context, id int) (*models.Bookmark, error)
 	CreateBox(ctx context.Context, input model.CreateBoxInput) (*models.Box, error)
@@ -285,6 +299,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Activities(ctx context.Context) ([]*models.Activity, error)
 	Me(ctx context.Context) (*models.User, error)
+	Background(ctx context.Context, page string) (*models.Background, error)
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
 	Boxes(ctx context.Context, page string) ([]*models.Box, error)
 	Favorites(ctx context.Context) ([]*models.Favorite, error)
@@ -369,6 +384,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.AuthPayload.User(childComplexity), true
+
+	case "Background.color":
+		if e.ComplexityRoot.Background.Color == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.Color(childComplexity), true
+	case "Background.fit":
+		if e.ComplexityRoot.Background.Fit == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.Fit(childComplexity), true
+	case "Background.id":
+		if e.ComplexityRoot.Background.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.ID(childComplexity), true
+	case "Background.image":
+		if e.ComplexityRoot.Background.Image == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.Image(childComplexity), true
+	case "Background.page":
+		if e.ComplexityRoot.Background.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.Page(childComplexity), true
+	case "Background.updatedAt":
+		if e.ComplexityRoot.Background.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Background.UpdatedAt(childComplexity), true
 
 	case "Bookmark.category":
 		if e.ComplexityRoot.Bookmark.Category == nil {
@@ -615,6 +667,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Message.Private(childComplexity), true
 
+	case "Mutation.clearBackground":
+		if e.ComplexityRoot.Mutation.ClearBackground == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_clearBackground_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ClearBackground(childComplexity, args["page"].(string)), true
 	case "Mutation.createActivity":
 		if e.ComplexityRoot.Mutation.CreateActivity == nil {
 			break
@@ -792,6 +855,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RefreshToken(childComplexity), true
+	case "Mutation.setBackground":
+		if e.ComplexityRoot.Mutation.SetBackground == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setBackground_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SetBackground(childComplexity, args["page"].(string), args["input"].(model.BackgroundInput)), true
 	case "Mutation.setUserAdmin":
 		if e.ComplexityRoot.Mutation.SetUserAdmin == nil {
 			break
@@ -995,6 +1069,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Activities(childComplexity), true
+	case "Query.background":
+		if e.ComplexityRoot.Query.Background == nil {
+			break
+		}
+
+		args, err := ec.field_Query_background_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Background(childComplexity, args["page"].(string)), true
 	case "Query.bookmarks":
 		if e.ComplexityRoot.Query.Bookmarks == nil {
 			break
@@ -1323,6 +1408,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputBackgroundInput,
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateBoxInput,
@@ -1410,7 +1496,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/background.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1424,6 +1510,7 @@ func sourceData(filename string) string {
 var sources = []*ast.Source{
 	{Name: "schema/activity.graphql", Input: sourceData("schema/activity.graphql"), BuiltIn: false},
 	{Name: "schema/auth.graphql", Input: sourceData("schema/auth.graphql"), BuiltIn: false},
+	{Name: "schema/background.graphql", Input: sourceData("schema/background.graphql"), BuiltIn: false},
 	{Name: "schema/bookmark.graphql", Input: sourceData("schema/bookmark.graphql"), BuiltIn: false},
 	{Name: "schema/box.graphql", Input: sourceData("schema/box.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
@@ -1468,6 +1555,24 @@ func (ec *executionContext) childFields_AuthPayload(ctx context.Context, field g
 		return ec.fieldContext_AuthPayload_user(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type AuthPayload", field.Name)
+}
+
+func (ec *executionContext) childFields_Background(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Background_id(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_Background_updatedAt(ctx, field)
+	case "page":
+		return ec.fieldContext_Background_page(ctx, field)
+	case "color":
+		return ec.fieldContext_Background_color(ctx, field)
+	case "image":
+		return ec.fieldContext_Background_image(ctx, field)
+	case "fit":
+		return ec.fieldContext_Background_fit(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Background", field.Name)
 }
 
 func (ec *executionContext) childFields_Bookmark(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1880,6 +1985,20 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_clearBackground_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createActivity_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2090,6 +2209,28 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_setBackground_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.BackgroundInput, error) {
+			return ec.unmarshalNBackgroundInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐBackgroundInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setUserAdmin_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2211,6 +2352,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_background_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg0
 	return args, nil
 }
 
@@ -2498,6 +2653,144 @@ func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, fie
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Background_id(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Background_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _Background_page(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Background_color(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_color(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Color, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_color(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Background_image(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_image(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Image, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_image(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Background_fit(ctx context.Context, field graphql.CollectedField, obj *models.Background) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Background_fit(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Fit, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Background_fit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Background", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Bookmark_id(ctx context.Context, field graphql.CollectedField, obj *models.Bookmark) (ret graphql.Marshaler) {
@@ -3572,6 +3865,120 @@ func (ec *executionContext) fieldContext_Mutation_refreshToken(_ context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_AuthPayload(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_setBackground(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_setBackground(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SetBackground(ctx, fc.Args["page"].(string), fc.Args["input"].(model.BackgroundInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Background
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Background) graphql.Marshaler {
+			return ec.marshalNBackground2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBackground(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_setBackground(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Background(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setBackground_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_clearBackground(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_clearBackground(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ClearBackground(ctx, fc.Args["page"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_clearBackground(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_clearBackground_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5200,6 +5607,50 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_User(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_background(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_background(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Background(ctx, fc.Args["page"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Background) graphql.Marshaler {
+			return ec.marshalOBackground2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBackground(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_background(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Background(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_background_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -7705,6 +8156,50 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBackgroundInput(ctx context.Context, obj any) (model.BackgroundInput, error) {
+	var it model.BackgroundInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"color", "image", "fit"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "color":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Color = data
+		case "image":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("image"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Image = data
+		case "fit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fit"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Fit = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateActivityInput(ctx context.Context, obj any) (model.CreateActivityInput, error) {
 	var it model.CreateActivityInput
 	if obj == nil {
@@ -8554,6 +9049,69 @@ func (ec *executionContext) _AuthPayload(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var backgroundImplementors = []string{"Background"}
+
+func (ec *executionContext) _Background(ctx context.Context, sel ast.SelectionSet, obj *models.Background) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, backgroundImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Background")
+		case "id":
+			out.Values[i] = ec._Background_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Background_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._Background_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "color":
+			out.Values[i] = ec._Background_color(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "image":
+			out.Values[i] = ec._Background_image(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fit":
+			out.Values[i] = ec._Background_fit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var bookmarkImplementors = []string{"Bookmark"}
 
 func (ec *executionContext) _Bookmark(ctx context.Context, sel ast.SelectionSet, obj *models.Bookmark) graphql.Marshaler {
@@ -9000,6 +9558,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setBackground":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setBackground(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clearBackground":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_clearBackground(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createBookmark":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createBookmark(ctx, field)
@@ -9413,6 +9985,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_me(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "background":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_background(ctx, field)
 				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -10808,6 +11402,21 @@ func (ec *executionContext) marshalNAuthPayload2ᚖadamᚑfrenchᚗcoᚗukᚋbac
 	return ec._AuthPayload(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBackground2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBackground(ctx context.Context, sel ast.SelectionSet, v *models.Background) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Background(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBackgroundInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐBackgroundInput(ctx context.Context, v any) (model.BackgroundInput, error) {
+	res, err := ec.unmarshalInputBackgroundInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNBookmark2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBookmarkᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Bookmark) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -11465,6 +12074,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOBackground2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBackground(ctx context.Context, sel ast.SelectionSet, v *models.Background) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Background(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
