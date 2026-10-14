@@ -293,7 +293,7 @@ function toggleEdit() {
   <div
     class="box-canvas"
     :class="{
-      'with-editor': inEditMode && selected,
+      'with-editor': inEditMode && selected && !overlay,
       overlay: overlay && !isMobile,
       'overlay-editing': overlay && inEditMode,
     }"
@@ -404,7 +404,9 @@ function toggleEdit() {
   box-sizing: border-box;
 }
 /* Leave room for the fixed editor panel so the canvas rescales beside it
-   instead of disappearing under it. */
+   instead of disappearing under it. Not for an overlay: rescaling it would
+   pull its boxes off the content they are pinned over, so the panel just
+   covers the right of the page instead. */
 .box-canvas.with-editor {
   padding-right: calc(min(460px, 100vw) + 16px);
 }
