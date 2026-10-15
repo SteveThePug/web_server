@@ -338,7 +338,7 @@ of deleting the directory:
 | `./gitea/data`              | Git repositories, LFS objects, avatars, sessions                                                    | The actual git data                                                                    |
 | `./gitea/config`            | Gitea's live `app.ini`                                                                              | Gitignored; generated from the template on first boot and then owned by Gitea          |
 | `./logs`                    | Backend logs (`go.log`); nginx's JSON request-body log in `logs/nginx/payloads.log`                  | The payload log grows without bound; rotate it on the host (§7, "Incoming request bodies") |
-| `./icecast2/fallback_music` | Radio fallback MP3s                                                                                 | Synced by `sync-secrets.sh`, not git                                                   |
+| `./icecast2/fallback_music` | Radio fallback MP3s                                                                                 | Copied to the host by hand, not git                                                    |
 | `${OBSIDIAN_DIR}`           | The Obsidian vault (a git clone of the notes repo)                                                  | Read-write to backend and silverbullet, **read-only** to silverbullet-public           |
 
 **Ephemeral:** anything else inside a container. Notably the Vue build, the
@@ -371,11 +371,9 @@ through `env_file` but does not use it. A new variable for either service has
 to be added to its allow-list as well as
 `.env.example`.
 
-**`.env` reaches the host via `./sync-secrets.sh`**, which syncs exactly two
-things between this checkout and `adamf@stpvm.tailf20278.ts.net:~/deploy/web_server`:
-`.env`, and `icecast2/fallback_music/*.mp3`. The sync is **bidirectional and
-resolved by modification time — newer wins, with no merge.** Editing `.env` on
-both machines silently loses one side's edits. Run it before and after editing.
+**`.env` is edited by hand on the host**, in
+`~/deploy/web_server`. Nothing syncs it from a laptop checkout, so a laptop's
+`.env` (often with dev values) never reaches production by accident.
 
 An unset variable is not an error: `envsubst` renders it as an empty string,
 which for a password field means _no password_. After editing `.env`, confirm
@@ -383,8 +381,7 @@ with `docker compose config`.
 
 ### Changing a value on the host
 
-Edit `.env` (on the laptop, then `./sync-secrets.sh`; or on the host directly,
-then sync back), and recreate only the services that read the variable:
+Edit `.env` on the host, and recreate only the services that read the variable:
 `docker compose up -d <service>`. A plain `up -d` would also restart Postgres,
 since nginx, db, icecast2 and certbot load the whole file.
 
@@ -520,12 +517,6 @@ manually before Gitea will start:
 
 ```
 docker compose exec db createdb -U "$POSTGRES_USER" "$POSTGRES_GITEA_DB"
-```
-
-**Sync secrets / fallback music** (from the laptop checkout, not the host):
-
-```
-./sync-secrets.sh
 ```
 
 **Set up the CI runner on a fresh host:**

@@ -13,8 +13,8 @@
 #
 # ENV VARS
 #   Everything interpolated as ${VAR} below is read by the docker compose CLI
-#   from ./.env at the repo root (which is gitignored — see sync-secrets.sh for
-#   how it is distributed to the Pi). Note the two distinct mechanisms:
+#   from ./.env at the repo root (gitignored, and edited by hand on the host).
+#   Note the two distinct mechanisms:
 #     - ${VAR} in this file      -> substituted by compose when parsing
 #     - `env_file: ./.env`       -> the whole file injected into the container
 #   Many services need both: the container name comes from substitution, the
