@@ -482,9 +482,11 @@ services:
   # database role of its own. A variable the tracker reads must be added to
   # the list below as well as .env.example.
   #
-  # It has no login. AUTH_VALIDATE_URL is the backend's validate-admin route
-  # (the one nginx's auth_request uses), which the tracker asks with the
-  # visitor's cookies on each admin request.
+  # It has no login. nginx's auth_request gates /jobs/ like /sb/ (except the
+  # bearer-token capture API and the userscript), and the tracker checks
+  # again itself: AUTH_VALIDATE_URL is the backend's validate-admin route
+  # (the one nginx's auth_request uses), which it asks with the visitor's
+  # cookies on each admin request.
   #
   # ./jobs-data holds the Microsoft Graph session and the capture token. The
   # image runs as uid 1000, so the directory must be owned by it.
@@ -564,9 +566,10 @@ services:
   # Two kinds of auth. Collectors send per-device bearer keys, made on the
   # tracker's /tracker/setup page or with `docker exec activity-tracker
   # tracker apikey create`. The dashboard and setup pages have no login of
-  # their own: like jobs, the tracker asks AUTH_VALIDATE_URL (the backend's
-  # validate-admin) with the visitor's cookies and sends anyone else to
-  # /admin/login.
+  # their own: nginx's auth_request gates them like /sb/ (everything but
+  # /tracker/api/v1/ and the userscript), and like jobs the tracker also asks
+  # AUTH_VALIDATE_URL (the backend's validate-admin) with the visitor's
+  # cookies and sends anyone else to /admin/login.
   activity-tracker:
     image: adam-french.co.uk/adamf/activity-tracker:${ACTIVITY_TRACKER_IMAGE_TAG:-latest}
     container_name: activity-tracker

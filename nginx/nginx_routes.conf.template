@@ -372,19 +372,45 @@
         # ---- Job tracker (/jobs/) ----
         # Its own container (the adamf/job-tracker repo), which serves its SPA
         # and its API from the same prefix. The prefix is NOT stripped: the
-        # app is built to live at /jobs/. There is no auth_request here: the
-        # SPA's files are public, and every API route that is not checks the
-        # session itself, by asking the backend's validate-admin with the
-        # visitor's cookies. ^~ so no regex location can claim a /jobs/ path.
+        # app is built to live at /jobs/. Gated like /sb/: everything under
+        # /jobs/ needs the admin session, checked here by auth_request before
+        # the app sees it (the app still checks the session itself too). Two
+        # exceptions, below, that a session cookie can never reach. ^~ so no
+        # regex location can claim a /jobs/ path.
         location = /jobs {
             return 301 /jobs/;
         }
 
         location ^~ /jobs/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
             limit_req zone=api burst=20 nodelay;
             # "Sync now" on the Settings page runs a whole email sync before
             # answering.
             proxy_read_timeout 300s;
+            proxy_pass $upstream_jobs;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # The capture API is called by the userscript from job sites' origins,
+        # with the capture bearer token rather than cookies, so it cannot pass
+        # the session gate; the app's CaptureTokenMiddleware guards it.
+        location ^~ /jobs/api/capture {
+            limit_req zone=api burst=20 nodelay;
+            proxy_pass $upstream_jobs;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # The userscript itself: userscript managers fetch its @updateURL
+        # without the session, and it holds no secrets (the token is entered
+        # after install).
+        location = /jobs/job-capture.user.js {
             proxy_pass $upstream_jobs;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -417,20 +443,43 @@
         # ---- Activity tracker (/tracker/) ----
         # Its own container (the adamf/ccp repo): an ingest API for device
         # collectors, which send batches of events with a per-device bearer
-        # key, plus a dashboard and setup page. The app does its own auth, so
-        # no auth_request: the pages check the site session by asking the
-        # backend's validate-admin with the visitor's cookies, as /jobs/
-        # does, and /tracker.user.js is public. Unlike /jobs/
-        # the prefix IS stripped: the server serves /api/v1/... and /readyz
-        # from /. Collectors must use the www host: the apex 301 would turn
-        # their POSTs into GETs. Health Auto Export bodies can be several MB;
-        # the server-wide 50M client_max_body_size covers them.
+        # key, plus a dashboard and setup page. Gated like /sb/: the pages
+        # and their assets need the admin session, checked here by
+        # auth_request (the app also checks it itself). Two exceptions,
+        # below: the API, which collectors call with bearer keys and no
+        # cookies (the app guards each route, by device key, admin session or
+        # either), and the public /tracker.user.js. Unlike /jobs/ the prefix
+        # IS stripped: the server serves /api/v1/... and /readyz from /.
+        # Collectors must use the www host: the apex 301 would turn their
+        # POSTs into GETs. Health Auto Export bodies can be several MB; the
+        # server-wide 50M client_max_body_size covers them.
         location = /tracker {
             return 301 /tracker/;
         }
 
         location ^~ /tracker/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
             limit_req zone=api burst=20 nodelay;
+            rewrite ^/tracker/(.*)$ /$1 break;
+            proxy_pass $upstream_tracker;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ^~ /tracker/api/v1/ {
+            limit_req zone=api burst=20 nodelay;
+            rewrite ^/tracker/(.*)$ /$1 break;
+            proxy_pass $upstream_tracker;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /tracker/tracker.user.js {
             rewrite ^/tracker/(.*)$ /$1 break;
             proxy_pass $upstream_tracker;
             proxy_set_header Host $host;
@@ -453,7 +502,7 @@
             return 301 /jobs/job-capture.user.js;
         }
 
-        # ---- Admin gate (/sb/, /radio/admin/, /uploads/private/) ----
+        # ---- Admin gate (/sb/, /jobs/, /tracker/, /radio/admin/, /uploads/private/) ----
         # (/uploads/private/ is declared in the including template, not here;
         # it points at the two locations below by name.)
         # `auth_request` makes nginx fire a subrequest here before serving the

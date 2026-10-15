@@ -60,8 +60,8 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | silverbullet-public (notes site)              | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only)                                                                       | no                   |
 | silverbullet-git                              | n/a                           | n/a                           | none (timer loop)                                                                                       | no                   |
 | python (FastAPI)                              | `${PYTHON_HOST}`              | `${PYTHON_PORT}`              | `/py/`, docs at `/py/docs`                                                                              | no                   |
-| jobs (job tracker, published image)           | `jobs`                        | 8080                          | `/jobs/` (admin-gated by the app itself)                                                                | no                   |
-| activity-tracker (published image, adamf/ccp) | `activity-tracker`            | 8080                          | `/tracker/`, prefix stripped (collectors: per-device bearer keys; pages: admin-gated by the app itself) | no                   |
+| jobs (job tracker, published image)           | `jobs`                        | 8080                          | `/jobs/` (admin-gated by nginx `auth_request`; capture API and userscript public, bearer-token)       | no                   |
+| activity-tracker (published image, adamf/ccp) | `activity-tracker`            | 8080                          | `/tracker/`, prefix stripped (pages admin-gated by nginx `auth_request`; `/api/v1/` bearer/app-checked) | no                   |
 | icecast2 + liquidsoap                         | `${ICECAST_HOST}`             | `${ICECAST_PORT}`             | `/radio/`                                                                                               | **harbor port only** |
 | gitea                                         | `${GITEA_HOST}`               | 3000, 2222                    | `/gitea/`                                                                                               | **3000, 2222**       |
 | vue                                           | `vue`                         | 5173 (dev only)               | `/` (dev only)                                                                                          | no                   |
@@ -86,9 +86,12 @@ in one step — never change one without the other.**
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/sb/`, `/radio/admin/` and `/uploads/private/` are protected by an `auth_request`
-  subrequest to the backend's `/auth/validate-admin`; a failure redirects to the
-  SPA login. None of these services has any auth of its own at that path.
+- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/radio/admin/` and `/uploads/private/` are
+  protected by an `auth_request` subrequest to the backend's `/auth/validate-admin`; a failure
+  redirects to the SPA login. Most of these services have no auth of their own at that path; the
+  job and activity trackers also check the session themselves. Their carve-outs, which a session
+  cookie never reaches, stay public at nginx and are guarded by bearer tokens in the apps:
+  `/jobs/api/capture` and `/jobs/job-capture.user.js`, `/tracker/api/v1/` and `/tracker/tracker.user.js`.
 - **Public notes privacy boundary.** `/notes/` is public, and the only thing
   keeping `private/` (and `templates/`, `.git`, `.obsidian`) off it is a pair of
   nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
