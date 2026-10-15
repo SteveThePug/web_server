@@ -3,8 +3,7 @@
  * Admin panel: tail of the backend log.
  *
  * GET /api/admin/logs returns JSON read from the filesystem, not GraphQL —
- * it is not part of the site's data model. Configuration, which used to share
- * this tab, is on the Environment tab.
+ * it is not part of the site's data model.
  *
  * An admin who remounts the component via tab switches re-triggers
  * onMounted, which is the desired "refresh on tab change" behaviour.

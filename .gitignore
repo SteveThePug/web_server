@@ -9,9 +9,8 @@ usaco-data/
 .env
 .env.bak
 
-# Admin panel -> host hand-off (request and status files, holds secrets)
-env-apply/run/*
-!env-apply/run/.gitkeep
+# flock taken by the deploy and maintenance workflows around docker compose
+.compose.lock
 
 gitea/data/*
 gitea/config/app.ini

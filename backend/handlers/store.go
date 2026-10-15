@@ -38,10 +38,6 @@ type Store struct {
 	// services.CallPython: reading a rowing display photo (handle_rowing.go).
 	PythonURL string
 
-	// Registry of .env variables and the request/status hand-off with the
-	// host that applies changes to them (handle_env.go).
-	Env *services.EnvManager
-
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can
 	// mean "never fetched" distinctly from "fetched, empty".

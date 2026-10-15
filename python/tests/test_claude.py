@@ -76,17 +76,6 @@ def test_haiku_gets_the_plain_request(monkeypatch):
     assert call == {"model": "claude-haiku-4-5", "max_tokens": 64, "messages": MESSAGES}
 
 
-def test_the_default_model_is_one_the_admin_panel_offers():
-    """CLAUDE_MODEL's options in the env registry are what the Environment tab lets an admin pick."""
-    import json
-    from pathlib import Path
-
-    registry = json.loads((Path(__file__).parents[2] / "backend/services/env_registry.json").read_text())
-    (entry,) = [v for v in registry if v["name"] == "CLAUDE_MODEL"]
-    assert claude.DEFAULT_MODEL in entry["options"]
-    assert "python" in entry["services"]
-
-
 def test_the_answer_is_found_after_a_thinking_block():
     reply = SimpleNamespace(
         stop_reason="end_turn",

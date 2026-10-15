@@ -22,12 +22,11 @@ log = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
-# Which model every call uses. CLAUDE_MODEL is set from the admin panel's
-# Environment tab (it is in backend/services/env_registry.json, whose `options`
-# list is what the panel offers); changing it there recreates this container,
-# which is why reading it once at import is enough. Blank means the default.
+# Which model every call uses. CLAUDE_MODEL comes from .env; changing it means
+# recreating this container, which is why reading it once at import is enough.
+# Blank means the default.
 #
-# The registry's options are the ids this module has been written for. Another
+# The ids listed in .env.example are the ones this module has been written for. Another
 # id is passed through as it is, treated as a model that thinks (see below);
 # if the API does not know it, every call fails with its `failed` message and
 # the reason is in this service's log.

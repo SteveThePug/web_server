@@ -132,8 +132,7 @@ await api.post("/radio/upload", formData, { fallback: "Upload failed" });
 It prefixes `/api`, resolves to the response body, and on failure throws an
 `ApiError` whose `message` is the backend's `{"error": "..."}` string when there
 is one, otherwise the `fallback` the caller passed. `err.status` carries the
-HTTP status for the few callers that branch on it (the Environment tab treats a
-401/403 while polling as "the apply rotated my session"). Any other option is
+HTTP status for callers that need to branch on it. Any other option is
 passed to axios, so multipart bodies and `onUploadProgress` work unchanged.
 
 ### Which one to use

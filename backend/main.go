@@ -132,15 +132,7 @@ func main() {
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
-	// ENVIRONMENT
-	// The registry is embedded, so the only way this fails is a malformed
-	// env_registry.json — a build mistake worth stopping for.
-	envManager, err := services.NewEnvManager(services.ENV_APPLY_DIR)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, Env: envManager}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
@@ -188,11 +180,6 @@ func main() {
 
 	// ADMIN DIAGNOSTICS: log tail for the admin panel.
 	admin.GET("/admin/logs", store.Logs)
-	// ENVIRONMENT: report on .env and queue changes for the host to apply.
-	admin.GET("/admin/env", store.GetEnv)
-	admin.PUT("/admin/env", store.UpdateEnv)
-	admin.GET("/admin/env/status", store.GetEnvStatus)
-	admin.DELETE("/admin/env/pending", store.CancelEnv)
 
 	// GRAPHQL
 	// GraphQL is assembled by hand rather than with handler.NewDefaultServer

@@ -19,7 +19,6 @@ import CreatePlace from "./CreatePlace.vue";
 import ManagePages from "./ManagePages.vue";
 import ManageUsers from "./ManageUsers.vue";
 import ManageRadio from "./ManageRadio.vue";
-import Environment from "./Environment.vue";
 import Diagnostics from "./Diagnostics.vue";
 
 const auth = useAuthStore();
@@ -35,7 +34,6 @@ const sections = [
   { id: "pages", label: "Pages", component: ManagePages },
   { id: "users", label: "Manage Users", component: ManageUsers },
   { id: "radio", label: "Manage Radio", component: ManageRadio },
-  { id: "environment", label: "Environment", component: Environment },
   { id: "diagnostics", label: "Diagnostics", component: Diagnostics },
 ];
 

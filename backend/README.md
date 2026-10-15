@@ -176,48 +176,7 @@ for the things GraphQL cannot do:
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
-| `/admin/env`, `/admin/logs` | process environment and files on disk, not the data model |
-
-### Environment tab
-
-`handlers/handle_env.go` and `services/env_manager.go` let the admin panel
-change `.env` on the Pi without SSH. The backend never reads or writes the
-file and has no Docker access: it validates an edit and leaves it for the
-host, which is the part trusted to act.
-
-- **`services/env_registry.json`** lists every variable in `.env.example`
-  with its group, kind, whether it is editable, and the compose services that
-  read it. It is embedded in the binary and read from the checkout by the host
-  script, so one file decides what the panel offers and what the host accepts.
-  A test fails if it and `.env.example` disagree.
-- **The `python` and `jobs` services are a third place.** They are given an
-  explicit `environment:` list in `docker-compose.yml` instead of the whole
-  `.env`, so that they never hold the site's database password or the JWT
-  secret. A new variable for either therefore goes in the registry (with the
-  service in its `services`), in `.env.example`, *and* in that list.
-  `TestEnvRegistryMatchesComposePythonEnvironment` reads the compose file and
-  fails if a variable the registry says one of them reads is not passed to
-  it, or if an editable variable passed to it does not list that service. Locked
-  variables carry no `services` and are exempt (`PYTHON_PORT` is one).
-- `GET /admin/env` — the registry plus state from this process's own
-  environment. A secret's value is never sent, only "set" and, for values of
-  12+ characters, the last four.
-- `PUT /admin/env` — `{"set": {NAME: value}, "generate": [NAME]}`; `""`
-  clears. The whole batch is validated first. Control characters are refused
-  because `.env` is line oriented: a newline would let an edit to an allowed
-  variable write a second, arbitrary one. Generated values (32 random bytes,
-  hex) are returned once.
-- The change is written to `/backend/env-apply/request.json` (`./env-apply/run`
-  on the host), `0600` and chowned to that directory's owner so the
-  unprivileged host user can read it. `env-apply/apply.py` claims it, rewrites
-  `.env`, recreates the affected services and writes `status.json`.
-- `GET /admin/env/status` — `idle`, `pending`, `applying`, `applied` or
-  `failed`. `watcher: false` means a request has sat unclaimed for 15 seconds,
-  i.e. nothing on the host is watching. `DELETE /admin/env/pending` withdraws
-  an unclaimed request.
-
-The backend is always among the recreated services, because the values the
-panel shows are the ones this process started with.
+| `/admin/logs` | files on disk, not the data model |
 
 ## Calling the Python service
 
@@ -356,7 +315,7 @@ Paths baked into the code, all inside mounted volumes so they survive a
 container restart: `/backend/logs`, `/backend/notes`, `/backend/uploads`,
 `/backend/fallback_music`, `/backend/token/` (the Spotify OAuth token).
 
-`CLAUDE_API_KEY` is not in the table: the backend does not read it. It is in
-the registry with `services: ["python", "jobs"]`, the two containers that use
-it. The email and job-lead variables still in `.env` belong to the job
+`CLAUDE_API_KEY` is not in the table: the backend does not read it. The
+`python` and `jobs` containers, the two that use it, get it through their
+explicit `environment:` lists in `docker-compose.yml`. The email and job-lead variables still in `.env` belong to the job
 tracker (`jobs`), which has its own repo and README.

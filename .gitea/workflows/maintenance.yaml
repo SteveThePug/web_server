@@ -21,28 +21,26 @@ jobs:
             - name: Autoremove obsolete packages
               run: sudo apt-get -y autoremove --purge
 
-            # Both compose steps below take env-apply/run/lock, the same flock
-            # deploy.yaml and env-apply/apply.py hold while they run compose.
-            # Without it this weekly job could recreate containers at the same
-            # moment a .env edit from the admin panel is being applied (or a
-            # deploy is mid-build), and two `compose up`s racing over the same
-            # project can each recreate a container the other just started,
-            # ending with services built against a half-written .env. flock
-            # blocks until the other holder finishes, so the job waits rather
-            # than fails. The lock is taken per step, not across both: nothing
-            # needs pull and up to be atomic, and holding it for less time
-            # keeps an admin-panel change from waiting behind a long pull.
+            # Both compose steps below take .compose.lock, the same flock
+            # deploy.yaml holds while it runs compose. Without it this weekly
+            # job could recreate containers while a deploy is mid-build, and
+            # two `compose up`s racing over the same project can each recreate
+            # a container the other just started. flock blocks until the other
+            # holder finishes, so the job waits rather than fails. The lock is
+            # taken per step, not across both: nothing needs pull and up to be
+            # atomic, and holding it for less time keeps a deploy from waiting
+            # behind a long pull.
             - name: Pull latest base images
               working-directory: /home/adamf/deploy/web_server
               env:
                   DOCKER_API_VERSION: "1.41"
-              run: flock env-apply/run/lock docker compose pull
+              run: flock .compose.lock docker compose pull
 
             - name: Rebuild and restart containers
               working-directory: /home/adamf/deploy/web_server
               env:
                   DOCKER_API_VERSION: "1.41"
-              run: flock env-apply/run/lock docker compose up -d --build --remove-orphans
+              run: flock .compose.lock docker compose up -d --build --remove-orphans
 
             - name: Prune unused Docker images
               run: docker image prune -af

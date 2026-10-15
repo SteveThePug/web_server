@@ -94,9 +94,9 @@ Their plumbing is in two places, shared by any route added later:
   outside is a 404 before its body is validated.
 
 Every route uses one model, `MODEL` in `claude.py`: the `CLAUDE_MODEL` variable,
-or `claude-sonnet-5-5` when it is blank. It is chosen on the admin panel's
-Environment tab from `claude-haiku-4-5`, `claude-sonnet-5-5` and
-`claude-opus-5-5`, and saving it there restarts this service. The request is
+or `claude-sonnet-5-5` when it is blank. It is set in `.env` to one of
+`claude-haiku-4-5`, `claude-sonnet-5-5` and `claude-opus-5-5`; recreate this
+service after changing it. The request is
 shaped per model by `_model_options`: a model that thinks gets
 `output_config.effort: "low"` and 4,000 tokens of headroom on top of the
 caller's `max_tokens`, because thinking is billed against it; Haiku 4.5 gets

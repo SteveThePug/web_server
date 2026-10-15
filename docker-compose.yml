@@ -223,10 +223,6 @@ services:
       # rebuild, forcing a manual re-authorisation of Spotify after each
       # deploy. Gitignored (it is a credential).
       - ./backend/token/:/backend/token
-      # Hand-off directory for the admin panel's Environment tab: the backend
-      # queues a change here and env-apply/apply.py on the host applies it.
-      # The backend gets this instead of .env itself or the Docker socket.
-      - ./env-apply/run:/backend/env-apply
       # The Obsidian vault on the host, read by the backend for the notes API.
       # Same directory is mounted read-write into silverbullet (the editor) and
       # read-only into silverbullet-public (the /notes/ site).
@@ -478,8 +474,8 @@ services:
   #
   # Like python, it gets an explicit `environment:` list rather than the whole
   # .env: it never sees the site's database password or JWT secret, and has a
-  # database role of its own. backend/services/env_manager_test.go checks the
-  # list against env_registry.json.
+  # database role of its own. A variable the tracker reads must be added to
+  # the list below as well as .env.example.
   #
   # It has no login. AUTH_VALIDATE_URL is the backend's validate-admin route
   # (the one nginx's auth_request uses), which the tracker asks with the

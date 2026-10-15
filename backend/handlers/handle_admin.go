@@ -10,8 +10,7 @@ import (
 
 // This file backs the admin diagnostics panel's log tail. It is an admin-only
 // REST endpoint rather than GraphQL because it reads the filesystem — outside
-// the data model the GraphQL schema describes. The configuration report that
-// used to live here is now the Environment tab (handle_env.go).
+// the data model the GraphQL schema describes.
 
 // logTailBytes and logTailLines bound how much of the log file one request
 // moves: 256 KiB is beyond any useful screen at log-ish line lengths, and is
