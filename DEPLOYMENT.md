@@ -230,14 +230,20 @@ _remotely managed_ tunnel: the only thing in this repo is the token
 (`CLOUDFLARE_TUNNEL_TOKEN`, editable from the Environment tab); hostnames and
 origin settings live in the dashboard.
 
-**Origin: `https://nginx:443`, with No TLS Verify.** Cloudflare terminates the
-visitor's TLS at its edge, and cloudflared opens a second TLS connection to
-nginx. That is deliberate. Pointed at `http://nginx:80`, the tunnel would hit
-the HTTP→HTTPS redirect and loop. Going to :443 keeps every redirect, security
-header and the `X-Forwarded-Proto: https` the backend's Secure cookies depend
-on, and needs no nginx change. No TLS Verify is needed because cloudflared
-dials the name `nginx`, which the certificate does not cover. The hop never
-leaves `app-network`.
+**Origin: `https://www.<DOMAIN>`, the site's own name.** Cloudflare
+terminates the visitor's TLS at its edge, and cloudflared opens a second TLS
+connection to nginx. That is deliberate. Pointed at `http://nginx:80`, the
+tunnel would hit the HTTP→HTTPS redirect and loop. Going to :443 keeps every
+redirect, security header and the `X-Forwarded-Proto: https` the backend's
+Secure cookies depend on, and needs no nginx change.
+
+The origin is the public name, not `nginx`, because nginx carries `<DOMAIN>`
+and `www.<DOMAIN>` as network aliases on `app-network` (`docker-compose.yml`).
+Inside the network those names resolve to the nginx container, so the hop
+never leaves the Pi, and cloudflared verifies the Let's Encrypt certificate
+against a name it covers. `https://nginx` would fail that check and need No
+TLS Verify. The flip side: **an expired certificate now takes the tunnel down
+with a 502**, which is why renewal over DNS-01 (step 5) matters.
 
 Setup, once:
 
@@ -247,11 +253,10 @@ Setup, once:
 3. Put it in `.env` as `CLOUDFLARE_TUNNEL_TOKEN` (or set it from the
    Environment tab), then `docker compose up -d cloudflared`. The tunnel
    shows as Healthy in the dashboard.
-4. Add a public hostname per name, each with service `HTTPS`, URL
-   `nginx:443`, and under Additional application settings → TLS, **No TLS
-   Verify** on:
-    - `www.<DOMAIN>`: the site.
-    - `<DOMAIN>`: nginx redirects it to www, and it serves Gitea's registry
+4. Add a public hostname per name, each with service `HTTPS` and its own
+   name as the URL, and no other settings:
+    - `www.<DOMAIN>` → `https://www.<DOMAIN>`: the site.
+    - `<DOMAIN>` → `https://<DOMAIN>`: nginx redirects it to www, and it serves Gitea's registry
       at `/v2/`.
       Creating each hostname replaces the existing A record for that name with
       a CNAME to the tunnel. **That is the cutover**: until then the tunnel
@@ -268,9 +273,8 @@ Setup, once:
 
 - **Certificate renewal.** Over DNS-01 with `CLOUDFLARE_DNS_API_TOKEN` set;
   without it certbot falls back to HTTP-01, which needs port 80 forwarded.
-  The certificate still matters behind the tunnel: the registry path below
-  and any direct LAN access use it. (The tunnel itself would survive an
-  expired one, because of No TLS Verify.) A fresh machine with no
+  The certificate matters behind the tunnel: cloudflared verifies it, as
+  do the registry path below and any direct LAN access. A fresh machine with no
   certificate at all boots the setup config (§3), which serves nothing over
   443, so the tunnel carries nothing until the first issuance.
 - **Registry pushes and pulls on the Pi.** Cloudflare caps request bodies at

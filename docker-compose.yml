@@ -118,7 +118,17 @@ services:
       - jobs
       - activity-tracker
     networks:
-      - app-network
+      app-network:
+        # The site's public names, resolving to this container for everything
+        # on app-network. They exist for cloudflared: its tunnel origin is
+        # https://www.DOMAIN, which lands here over the bridge with a name the
+        # Let's Encrypt certificate actually covers, so the tunnel verifies
+        # TLS with no extra dashboard settings (`https://nginx` would fail the
+        # name check). Any other container that calls the public site now
+        # reaches nginx directly instead of hairpinning through the internet.
+        aliases:
+          - ${DOMAIN}
+          - www.${DOMAIN}
     ports:
       - 80:80
       - 443:443
@@ -160,9 +170,10 @@ services:
   # forwards can be closed. The tunnel is "remotely managed": its public
   # hostnames and origin settings live in the Cloudflare dashboard, and this
   # container only needs the token. The routing set up there (DEPLOYMENT.md,
-  # "Cloudflare Tunnel") is https://nginx:443 with No TLS Verify, so nginx's
-  # config, redirects and security headers apply to tunnel traffic exactly as
-  # to direct traffic, and both paths work side by side.
+  # "Cloudflare Tunnel") is https://www.DOMAIN, which nginx's network aliases
+  # resolve to nginx itself, so the certificate verifies; nginx's config,
+  # redirects and security headers apply to tunnel traffic exactly as to
+  # direct traffic, and both paths work side by side.
   #
   # Fixed address so nginx can trust the CF-Connecting-IP header from this
   # container and no other (set_real_ip_from in nginx.conf.template). It sits
