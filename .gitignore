@@ -20,9 +20,6 @@ gitea-runner/.runner
 gitea-runner/act_runner
 gitea-runner/nohup.out
 
-# Rust build artifacts
-**/target/
-
 # Python bytecode
 __pycache__/
 *.pyc
@@ -30,9 +27,6 @@ __pycache__/
 
 # Virtualenv `make check-python` builds on demand from python/requirements-dev.txt
 /.venv/
-
-# Generated WASM output
-vue/src/wasm/
 
 # Logs
 logs

@@ -4,8 +4,6 @@ import { defineConfig, loadEnv } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import vueDevTools from "vite-plugin-vue-devtools";
-import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 
 // Dev-server proxy targets (frontend-only `npm run dev`).
 //
@@ -66,8 +64,6 @@ export default defineConfig(({ mode }) => {
       vue(),
       ...(process.env.NODE_ENV !== "production" ? [vueDevTools()] : []),
       tailwindcss(),
-      wasm(),
-      topLevelAwait(),
     ],
     resolve: {
       alias: {

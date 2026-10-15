@@ -11,8 +11,7 @@
 # WHAT IT NEEDS ON THE HOST
 #   check-backend / generate   Go (the version in backend/go.mod)
 #   check-python               python3 with the venv module
-#   check-vue                  Node + `npm install` done in vue/, and the
-#                              generated vue/src/wasm/ directory (see below)
+#   check-vue                  Node + `npm install` done in vue/
 #   check-compose / dev        Docker with the compose plugin
 #   Nothing here installs a toolchain; a missing one fails that target only.
 #
@@ -69,26 +68,12 @@ $(VENV_STAMP): python/requirements.txt python/requirements-dev.txt
 check-python: $(VENV_STAMP)
 	cd python && ../$(VENV)/bin/python -m pytest tests -q
 
-# `npx vite build`, NOT `npm run build`: the npm script first runs wasm-pack to
-# compile the Rust crate, which needs a Rust toolchain most machines (and the
-# Pi) do not have. The Vite half alone is enough to catch a broken import or
-# template.
-#
-# It does still need the OUTPUT of that Rust step, vue/src/wasm/, which is
-# generated and gitignored — so a fresh clone has none and Vite would fail with
-# a bare "could not resolve ../wasm/..." error. The guards below say what is
-# actually wrong instead.
+# A Vite build is enough to catch a broken import or template; there is no
+# test runner or linter for the frontend.
 #
 # The build goes to a temp directory that is removed afterwards (success or
 # failure), so the check never leaves a vue/dist behind or overwrites one.
 check-vue:
-	@test -d vue/src/wasm || { \
-		echo "check-vue: vue/src/wasm/ is missing."; \
-		echo "  It is the generated (gitignored) output of the Rust crate in vue/crates/"; \
-		echo "  and the Vite build imports it. Create it with wasm-pack:"; \
-		echo "      cd vue && npm run build:wasm"; \
-		echo "  (needs a Rust toolchain; the vue image builds it for you, see vue/Dockerfile)."; \
-		exit 1; }
 	@test -d vue/node_modules || { \
 		echo "check-vue: vue/node_modules/ is missing. Run: cd vue && npm install"; \
 		exit 1; }

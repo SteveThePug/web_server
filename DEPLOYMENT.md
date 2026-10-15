@@ -165,10 +165,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 The override layer changes five services and disables one:
 
 - **vue** — `npm run dev` instead of a one-shot build; `./vue` is bind-mounted
-  for hot reload, with anonymous-volume masks on `/app/node_modules` and
-  `/app/src/wasm` so the image's installed deps and compiled WASM are not hidden
-  by the bind mount. You need neither `node_modules` nor a Rust toolchain on the
-  host.
+  for hot reload, with an anonymous-volume mask on `/app/node_modules` so the
+  image's installed deps are not hidden by the bind mount. You don't need
+  `node_modules` on the host.
 - **nginx** — `DEV_MODE=true`, which makes the entrypoint self-sign a
   `CN=localhost` certificate (once, kept in `certbot/conf`) and render
   `nginx_dev.conf.template`: `/` proxies to the Vite dev server, both `:80` and

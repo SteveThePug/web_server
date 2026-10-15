@@ -32,7 +32,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 ## Tech Stack
 
-**Frontend** - Vue 3, Vite, Tailwind CSS v4, Pinia, Vue Router, markdown-it (wikilinks + KaTeX), Rust/WASM
+**Frontend** - Vue 3, Vite, Tailwind CSS v4, Pinia, Vue Router, markdown-it (wikilinks + KaTeX)
 
 **Backend** - Go (Gin), gqlgen (GraphQL), GORM, PostgreSQL, JWT auth, WebSockets
 
@@ -349,7 +349,6 @@ These files are git-ignored and must be created manually:
 
 ## Future Ideas
 
-- More Rust to WASM
 - ML for chatboards
 - Cache requests
 - Design more webpages

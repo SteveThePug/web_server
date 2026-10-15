@@ -40,7 +40,7 @@ Vite dev server proxies `/api`, `/gitea`, `/py` and `/radio`; the targets defaul
 cd vue && npm run build
 ```
 
-`npm run build` compiles the Rust crate first and needs `wasm-pack`. `npm run build:js` (plain `vite build`) is the check to use when only the JS changed and `src/wasm/` already exists.
+`npm run build` is a plain `vite build`.
 
 ### Regenerate GraphQL (after editing schema files)
 

@@ -29,7 +29,7 @@
 #
 # NOT TESTED HERE: THE VUE BUILD
 #   Deliberately skipped. `docker compose up --build` in the deploy job
-#   already runs the full frontend build (wasm-pack + vite) while building the
+#   already runs the full frontend build (npm ci + vite) while building the
 #   vue image, and a failed image build aborts `up` BEFORE any container is
 #   replaced, so the old site keeps serving. Building it a second time here
 #   would cost the Pi several minutes per push to learn nothing new. The same

@@ -32,14 +32,12 @@ services:
         command: ["npm", "run", "dev"]
         volumes:
             - ./vue:/app
-            # The two bare paths are ANONYMOUS-VOLUME MASKS, not typos. Binding
-            # ./vue over /app would otherwise hide the node_modules and WASM
-            # output that were installed/built *inside* the image. Declaring
-            # them as anonymous volumes re-exposes the image's copies on top of
-            # the bind mount, so `npm ci` and wasm-pack results survive and the
-            # host does not need node_modules or a Rust toolchain at all.
+            # The bare path is an ANONYMOUS-VOLUME MASK, not a typo. Binding
+            # ./vue over /app would otherwise hide the node_modules that were
+            # installed *inside* the image. Declaring it as an anonymous volume
+            # re-exposes the image's copy on top of the bind mount, so the
+            # `npm ci` result survives and the host does not need node_modules.
             - /app/node_modules
-            - /app/src/wasm
         environment:
             - NODE_ENV=development
     backend:
