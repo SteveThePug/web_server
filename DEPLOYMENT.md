@@ -101,12 +101,13 @@ in one step — never change one without the other.**
   them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
   adding it to the deny regex in `nginx_routes.conf.template` publishes it. See the
   comment above `location /notes/` in `nginx_routes.conf.template`.
-- **Uploads: disk first, then the bucket.** `/uploads/<f>` is looked for on
-  the shared `uploads` volume and, if it is not there, fetched from Garage's
-  website endpoint (`@uploads_bucket`). Both paths add `nosniff`,
+- **Uploads: the bucket first, then disk.** `/uploads/<f>` is fetched from
+  Garage's website endpoint and, if Garage has no such file or is down, from
+  the shared `uploads` volume (`@uploads_disk`). Both paths add `nosniff`,
   `Content-Disposition: inline` and a deny-all CSP, so user-supplied files
-  cannot execute anything on our origin. Disk first means Garage being down
-  only affects files that exist nowhere else; see "Garage" in §7.
+  cannot execute anything on our origin. The bucket is the source of truth;
+  a Garage outage only affects files that exist nowhere else. See "Garage"
+  in §7.
 - **Rate limits** — see §6.
 
 ---
@@ -415,7 +416,7 @@ rate"_. Anything beyond the burst gets an immediate **503**.
 | `login`        | 5/min  | 3     | `/api/auth/login`           | Brute-force defence. A human mistyping gets 3 tries then one per 12s; a credential-stuffing script gets nothing useful.                                                                                |
 | `api`          | 30/sec | 20    | `/api/`, `/py/`             | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota.                                                                                                      |
 | `graphql`      | 10/sec | 10    | `/api/graphql`              | Tighter than REST because one query can be arbitrarily expensive. **Production config only**; dev folds GraphQL into `api`.                                                                            |
-| `upload`       | 30/min | 20    | `/api/messages/upload`      | Uploads hit disk; bounds how fast one IP fills the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
+| `upload`       | 30/min | 20    | `/api/uploads`              | Bounds how fast one IP fills the bucket or the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
 | `hotel_search` | 3/min  | 2     | `/py/hotels/(search\|scan)` | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection.                                                           |
 
 The WebSocket endpoint is deliberately unlimited: a socket is one long-lived
@@ -529,14 +530,15 @@ manually before Gitea will start:
 docker compose exec db createdb -U "$POSTGRES_USER" "$POSTGRES_GITEA_DB"
 ```
 
-**Garage (the `/uploads/` bucket).** Public uploads can live in a Garage
-bucket instead of the `uploads` volume. It is opt-in and every step can be
-undone; nothing breaks while Garage is down or not set up:
+**Garage (the `/uploads/` bucket).** Public uploads live in a Garage bucket,
+with the `uploads` volume as a safety net. Nothing breaks while Garage is down
+or not set up:
 
 - the backend writes to disk until `S3_ENDPOINT` is set, and falls back to
   disk (with a log line) whenever Garage refuses a write;
-- nginx serves `/uploads/` from the volume first and asks Garage only for
-  files that are not there, and it boots without the `garage` container.
+- nginx serves `/uploads/` from Garage and falls back to the volume when
+  Garage has no such file or is unreachable, and it boots without the
+  `garage` container.
 
 Turning it on:
 
@@ -554,7 +556,8 @@ Turning it on:
    `docker compose exec garage /garage bucket info uploads` shows the object
    count going up, and the returned `/uploads/...` URL loads.
 
-Moving the old files in (optional — they are served from the volume anyway):
+Moving the old files in (so they show in garage-webui, and so the bucket
+holds everything):
 
 ```
 export $(grep -E '^S3_(ACCESS_KEY_ID|SECRET_ACCESS_KEY)=' .env)
@@ -566,10 +569,10 @@ docker run --rm --network web_server_app-network \
   --endpoint-url http://garage:3900
 ```
 
-The copies on the volume keep winning (disk first) until they are deleted,
-which is also the rollback: leave them until the bucket has been trusted for a
-while, then remove everything but `private/` from the volume. Until then,
-deleting a file in garage-webui does not unpublish it if a disk copy exists.
+The copies left on the volume are then only a fallback for when Garage is
+down, and the rollback. One catch: a file deleted in garage-webui is still
+served from its disk copy, if it has one. Once the bucket has been trusted for
+a while, remove everything but `private/` from the volume.
 
 **Rollback:** blank `S3_ENDPOINT` and `docker compose up -d backend`. Files
 written to the bucket in the meantime stay reachable as long as `garage` runs;
@@ -629,7 +632,7 @@ Documented, not fixed — each would change deploy behaviour.
    mounted to the same in-container path as the real wrapper. It is currently
    shadowed by an explicit file mount — fragile. Deleting it would be safe but
    is a file removal.
-4. **The `/uploads/` location blocks (with `@uploads_bucket`) are still written twice** — once in
+4. **The `/uploads/` location blocks (with `@uploads_disk`) are still written twice** — once in
    `nginx.conf.template` and once in `nginx_dev_common.conf.template` —
    because production adds security headers inside an auth-gated block. Every
    other proxied route lives once in `nginx_routes.conf.template`, which both

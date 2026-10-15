@@ -19,7 +19,7 @@
 #         garage/bootstrap.sh imports); garage-webui browses through it.
 #   3901  RPC between Garage nodes. Only this node talks to itself.
 #   3902  Website endpoint. Serves a bucket ANONYMOUSLY, choosing it from the
-#         Host header: "<bucket><root_domain>", so nginx's /uploads/ fallback
+#         Host header: "<bucket><root_domain>", so nginx's /uploads/ location
 #         sends `Host: uploads.web.garage`. Only buckets that bootstrap.sh
 #         opened with `garage bucket website --allow` are served.
 #   3903  Admin API, used by garage-webui and authenticated by admin_token.

@@ -8,7 +8,7 @@
 
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import axios from "axios";
+import { uploadFile } from "@/uploads";
 
 /**
  * Same-origin ws:// or wss:// URL for the chat socket, derived from the page's
@@ -133,21 +133,17 @@ export const useMessagesStore = defineStore("messages", () => {
   }
 
   /**
-   * POST a file to the REST upload endpoint, then send its returned URL over
-   * the socket as a normal message. Two steps because the socket carries JSON
-   * text only. Errors surface via `lastError`.
+   * Store a file (uploads.js), then send its URL over the socket as a normal
+   * message. Two steps because the socket carries JSON text only. Errors
+   * surface via `lastError`.
    *
-   * `private` is sent with the upload as well as with the message: the backend
-   * stores private attachments under /uploads/private/, which nginx gates
-   * behind an admin check.
+   * `private` goes to both: the upload is stored under /uploads/private/,
+   * which nginx gates behind an admin check, and the message is marked
+   * private. The two must agree.
    */
   async function uploadAndSendFile(file, isPrivate = false) {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("private", isPrivate ? "true" : "false");
-      const res = await axios.post("/api/messages/upload", formData);
-      const { url } = res.data;
+      const url = await uploadFile(file, { private: isPrivate });
       if (!socket.value || !isConnected.value) return;
       socket.value.send(
         JSON.stringify({ text: "", fileUrl: url, private: isPrivate }),

@@ -83,8 +83,8 @@
         set $upstream_usaco http://usaco:8080;
         # And the Dozzle log viewer's.
         set $upstream_dozzle http://dozzle:8080;
-        # Garage: its website endpoint (the /uploads/ bucket fallback, used by
-        # the @uploads_bucket location in nginx.conf.template and
+        # Garage: its website endpoint (where /uploads/ is served from; see the
+        # /uploads/ location in nginx.conf.template and
         # nginx_dev_common.conf.template) and the garage-webui admin UI.
         set $upstream_garage_web http://garage:3902;
         set $upstream_garage_webui http://garage-webui:3909;
@@ -115,7 +115,7 @@
         #                            breaking auth behind TLS termination.
         #
         # Ordering matters: nginx picks the longest matching prefix location,
-        # so the specific /ws, /auth/login and /messages/upload blocks (and
+        # so the specific /ws, /auth/login and /uploads blocks (and
         # production's /graphql block in nginx.conf.template) win over the
         # catch-all <PREFIX>/ block regardless of file order.
         location $BACKEND_ENDPOINT {
@@ -154,7 +154,7 @@
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        location $BACKEND_ENDPOINT/messages/upload {
+        location $BACKEND_ENDPOINT/uploads {
             limit_req zone=upload burst=20 nodelay;
             rewrite ^$BACKEND_ENDPOINT/(.*)$ /$1 break;
             proxy_pass $upstream_backend;

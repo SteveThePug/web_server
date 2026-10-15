@@ -18,6 +18,7 @@ import { useMessagesStore } from "@/stores/messages";
 import { useAuthStore } from "@/stores/auth";
 import Header from "@/components/text/Header.vue";
 import Link from "@/components/text/Link.vue";
+import { ACCEPT, isUploadUrl, kindOf } from "@/uploads";
 
 const messagesStore = useMessagesStore();
 const authStore = useAuthStore();
@@ -116,28 +117,8 @@ async function onFileSelected(e) {
   fileInput.value.value = "";
 }
 
-function isImageUrl(url) {
-  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-}
-
-function isVideoUrl(url) {
-  return /\.(mp4|webm|ogg|mov)$/i.test(url);
-}
-
-// Public attachments live under /uploads/; attachments on private messages are
-// written under /uploads/private/, which nginx gates behind an admin check.
-const UPLOAD_PREFIXES = ["/uploads/", "/uploads/private/"];
-
-/** Only render attachments the backend served from its own upload directory —
- *  the fileUrl arrives over the socket and is otherwise attacker-controlled.
- *  A strict prefix allowlist, so absolute ("https://evil/uploads/x") and
- *  protocol-relative ("//evil/uploads/x") URLs are rejected; "..", which could
- *  otherwise escape the directory, is rejected outright. */
-function isSafeFileUrl(url) {
-  if (typeof url !== "string") return false;
-  if (url.includes("..")) return false;
-  return UPLOAD_PREFIXES.some((prefix) => url.startsWith(prefix));
-}
+// Attachments are rendered only if isUploadUrl() accepts them: the fileUrl
+// arrives over the socket and is otherwise attacker-controlled.
 
 // NOTE: a module-level /g regex carries `lastIndex` between calls. It is safe
 // here only because parseMessageParts() below always runs exec() to completion
@@ -262,20 +243,27 @@ onUnmounted(() => {
             >
             <span v-else>{{ part.value }}</span>
           </template>
-          <template v-if="message.fileUrl && isSafeFileUrl(message.fileUrl)">
+          <template v-if="isUploadUrl(message.fileUrl)">
             <img
-              v-if="isImageUrl(message.fileUrl)"
+              v-if="kindOf(message.fileUrl) === 'image'"
               :src="message.fileUrl"
               alt="Uploaded image"
               loading="lazy"
               class="w-full max-w-full rounded block"
             />
             <video
-              v-else-if="isVideoUrl(message.fileUrl)"
+              v-else-if="kindOf(message.fileUrl) === 'video'"
               :src="message.fileUrl"
               controls
               preload="none"
               class="w-full max-w-full max-h-48 rounded block"
+            />
+            <audio
+              v-else-if="kindOf(message.fileUrl) === 'audio'"
+              :src="message.fileUrl"
+              controls
+              preload="none"
+              class="w-full max-w-full block"
             />
             <Link
               v-else
@@ -299,6 +287,7 @@ onUnmounted(() => {
       <input
         ref="fileInput"
         type="file"
+        :accept="ACCEPT.any"
         class="hidden"
         @change="onFileSelected"
       />

@@ -13,7 +13,7 @@
  *     the panel. Saving every keystroke would push half-written markup to
  *     every visitor; leaving is the point it is finished.
  *
- * "Insert upload" uploads a file (upload.js) and puts a tag for it at the
+ * "Insert upload" uploads a file (@/uploads) and puts a tag for it at the
  * cursor — the way to add pictures to an existing box, e.g. a gallery.
  *
  * The panel is teleported to <body>, so it is fixed to the window whatever
@@ -21,7 +21,7 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";
-import { tagFor, uploadFile } from "./upload";
+import { ACCEPT, tagFor, uploadFile } from "@/uploads";
 import CodeEditor from "./CodeEditor.vue";
 import { WIDGETS } from "./widgetRegistry";
 import OverlayShell from "@/components/util/OverlayShell.vue";
@@ -194,7 +194,7 @@ function close() {
           <input
             ref="fileInput"
             type="file"
-            accept="image/*,video/mp4,video/webm,audio/mpeg,audio/ogg"
+            :accept="ACCEPT.media"
             hidden
             @change="upload"
           />

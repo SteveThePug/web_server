@@ -66,9 +66,9 @@ volumes:
   # File upload — PERSISTENT. Written by the backend at /backend/uploads,
   # served read-only by nginx at /uploads/. Shared so nginx can serve user
   # uploads without proxying through the Go process. Since Garage, it holds
-  # the uploads from before the bucket, private attachments (always), and any
-  # upload the backend wrote here because Garage refused it; nginx looks here
-  # first and only then in the bucket.
+  # private attachments (always), the uploads from before the bucket, and any
+  # upload the backend wrote here because Garage refused it. nginx serves
+  # /uploads/ from the bucket first and only then from here.
   uploads:
   # Garage object store — PERSISTENT, both. garage_meta is the metadata DB
   # (buckets, keys, the object index, the cluster layout); garage_data is the
@@ -629,15 +629,16 @@ services:
 
   # S3-compatible object store holding public uploads (the `uploads` bucket).
   # The backend writes to it on :3900 once S3_ENDPOINT is set in .env; nginx
-  # reads it anonymously on :3902 for /uploads/ files not found on the
+  # serves /uploads/ from it anonymously on :3902, falling back to the
   # `uploads` volume; garage-webui manages it via :3903. Nothing is published
   # to the host. Config is garage/garage.toml (no secrets in it); the two
   # secrets come from .env through the explicit list below.
   #
   # Nothing depends on this container being up. nginx is deliberately NOT
   # given it in depends_on: its upstream is a variable, so a missing or
-  # crash-looping garage costs a 502 on bucket-only files, never nginx's
-  # boot; and the backend falls back to the volume when a write fails.
+  # crash-looping garage only makes bucket-only files 404 (everything on the
+  # volume is still served), never nginx's boot; and the backend falls back
+  # to the volume when a write fails.
   #
   # FIRST RUN: garage/bootstrap.sh (layout, bucket, key, website access).
   # The image is FROM scratch — no shell, so no in-container init script and

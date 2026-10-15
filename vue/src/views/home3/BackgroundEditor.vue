@@ -10,7 +10,7 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { FITS, useBackgroundStore } from "@/stores/background";
-import { uploadFile, isImage } from "./upload";
+import { ACCEPT, uploadFile, isImage } from "@/uploads";
 import OverlayShell from "@/components/util/OverlayShell.vue";
 import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 
@@ -133,7 +133,7 @@ async function confirmReset() {
     <span class="row">
       <label class="bar-btn upload">
         {{ busy ? "Working…" : "Upload image…" }}
-        <input type="file" accept="image/*" hidden :disabled="busy" @change="upload($event.target.files[0])" />
+        <input type="file" :accept="ACCEPT.images" hidden :disabled="busy" @change="upload($event.target.files[0])" />
       </label>
       <span class="hint">or drop one on this panel</span>
     </span>

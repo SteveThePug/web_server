@@ -141,9 +141,30 @@ passed to axios, so multipart bodies and `onUploadProgress` work unchanged.
 | --- | --- |
 | reading or writing the site's data model | `gql()`, from a store |
 | doing list/create/update/delete on one GraphQL type | a store built with `createCrudStore()` |
-| calling a backend REST route (uploads, admin tooling, OAuth start) | `api` |
+| storing a file, or showing one that was stored | `uploadFile()` and friends from `@/uploads` |
+| calling a backend REST route (admin tooling, OAuth start) | `api` |
 | reading the Python service's NDJSON streams | `views/hotels/hotelsStream.js` — incremental `fetch`, not `api` |
 | probing `/radio/stream` | bare `axios.head` — it is Icecast, not the API |
+
+### Uploading files
+
+`src/uploads.js` is the one way to store a file:
+
+```js
+import { uploadFile, ACCEPT, kindOf, tagFor } from "@/uploads";
+
+// <input type="file" :accept="ACCEPT.images" @change="onPick">
+const url = await uploadFile(file); // "/uploads/3f9c….png", public and permanent
+```
+
+It posts to `/api/uploads`; the backend (`backend/services/uploads.go`) owns
+the allowed types, the 10MB limit and the file name, and stores the file in
+Garage. A refused file rejects with an `ApiError` whose message can be shown
+as-is. `kindOf(url)` says image/video/audio/file, `tagFor(url)` gives the
+markup for a box, `isUploadUrl(url)` checks a URL from someone else before
+rendering it, and `mediaSize(file)` reads an image or video's dimensions.
+`{ private: true }` (admin only) is for private chat attachments; never use
+it for anything shown in a canvas box, whose sandboxed frame has no cookie.
 
 New views should not call `gql()` or `axios` directly (a few small admin forms
 still call `gql()` for a one-off mutation). A view that needs data gets a
@@ -255,7 +276,7 @@ renders any page's boxes.
   `<body>`.
   Image and video files dropped onto the canvas in edit mode are uploaded and
   each becomes an unframed box at the drop point. "Insert upload" stores a
-  file through the chat's public upload endpoint and puts an `<img>`/`<video>`
+  file through `@/uploads` (see "Uploading files") and puts an `<img>`/`<video>`
   tag for it at the cursor. Starter HTML is in `templates.js`; links in a box
   need `target="_top"` or `_blank` (the Link templates set it), or they open
   inside the frame. A canvas given a `starter` has an import button in edit

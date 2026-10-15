@@ -39,7 +39,7 @@ import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
 import { TEMPLATES, imageHtml, videoHtml } from "./templates";
-import { mediaSize, uploadFile } from "./upload";
+import { mediaSize, uploadFile } from "@/uploads";
 
 const props = defineProps({
   page: { type: String, required: true },

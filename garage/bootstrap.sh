@@ -25,8 +25,8 @@
 #      with the same credentials and the backend needs no change.
 #   4. Grants that key read+write on the bucket. garage-webui also browses
 #      with it: it borrows the first key that has access to a bucket.
-#   5. Opens the bucket on the website endpoint, which is what nginx's
-#      /uploads/ fallback reads from, anonymously.
+#   5. Opens the bucket on the website endpoint, which is what nginx serves
+#      /uploads/ from, anonymously.
 #
 # ENV / .env
 #   S3_ACCESS_KEY_ID       required; "GK" + 24 hex chars

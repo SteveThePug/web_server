@@ -14,23 +14,21 @@ import (
 
 // What is deliberately NOT covered here, and why:
 //
-//   - Every handler method (Login, UploadMessageFile, the radio file movers,
+//   - Every handler method (Login, Upload, the radio file movers,
 //     the Spotify and email endpoints). They all need a live *gorm.DB, a real
 //     multipart request, the container's /backend/... directories, or a paid
 //     Claude call. Only postgres is in go.mod, so a DB would mean a server in
 //     CI.
-//   - The radio/chat upload filename sanitisation itself. It is written inline
-//     inside the handler bodies rather than in a helper, so testing it would
-//     mean either driving a full multipart upload against the real upload
-//     directories or refactoring production code. Neither was in scope, so the
-//     part that *is* extractable — the extension allow-lists those handlers
-//     gate on — is covered as a table contract below instead.
+//   - The radio upload's filename sanitisation. It is written inline in the
+//     handler, so only the extension allow-list it gates on is covered, as a
+//     table contract below. (The site's general uploads — validation, naming,
+//     storage — are services.Uploads, tested in services/uploads_test.go.)
 //   - Store.isAdminRequest and the refresh fallback in ValidateAdmin: both
 //     reach the database on the refresh path.
 //
 // What is covered: the Spotify OAuth CSRF nonce store, the TTL rules of the
 // three shared caches, the admin claim check on the upload trust boundary, and
-// the upload allow-list tables.
+// the radio allow-list.
 
 // --- Spotify OAuth CSRF nonces -------------------------------------------
 
@@ -253,68 +251,20 @@ func TestRequestIsAdmin(t *testing.T) {
 	}
 }
 
-// The allow-list tables are the upload trust boundary's data. Testing them as
-// data catches the realistic failure: someone adding an executable or markup
-// extension, or adding an extension to the MIME map without allowing it (which
-// would be dead configuration).
-func TestUploadAllowLists(t *testing.T) {
-	t.Run("dangerous extensions stay off the chat allow-list", func(t *testing.T) {
-		// Served by nginx from a public directory with no auth, so anything
-		// the browser will execute or render as markup must not be storable.
-		for _, ext := range []string{".html", ".htm", ".svg", ".js", ".php", ".exe", ".sh", ".xml", ""} {
-			if allowedExtensions[ext] {
-				t.Errorf("%q must not be an allowed chat upload extension", ext)
-			}
-		}
-	})
-
-	t.Run("allow-list keys are lower-cased with a leading dot", func(t *testing.T) {
-		// The handlers look up strings.ToLower(filepath.Ext(...)), so a key in
+// The radio allow-list is the radio upload's trust boundary. Testing it as
+// data catches the realistic failure: someone adding a non-audio or malformed
+// extension.
+func TestRadioAllowList(t *testing.T) {
+	for ext := range allowedAudioExtensions {
+		// The handler looks up strings.ToLower(filepath.Ext(...)), so a key in
 		// any other shape is unreachable.
-		for _, m := range []map[string]bool{allowedExtensions, allowedAudioExtensions} {
-			for ext := range m {
-				if ext == "" || ext[0] != '.' || ext != strings.ToLower(ext) {
-					t.Errorf("malformed allow-list key %q", ext)
-				}
-			}
+		if ext == "" || ext[0] != '.' || ext != strings.ToLower(ext) {
+			t.Errorf("malformed allow-list key %q", ext)
 		}
-	})
-
-	t.Run("every MIME-checked extension is also allowed", func(t *testing.T) {
-		for ext := range extensionToMIMEPrefix {
-			if !allowedExtensions[ext] {
-				t.Errorf("%q has a MIME prefix but is not an allowed extension, so the check never runs", ext)
-			}
+	}
+	for _, ext := range []string{".mp4", ".webm", ".pdf", ".txt", ".png", ".html"} {
+		if allowedAudioExtensions[ext] {
+			t.Errorf("%q must not be an allowed radio upload extension", ext)
 		}
-	})
-
-	t.Run("every allowed extension has a stored Content-Type", func(t *testing.T) {
-		// Garage serves back the type the upload was stored with; a missing
-		// entry would store an empty type and the browser would be left to
-		// guess under nosniff — i.e. refuse to render it.
-		for ext := range allowedExtensions {
-			if extensionContentType[ext] == "" {
-				t.Errorf("%q is allowed but has no Content-Type", ext)
-			}
-		}
-	})
-
-	t.Run("audio extensions are content-unverified by design", func(t *testing.T) {
-		// http.DetectContentType is unreliable for these, so a missing entry
-		// means "extension allowed, content not verified". Adding one would
-		// start rejecting legitimate uploads.
-		for _, ext := range []string{".mp3", ".ogg"} {
-			if _, ok := extensionToMIMEPrefix[ext]; ok {
-				t.Errorf("%q should not be MIME-checked", ext)
-			}
-		}
-	})
-
-	t.Run("radio allow-list is audio only", func(t *testing.T) {
-		for _, ext := range []string{".mp4", ".webm", ".pdf", ".txt", ".png", ".html"} {
-			if allowedAudioExtensions[ext] {
-				t.Errorf("%q must not be an allowed radio upload extension", ext)
-			}
-		}
-	})
+	}
 }
