@@ -490,7 +490,7 @@ The file is never rotated by the stack. On the Pi, add
 `/etc/logrotate.d/web_server`:
 
 ```
-/home/<user>/web_server/logs/nginx/*.log {
+/home/adamf/deploy/web_server/logs/nginx/*.log {
     weekly
     rotate 4
     compress
