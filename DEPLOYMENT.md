@@ -297,7 +297,7 @@ Setup, once:
   that wants the public site. Pushing from another machine still goes
   through Cloudflare and its cap; use the host's Tailscale name for that.
 - **Gitea SSH (2222).** Not HTTP, so not tunnelled. Already Tailscale-only:
-  `SSH_DOMAIN` in `gitea/config/app.ini.template` is the host's MagicDNS name
+  `GITEA_SSH_DOMAIN` in `.env` (Gitea's `SSH_DOMAIN`) is the host's MagicDNS name
   and 2222 has never been forwarded. Nothing changes.
 - **The radio harbor (8001).** Also a raw source protocol, so a DJ client
   pointed at `<DOMAIN>:8001` stops connecting once the domain resolves to

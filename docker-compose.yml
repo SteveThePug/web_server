@@ -646,6 +646,12 @@ services:
       - GITEA__server__LFS_JWT_SECRET=${GITEA_LFS_JWT_SECRET}
       - GITEA__security__INTERNAL_TOKEN=${GITEA_INTERNAL_TOKEN}
       - GITEA__oauth2__JWT_SECRET=${GITEA_OAUTH2_JWT_SECRET}
+      # The host's own name, which Gitea prints in SSH clone URLs. It lives in
+      # .env, not app.ini, so moving to another host is a one-line change;
+      # environment-to-ini writes it into the live app.ini on every start.
+      # localhost suits dev.
+      - GITEA__server__SSH_DOMAIN=${GITEA_SSH_DOMAIN:-localhost}
+      - GITEA__server__DOMAIN=${GITEA_SSH_DOMAIN:-localhost}
       # Webhooks are refused to private addresses by default ("external").
       # The usaco site's push hook targets http://usaco:8080 on the Docker
       # network, so that one host is allowed by name.
