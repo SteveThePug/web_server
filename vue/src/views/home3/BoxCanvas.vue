@@ -32,6 +32,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useBoxesStore } from "@/stores/boxes";
 import { useBackgroundStore } from "@/stores/background";
 import BackgroundEditor from "./BackgroundEditor.vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import BoxFrame from "./BoxFrame.vue";
 import BoxEditor from "./BoxEditor.vue";
 import HtmlBox from "./HtmlBox.vue";
@@ -64,6 +65,7 @@ const background = useBackgroundStore();
 background.show(props.page);
 onBeforeUnmount(() => background.hide(props.page));
 const backgroundOpen = ref(false);
+const confirmation = ref(null);
 
 const isMobile = useMediaQuery(MOBILE_QUERY);
 const isAdmin = computed(() => auth.loggedIn && !!auth.user.admin);
@@ -144,10 +146,28 @@ function onAction(box, action) {
   else if (action === "duplicate") {
     run(async () => (selectedId.value = (await store.duplicate(box)).id));
   } else if (action === "delete") {
-    if (!confirm(`Delete “${labelOf(box)}”? This can't be undone from here.`)) return;
-    if (selectedId.value === box.id) selectedId.value = null;
-    run(() => store.remove(box.id));
+    askConfirmation({
+      title: "Delete box",
+      message: `Delete “${labelOf(box)}”? This can't be undone from here.`,
+      confirmLabel: "Delete",
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      if (selectedId.value === box.id) selectedId.value = null;
+      run(() => store.remove(box.id));
+    });
   }
+}
+
+function askConfirmation(request) {
+  return new Promise((resolve) => {
+    confirmation.value = { ...request, open: true, resolve };
+  });
+}
+
+function finishConfirmation(confirmed) {
+  const request = confirmation.value;
+  confirmation.value = null;
+  request?.resolve(confirmed);
 }
 
 function labelOf(box) {
@@ -208,7 +228,14 @@ function addBox() {
 const importing = ref(false);
 async function importStarter() {
   const count = store.boxes.length;
-  if (count && !confirm(`This page already has ${count} box${count === 1 ? "" : "es"}. Add the starter layout on top?`)) return;
+  if (count) {
+    const confirmed = await askConfirmation({
+      title: "Import starter layout",
+      message: `This page already has ${count} box${count === 1 ? "" : "es"}. Add the starter layout on top?`,
+      confirmLabel: "Import",
+    });
+    if (!confirmed) return;
+  }
   importing.value = true;
   try {
     // Sequential, so the boxes come back in z order without a refetch.
@@ -273,11 +300,18 @@ async function onDrop(event) {
 // Leaving a box saves its unsaved HTML; BoxEditor does that itself as the
 // selection changes or it unmounts.
 function select(box) {
+  backgroundOpen.value = false;
   selectedId.value = box.id;
+}
+
+function toggleBackground() {
+  backgroundOpen.value = !backgroundOpen.value;
+  if (backgroundOpen.value) selectedId.value = null;
 }
 
 function toggleEdit() {
   editing.value = !editing.value;
+  if (!editing.value) selectedId.value = null;
 }
 </script>
 
@@ -290,7 +324,7 @@ function toggleEdit() {
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
         {{ editing ? "Done" : "Edit layout" }}
       </button>
-      <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="backgroundOpen = !backgroundOpen">
+       <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="toggleBackground">
         Background
       </button>
       <template v-if="inEditMode">
@@ -386,6 +420,16 @@ function toggleEdit() {
       @preview="preview = $event"
       @close="selectedId = null"
       @error="report"
+    />
+
+    <ConfirmDialog
+      v-if="confirmation"
+      v-model="confirmation.open"
+      :title="confirmation.title"
+      :message="confirmation.message"
+      :confirm-label="confirmation.confirmLabel"
+      @confirm="finishConfirmation(true)"
+      @cancel="finishConfirmation(false)"
     />
   </div>
 </template>

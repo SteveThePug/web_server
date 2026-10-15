@@ -11,11 +11,14 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { FITS, useBackgroundStore } from "@/stores/background";
 import { uploadFile, isImage } from "./upload";
+import OverlayShell from "@/components/util/OverlayShell.vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 
 const props = defineProps({
   page: { type: String, required: true },
 });
 const emit = defineEmits(["close"]);
+const open = ref(true);
 
 const bg = useBackgroundStore();
 const saved = bg.byPage[props.page];
@@ -37,6 +40,7 @@ const swatch = computed(() => (HEX.test(draft.value.color) ? draft.value.color :
 const busy = ref(false);
 const error = ref("");
 const dragOver = ref(false);
+const confirmation = ref(false);
 
 async function upload(file) {
   if (!file) return;
@@ -60,6 +64,11 @@ function onDrop(event) {
   upload(event.dataTransfer?.files?.[0]);
 }
 
+function close() {
+  open.value = false;
+  emit("close");
+}
+
 async function save() {
   error.value = "";
   busy.value = true;
@@ -76,7 +85,10 @@ async function save() {
 }
 
 async function resetToDefault() {
-  if (!confirm("Go back to the site's default background on this page?")) return;
+  confirmation.value = true;
+}
+
+async function confirmReset() {
   error.value = "";
   busy.value = true;
   try {
@@ -91,14 +103,15 @@ async function resetToDefault() {
 </script>
 
 <template>
-  <form
-    class="bg-editor bdr-2 bg-surface"
-    :class="{ 'drag-over': dragOver }"
-    @submit.prevent="save"
-    @dragover.prevent="dragOver = true"
-    @dragleave.self="dragOver = false"
-    @drop.prevent="onDrop"
-  >
+  <OverlayShell v-model="open" title="Page background" @close="close">
+    <form
+      class="bg-editor bdr-2 bg-surface"
+      :class="{ 'drag-over': dragOver }"
+      @submit.prevent="save"
+      @dragover.prevent="dragOver = true"
+      @dragleave.self="dragOver = false"
+      @drop.prevent="onDrop"
+    >
     <h3>Page background</h3>
 
     <label>
@@ -135,13 +148,22 @@ async function resetToDefault() {
 
     <div class="row">
       <button type="submit" class="bar-btn" :disabled="busy">Save</button>
-      <button type="button" class="bar-btn" @click="emit('close')">Cancel</button>
+      <button type="button" class="bar-btn" @click="close">Cancel</button>
       <button v-if="saved" type="button" class="bar-btn" :disabled="busy" @click="resetToDefault">
         Theme default
       </button>
     </div>
     <p v-if="error" class="text-tertiary">{{ error }}</p>
-  </form>
+    </form>
+  </OverlayShell>
+  <ConfirmDialog
+    v-if="confirmation"
+    v-model="confirmation"
+    title="Reset background"
+    message="Go back to the site's default background on this page?"
+    confirm-label="Reset"
+    @confirm="confirmReset"
+  />
 </template>
 
 <style scoped>

@@ -6,13 +6,16 @@
  * the `loggedIn` watcher covers someone who signs in while the page is open, and
  * both check `!loaded && !loading` so the two paths can't fire two requests.
  */
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { usePlacesStore } from "@/stores/places";
 import { useAuthStore } from "@/stores/auth";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 
 const places = usePlacesStore();
 const auth = useAuthStore();
 const loggedIn = computed(() => auth.loggedIn);
+const removeTarget = ref(null);
+const confirmationOpen = ref(false);
 
 // Two entry points, one fetch: onMounted covers an already-signed-in visitor,
 // the watcher covers signing in with the page already open. The
@@ -36,7 +39,14 @@ async function toggleDone(place) {
 
 async function remove(place) {
   if (!loggedIn.value) return;
-  if (!confirm(`Delete "${place.title}"?`)) return;
+  removeTarget.value = place;
+  confirmationOpen.value = true;
+}
+
+async function confirmRemove() {
+  const place = removeTarget.value;
+  removeTarget.value = null;
+  if (!place) return;
   try {
     await places.remove(place.id);
   } catch (err) {
@@ -98,6 +108,15 @@ async function remove(place) {
       </tbody>
     </table>
   </div>
+  <ConfirmDialog
+    v-if="removeTarget"
+    v-model="confirmationOpen"
+    title="Delete place"
+    :message="`Delete ${removeTarget.title}?`"
+    confirm-label="Delete"
+    @confirm="confirmRemove"
+    @cancel="removeTarget = null"
+  />
 </template>
 
 <style scoped>

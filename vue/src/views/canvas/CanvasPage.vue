@@ -19,6 +19,7 @@ import { PAGE_FIELDS, usePagesStore } from "@/stores/pages";
 import BoxCanvas from "@/views/home3/BoxCanvas.vue";
 import NotFound from "@/views/404/404.vue";
 import PageForm from "./PageForm.vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -59,6 +60,7 @@ auth.ensureLoaded();
 const settingsOpen = ref(false);
 const draft = ref({ title: "", slug: "", adminOnly: false });
 const settingsError = ref("");
+const deleteConfirmationOpen = ref(false);
 
 function openSettings() {
   draft.value = { title: page.value.title, slug: page.value.slug, adminOnly: page.value.adminOnly };
@@ -83,7 +85,11 @@ async function saveSettings() {
 }
 
 async function deletePage() {
-  if (!confirm(`Delete the page “${page.value.title}” and everything on it?`)) return;
+  deleteConfirmationOpen.value = true;
+}
+
+async function confirmDeletePage() {
+  deleteConfirmationOpen.value = false;
   try {
     await pages.remove(page.value.id);
     router.push("/");
@@ -126,6 +132,15 @@ async function deletePage() {
     </section>
     <NotFound />
   </template>
+
+  <ConfirmDialog
+    v-if="deleteConfirmationOpen"
+    v-model="deleteConfirmationOpen"
+    title="Delete page"
+    :message="`Delete the page “${page.title}” and everything on it?`"
+    confirm-label="Delete"
+    @confirm="confirmDeletePage"
+  />
 </template>
 
 <style scoped>

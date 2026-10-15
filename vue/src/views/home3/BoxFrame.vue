@@ -16,7 +16,8 @@
  * the final geometry is emitted once as `commit`; the parent saves it. A press
  * that never moves is a click (select only) and commits nothing.
  */
-import { computed, ref } from "vue";
+import { computed, toRef } from "vue";
+import { useBoxInteraction } from "./useBoxInteraction";
 
 const props = defineProps({
   box: { type: Object, required: true },
@@ -28,12 +29,51 @@ const props = defineProps({
 
 const emit = defineEmits(["select", "commit", "action"]);
 
-const SNAP = 5;
-const MIN_SIZE = 40; // matches minBoxSize in backend/graph/box_helpers.go
 const HANDLES = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
 
-const draft = ref(null);
+const { draft, start } = useBoxInteraction({
+  box: toRef(props, "box"),
+  scale: toRef(props, "scale"),
+  emit,
+});
 const geom = computed(() => draft.value ?? props.box);
+
+function nudge(mode, event) {
+  if (!props.selected || !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  event.preventDefault();
+  const step = event.shiftKey ? 10 : 5;
+  const next = { x: props.box.x, y: props.box.y, w: props.box.w, h: props.box.h };
+  if (mode === "move") {
+    if (event.key === "ArrowLeft") next.x -= step;
+    if (event.key === "ArrowRight") next.x += step;
+    if (event.key === "ArrowUp") next.y -= step;
+    if (event.key === "ArrowDown") next.y += step;
+  } else {
+    if (mode.includes("w") && event.key === "ArrowLeft") {
+      next.x -= step;
+      next.w += step;
+    }
+    if (mode.includes("w") && event.key === "ArrowRight") {
+      next.x += step;
+      next.w = Math.max(40, next.w - step);
+    }
+    if (mode.includes("e") && event.key === "ArrowRight") next.w += step;
+    if (mode.includes("e") && event.key === "ArrowLeft") next.w = Math.max(40, next.w - step);
+    if (mode.includes("n") && event.key === "ArrowUp") {
+      next.y -= step;
+      next.h += step;
+    }
+    if (mode.includes("n") && event.key === "ArrowDown") {
+      next.y += step;
+      next.h = Math.max(40, next.h - step);
+    }
+    if (mode.includes("s") && event.key === "ArrowDown") next.h += step;
+    if (mode.includes("s") && event.key === "ArrowUp") next.h = Math.max(40, next.h - step);
+  }
+  next.x = Math.max(0, next.x);
+  next.y = Math.max(0, next.y);
+  emit("commit", next);
+}
 
 const style = computed(() => ({
   left: `${geom.value.x}px`,
@@ -46,60 +86,6 @@ const style = computed(() => ({
   zIndex: props.selected ? 100000 : props.box.z,
 }));
 
-const snap = (n) => Math.round(n / SNAP) * SNAP;
-
-let drag = null;
-
-function start(mode, event) {
-  if (event.button !== 0) return;
-  emit("select");
-  event.preventDefault();
-  event.target.setPointerCapture(event.pointerId);
-  const { x, y, w, h } = props.box;
-  drag = { mode, startX: event.clientX, startY: event.clientY, from: { x, y, w, h }, moved: false };
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", end);
-  window.addEventListener("pointercancel", end);
-}
-
-function move(event) {
-  const dx = (event.clientX - drag.startX) / props.scale;
-  const dy = (event.clientY - drag.startY) / props.scale;
-  // A few px of jitter on a click shouldn't count as a move.
-  if (!drag.moved && Math.hypot(dx, dy) < 3) return;
-  drag.moved = true;
-
-  const { x, y, w, h } = drag.from;
-  const next = { x, y, w, h };
-  if (drag.mode === "move") {
-    next.x = Math.max(0, snap(x + dx));
-    next.y = Math.max(0, snap(y + dy));
-  } else {
-    // Each handle moves the edges named in it. Moving the left or top edge
-    // changes position and size together, and is clamped so the opposite
-    // edge stays put once the box reaches its minimum size.
-    if (drag.mode.includes("e")) next.w = Math.max(MIN_SIZE, snap(w + dx));
-    if (drag.mode.includes("s")) next.h = Math.max(MIN_SIZE, snap(h + dy));
-    if (drag.mode.includes("w")) {
-      next.x = Math.max(0, Math.min(snap(x + dx), x + w - MIN_SIZE));
-      next.w = x + w - next.x;
-    }
-    if (drag.mode.includes("n")) {
-      next.y = Math.max(0, Math.min(snap(y + dy), y + h - MIN_SIZE));
-      next.h = y + h - next.y;
-    }
-  }
-  draft.value = next;
-}
-
-function end() {
-  window.removeEventListener("pointermove", move);
-  window.removeEventListener("pointerup", end);
-  window.removeEventListener("pointercancel", end);
-  if (drag?.moved && draft.value) emit("commit", { ...draft.value });
-  drag = null;
-  draft.value = null;
-}
 </script>
 
 <template>
@@ -112,14 +98,16 @@ function end() {
     <div
       v-if="editing"
       class="overlay"
+      :tabindex="selected ? 0 : -1"
       @pointerdown="start('move', $event)"
+      @keydown="nudge('move', $event)"
     >
       <span class="label">{{ label }}</span>
       <div v-if="selected" class="toolbar" @pointerdown.stop>
-        <button type="button" title="Bring to front" @click="emit('action', 'front')">▲</button>
-        <button type="button" title="Send to back" @click="emit('action', 'back')">▼</button>
-        <button type="button" title="Duplicate" @click="emit('action', 'duplicate')">⧉</button>
-        <button type="button" title="Delete" @click="emit('action', 'delete')">✕</button>
+        <button type="button" title="Bring to front" aria-label="Bring to front" @click="emit('action', 'front')">▲</button>
+        <button type="button" title="Send to back" aria-label="Send to back" @click="emit('action', 'back')">▼</button>
+        <button type="button" title="Duplicate" aria-label="Duplicate" @click="emit('action', 'duplicate')">⧉</button>
+        <button type="button" title="Delete" aria-label="Delete" @click="emit('action', 'delete')">✕</button>
       </div>
       <template v-if="selected">
         <div
@@ -127,7 +115,11 @@ function end() {
           :key="h"
           class="handle"
           :class="`h-${h}`"
+          :tabindex="selected ? 0 : -1"
+          role="slider"
+          :aria-label="`Resize ${h}`"
           @pointerdown.stop="start(h, $event)"
+          @keydown.stop="nudge(h, $event)"
         />
       </template>
     </div>

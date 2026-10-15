@@ -19,12 +19,15 @@ import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { api } from "@/api";
 import Button from "@/components/input/Button.vue";
 import SecretReveal from "@/components/admin/SecretReveal.vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import "./env.css";
 
 const groups = ref([]);
 const status = ref(null);
 const error = ref("");
 const loading = ref(true);
+const applyConfirmationOpen = ref(false);
+const applyConfirmation = ref({ title: "Apply changes", message: "", confirmLabel: "Apply" });
 
 // Staged edits, none of which exist anywhere but this component until Apply.
 //   drafts:     name -> text in the row's input
@@ -127,7 +130,12 @@ async function apply() {
     `This recreates: ${affectedServices.value.join(", ")}. The site's API is unavailable for a few seconds.`,
     ...warnings,
   ];
-  if (!confirm(lines.join("\n"))) return;
+  applyConfirmation.value = { title: "Apply environment changes", message: lines.join("\n"), confirmLabel: "Apply" };
+  applyConfirmationOpen.value = true;
+}
+
+async function confirmApply() {
+  applyConfirmationOpen.value = false;
 
   const body = { set: {}, generate: [] };
   for (const { change } of changes.value) {
@@ -377,6 +385,14 @@ onUnmounted(stopPolling);
         <Button class="px-2 env-apply" @click="apply">Apply</Button>
       </div>
     </footer>
+    <ConfirmDialog
+      v-if="applyConfirmationOpen"
+      v-model="applyConfirmationOpen"
+      :title="applyConfirmation.title"
+      :message="applyConfirmation.message"
+      :confirm-label="applyConfirmation.confirmLabel"
+      @confirm="confirmApply"
+    />
   </div>
 </template>
 

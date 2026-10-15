@@ -24,6 +24,7 @@ import { useBoxesStore } from "@/stores/boxes";
 import { tagFor, uploadFile } from "./upload";
 import CodeEditor from "./CodeEditor.vue";
 import { WIDGETS } from "./widgetRegistry";
+import OverlayShell from "@/components/util/OverlayShell.vue";
 
 const props = defineProps({
   box: { type: Object, required: true },
@@ -35,6 +36,7 @@ const store = useBoxesStore(props.box.page);
 const codeEditor = ref(null);
 const fileInput = ref(null);
 const uploading = ref(false);
+const open = ref(true);
 
 const draftHtml = ref(props.box.html ?? "");
 const saving = ref(false);
@@ -119,13 +121,14 @@ async function upload(event) {
 }
 
 function close() {
+  open.value = false;
   emit("close");
 }
 </script>
 
 <template>
-  <Teleport to="body">
-    <aside class="box-editor" @keydown.esc="close">
+  <OverlayShell v-model="open" title="Box editor" @close="close">
+    <aside class="box-editor">
       <header class="flex items-center justify-between gap-2">
         <h3 class="m-0">
           {{ box.kind === "widget" ? `Widget · ${box.widget}` : "HTML box" }}
@@ -210,7 +213,7 @@ function close() {
         </footer>
       </template>
     </aside>
-  </Teleport>
+  </OverlayShell>
 </template>
 
 <style scoped>
@@ -219,7 +222,6 @@ function close() {
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 60;
   width: min(460px, 100vw);
   display: flex;
   flex-direction: column;

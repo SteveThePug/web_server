@@ -1,62 +1,26 @@
 <script setup>
-import { watch, onUnmounted } from "vue";
+import OverlayShell from "./OverlayShell.vue";
 
 // Popup modal: a dimmed backdrop over the page with the content floated on top.
-// Closes on backdrop click or Escape. Used by the home widgets so their create
-// forms pop up instead of replacing the widget's contents.
 const open = defineModel({ type: Boolean, default: false });
 
 const props = defineProps({
   maxWidth: { type: String, default: "420px" },
 });
 
-function onKeydown(e) {
-  if (e.key === "Escape") open.value = false;
-}
-
-// The Escape listener is attached only while open, so several modals on one
-// page can't all react to a single keypress. `immediate` covers a modal that
-// mounts already open.
-watch(
-  open,
-  (isOpen) => {
-    if (isOpen) {
-      window.addEventListener("keydown", onKeydown);
-    } else {
-      window.removeEventListener("keydown", onKeydown);
-    }
-  },
-  { immediate: true },
-);
-
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 </script>
 
 <template>
-  <!-- Teleported to <body> so the backdrop escapes any ancestor with
-       overflow/transform/z-index that would otherwise clip or trap it. -->
-  <Teleport to="body">
-    <div v-if="open" class="modal-backdrop" @click.self="open = false">
-      <div class="modal bdr-1" :style="{ maxWidth: props.maxWidth }">
-        <slot />
-      </div>
+  <OverlayShell v-model="open" title="Dialog" backdrop close-on-backdrop>
+    <div class="modal bdr-1" :style="{ maxWidth: props.maxWidth }">
+      <slot />
     </div>
-  </Teleport>
+  </OverlayShell>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 12px;
-}
-
 .modal {
+  box-sizing: border-box;
   background-color: var(--color-surface);
   padding: 16px;
   width: 100%;

@@ -10,12 +10,23 @@
  */
 import { usePagesStore } from "@/stores/pages";
 import PageForm from "@/views/canvas/PageForm.vue";
+import { ref } from "vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 
 const pages = usePagesStore();
 pages.fetch();
+const removeTarget = ref(null);
+const confirmationOpen = ref(false);
 
 async function remove(page) {
-  if (!confirm(`Delete the page “${page.title}” and everything on it?`)) return;
+  removeTarget.value = page;
+  confirmationOpen.value = true;
+}
+
+async function confirmRemove() {
+  const page = removeTarget.value;
+  removeTarget.value = null;
+  if (!page) return;
   try {
     await pages.remove(page.id);
   } catch (err) {
@@ -61,5 +72,15 @@ async function remove(page) {
       <h1>New page</h1>
       <PageForm />
     </section>
+
+    <ConfirmDialog
+      v-if="removeTarget"
+      v-model="confirmationOpen"
+      title="Delete page"
+      :message="`Delete the page “${removeTarget.title}” and everything on it?`"
+      confirm-label="Delete"
+      @confirm="confirmRemove"
+      @cancel="removeTarget = null"
+    />
   </div>
 </template>
