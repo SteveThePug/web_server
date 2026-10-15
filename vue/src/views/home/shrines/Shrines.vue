@@ -1,10 +1,13 @@
 <script setup>
 /**
- * Route `/shrines` — index of the shrine pages: every canvas page
+ * STATUS: unused — unrouted. /shrines is now an admin-made canvas page whose
+ * links are boxes; new shrines are made on the admin panel's Pages tab.
+ *
+ * Was route `/shrines` — index of the shrine pages: every canvas page
  * (views/canvas/) whose address starts with "shrines/", from the pages query.
  * Admins — and only admins; the server refuses createPage to anyone else
  * anyway — get a button that opens a form to start one from the Shrine
- * layout.
+ * layout (since removed).
  */
 import { computed, ref } from "vue";
 import RouterTable from "@/components/util/RouterTable.vue";
@@ -41,7 +44,7 @@ const shrine_links = computed(() =>
         <button type="button" class="bdr-2 bg-surface mt-4 cursor-pointer" @click="creating = !creating">
           {{ creating ? "Cancel" : "+ New shrine" }}
         </button>
-        <PageForm v-if="creating" prefix="shrines/" starter="shrine" />
+        <PageForm v-if="creating" prefix="shrines/" />
       </template>
     </div>
   </main>

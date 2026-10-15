@@ -37,8 +37,17 @@ onMounted(async () => {
       "&": { height: "100%", fontSize: "13px", backgroundColor: "var(--color-surface-deep)", color: "var(--color-muted)" },
       ".cm-content": { caretColor: "var(--color-primary)" },
       ".cm-gutters": { backgroundColor: "var(--color-surface)", color: "var(--color-quaternary)", border: "none" },
-      ".cm-activeLine, .cm-activeLineGutter": { backgroundColor: "var(--color-surface-tint)" },
-      "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": { backgroundColor: "#24504a" },
+      // The selection is drawn in a layer *behind* the text, so an opaque
+      // active-line colour would hide it on the cursor's line: keep it
+      // translucent.
+      ".cm-activeLine": { backgroundColor: "#55ffbb0d" },
+      ".cm-activeLineGutter": { backgroundColor: "var(--color-surface-tint)" },
+      // Same selectors as CodeMirror's base theme — a shorter one loses to
+      // its focused rule, which paints #233, all but invisible here.
+      "& .cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+        backgroundColor: "#1f6b5c",
+      },
+      ".cm-selectionMatch": { backgroundColor: "#55ffbb26" },
       ".cm-scroller": { fontFamily: "ui-monospace, monospace" },
     },
     { dark: true },

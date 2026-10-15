@@ -60,14 +60,10 @@ const router = createRouter({
                     name: "cheap-hotels",
                     component: () => import("@/views/hotels/CheapHotels.vue"),
                 },
-                {
-                    path: "shrines",
-                    name: "shrine links",
-                    component: () => import("@/views/home/shrines/Shrines.vue"),
-                },
-                // Individual shrines are canvas pages, made from /shrines and
-                // served by the catch-all below. The old hand-written ones
-                // (views/home/shrines/) are unrouted.
+                // /shrines and the shrines under it are canvas pages, made
+                // from the admin panel's Pages tab and served by the catch-all
+                // below. The old hand-written ones (views/home/shrines/) are
+                // unrouted.
                 // Anything else is an admin-created canvas page if one exists
                 // at that address (the Page GraphQL type), else the 404.
                 {

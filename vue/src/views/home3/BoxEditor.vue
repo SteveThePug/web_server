@@ -8,8 +8,10 @@
  *     "instant" model as dragging.
  *   - HTML is a draft. Typing updates the box on the canvas live (through the
  *     `preview` event, so the parent can render the draft without touching the
- *     store) and is saved only by Save or Ctrl/Cmd+S. Saving every keystroke
- *     would push half-written markup to every visitor.
+ *     store) and is saved by Save or Ctrl/Cmd+S, or automatically on leaving
+ *     the box: selecting another one, clicking empty canvas, Done, or closing
+ *     the panel. Saving every keystroke would push half-written markup to
+ *     every visitor; leaving is the point it is finished.
  *
  * "Insert upload" uploads a file (upload.js) and puts a tag for it at the
  * cursor — the way to add pictures to an existing box, e.g. a gallery.
@@ -17,7 +19,7 @@
  * The panel is teleported to <body>, so it is fixed to the window whatever
  * transform or stacking context the page puts around the canvas.
  */
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";
 import { tagFor, uploadFile } from "./upload";
 import CodeEditor from "./CodeEditor.vue";
@@ -38,15 +40,32 @@ const draftHtml = ref(props.box.html ?? "");
 const saving = ref(false);
 const dirty = computed(() => props.box.kind === "html" && draftHtml.value !== (props.box.html ?? ""));
 
-// Switching to another box: drop this one's preview, start from the new
-// box's saved html.
+// Save the draft of box `id` if it differs from what is stored. Fire and
+// forget: it runs as the editor moves on or unmounts, with nothing left to
+// show progress in, so a failure is only reported through `error`.
+function flush(id) {
+  const box = store.boxes.find((b) => b.id === id);
+  if (!box || box.kind !== "html" || draftHtml.value === (box.html ?? "")) return;
+  store.update(id, { html: draftHtml.value }).catch((err) => emit("error", err));
+}
+
+// Switching to another box: save the old one's draft, drop its preview, start
+// from the new box's saved html.
 watch(
   () => props.box.id,
-  () => {
+  (_, oldId) => {
+    flush(oldId);
     emit("preview", null);
     draftHtml.value = props.box.html ?? "";
   },
 );
+
+// Deselecting, Done and ✕ all unmount the panel.
+onBeforeUnmount(() => {
+  clearTimeout(previewTimer);
+  flush(props.box.id);
+  emit("preview", null);
+});
 
 let previewTimer = null;
 watch(draftHtml, (html) => {
@@ -100,12 +119,8 @@ async function upload(event) {
 }
 
 function close() {
-  if (dirty.value && !confirm("Discard unsaved HTML changes?")) return;
-  emit("preview", null);
   emit("close");
 }
-
-defineExpose({ close });
 </script>
 
 <template>
@@ -171,7 +186,7 @@ defineExpose({ close });
         <footer class="flex items-center justify-between gap-2">
           <small class="text-muted">
             Runs sandboxed: scripts work, cookies and /api don't. fetch() only reaches
-            keyless CORS-open APIs. Ctrl+S saves.
+            keyless CORS-open APIs. Ctrl+S saves; so does leaving the box.
           </small>
           <input
             ref="fileInput"

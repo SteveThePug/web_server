@@ -17,7 +17,7 @@ func TestValidateSlug(t *testing.T) {
 		{"shrines//gto", false},     // empty segment
 		{"shrines/gto-", false},     // trailing hyphen
 		{"shrines/../admin", false}, // dots
-		{"shrines", false},          // the SPA's own index
+		{"shrines", true},           // the index is a canvas page too
 		{"shrines/demoman", true},   // no longer an SPA route
 		{"admin/pages", false},      // under an SPA route
 		{"jobs/x", false},           // under an nginx route

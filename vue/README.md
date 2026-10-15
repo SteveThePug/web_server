@@ -68,7 +68,8 @@ Two layout shells, defined in `src/router/index.js`:
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint): a box canvas, page key `index`; the old fixed page is its starter layout, `views/landing/landingLayout.js` |
 | `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
-| `/automata`, `/hotels`, `/shrines` | DefaultLayout | Each shrine under `/shrines/` is a canvas page |
+| `/automata`, `/hotels` | DefaultLayout | |
+| `/shrines`, `/shrines/*` | DefaultLayout | All canvas pages via the catch-all: `/shrines` is an index whose links are Link boxes placed by hand |
 | `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
 | `:pathMatch(.*)*` | DefaultLayout | `views/canvas/CanvasPage.vue`: an admin-created canvas page if one exists at the path, else the 404 (with a "create a page here" form for admins) |
@@ -209,9 +210,9 @@ renders any page's boxes.
   (`Landing.vue`), which is nothing but the canvas. Any other key is the slug of a **`Page`** (GraphQL
   type, `stores/pages.js`), an admin-created page served at `/<slug>` by the
   router's catch-all (`views/canvas/CanvasPage.vue`). Pages are created from
-  the admin panel's Pages tab, from `/shrines`, or from the 404 of the address
-  you want; each can start from a layout in `views/canvas/pageStarters.js`
-  (Blank, Shrine, Notes board). Title, address and visibility are under "Page
+  the admin panel's Pages tab (which also has a "New shrine" form, a blank page
+  under `shrines/`), or from the 404 of the address you want; each can start
+  from a layout in `views/canvas/pageStarters.js` (Blank, Notes board). Title, address and visibility are under "Page
   settings" on the page; renaming moves its boxes, deleting takes them too.
   The server refuses slugs that an SPA or nginx route would answer first
   (`validateSlug` in `backend/graph/page_helpers.go`) — add to that list when
@@ -248,7 +249,9 @@ renders any page's boxes.
 - **Editing.** Admins get an "Edit layout" toggle at desktop width. Geometry
   saves on pointer release, and the box is moved locally first and put back if
   the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
-  HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S.
+  HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S, or
+  automatically on leaving the box (selecting another, clicking empty canvas,
+  Done, ✕).
   CodeMirror is loaded only when that panel opens; the panel is teleported to
   `<body>`.
   Image and video files dropped onto the canvas in edit mode are uploaded and
@@ -307,7 +310,7 @@ in its header comment; the summary:
 | File | Status |
 | --- | --- |
 | `views/home3/Home3.vue` | live (`/stp`) — the box canvas; its widget boxes use **Intro3** and **Gym2** |
-| `views/home/shrines/{Demoman,GTO,Evangelion,Skipskipbenben}.vue` | the old hand-written shrines (Demoman a video wall, the rest `<Wip />`), unrouted; shrines are canvas pages now |
+| `views/home/shrines/{Shrines,Demoman,GTO,Evangelion,Skipskipbenben}.vue` | the old `/shrines` index and hand-written shrines (Demoman a video wall, the rest `<Wip />`), unrouted; shrines are canvas pages now |
 | `views/home/Home.vue` | legacy fixed grid that `/stp` used to be; no route. Its widgets are still live through `home3/widgetRegistry.js` |
 | `views/home/Intro.vue` | superseded by `Intro2.vue`; not imported |
 | `views/home/Gym.vue` | superseded by `Gym2.vue`; not imported |

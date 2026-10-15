@@ -3,6 +3,10 @@
  * Admin tab: the canvas pages made in the browser (views/canvas/). Lists them
  * all, admin-only ones included, and creates new ones. A page's title,
  * address and visibility are edited from "Page settings" on the page itself.
+ *
+ * "New shrine" is the same form with the address fixed under /shrines/. It
+ * starts blank and adds no link anywhere: /shrines is itself a canvas page,
+ * and its links are boxes put there by hand.
  */
 import { usePagesStore } from "@/stores/pages";
 import PageForm from "@/views/canvas/PageForm.vue";
@@ -42,6 +46,15 @@ async function remove(page) {
         </tr>
       </table>
       <p v-else-if="pages.loaded" class="text-muted">No pages yet.</p>
+    </section>
+
+    <section>
+      <h1>New shrine</h1>
+      <p class="text-muted">
+        A blank page under /shrines/. Link to it from the /shrines page with a
+        Link box.
+      </p>
+      <PageForm prefix="shrines/" placeholder="address, e.g. evangelion" submit-label="Create shrine" />
     </section>
 
     <section>

@@ -2,8 +2,9 @@
 /**
  * Create a canvas page: its address, title, a starting layout from
  * pageStarters.js, and whether only admins may see it. On success it opens
- * the new page and emits `created`. Used on the admin panel's Pages tab, on /shrines, and on the
- * 404 an admin sees at an address that has no page yet.
+ * the new page and emits `created`. Used on the admin panel's Pages tab
+ * (twice: any page, and a shrine under /shrines/) and on the 404 an admin sees
+ * at an address that has no page yet.
  */
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -15,9 +16,11 @@ import { STARTERS } from "./pageStarters";
 const props = defineProps({
   // Pre-filled address, e.g. the path of the 404 being looked at.
   slug: { type: String, default: "" },
-  // Fixed leading part of the address, e.g. "shrines/" on /shrines.
+  // Fixed leading part of the address, e.g. "shrines/" for a new shrine.
   prefix: { type: String, default: "" },
   starter: { type: String, default: "blank" },
+  placeholder: { type: String, default: "address, e.g. shrines/evangelion" },
+  submitLabel: { type: String, default: "Create page" },
 });
 
 const emit = defineEmits(["created"]);
@@ -64,7 +67,7 @@ async function submit() {
   <form class="page-form flex flex-col gap-1" @submit.prevent="submit">
     <label class="flex items-center gap-1">
       <span class="text-muted">/{{ prefix }}</span>
-      <input v-model="slug" type="text" placeholder="address, e.g. evangelion" required class="flex-1" />
+      <input v-model="slug" type="text" :placeholder="placeholder" required class="flex-1" />
     </label>
     <input v-model="title" type="text" placeholder="Title (required)" />
     <select v-model="starter">
@@ -74,7 +77,7 @@ async function submit() {
       <input v-model="adminOnly" type="checkbox" />
       Only admins can see this page
     </label>
-    <Button type="submit" :disabled="busy">{{ busy ? "Creating…" : "Create page" }}</Button>
+    <Button type="submit" :disabled="busy">{{ busy ? "Creating…" : submitLabel }}</Button>
     <p v-if="error" class="text-tertiary">{{ error }}</p>
   </form>
 </template>

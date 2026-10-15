@@ -82,7 +82,6 @@ const selectedId = ref(null);
 const selected = computed(() => store.boxes.find((b) => b.id === selectedId.value) ?? null);
 const preview = ref(null); // unsaved HTML for the selected box, from BoxEditor
 const errorMsg = ref("");
-const editor = ref(null);
 
 // ---- Scaling -------------------------------------------------------------
 const viewport = ref(null);
@@ -271,21 +270,13 @@ async function onDrop(event) {
 }
 
 // ---- Selection -----------------------------------------------------------
+// Leaving a box saves its unsaved HTML; BoxEditor does that itself as the
+// selection changes or it unmounts.
 function select(box) {
-  if (selectedId.value === box.id) return;
-  // Leaving a box with unsaved HTML goes through the editor's own confirm.
-  if (editor.value && selected.value) {
-    editor.value.close();
-    if (selectedId.value !== null) return; // they chose to keep editing
-  }
   selectedId.value = box.id;
 }
 
 function toggleEdit() {
-  if (editing.value && selected.value) {
-    editor.value?.close();
-    if (selectedId.value !== null) return;
-  }
   editing.value = !editing.value;
 }
 </script>
@@ -391,7 +382,6 @@ function toggleEdit() {
 
     <BoxEditor
       v-if="inEditMode && selected"
-      ref="editor"
       :box="selected"
       @preview="preview = $event"
       @close="selectedId = null"

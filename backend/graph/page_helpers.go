@@ -25,18 +25,14 @@ const maxSlugLen = 100
 // nginx or one of the SPA's own routes answers them first (see
 // nginx/nginx_routes.conf.template and vue/src/router/index.js), plus the
 // built-in canvases' page keys, whose boxes a page of the same slug would
-// share. "shrines" is deliberately absent: shrine pages live under it.
+// share. "shrines" is deliberately absent: /shrines and the shrine pages under
+// it are all canvas pages.
 var reservedFirstSegments = map[string]bool{
 	"stp": true, "stp2": true, "index": true, "admin": true, "cv": true,
 	"automata": true, "hotels": true, "api": true, "py": true, "radio": true,
 	"gitea": true, "notes": true, "sb": true, "jobs": true, "tracker": true,
 	"usaco": true, "uploads": true, "img": true, "fonts": true, "pdf": true,
 	"sound": true, "assets": true, "internal": true,
-}
-
-// reservedSlugs are individual paths the SPA routes itself.
-var reservedSlugs = map[string]bool{
-	"shrines": true,
 }
 
 func validPageKey(key string) bool {
@@ -49,7 +45,7 @@ func validateSlug(slug string) error {
 		return errors.New("a page address is lower-case letters, digits and hyphens, in /-separated parts, e.g. shrines/evangelion")
 	}
 	first, _, _ := strings.Cut(slug, "/")
-	if reservedFirstSegments[first] || reservedSlugs[slug] {
+	if reservedFirstSegments[first] {
 		return errors.New("that address is already used by the site")
 	}
 	return nil
