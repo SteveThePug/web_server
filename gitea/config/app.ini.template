@@ -50,7 +50,7 @@ TEMP_PATH = /tmp/gitea/uploads
 
 [server]
 APP_DATA_PATH = /var/lib/gitea
-SSH_DOMAIN = stppi.tailf20278.ts.net
+SSH_DOMAIN = stpvm.tailf20278.ts.net
 HTTP_PORT = 3000
 ROOT_URL = https://adam-french.co.uk/gitea/
 DISABLE_SSH = false
@@ -60,7 +60,7 @@ SSH_PORT = 2222
 SSH_LISTEN_PORT = 2222
 BUILTIN_SSH_SERVER_USER = git
 LFS_START_SERVER = true
-DOMAIN = stppi.local
+DOMAIN = stpvm.tailf20278.ts.net
 LFS_JWT_SECRET =
 OFFLINE_MODE = true
 

@@ -52,7 +52,7 @@ This regenerates `graph/generated.go` and `graph/model/models_gen.go`. Resolver 
 
 ## Architecture
 
-Dockerized multi-service personal website self-hosted on a Raspberry Pi.
+Dockerized multi-service personal website self-hosted on `stpvm` (an x86-64 Ubuntu VM; formerly a Raspberry Pi).
 
 **Backend** (`backend/`): Go with Gin router. GraphQL API via gqlgen at `POST /api/graphql`. REST endpoints for auth, file uploads, Spotify OAuth, and WebSockets. GORM for PostgreSQL with auto-migrations (no separate migration files). JWT auth stored in HTTP-only cookies.
 

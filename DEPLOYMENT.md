@@ -4,14 +4,16 @@ How this site is put together and how to operate it. Application code is
 documented in `CLAUDE.md` and `README.md`; this file covers infrastructure only
 — compose, nginx, TLS, the runner, and the runbook.
 
-Everything runs on a single Raspberry Pi, as Docker containers on one bridge
+Everything runs on a single host, `stpvm` (an x86-64 Ubuntu VM on Proxmox,
+reached over Tailscale as `stpvm.tailf20278.ts.net`; until 2026-10-15 it was
+the Raspberry Pi `stppi`), as Docker containers on one bridge
 network, behind one nginx.
 
 ---
 
 ## 1. Service topology
 
-Only three things are reachable from outside the Pi: nginx on 80/443, Gitea on
+Only three things are reachable from outside the host: nginx on 80/443, Gitea on
 3000/2222, and the liquidsoap harbor port. Everything else is internal. Web
 traffic can also come in through the Cloudflare tunnel (`cloudflared`), which
 dials out and publishes no port; see "Cloudflare Tunnel" in §3.
@@ -120,7 +122,7 @@ docker compose up --build
 4. Everything else comes up in parallel; `depends_on` here is the plain list
    form, which waits only for _start_, not readiness.
 
-On the Pi this is triggered automatically by `.gitea/workflows/deploy.yaml`,
+On the host this is triggered automatically by `.gitea/workflows/deploy.yaml`,
 which has two jobs:
 
 - **`test`** runs on every push to any branch. It exports the pushed commit
@@ -135,7 +137,7 @@ which has two jobs:
   `docker compose up -d --build --remove-orphans` under the
   `.compose.lock` flock, shared with the weekly maintenance workflow.
 
-The test job keeps state on the Pi outside the deploy checkout: a bare
+The test job keeps state on the host outside the deploy checkout: a bare
 repository cache at `/home/adamf/.cache/web_server-ci/` and three named
 volumes (`web_server_ci_gomod`, `web_server_ci_gobuild`, `web_server_ci_pip`).
 The weekly maintenance workflow's `docker image prune -af` removes the two
@@ -172,7 +174,7 @@ Visit `http://localhost`.
 
 **`SEED_DB`** makes the Go backend populate the database with test posts, users
 and messages at startup. It is set only in the dev override and must never be
-set on the Pi — it would inject fake content into the live site.
+set on the host — it would inject fake content into the live site.
 
 Frontend-only work can skip Docker: `cd vue && npm run dev`, which proxies
 `/api`, `/gitea` and `/radio` to locally running services.
@@ -242,7 +244,7 @@ Secure cookies depend on, and needs no nginx change.
 The origin is the public name, not `nginx`, because nginx carries `<DOMAIN>`
 and `www.<DOMAIN>` as network aliases on `app-network` (`docker-compose.yml`).
 Inside the network those names resolve to the nginx container, so the hop
-never leaves the Pi, and cloudflared verifies the Let's Encrypt certificate
+never leaves the host, and cloudflared verifies the Let's Encrypt certificate
 against a name it covers. `https://nginx` would fail that check and need No
 TLS Verify. The flip side: **an expired certificate now takes the tunnel down
 with a 502**, which is why renewal over DNS-01 (step 5) matters.
@@ -267,7 +269,7 @@ Setup, once:
 5. Create a Cloudflare API token (My Profile → API Tokens → "Edit zone
    DNS", this zone only) and set it as `CLOUDFLARE_DNS_API_TOKEN`. certbot
    then renews over DNS-01 (see Renewal above) and needs no inbound port.
-6. On the Pi, point the apex at nginx locally (next section).
+6. On the host, point the apex at nginx locally (next section).
 7. Close the router's 80 and 443 forwards. Once 5 and 6 are done nothing
    depends on them.
 
@@ -279,29 +281,29 @@ Setup, once:
   do the registry path below and any direct LAN access. A fresh machine with no
   certificate at all boots the setup config (§3), which serves nothing over
   443, so the tunnel carries nothing until the first issuance.
-- **Registry pushes and pulls on the Pi.** Cloudflare caps request bodies at
+- **Registry pushes and pulls on the host.** Cloudflare caps request bodies at
   100 MB on the free plan, so a push of a larger image layer through the
-  tunnel fails. The runner on the Pi pushes to `<DOMAIN>/adamf/...` and the
+  tunnel fails. The runner on the host pushes to `<DOMAIN>/adamf/...` and the
   stack pulls from it, both through the host's Docker daemon, which resolves
-  names through the Pi's `/etc/hosts`. Pin the apex there to the loopback:
+  names through the host's `/etc/hosts`. Pin the apex there to the loopback:
 
   ```
   127.0.0.1   <DOMAIN>
   ```
 
   so registry traffic goes straight to nginx on :443, with the real
-  certificate, and never leaves the Pi. (Without it the name resolves to
-  Cloudflare once DNS moves there.) Only the apex: www stays on Cloudflare for anything on the Pi
+  certificate, and never leaves the host. (Without it the name resolves to
+  Cloudflare once DNS moves there.) Only the apex: www stays on Cloudflare for anything on the host
   that wants the public site. Pushing from another machine still goes
-  through Cloudflare and its cap; use the Pi's Tailscale name for that.
+  through Cloudflare and its cap; use the host's Tailscale name for that.
 - **Gitea SSH (2222).** Not HTTP, so not tunnelled. Already Tailscale-only:
-  `SSH_DOMAIN` in `gitea/config/app.ini.template` is the Pi's MagicDNS name
+  `SSH_DOMAIN` in `gitea/config/app.ini.template` is the host's MagicDNS name
   and 2222 has never been forwarded. Nothing changes.
 - **The radio harbor (8001).** Also a raw source protocol, so a DJ client
   pointed at `<DOMAIN>:8001` stops connecting once the domain resolves to
-  Cloudflare. Point it at the Pi's Tailscale name
-  (`stppi.tailf20278.ts.net:8001`) and close the 8001 forward. A guest DJ
-  off the tailnet would need either a Tailscale share of the Pi or a
+  Cloudflare. Point it at the host's Tailscale name
+  (`stpvm.tailf20278.ts.net:8001`) and close the 8001 forward. A guest DJ
+  off the tailnet would need either a Tailscale share of the host or a
   Cloudflare TCP route used with `cloudflared access tcp` on their side.
 
 #### Other limits
@@ -324,7 +326,7 @@ Setup, once:
 | `uploads`  | User-uploaded files (backend writes, nginx serves)    | All uploaded images                                |
 | `vue_dist` | The built SPA                                         | Nothing — rebuilt on next deploy                   |
 
-**Bind mounts** — live in the repo checkout on the Pi, survive everything short
+**Bind mounts** — live in the repo checkout on the host, survive everything short
 of deleting the directory:
 
 | Path                        | Holds                                                                                               | Notes                                                                                  |
@@ -369,8 +371,8 @@ through `env_file` but does not use it. A new variable for either service has
 to be added to its allow-list as well as
 `.env.example`.
 
-**`.env` reaches the Pi via `./sync-secrets.sh`**, which syncs exactly two
-things between this checkout and `adamf@stppi.local:~/deploy/web_server`:
+**`.env` reaches the host via `./sync-secrets.sh`**, which syncs exactly two
+things between this checkout and `adamf@stpvm.tailf20278.ts.net:~/deploy/web_server`:
 `.env`, and `icecast2/fallback_music/*.mp3`. The sync is **bidirectional and
 resolved by modification time — newer wins, with no merge.** Editing `.env` on
 both machines silently loses one side's edits. Run it before and after editing.
@@ -379,9 +381,9 @@ An unset variable is not an error: `envsubst` renders it as an empty string,
 which for a password field means _no password_. After editing `.env`, confirm
 with `docker compose config`.
 
-### Changing a value on the Pi
+### Changing a value on the host
 
-Edit `.env` (on the laptop, then `./sync-secrets.sh`; or on the Pi directly,
+Edit `.env` (on the laptop, then `./sync-secrets.sh`; or on the host directly,
 then sync back), and recreate only the services that read the variable:
 `docker compose up -d <service>`. A plain `up -d` would also restart Postgres,
 since nginx, db, icecast2 and certbot load the whole file.
@@ -423,7 +425,7 @@ cloudflared's one bucket**, and the login limit locks everyone out together.
 
 ## 7. Runbook
 
-All commands run from the deploy checkout on the Pi
+All commands run from the deploy checkout on the host
 (`~/deploy/web_server`) unless stated.
 
 **Deploy.** Normally automatic — push to `main` and the Gitea Actions runner does
@@ -486,7 +488,7 @@ Bodies mentioning `password`, `token` or `secret` are logged as `[redacted]`
 (that covers every login and the refresh call). Bodies over 64 KB, i.e.
 uploads, are logged with an empty `body`, and responses are never logged.
 
-The file is never rotated by the stack. On the Pi, add
+The file is never rotated by the stack. On the host, add
 `/etc/logrotate.d/web_server`:
 
 ```
@@ -520,17 +522,17 @@ manually before Gitea will start:
 docker compose exec db createdb -U "$POSTGRES_USER" "$POSTGRES_GITEA_DB"
 ```
 
-**Sync secrets / fallback music** (from the laptop checkout, not the Pi):
+**Sync secrets / fallback music** (from the laptop checkout, not the host):
 
 ```
 ./sync-secrets.sh
 ```
 
-**Set up the CI runner on a fresh Pi:**
+**Set up the CI runner on a fresh host:**
 
 ```
 cd gitea-runner
-bash download.sh                                  # pulls the arm64 binary
+bash download.sh                                  # pulls the binary for this CPU
 # mint a registration token: Gitea -> Site Administration -> Actions -> Runners
 GITEA_RUNNER_REGISTRATION_TOKEN=... ./run.sh      # registers once, then daemonises
 ```
@@ -540,7 +542,7 @@ against this stack, so it cannot be a container in it. Registration is one-shot 
 `.runner` is the lasting credential; re-registering needs that file deleted _and_
 a fresh token.
 
-**Go live on the radio:** point a broadcasting client (e.g. butt) at the Pi's
+**Go live on the radio:** point a broadcasting client (e.g. butt) at the host's
 Tailscale name (not the domain, which resolves to Cloudflare) on
 `${LIQUIDSOAP_HARBOR_PORT}` with mount `${LIQUIDSOAP_HARBOR_MOUNT}` and the
 icecast source password. liquidsoap pre-empts the fallback playlist immediately
