@@ -288,9 +288,8 @@ Setup, once:
   ```
 
   so registry traffic goes straight to nginx on :443, with the real
-  certificate, and never leaves the Pi. (It used to pin the public IP,
-  which hairpins through the router and stops working when 443 is no longer
-  forwarded.) Only the apex: www stays on Cloudflare for anything on the Pi
+  certificate, and never leaves the Pi. (Without it the name resolves to
+  Cloudflare once DNS moves there.) Only the apex: www stays on Cloudflare for anything on the Pi
   that wants the public site. Pushing from another machine still goes
   through Cloudflare and its cap; use the Pi's Tailscale name for that.
 - **Gitea SSH (2222).** Not HTTP, so not tunnelled. Already Tailscale-only:
