@@ -12,8 +12,24 @@
 #   profile, so `docker compose -f docker-compose.yml -f docker-compose.dev.yml
 #   up` never starts it and dev uses nginx's self-signed localhost cert instead.
 #
-# HOW VALIDATION WORKS (--webroot)
-#   Let's Encrypt HTTP-01: certbot writes a challenge token into
+# HOW VALIDATION WORKS: DNS-01 (--dns-cloudflare) when CLOUDFLARE_DNS_API_TOKEN
+# is set, otherwise HTTP-01 (--webroot)
+#   DNS-01: certbot creates a _acme-challenge TXT record through the Cloudflare
+#   API, Let's Encrypt looks it up, and certbot deletes it. Nothing has to
+#   reach the Pi, which is the point: with the site behind the Cloudflare
+#   tunnel, ports 80 and 443 need not be forwarded at all. The token needs
+#   Zone -> DNS -> Edit on this zone only. certbot insists its credentials
+#   arrive as a mode-600 ini file, not an environment variable, so the script
+#   writes one to /tmp on every start; nothing is stored on disk outside the
+#   container.
+#
+#   Switching method on an existing certificate: certbot records the method
+#   in renewal/<DOMAIN>.conf and `renew` would keep using webroot. Flags on
+#   the command line override the stored ones, and the next successful
+#   renewal saves them, so the method flags are passed to BOTH commands below.
+#   An unset token after a switch therefore puts it back on webroot, too.
+#
+#   HTTP-01, the fallback: certbot writes a challenge token into certbot writes a challenge token into
 #   /var/www/certbot/.well-known/acme-challenge/ and Let's Encrypt fetches it
 #   over plain HTTP on port 80. certbot itself listens on nothing — nginx is
 #   the server that answers. /var/www/certbot is the ./certbot/www bind mount,
@@ -47,12 +63,14 @@
 #   root-equivalent on the host, and the shared cert directory is a capability
 #   both containers already have.
 #
-# ENV VARS REQUIRED (from ./.env via `env_file`)
+# ENV VARS (from ./.env via `env_file`)
 #   DOMAIN  apex domain; both $DOMAIN and www.$DOMAIN go on one certificate,
 #           filed under --cert-name $DOMAIN so the path nginx expects
 #           (/etc/letsencrypt/live/$DOMAIN/) is stable regardless of which
 #           name certbot would otherwise have chosen.
 #   EMAIL   registration/expiry-notice address for the ACME account.
+#   CLOUDFLARE_DNS_API_TOKEN
+#           optional; selects DNS-01. See HOW VALIDATION WORKS.
 #
 # FLAGS WORTH KNOWING
 #   --agree-tos --non-interactive  never prompt; required in a container.
@@ -61,9 +79,10 @@
 #                                  rather than erroring out.
 #
 # ASSUMES EXISTS
-#   /var/www/certbot  (shared ACME webroot, served by nginx on port 80)
 #   /etc/letsencrypt  (persistent cert store, shared with nginx)
-#   Port 80 reachable from the public internet for $DOMAIN and www.$DOMAIN.
+#   Webroot method only: /var/www/certbot (shared ACME webroot, served by
+#   nginx on port 80) and port 80 reachable from the public internet for
+#   $DOMAIN and www.$DOMAIN.
 # =============================================================================
 
 # The reload sentinel: a file in the SHARED /etc/letsencrypt mount that nginx's
@@ -71,7 +90,23 @@
 # — see RELOAD SIGNAL above.
 RELOAD_SENTINEL=/etc/letsencrypt/.nginx-reload
 
-certbot certonly --webroot -w /var/www/certbot \
+if [ -n "${CLOUDFLARE_DNS_API_TOKEN}" ]; then
+    CREDENTIALS=/tmp/cloudflare.ini
+    # umask rather than a chmod afterwards, so the token is never readable
+    # by anyone else even for an instant.
+    (umask 077 && printf 'dns_cloudflare_api_token = %s\n' "${CLOUDFLARE_DNS_API_TOKEN}" >"${CREDENTIALS}")
+    # 30s rather than the plugin's 10: Let's Encrypt queries from several
+    # vantage points, and a lookup that lands before Cloudflare has the record
+    # everywhere fails the whole order.
+    set -- --dns-cloudflare --dns-cloudflare-credentials "${CREDENTIALS}" \
+        --dns-cloudflare-propagation-seconds 30
+    echo "Validating over DNS (Cloudflare API)."
+else
+    set -- --webroot -w /var/www/certbot
+    echo "Validating over HTTP (webroot); needs port 80 reachable."
+fi
+
+certbot certonly "$@" \
     --email "${EMAIL}" \
     -d "${DOMAIN}" -d "www.${DOMAIN}" \
     --cert-name "${DOMAIN}" \
@@ -82,7 +117,7 @@ certbot certonly --webroot -w /var/www/certbot \
 trap exit TERM;
 
 while :; do
-    certbot renew --webroot -w /var/www/certbot \
+    certbot renew "$@" \
         --deploy-hook "touch ${RELOAD_SENTINEL}";
     sleep 12h;
 done

@@ -12,7 +12,9 @@ network, behind one nginx.
 ## 1. Service topology
 
 Only three things are reachable from outside the Pi: nginx on 80/443, Gitea on
-3000/2222, and the liquidsoap harbor port. Everything else is internal.
+3000/2222, and the liquidsoap harbor port. Everything else is internal. Web
+traffic can also come in through the Cloudflare tunnel (`cloudflared`), which
+dials out and publishes no port; see "Cloudflare Tunnel" in §3.
 
 ```
                  internet
@@ -47,21 +49,22 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 
 ### Who listens where
 
-| Service | Container name | Internal port | Public route | Published to host |
-|---|---|---|---|---|
-| nginx | `nginx` | 80, 443 | — | **80, 443** |
-| backend (Go) | `${BACKEND_HOST}` | `${BACKEND_PORT}` (8080) | `${BACKEND_ENDPOINT}` = `/api/` | no |
-| db (Postgres 16) | `${POSTGRES_HOST}` | 5432 | none | no |
-| silverbullet (editor) | `${SILVERBULLET_HOST}` | `${SILVERBULLET_PORT}` | `/sb/` (admin-gated) | no |
-| silverbullet-public (notes site) | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only) | no |
-| silverbullet-git | n/a | n/a | none (timer loop) | no |
-| python (FastAPI) | `${PYTHON_HOST}` | `${PYTHON_PORT}` | `/py/`, docs at `/py/docs` | no |
-| jobs (job tracker, published image) | `jobs` | 8080 | `/jobs/` (admin-gated by the app itself) | no |
-| activity-tracker (published image, adamf/ccp) | `activity-tracker` | 8080 | `/tracker/`, prefix stripped (collectors: per-device bearer keys; pages: admin-gated by the app itself) | no |
-| icecast2 + liquidsoap | `${ICECAST_HOST}` | `${ICECAST_PORT}` | `/radio/` | **harbor port only** |
-| gitea | `${GITEA_HOST}` | 3000, 2222 | `/gitea/` | **3000, 2222** |
-| vue | `vue` | 5173 (dev only) | `/` (dev only) | no |
-| certbot | `certbot` | — | — | no |
+| Service                                       | Container name                | Internal port                 | Public route                                                                                            | Published to host    |
+| --------------------------------------------- | ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------- |
+| nginx                                         | `nginx`                       | 80, 443                       | —                                                                                                       | **80, 443**          |
+| backend (Go)                                  | `${BACKEND_HOST}`             | `${BACKEND_PORT}` (8080)      | `${BACKEND_ENDPOINT}` = `/api/`                                                                         | no                   |
+| db (Postgres 16)                              | `${POSTGRES_HOST}`            | 5432                          | none                                                                                                    | no                   |
+| silverbullet (editor)                         | `${SILVERBULLET_HOST}`        | `${SILVERBULLET_PORT}`        | `/sb/` (admin-gated)                                                                                    | no                   |
+| silverbullet-public (notes site)              | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only)                                                                       | no                   |
+| silverbullet-git                              | n/a                           | n/a                           | none (timer loop)                                                                                       | no                   |
+| python (FastAPI)                              | `${PYTHON_HOST}`              | `${PYTHON_PORT}`              | `/py/`, docs at `/py/docs`                                                                              | no                   |
+| jobs (job tracker, published image)           | `jobs`                        | 8080                          | `/jobs/` (admin-gated by the app itself)                                                                | no                   |
+| activity-tracker (published image, adamf/ccp) | `activity-tracker`            | 8080                          | `/tracker/`, prefix stripped (collectors: per-device bearer keys; pages: admin-gated by the app itself) | no                   |
+| icecast2 + liquidsoap                         | `${ICECAST_HOST}`             | `${ICECAST_PORT}`             | `/radio/`                                                                                               | **harbor port only** |
+| gitea                                         | `${GITEA_HOST}`               | 3000, 2222                    | `/gitea/`                                                                                               | **3000, 2222**       |
+| vue                                           | `vue`                         | 5173 (dev only)               | `/` (dev only)                                                                                          | no                   |
+| certbot                                       | `certbot`                     | —                             | —                                                                                                       | no                   |
+| cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
 
 Container names come from `.env`, and nginx builds its upstreams from the same
 variables. **Renaming a `*_HOST` value renames the container and repoints nginx
@@ -85,7 +88,7 @@ in one step — never change one without the other.**
 - **Public notes privacy boundary.** `/notes/` is public, and the only thing
   keeping `private/` (and `templates/`, `.git`, `.obsidian`) off it is a pair of
   nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
-  file *list*; direct `/.fs/` fetches and server-rendered page URLs still serve
+  file _list_; direct `/.fs/` fetches and server-rendered page URLs still serve
   them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
   adding it to the deny regex in `nginx_routes.conf.template` publishes it. See the
   comment above `location /notes/` in `nginx_routes.conf.template`.
@@ -106,14 +109,14 @@ docker compose up --build
 
 1. `vue` builds the SPA into the `vue_dist` volume and **exits 0** (expected).
 2. `nginx` starts, runs `nginx/entrypoint.sh`, which:
-   - is not in `DEV_MODE`, so it looks for `/etc/letsencrypt/live/$DOMAIN/`;
-   - renders `nginx.conf.template` if the cert is there, else
-     `nginx_setup.conf.template`;
-   - polls up to 120s for `index.html` to appear in `vue_dist`, then starts
-     nginx either way.
+    - is not in `DEV_MODE`, so it looks for `/etc/letsencrypt/live/$DOMAIN/`;
+    - renders `nginx.conf.template` if the cert is there, else
+      `nginx_setup.conf.template`;
+    - polls up to 120s for `index.html` to appear in `vue_dist`, then starts
+      nginx either way.
 3. `certbot` obtains or confirms the certificate, then loops renewing.
 4. Everything else comes up in parallel; `depends_on` here is the plain list
-   form, which waits only for *start*, not readiness.
+   form, which waits only for _start_, not readiness.
 
 On the Pi this is triggered automatically by `.gitea/workflows/deploy.yaml`,
 which has two jobs:
@@ -180,8 +183,7 @@ Frontend-only work can skip Docker: `cd vue && npm run dev`, which proxies
 
 The production nginx config references
 `/etc/letsencrypt/live/$DOMAIN/fullchain.pem`, and nginx refuses to start if that
-file is missing. Certbot's HTTP-01 challenge needs a working HTTP server on port
-80. On a brand-new host neither can go first.
+file is missing. Certbot's HTTP-01 challenge needs a working HTTP server on port 80. On a brand-new host neither can go first.
 
 `nginx_setup.conf.template` breaks the loop: port 80 only, no TLS directives, no
 upstreams, nothing that can fail to load. It serves
@@ -191,7 +193,7 @@ so a half-configured site is never partially exposed.
 **First run on a new domain:**
 
 1. `docker compose up -d`. nginx logs `Certificates NOT found. Using setup nginx
-   config.`
+config.`
 2. certbot runs `certbot certonly --webroot` and writes the certificate into
    `./certbot/conf` (bind-mounted into both containers — that sharing is what
    makes the whole thing work).
@@ -206,12 +208,103 @@ until the cert is inside its 30-day window, so this is well within Let's Encrypt
 rate limits — it just means the window is checked twice a day. Certs are valid 90
 days, so renewal lands around day 60.
 
+**Validation method.** With `CLOUDFLARE_DNS_API_TOKEN` set, certbot proves
+control of the domain by creating a `_acme-challenge` TXT record through the
+Cloudflare API (DNS-01), so renewal needs no inbound port at all. That is
+what lets the router's 80/443 forwards close behind the tunnel. Without the
+token it uses the webroot (HTTP-01) on port 80, as it always did. Switching
+either way takes effect at the next renewal; see `certbot/entrypoint.sh`.
+
 **Caveat worth knowing:** there is no `--deploy-hook`, and the certbot container
 cannot signal nginx (no docker socket, no shared PID namespace). nginx reads the
 certificate at startup and holds it in memory, so **a renewed certificate is not
 served until nginx is reloaded or restarted.** In practice pushes to `main`
 recreate nginx often enough to hide this. If the site ever serves an expired
 cert, `docker compose restart nginx` is the fix. See proposal 1 in §8.
+
+### Cloudflare Tunnel
+
+The `cloudflared` container holds an outbound connection to Cloudflare and
+forwards requests for the site's hostnames down it to nginx. It is a
+_remotely managed_ tunnel: the only thing in this repo is the token
+(`CLOUDFLARE_TUNNEL_TOKEN`, editable from the Environment tab); hostnames and
+origin settings live in the dashboard.
+
+**Origin: `https://nginx:443`, with No TLS Verify.** Cloudflare terminates the
+visitor's TLS at its edge, and cloudflared opens a second TLS connection to
+nginx. That is deliberate. Pointed at `http://nginx:80`, the tunnel would hit
+the HTTP→HTTPS redirect and loop. Going to :443 keeps every redirect, security
+header and the `X-Forwarded-Proto: https` the backend's Secure cookies depend
+on, and needs no nginx change. No TLS Verify is needed because cloudflared
+dials the name `nginx`, which the certificate does not cover. The hop never
+leaves `app-network`.
+
+Setup, once:
+
+1. Cloudflare dashboard → the domain must be on Cloudflare DNS.
+2. Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared. Copy the
+   token from the install command (the long string after `--token`).
+3. Put it in `.env` as `CLOUDFLARE_TUNNEL_TOKEN` (or set it from the
+   Environment tab), then `docker compose up -d cloudflared`. The tunnel
+   shows as Healthy in the dashboard.
+4. Add a public hostname per name, each with service `HTTPS`, URL
+   `nginx:443`, and under Additional application settings → TLS, **No TLS
+   Verify** on:
+    - `www.<DOMAIN>`: the site.
+    - `<DOMAIN>`: nginx redirects it to www, and it serves Gitea's registry
+      at `/v2/`.
+      Creating each hostname replaces the existing A record for that name with
+      a CNAME to the tunnel. **That is the cutover**: until then the tunnel
+      carries nothing.
+
+5. Create a Cloudflare API token (My Profile → API Tokens → "Edit zone
+   DNS", this zone only) and set it as `CLOUDFLARE_DNS_API_TOKEN`. certbot
+   then renews over DNS-01 (see Renewal above) and needs no inbound port.
+6. On the Pi, point the apex at nginx locally (next section).
+7. Close the router's 80 and 443 forwards. Once 5 and 6 are done nothing
+   depends on them.
+
+#### What the tunnel does not carry, and where it goes instead
+
+- **Certificate renewal.** Over DNS-01 with `CLOUDFLARE_DNS_API_TOKEN` set;
+  without it certbot falls back to HTTP-01, which needs port 80 forwarded.
+  The certificate still matters behind the tunnel: the registry path below
+  and any direct LAN access use it. (The tunnel itself would survive an
+  expired one, because of No TLS Verify.) A fresh machine with no
+  certificate at all boots the setup config (§3), which serves nothing over
+  443, so the tunnel carries nothing until the first issuance.
+- **Registry pushes and pulls on the Pi.** Cloudflare caps request bodies at
+  100 MB on the free plan, so a push of a larger image layer through the
+  tunnel fails. The runner on the Pi pushes to `<DOMAIN>/adamf/...` and the
+  stack pulls from it, both through the host's Docker daemon, which resolves
+  names through the Pi's `/etc/hosts`. Pin the apex there to the loopback:
+
+  ```
+  127.0.0.1   <DOMAIN>
+  ```
+
+  so registry traffic goes straight to nginx on :443, with the real
+  certificate, and never leaves the Pi. (It used to pin the public IP,
+  which hairpins through the router and stops working when 443 is no longer
+  forwarded.) Only the apex: www stays on Cloudflare for anything on the Pi
+  that wants the public site. Pushing from another machine still goes
+  through Cloudflare and its cap; use the Pi's Tailscale name for that.
+- **Gitea SSH (2222).** Not HTTP, so not tunnelled. Already Tailscale-only:
+  `SSH_DOMAIN` in `gitea/config/app.ini.template` is the Pi's MagicDNS name
+  and 2222 has never been forwarded. Nothing changes.
+- **The radio harbor (8001).** Also a raw source protocol, so a DJ client
+  pointed at `<DOMAIN>:8001` stops connecting once the domain resolves to
+  Cloudflare. Point it at the Pi's Tailscale name
+  (`stppi.tailf20278.ts.net:8001`) and close the 8001 forward. A guest DJ
+  off the tailnet would need either a Tailscale share of the Pi or a
+  Cloudflare TCP route used with `cloudflared access tcp` on their side.
+
+#### Other limits
+- Cloudflare returns a 524 if the origin sends no response bytes for 100
+  seconds. Streaming endpoints are fine while they keep writing; a long
+  silent request is not.
+- Dev never runs cloudflared (`disabled` profile in `docker-compose.dev.yml`),
+  so a laptop cannot join the production tunnel.
 
 ---
 
@@ -220,27 +313,27 @@ cert, `docker compose restart nginx` is the fix. See proposal 1 in §8.
 **Named volumes** — survive `docker compose down` and rebuilds; destroyed only by
 `docker compose down -v` or `docker volume rm`:
 
-| Volume | Holds | Losing it means |
-|---|---|---|
-| `dbdata` | Postgres: the app database **and** the Gitea database | All posts, users, messages, and all Gitea metadata |
-| `uploads` | User-uploaded files (backend writes, nginx serves) | All uploaded images |
-| `vue_dist` | The built SPA | Nothing — rebuilt on next deploy |
+| Volume     | Holds                                                 | Losing it means                                    |
+| ---------- | ----------------------------------------------------- | -------------------------------------------------- |
+| `dbdata`   | Postgres: the app database **and** the Gitea database | All posts, users, messages, and all Gitea metadata |
+| `uploads`  | User-uploaded files (backend writes, nginx serves)    | All uploaded images                                |
+| `vue_dist` | The built SPA                                         | Nothing — rebuilt on next deploy                   |
 
 **Bind mounts** — live in the repo checkout on the Pi, survive everything short
 of deleting the directory:
 
-| Path | Holds | Notes |
-|---|---|---|
-| `./certbot/conf` | TLS certificates and **private keys** | Gitignored. Never commit. |
-| `./certbot/www` | ACME challenge webroot | Transient by nature |
-| `./backend/token/` | **Spotify OAuth refresh token** (`spotify_token.json`) | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild. |
-| `./jobs-data` | The job tracker's **capture token hash** and Graph OAuth session | Gitignored. Must be owned by uid 1000, the user the `jobs` image runs as. |
-| `./env-apply/run` | The admin panel's queued `.env` change (`request.json`) and the host's report on it (`status.json`) | Gitignored. Transient, but must be owned by the deploy user, not root — see §5. |
-| `./gitea/data` | Git repositories, LFS objects, avatars, sessions | The actual git data |
-| `./gitea/config` | Gitea's live `app.ini` | Gitignored; generated from the template on first boot and then owned by Gitea |
-| `./logs` | Backend logs | |
-| `./icecast2/fallback_music` | Radio fallback MP3s | Synced by `sync-secrets.sh`, not git |
-| `${OBSIDIAN_DIR}` | The Obsidian vault (a git clone of the notes repo) | Read-write to backend and silverbullet, **read-only** to silverbullet-public |
+| Path                        | Holds                                                                                               | Notes                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `./certbot/conf`            | TLS certificates and **private keys**                                                               | Gitignored. Never commit.                                                              |
+| `./certbot/www`             | ACME challenge webroot                                                                              | Transient by nature                                                                    |
+| `./backend/token/`          | **Spotify OAuth refresh token** (`spotify_token.json`)                                              | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild. |
+| `./jobs-data`               | The job tracker's **capture token hash** and Graph OAuth session                                    | Gitignored. Must be owned by uid 1000, the user the `jobs` image runs as.              |
+| `./env-apply/run`           | The admin panel's queued `.env` change (`request.json`) and the host's report on it (`status.json`) | Gitignored. Transient, but must be owned by the deploy user, not root — see §5.        |
+| `./gitea/data`              | Git repositories, LFS objects, avatars, sessions                                                    | The actual git data                                                                    |
+| `./gitea/config`            | Gitea's live `app.ini`                                                                              | Gitignored; generated from the template on first boot and then owned by Gitea          |
+| `./logs`                    | Backend logs                                                                                        |                                                                                        |
+| `./icecast2/fallback_music` | Radio fallback MP3s                                                                                 | Synced by `sync-secrets.sh`, not git                                                   |
+| `${OBSIDIAN_DIR}`           | The Obsidian vault (a git clone of the notes repo)                                                  | Read-write to backend and silverbullet, **read-only** to silverbullet-public           |
 
 **Ephemeral:** anything else inside a container. Notably the Vue build, the
 rendered nginx/icecast configs, and the Gitea runner's downloaded binary
@@ -280,7 +373,7 @@ resolved by modification time — newer wins, with no merge.** Editing `.env` on
 both machines silently loses one side's edits. Run it before and after editing.
 
 An unset variable is not an error: `envsubst` renders it as an empty string,
-which for a password field means *no password*. After editing `.env`, confirm
+which for a password field means _no password_. After editing `.env`, confirm
 with `docker compose config`.
 
 ### Editing from the admin panel
@@ -325,23 +418,26 @@ tuned value.
 `rate` is a **smoothed leaky bucket**, not a per-window counter: `5r/m` means one
 request every 12 seconds, not five at once. `burst=N` lets N requests queue ahead
 of that drip, and `nodelay` (used everywhere here) serves those N immediately.
-So the effective behaviour is *"N instant requests, then throttled to the drip
-rate"*. Anything beyond the burst gets an immediate **503**.
+So the effective behaviour is _"N instant requests, then throttled to the drip
+rate"_. Anything beyond the burst gets an immediate **503**.
 
-| Zone | Rate | Burst | Applied to | Why |
-|---|---|---|---|---|
-| `login` | 5/min | 3 | `/api/auth/login` | Brute-force defence. A human mistyping gets 3 tries then one per 12s; a credential-stuffing script gets nothing useful. |
-| `api` | 30/sec | 20 | `/api/`, `/py/` | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota. |
-| `graphql` | 10/sec | 10 | `/api/graphql` | Tighter than REST because one query can be arbitrarily expensive. **Production config only**; dev folds GraphQL into `api`. |
-| `upload` | 30/min | 20 | `/api/messages/upload` | Uploads hit disk; bounds how fast one IP fills the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
-| `hotel_search` | 3/min | 2 | `/py/hotels/(search\|scan)` | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection. |
+| Zone           | Rate   | Burst | Applied to                  | Why                                                                                                                                                                                                    |
+| -------------- | ------ | ----- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `login`        | 5/min  | 3     | `/api/auth/login`           | Brute-force defence. A human mistyping gets 3 tries then one per 12s; a credential-stuffing script gets nothing useful.                                                                                |
+| `api`          | 30/sec | 20    | `/api/`, `/py/`             | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota.                                                                                                      |
+| `graphql`      | 10/sec | 10    | `/api/graphql`              | Tighter than REST because one query can be arbitrarily expensive. **Production config only**; dev folds GraphQL into `api`.                                                                            |
+| `upload`       | 30/min | 20    | `/api/messages/upload`      | Uploads hit disk; bounds how fast one IP fills the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
+| `hotel_search` | 3/min  | 2     | `/py/hotels/(search\|scan)` | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection.                                                           |
 
 The WebSocket endpoint is deliberately unlimited: a socket is one long-lived
 request, and a limit there would drop reconnect storms rather than abuse.
 
-These zones key on the direct client IP, which is correct because nginx is the
-sole edge. **If a CDN or proxy is ever put in front, they must switch to a
-trusted `X-Forwarded-For` or every visitor shares one bucket.**
+These zones key on `$remote_addr`. For tunnel traffic nginx rewrites that
+from Cloudflare's `CF-Connecting-IP` header (`set_real_ip_from` /
+`real_ip_header` in `nginx.conf.template`), trusting the header only from
+cloudflared's fixed address. **If that address changes in
+`docker-compose.yml` without the nginx line, every tunnel visitor shares
+cloudflared's one bucket**, and the login limit locks everyone out together.
 
 ---
 
@@ -445,10 +541,11 @@ GITEA_RUNNER_REGISTRATION_TOKEN=... ./run.sh      # registers once, then daemoni
 
 The runner lives **outside** Docker on purpose: it runs `docker compose up`
 against this stack, so it cannot be a container in it. Registration is one-shot —
-`.runner` is the lasting credential; re-registering needs that file deleted *and*
+`.runner` is the lasting credential; re-registering needs that file deleted _and_
 a fresh token.
 
-**Go live on the radio:** point a broadcasting client (e.g. butt) at the Pi on
+**Go live on the radio:** point a broadcasting client (e.g. butt) at the Pi's
+Tailscale name (not the domain, which resolves to Cloudflare) on
 `${LIQUIDSOAP_HARBOR_PORT}` with mount `${LIQUIDSOAP_HARBOR_MOUNT}` and the
 icecast source password. liquidsoap pre-empts the fallback playlist immediately
 (`track_sensitive=false`). Disconnect and it falls back to the playlist, then to

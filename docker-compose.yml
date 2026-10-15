@@ -37,7 +37,8 @@
 #   Only nginx (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
 #   port. Everything else is reachable only from inside app-network, which is
 #   why the backend, db, silverbullet and python have no `ports:` — they are
-#   deliberately not exposed and are reached through nginx.
+#   deliberately not exposed and are reached through nginx. Web traffic can
+#   also arrive through the `cloudflared` tunnel, which publishes nothing.
 # =============================================================================
 
 networks:
@@ -137,8 +138,11 @@ services:
   # certbot image with our script bind-mounted over the entrypoint, so editing
   # certbot/entrypoint.sh takes effect on restart with no rebuild. Version is
   # pinned so a certbot release cannot change behaviour under us on redeploy.
+  # The dns-cloudflare variant is plain certbot plus the Cloudflare DNS plugin:
+  # with CLOUDFLARE_DNS_API_TOKEN set it validates over DNS, so renewal needs
+  # no inbound port, and without it falls back to the webroot method.
   certbot:
-    image: certbot/certbot:v3.1.0
+    image: certbot/dns-cloudflare:v3.1.0
     container_name: certbot
     volumes:
       - ./certbot/entrypoint.sh:/entrypoint.sh
@@ -149,6 +153,36 @@ services:
       - .env
     networks:
       - app-network
+
+  # Cloudflare Tunnel: an OUTBOUND connection from here to Cloudflare's edge,
+  # which then forwards visitors' requests back down it to nginx. Nothing is
+  # published to the host, so with the tunnel live the router's 80/443
+  # forwards can be closed. The tunnel is "remotely managed": its public
+  # hostnames and origin settings live in the Cloudflare dashboard, and this
+  # container only needs the token. The routing set up there (DEPLOYMENT.md,
+  # "Cloudflare Tunnel") is https://nginx:443 with No TLS Verify, so nginx's
+  # config, redirects and security headers apply to tunnel traffic exactly as
+  # to direct traffic, and both paths work side by side.
+  #
+  # Fixed address so nginx can trust the CF-Connecting-IP header from this
+  # container and no other (set_real_ip_from in nginx.conf.template). It sits
+  # at the top of the /16 because docker hands out dynamic addresses from the
+  # bottom; the two must change together.
+  #
+  # Disabled in dev via the `disabled` profile in docker-compose.dev.yml.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    container_name: cloudflared
+    restart: always
+    command: ["tunnel", "--no-autoupdate", "run"]
+    # Explicit, not env_file: the container only ever needs the token.
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - nginx
+    networks:
+      app-network:
+        ipv4_address: 172.28.255.250
 
   backend:
     build:
@@ -247,7 +281,8 @@ services:
   #
   # This is the only non-nginx service that publishes a host port, and it has
   # to: LIQUIDSOAP_HARBOR_PORT is the live-DJ input. A broadcasting client
-  # (e.g. butt) connects straight to the Pi on that port with the icecast
+  # (e.g. butt) connects straight to the Pi on that port, by its Tailscale
+  # name now that the public domain resolves to Cloudflare, with the icecast
   # source password and pre-empts the fallback playlist. It is NOT proxied
   # through nginx because it is a raw source protocol, not HTTP the SPA uses.
   # Note the host:container mapping uses the same variable on both sides, so

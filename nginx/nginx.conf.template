@@ -101,10 +101,10 @@ http {
     #                           really concurrency protection, not abuse
     #                           protection.
     #
-    # NOTE: the key is the direct client IP. Since nginx is the edge here (no
-    # CDN or upstream proxy in front), that is correct. If anything is ever put
-    # in front, these zones must switch to a trusted X-Forwarded-For or every
-    # visitor will share one bucket.
+    # NOTE: the key is the client IP, which is only right because of the
+    # real-IP lines below. Traffic through the Cloudflare tunnel reaches nginx
+    # from the cloudflared container, so without them every tunnel visitor
+    # would share that one address and one bucket.
     #
     # login, api, upload and hotel_search are USED from
     # nginx_routes.conf.template, which dev includes too — so
@@ -115,6 +115,23 @@ http {
     limit_req_zone $binary_remote_addr zone=graphql:10m rate=10r/s;
     limit_req_zone $binary_remote_addr zone=upload:10m rate=30r/m;
     limit_req_zone $binary_remote_addr zone=hotel_search:10m rate=3r/m;
+
+    # ---- Real client IP behind the Cloudflare tunnel -------------------------
+    # For connections from the cloudflared container, and only those, replace
+    # $remote_addr with the visitor's address from Cloudflare's
+    # CF-Connecting-IP header. Everything downstream then just works: the
+    # rate-limit keys above, the access log, and the X-Real-IP /
+    # X-Forwarded-For headers sent upstream.
+    #
+    # The trust is pinned to cloudflared's fixed address (ipv4_address in
+    # docker-compose.yml; change both together), NOT the whole app-network
+    # subnet. Direct visitors on the forwarded 80/443 can arrive from the
+    # bridge gateway, 172.28.0.1, when docker's userland proxy handles the
+    # connection, so trusting the subnet would let anyone pick their own IP,
+    # and so their own rate-limit bucket, by sending the header themselves.
+    # Production only: dev has no tunnel.
+    set_real_ip_from 172.28.255.250;
+    real_ip_header CF-Connecting-IP;
 
     log_format compact
         '$remote_addr "$request" $status rt=$request_time';

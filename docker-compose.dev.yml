@@ -16,6 +16,7 @@
 #                nginx_dev.conf.template and self-sign a localhost certificate.
 #   - python   : uvicorn --reload with the app source bind-mounted.
 #   - certbot  : disabled entirely.
+#   - cloudflared : disabled entirely.
 #
 # HOW TO REACH IT
 #   http://localhost (HTTPS also works on :443 with the self-signed cert, which
@@ -91,5 +92,11 @@ services:
         # "disabled", so this is the idiomatic way to switch a service off in an
         # override file. Dev gets TLS from nginx's self-signed cert instead, and
         # Let's Encrypt could not validate localhost anyway.
+        profiles:
+            - disabled
+    cloudflared:
+        # Same profile trick as certbot. A dev stack must never join the
+        # production tunnel: Cloudflare would load-balance real visitors onto
+        # this machine's seeded database.
         profiles:
             - disabled
