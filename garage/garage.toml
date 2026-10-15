@@ -1,0 +1,51 @@
+# =============================================================================
+# Garage — the S3-compatible object store behind /uploads/.
+#
+# One node, one copy of everything (replication_factor = 1): this is storage
+# on the same disk as the rest of the site, not a resilience layer, so the
+# garage_meta and garage_data volumes still need backing up like the others.
+#
+# NO SECRETS IN THIS FILE. It is committed and mounted read-only into both
+# `garage` and `garage-webui`. rpc_secret and admin_token come from the
+# GARAGE_RPC_SECRET and GARAGE_ADMIN_TOKEN environment variables, which Garage
+# reads in place of the config keys.
+#
+# Binds are 0.0.0.0 rather than Garage's usual [::]: containers on a bridge
+# network without IPv6 may refuse an IPv6 bind. None of these ports is
+# published to the host; everything reaches them over app-network.
+#
+# PORTS
+#   3900  S3 API. The backend writes uploads here (signed with the key that
+#         garage/bootstrap.sh imports); garage-webui browses through it.
+#   3901  RPC between Garage nodes. Only this node talks to itself.
+#   3902  Website endpoint. Serves a bucket ANONYMOUSLY, choosing it from the
+#         Host header: "<bucket><root_domain>", so nginx's /uploads/ fallback
+#         sends `Host: uploads.web.garage`. Only buckets that bootstrap.sh
+#         opened with `garage bucket website --allow` are served.
+#   3903  Admin API, used by garage-webui and authenticated by admin_token.
+# =============================================================================
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "lmdb"
+# LMDB can be left unreadable by a crash mid-write; a periodic snapshot of
+# the metadata is what `garage meta` restores from.
+metadata_auto_snapshot_interval = "6h"
+
+replication_factor = 1
+
+rpc_bind_addr = "0.0.0.0:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+api_bind_addr = "0.0.0.0:3900"
+# Any string works; it only has to match what clients sign with (S3_REGION).
+s3_region = "garage"
+root_domain = ".s3.garage"
+
+[s3_web]
+bind_addr = "0.0.0.0:3902"
+root_domain = ".web.garage"
+index = "index.html"
+
+[admin]
+api_bind_addr = "0.0.0.0:3903"

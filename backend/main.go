@@ -128,11 +128,27 @@ func main() {
 	}
 	pythonURL := fmt.Sprintf("http://%s:%s", pythonHost, pythonPort)
 
+	// UPLOAD STORAGE
+	// Public uploads go to the Garage bucket once S3_ENDPOINT is set, and to
+	// the shared `uploads` volume until then (and whenever Garage refuses a
+	// write). See services/file_store.go. Region and bucket default to what
+	// garage/garage.toml and garage/bootstrap.sh set up.
+	s3Region := os.Getenv("S3_REGION")
+	if s3Region == "" {
+		s3Region = "garage"
+	}
+	s3Bucket := os.Getenv("S3_BUCKET")
+	if s3Bucket == "" {
+		s3Bucket = "uploads"
+	}
+	s3Config := services.S3Config{Endpoint: os.Getenv("S3_ENDPOINT"), Region: s3Region, Bucket: s3Bucket, AccessKeyID: os.Getenv("S3_ACCESS_KEY_ID"), SecretAccessKey: os.Getenv("S3_SECRET_ACCESS_KEY")}
+	files := services.NewUploadStore(s3Config, handlers.PublicUploadDir)
+
 	// 5 login attempts per IP per minute, applied by both the REST handler
 	// and the GraphQL login mutation. Nginx rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
-	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL}
+	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, Files: files}
 
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.

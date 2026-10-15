@@ -83,6 +83,11 @@
         set $upstream_usaco http://usaco:8080;
         # And the Dozzle log viewer's.
         set $upstream_dozzle http://dozzle:8080;
+        # Garage: its website endpoint (the /uploads/ bucket fallback, used by
+        # the @uploads_bucket location in nginx.conf.template and
+        # nginx_dev_common.conf.template) and the garage-webui admin UI.
+        set $upstream_garage_web http://garage:3902;
+        set $upstream_garage_webui http://garage-webui:3909;
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -193,6 +198,31 @@
             proxy_http_version 1.1;
             proxy_buffering off;
             proxy_read_timeout 1h;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # garage-webui: buckets, keys and a file browser for the Garage object
+        # store. It holds Garage's admin token, so it sits behind the admin
+        # `auth_request` like /dozzle/, and its own login is left unset (one
+        # login, not two). No prefix-strip rewrite: BASE_PATH=/garage makes it
+        # serve under the prefix itself. The body limit is lifted past the
+        # server-wide 50M so videos can be uploaded through it, and request
+        # buffering is off so a large upload streams through instead of
+        # landing on nginx's disk first.
+        location = /garage {
+            return 301 /garage/;
+        }
+
+        location /garage/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            client_max_body_size 2G;
+            proxy_request_buffering off;
+            proxy_pass $upstream_garage_webui;
+            proxy_http_version 1.1;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -502,7 +532,7 @@
             return 301 /jobs/job-capture.user.js;
         }
 
-        # ---- Admin gate (/sb/, /jobs/, /tracker/, /radio/admin/, /uploads/private/) ----
+        # ---- Admin gate (/sb/, /jobs/, /tracker/, /dozzle/, /garage/, /radio/admin/, /uploads/private/) ----
         # (/uploads/private/ is declared in the including template, not here;
         # it points at the two locations below by name.)
         # `auth_request` makes nginx fire a subrequest here before serving the
@@ -518,8 +548,18 @@
         #                               not coming.
         #   Cookie $http_cookie       - the whole point: forward the session
         #                               cookie so the backend can validate it.
+        #   client_max_body_size 0    - the subrequest is checked against THIS
+        #                               location's limit using the original
+        #                               request's Content-Length, so without it
+        #                               a gated location with a higher limit
+        #                               (/garage/, 2G) 413s inside the auth
+        #                               check and the user sees a 500. Safe:
+        #                               the location is internal and never
+        #                               reads a body; the real limit is the
+        #                               gated location's own.
         location = /internal/auth/admin-validate {
             internal;
+            client_max_body_size 0;
             rewrite ^ /auth/validate-admin break;
             proxy_pass $upstream_backend;
             proxy_pass_request_body off;

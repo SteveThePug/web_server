@@ -47,14 +47,24 @@
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
         }
 
-        # Both /uploads/ blocks are the production ones MINUS
+        # The /uploads/ blocks (and @uploads_bucket) are the production ones MINUS
         # `include security_headers.conf`: that file carries HSTS, which must
         # never be sent from localhost. That one line is why they are not in
         # the shared route table (see WHAT DOES NOT in
         # nginx_routes.conf.template). Keep the rest in step with
         # nginx.conf.template.
         location /uploads/ {
-            alias /uploads/;
+            root /;
+            try_files $uri @uploads_bucket;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
+
+        location @uploads_bucket {
+            rewrite ^/uploads/(.*)$ /$1 break;
+            proxy_pass $upstream_garage_web;
+            proxy_set_header Host uploads.web.garage;
             add_header X-Content-Type-Options nosniff always;
             add_header Content-Disposition "inline" always;
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;

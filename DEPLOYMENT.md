@@ -69,6 +69,8 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
 | dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by nginx `auth_request`; reads the Docker socket)                               | no                   |
 | traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
+| garage (S3 object store)                      | `garage`                      | 3900 S3, 3902 web, 3903 admin | none directly; `/uploads/` falls back to its web endpoint for files not on the volume                   | no                   |
+| garage-webui (Garage admin UI)                | `garage-webui`                | 3909                          | `/garage/` (admin-gated by nginx `auth_request`)                                                        | no                   |
 
 Container names come from `.env`, and nginx builds its upstreams from the same
 variables. **Renaming a `*_HOST` value renames the container and repoints nginx
@@ -86,7 +88,7 @@ in one step — never change one without the other.**
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/radio/admin/` and `/uploads/private/` are
+- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/dozzle/`, `/garage/`, `/radio/admin/` and `/uploads/private/` are
   protected by an `auth_request` subrequest to the backend's `/auth/validate-admin`; a failure
   redirects to the SPA login. Most of these services have no auth of their own at that path; the
   job and activity trackers also check the session themselves. Their carve-outs, which a session
@@ -99,9 +101,12 @@ in one step — never change one without the other.**
   them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
   adding it to the deny regex in `nginx_routes.conf.template` publishes it. See the
   comment above `location /notes/` in `nginx_routes.conf.template`.
-- **Uploads served directly.** `/uploads/` is an alias onto the shared `uploads`
-  volume with `nosniff`, `Content-Disposition: inline` and a deny-all CSP, so
-  user-supplied files cannot execute anything on our origin.
+- **Uploads: disk first, then the bucket.** `/uploads/<f>` is looked for on
+  the shared `uploads` volume and, if it is not there, fetched from Garage's
+  website endpoint (`@uploads_bucket`). Both paths add `nosniff`,
+  `Content-Disposition: inline` and a deny-all CSP, so user-supplied files
+  cannot execute anything on our origin. Disk first means Garage being down
+  only affects files that exist nowhere else; see "Garage" in §7.
 - **Rate limits** — see §6.
 
 ---
@@ -326,7 +331,9 @@ Setup, once:
 | Volume     | Holds                                                 | Losing it means                                    |
 | ---------- | ----------------------------------------------------- | -------------------------------------------------- |
 | `dbdata`   | Postgres: the app database **and** the Gitea database | All posts, users, messages, and all Gitea metadata |
-| `uploads`  | User-uploaded files (backend writes, nginx serves)    | All uploaded images                                |
+| `uploads`  | Uploads from before Garage, private attachments, and any upload Garage refused | Those files                               |
+| `garage_meta` | Garage's metadata: buckets, keys, object index, layout | Everything in the bucket (the bytes in `garage_data` are unreadable without it) |
+| `garage_data` | The bucket's object bytes                          | Every upload stored in Garage                      |
 | `vue_dist` | The built SPA                                         | Nothing — rebuilt on next deploy                   |
 
 **Bind mounts** — live in the repo checkout on the host, survive everything short
@@ -522,6 +529,63 @@ manually before Gitea will start:
 docker compose exec db createdb -U "$POSTGRES_USER" "$POSTGRES_GITEA_DB"
 ```
 
+**Garage (the `/uploads/` bucket).** Public uploads can live in a Garage
+bucket instead of the `uploads` volume. It is opt-in and every step can be
+undone; nothing breaks while Garage is down or not set up:
+
+- the backend writes to disk until `S3_ENDPOINT` is set, and falls back to
+  disk (with a log line) whenever Garage refuses a write;
+- nginx serves `/uploads/` from the volume first and asks Garage only for
+  files that are not there, and it boots without the `garage` container.
+
+Turning it on:
+
+1. Fill in `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `S3_ACCESS_KEY_ID` and
+   `S3_SECRET_ACCESS_KEY` in `.env` **before** the deploy that adds the
+   containers (otherwise `garage` crash-loops on a blank secret until they
+   are set; nothing else is affected). `.env.example` says how to generate
+   each.
+2. Deploy, then `garage/bootstrap.sh` (idempotent; it creates the layout, the
+   `uploads` bucket and the backend's key, and opens the bucket to the
+   website endpoint).
+3. Set `S3_ENDPOINT=http://garage:3900` and `docker compose up -d backend`.
+   The backend logs `[upload] storing uploads in bucket uploads ...` on start.
+4. Check: upload something through a canvas page or chat, then
+   `docker compose exec garage /garage bucket info uploads` shows the object
+   count going up, and the returned `/uploads/...` URL loads.
+
+Moving the old files in (optional — they are served from the volume anyway):
+
+```
+export $(grep -E '^S3_(ACCESS_KEY_ID|SECRET_ACCESS_KEY)=' .env)
+docker run --rm --network web_server_app-network \
+  -v web_server_uploads:/data:ro \
+  -e AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY_ID" -e AWS_SECRET_ACCESS_KEY="$S3_SECRET_ACCESS_KEY" \
+  -e AWS_DEFAULT_REGION=garage \
+  amazon/aws-cli:2.38.0 s3 sync /data s3://uploads --exclude 'private/*' \
+  --endpoint-url http://garage:3900
+```
+
+The copies on the volume keep winning (disk first) until they are deleted,
+which is also the rollback: leave them until the bucket has been trusted for a
+while, then remove everything but `private/` from the volume. Until then,
+deleting a file in garage-webui does not unpublish it if a disk copy exists.
+
+**Rollback:** blank `S3_ENDPOINT` and `docker compose up -d backend`. Files
+written to the bucket in the meantime stay reachable as long as `garage` runs;
+to drop Garage entirely, first copy them back
+(`aws s3 sync s3://uploads /data` with the volume mounted read-write).
+
+**Managing files:** garage-webui at `/garage/` (site admin login). Files
+uploaded there are public at `/uploads/<path>` and skip the backend's type
+checks; keep them under a prefix such as `media/`. Uploads through it are
+capped at 2G by nginx.
+
+**Backups:** Garage here is one node on the same disk — it is not a backup.
+Back up `garage_meta` and `garage_data` together (meta without data, or the
+reverse, is useless); Garage also snapshots its metadata every 6h inside
+`garage_meta`.
+
 **Set up the CI runner on a fresh host:**
 
 ```
@@ -565,7 +629,7 @@ Documented, not fixed — each would change deploy behaviour.
    mounted to the same in-container path as the real wrapper. It is currently
    shadowed by an explicit file mount — fragile. Deleting it would be safe but
    is a file removal.
-4. **The two `/uploads/` location blocks are still written twice** — once in
+4. **The `/uploads/` location blocks (with `@uploads_bucket`) are still written twice** — once in
    `nginx.conf.template` and once in `nginx_dev_common.conf.template` —
    because production adds security headers inside an auth-gated block. Every
    other proxied route lives once in `nginx_routes.conf.template`, which both

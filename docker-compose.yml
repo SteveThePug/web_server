@@ -65,8 +65,17 @@ volumes:
   dbdata:
   # File upload — PERSISTENT. Written by the backend at /backend/uploads,
   # served read-only by nginx at /uploads/. Shared so nginx can serve user
-  # uploads without proxying through the Go process.
+  # uploads without proxying through the Go process. Since Garage, it holds
+  # the uploads from before the bucket, private attachments (always), and any
+  # upload the backend wrote here because Garage refused it; nginx looks here
+  # first and only then in the bucket.
   uploads:
+  # Garage object store — PERSISTENT, both. garage_meta is the metadata DB
+  # (buckets, keys, the object index, the cluster layout); garage_data is the
+  # object bytes. Lose meta and the bytes in data are unreadable, so back up
+  # the two together. A fresh pair needs garage/bootstrap.sh run once.
+  garage_meta:
+  garage_data:
   # Vue build — EPHEMERAL in spirit but a named volume for handoff: the
   # one-shot `vue` container writes the built SPA here and exits; nginx mounts
   # it at /etc/nginx/html and serves it. Repopulated on every rebuild.
@@ -617,6 +626,74 @@ services:
       - DOZZLE_NO_ANALYTICS=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # S3-compatible object store holding public uploads (the `uploads` bucket).
+  # The backend writes to it on :3900 once S3_ENDPOINT is set in .env; nginx
+  # reads it anonymously on :3902 for /uploads/ files not found on the
+  # `uploads` volume; garage-webui manages it via :3903. Nothing is published
+  # to the host. Config is garage/garage.toml (no secrets in it); the two
+  # secrets come from .env through the explicit list below.
+  #
+  # Nothing depends on this container being up. nginx is deliberately NOT
+  # given it in depends_on: its upstream is a variable, so a missing or
+  # crash-looping garage costs a 502 on bucket-only files, never nginx's
+  # boot; and the backend falls back to the volume when a write fails.
+  #
+  # FIRST RUN: garage/bootstrap.sh (layout, bucket, key, website access).
+  # The image is FROM scratch — no shell, so no in-container init script and
+  # a healthcheck that calls the binary itself.
+  garage:
+    image: dxflrs/garage:v2.4.1
+    container_name: garage
+    restart: always
+    networks:
+      - app-network
+    environment:
+      - GARAGE_RPC_SECRET=${GARAGE_RPC_SECRET}
+      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN}
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Admin web UI for Garage, served at /garage/ behind the nginx admin gate.
+  # Manages buckets and keys, and browses/uploads/deletes objects. Its own
+  # login (AUTH_USER_PASS) is left unset because nginx's auth_request already
+  # requires the site admin — and it holds the admin token, so never publish
+  # its port. It reads the s3/web settings from garage.toml; the token comes
+  # from .env instead, since the file has none.
+  #
+  # Files uploaded here land in the PUBLIC bucket and are served at
+  # /uploads/<path> with none of the backend's checks. Put hand-managed media
+  # under a prefix (e.g. media/) so it can't collide with the backend's
+  # random hex names.
+  garage-webui:
+    image: khairul169/garage-webui:1.1.0
+    container_name: garage-webui
+    restart: always
+    depends_on:
+      - garage
+    networks:
+      - app-network
+    environment:
+      - BASE_PATH=/garage
+      - API_BASE_URL=http://garage:3903
+      - API_ADMIN_KEY=${GARAGE_ADMIN_TOKEN}
+      - S3_ENDPOINT_URL=http://garage:3900
+      - S3_REGION=garage
+    # The image has no /tmp, and Go spools any multipart upload over 32MB to
+    # a temp file there, so without this every large upload fails with
+    # "open /tmp/multipart-…: no such file or directory".
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
 
   # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
   # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to

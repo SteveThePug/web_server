@@ -32,7 +32,7 @@ var reservedFirstSegments = map[string]bool{
 	"automata": true, "hotels": true, "api": true, "py": true, "radio": true,
 	"gitea": true, "notes": true, "sb": true, "jobs": true, "tracker": true,
 	"usaco": true, "uploads": true, "img": true, "fonts": true, "pdf": true,
-	"sound": true, "assets": true, "internal": true,
+	"sound": true, "assets": true, "internal": true, "dozzle": true, "garage": true,
 }
 
 func validPageKey(key string) bool {

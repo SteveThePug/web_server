@@ -38,6 +38,12 @@ type Store struct {
 	// services.CallPython: reading a rowing display photo (handle_rowing.go).
 	PythonURL string
 
+	// Where public uploads are stored: the Garage bucket with a disk
+	// fallback, or the disk alone when S3 is not configured
+	// (services.NewUploadStore). nil means the disk, so a Store built in a
+	// test needs no setup.
+	Files services.FileStore
+
 	// Cached "recently played" tracks, refreshed at most once a minute by the
 	// GraphQL spotifyRecent resolver. A pointer to a slice so that nil can
 	// mean "never fetched" distinctly from "fetched, empty".

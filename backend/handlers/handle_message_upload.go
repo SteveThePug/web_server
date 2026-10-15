@@ -3,24 +3,28 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"adam-french.co.uk/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Attachment upload for the chat.
+// Attachment upload for the chat (and, through it, the canvas editors).
 //
-// Files land in one of two directories. /backend/uploads/ is served by nginx
-// at /uploads/ with no authentication, so anything written there is publicly
-// reachable by URL — which is why the extension and content checks below
-// matter. /backend/uploads/private/ holds attachments for private (admin-only)
+// Files land in one of two places. Public files go to Store.Files: the Garage
+// bucket when S3_ENDPOINT is configured, /backend/uploads/ otherwise (see
+// services/file_store.go). Either way nginx serves them at /uploads/ with no
+// authentication, so anything stored is publicly reachable by URL — which is
+// why the extension and content checks below matter.
+// /backend/uploads/private/ holds attachments for private (admin-only)
 // messages and is served at /uploads/private/ behind an nginx auth_request
-// gate; only an admin may upload there.
+// gate; only an admin may upload there. Private files always stay on disk:
+// nginx cannot sign S3 requests, so it has no way to gate a bucket.
 
 // allowedExtensions is the upload allow-list, keyed by lower-cased extension.
 var allowedExtensions = map[string]bool{
@@ -42,10 +46,23 @@ var extensionToMIMEPrefix = map[string]string{
 	".pdf": "application/pdf", ".txt": "text/",
 }
 
-// publicUploadDir and privateUploadDir are the two destinations; the private
-// one is created on demand because nothing else guarantees it exists.
+// extensionContentType is the Content-Type a file is stored with. It comes
+// from the (already allow-listed) extension rather than from sniffing,
+// because sniffing is unreliable for exactly the audio and gif files the
+// table above leaves unverified. It matters for the bucket: Garage serves
+// back the stored type, where nginx serving from disk inferred its own.
+var extensionContentType = map[string]string{
+	".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp",
+	".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".ogg": "audio/ogg",
+	".pdf": "application/pdf", ".txt": "text/plain; charset=utf-8",
+}
+
+// PublicUploadDir and privateUploadDir are the two directories on the shared
+// `uploads` volume; the private one is created on demand because nothing else
+// guarantees it exists. PublicUploadDir is exported for main, which hands it
+// to services.NewUploadStore as the disk store (or the bucket's fallback).
 const (
-	publicUploadDir  = "/backend/uploads/"
+	PublicUploadDir  = "/backend/uploads/"
 	privateUploadDir = "/backend/uploads/private/"
 )
 
@@ -118,20 +135,6 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	}
 	filename := hex.EncodeToString(b) + ext
 
-	uploadDir := publicUploadDir
-	urlPrefix := "/uploads/"
-	if private {
-		uploadDir = privateUploadDir
-		urlPrefix = "/uploads/private/"
-		// 0755 so nginx (a different user) can traverse the directory to
-		// serve the files once its auth_request gate has approved.
-		if err := os.MkdirAll(uploadDir, 0755); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
-			return
-		}
-	}
-	dest := filepath.Join(uploadDir, filename)
-
 	// Reopened rather than rewound: the earlier handle was closed after
 	// sniffing, and multipart files may be backed by either memory or a temp
 	// file, so a fresh reader is the simplest correct option.
@@ -142,14 +145,28 @@ func (store *Store) UploadMessageFile(ctx *gin.Context) {
 	}
 	defer src.Close()
 
-	out, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
-		return
+	var dest services.FileStore
+	urlPrefix := "/uploads/"
+	if private {
+		urlPrefix = "/uploads/private/"
+		// 0755 so nginx (a different user) can traverse the directory to
+		// serve the files once its auth_request gate has approved.
+		if err := os.MkdirAll(privateUploadDir, 0755); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+			return
+		}
+		dest = services.DiskFileStore{Dir: privateUploadDir}
+	} else {
+		dest = store.Files
+		// A Store built without one (the tests, mostly) keeps the old
+		// behaviour rather than panicking.
+		if dest == nil {
+			dest = services.DiskFileStore{Dir: PublicUploadDir}
+		}
 	}
-	defer out.Close()
 
-	if _, err := io.Copy(out, src); err != nil {
+	if err := dest.Put(ctx.Request.Context(), filename, extensionContentType[ext], src, file.Size); err != nil {
+		log.Printf("[upload] storing %s failed: %v", filename, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}

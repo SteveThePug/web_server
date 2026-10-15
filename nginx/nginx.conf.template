@@ -291,14 +291,44 @@ http {
             add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
         }
 
-        # User-uploaded files, served straight off the shared `uploads` volume
-        # so the Go process never has to stream them. Because these are
-        # attacker-supplied bytes on our own origin, three headers neutralise
-        # them: nosniff stops content-type guessing, Content-Disposition inline
-        # keeps them from being treated as downloads, and the locked-down CSP
-        # means even an uploaded .html can run no script and load no resource.
+        # User-uploaded files, served by nginx so the Go process never has to
+        # stream them. Because these are attacker-supplied bytes on our own
+        # origin, three headers neutralise them: nosniff stops content-type
+        # guessing, Content-Disposition inline keeps them from being treated
+        # as downloads, and the locked-down CSP means even an uploaded .html
+        # can run no script and load no resource.
+        #
+        # TWO PLACES, DISK FIRST. A file is looked for on the shared `uploads`
+        # volume and, only if it is not there, fetched from the Garage bucket
+        # (@uploads_bucket). Disk first is deliberate: everything uploaded
+        # before Garage, and anything the backend wrote to disk because Garage
+        # refused it (services/file_store.go), is served exactly as before
+        # with Garage not involved at all — Garage being down can only affect
+        # files that exist nowhere else. The cost is shadowing: a file present
+        # in both is served from disk, so deleting it in the bucket alone does
+        # nothing until the disk copy goes too.
+        # `root /` rather than `alias`: the volume is mounted at /uploads, so
+        # the URI already is the path, and try_files is unreliable with alias.
         location /uploads/ {
-            alias /uploads/;
+            root /;
+            try_files $uri @uploads_bucket;
+            include /etc/nginx/security_headers.conf;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Content-Disposition "inline" always;
+            add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'" always;
+        }
+
+        # Garage's website endpoint, which serves the bucket anonymously and
+        # picks it from the Host header (garage/garage.toml: s3_web). The
+        # bucket is reachable only over app-network, so this location is the
+        # only public way in. Range requests pass through, so video seeks.
+        # The headers are repeated, not inherited: a named location is its own
+        # location. If the garage container is absent the variable upstream
+        # fails per request (502) — nginx itself still starts.
+        location @uploads_bucket {
+            rewrite ^/uploads/(.*)$ /$1 break;
+            proxy_pass $upstream_garage_web;
+            proxy_set_header Host uploads.web.garage;
             include /etc/nginx/security_headers.conf;
             add_header X-Content-Type-Options nosniff always;
             add_header Content-Disposition "inline" always;

@@ -288,6 +288,17 @@ func TestUploadAllowLists(t *testing.T) {
 		}
 	})
 
+	t.Run("every allowed extension has a stored Content-Type", func(t *testing.T) {
+		// Garage serves back the type the upload was stored with; a missing
+		// entry would store an empty type and the browser would be left to
+		// guess under nosniff — i.e. refuse to render it.
+		for ext := range allowedExtensions {
+			if extensionContentType[ext] == "" {
+				t.Errorf("%q is allowed but has no Content-Type", ext)
+			}
+		}
+	})
+
 	t.Run("audio extensions are content-unverified by design", func(t *testing.T) {
 		// http.DetectContentType is unreliable for these, so a missing entry
 		// means "extension allowed, content not verified". Adding one would

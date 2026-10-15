@@ -62,6 +62,8 @@ Dockerized multi-service personal website self-hosted on `stpvm` (an x86-64 Ubun
 
 **Job tracker** (`jobs` service, `/jobs/`): the job application tracker, leads inbox, email pipeline and capture userscript now live in their own repo (`adamf/job-tracker` on Gitea) and run here as a published image, with their own Postgres database and role. It has no login: it asks the backend's `/auth/validate-admin` with the visitor's cookies. Nothing of it is left in `backend/`, `python/` or `vue/`; nginx redirects the old `/cv/jobs`, `/cv/leads` and userscript URLs to `/jobs/`. A push to that repo's `main` publishes the image and rolls this stack's `jobs` container onto it; pin `JOBS_IMAGE_TAG` in `.env` to hold a version. Its variables are passed through the `jobs` service's explicit `environment:` list in `docker-compose.yml`.
 
+**Uploads / Garage** (`garage/`): public uploads (`POST /api/messages/upload`, used by chat and the canvas editors) go to an S3 bucket in a self-hosted Garage container once `S3_ENDPOINT` is set in `.env`, and to the `uploads` volume until then — or whenever Garage refuses a write (`backend/services/file_store.go`). nginx serves `/uploads/` from the volume first and Garage's anonymous website endpoint second, so old URLs keep working and a Garage outage only affects bucket-only files. Private attachments (`/uploads/private/`) always stay on disk. `garage-webui` at `/garage/` (admin-gated) manages the bucket. First run on a fresh volume needs `garage/bootstrap.sh`; the full runbook is "Garage" in `DEPLOYMENT.md` §7.
+
 **Nginx** (`nginx/`): Reverse proxy + SPA server. Config is templated (`nginx.conf.template`) and selected at runtime by `entrypoint.sh` based on `DEV_MODE` and certificate presence. Rate limiting on login (5/min), API (30/sec), uploads (30/min, burst 20). Proxied routes are written once, in `nginx/nginx_routes.conf.template`, which both the production and dev configs include — add a new route there. Production-only pieces (TLS, static asset caching, the GraphQL rate-limit zone, security headers) stay in `nginx.conf.template`; a new rate-limit zone must be declared in both `http` blocks. Every request is also logged as a JSON line, body included (redacted if it mentions a password, token or secret), to `logs/nginx/payloads.log` via `nginx/payload_log.conf`. The `traffic` container tails that file so it shows up in Dozzle, which is served at `/dozzle/` behind the admin login; the admin panel no longer has a log view.
 
 ## Backend Structure
@@ -75,7 +77,7 @@ Dockerized multi-service personal website self-hosted on `stpvm` (an x86-64 Ubun
 - `graph/model/models_gen.go` — auto-generated GraphQL models, do not edit
 - `models/models.go` — GORM database models (User, Post, Message, Activity, Favorite, Rowing, Bookmark, Place, Box, Page, Background)
 - `graph/directives.go` — the `@admin` / `@signedIn` schema directives (see Key Patterns)
-- `services/` — database init, JWT auth, WebSocket server, Spotify OAuth, Gitea feed, the Python-service call helper (`python_call.go`), the `.env` registry (`env_manager.go`), DB seeding. There is no Claude client in Go any more
+- `services/` — database init, JWT auth, WebSocket server, Spotify OAuth, Gitea feed, the Python-service call helper (`python_call.go`), upload storage (`file_store.go`: Garage bucket with disk fallback), DB seeding. There is no Claude client in Go any more
 
 ## Frontend Structure
 

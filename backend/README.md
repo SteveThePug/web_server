@@ -226,6 +226,12 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   (Steam).
 - **python_call.go** — `CallPython`, the one way to reach the Python service's
   internal routes. See [Calling the Python service](#calling-the-python-service).
+- **file_store.go** — where public uploads are written. `NewUploadStore`
+  returns the disk store (`/backend/uploads/`) when `S3_ENDPOINT` is unset,
+  and otherwise the Garage bucket wrapped in `FallbackFileStore`, which logs
+  a failed S3 write and retries on disk. nginx serves `/uploads/` from disk
+  first and the bucket second, so either store's files work at the same URL.
+  Private attachments always stay on disk (nginx cannot gate a bucket).
 - **notes.go** — path-traversal-safe file lookup for the notes directory.
 - **seed.go** — dev-only test data. Creates an admin with the password
   `password`, so it must never run in production (`SEED_DB=true` is set only
