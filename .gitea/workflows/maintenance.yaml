@@ -32,14 +32,10 @@ jobs:
             # behind a long pull.
             - name: Pull latest base images
               working-directory: /home/adamf/deploy/web_server
-              env:
-                  DOCKER_API_VERSION: "1.41"
               run: flock .compose.lock docker compose pull
 
             - name: Rebuild and restart containers
               working-directory: /home/adamf/deploy/web_server
-              env:
-                  DOCKER_API_VERSION: "1.41"
               run: flock .compose.lock docker compose up -d --build --remove-orphans
 
             - name: Prune unused Docker images

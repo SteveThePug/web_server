@@ -168,7 +168,6 @@ jobs:
             - name: Run docker compose up
               working-directory: /home/adamf/deploy/web_server
               env:
-                  DOCKER_API_VERSION: "1.41"
                   COMPOSE_BAKE: "false"
               # The lock is shared with maintenance.yaml, so a deploy and the
               # weekly rebuild cannot run compose at the same time.
