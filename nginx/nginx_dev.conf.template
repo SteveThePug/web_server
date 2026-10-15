@@ -62,6 +62,9 @@ http {
 
     access_log /var/log/nginx/access.log compact;
 
+    # JSON request-body log for Dozzle; see payload_log.conf.
+    include /etc/nginx/payload_log.conf;
+
     types {
         text/javascript mjs;
     }

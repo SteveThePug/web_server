@@ -178,9 +178,6 @@ func main() {
 	// NOTES
 	admin.GET("/notes/*path", store.GetNoteFile)
 
-	// ADMIN DIAGNOSTICS: log tail for the admin panel.
-	admin.GET("/admin/logs", store.Logs)
-
 	// GRAPHQL
 	// GraphQL is assembled by hand rather than with handler.NewDefaultServer
 	// so the transports and extensions below are explicit.

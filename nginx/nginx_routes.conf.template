@@ -81,6 +81,8 @@
         set $upstream_tracker http://activity-tracker:8080;
         # And the USACO site's.
         set $upstream_usaco http://usaco:8080;
+        # And the Dozzle log viewer's.
+        set $upstream_dozzle http://dozzle:8080;
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -172,6 +174,29 @@
 
         location /radio {
             return 301 /radio/;
+        }
+
+        # Dozzle: live view of every container's logs, including the `traffic`
+        # container's JSON request-body log (see payload_log.conf). It reads
+        # the Docker socket, so it sits behind the same admin `auth_request`
+        # as /radio/admin/. No prefix-strip rewrite: DOZZLE_BASE=/dozzle makes
+        # it serve under the prefix itself. Buffering is off and the read
+        # timeout long because log tails stream over server-sent events.
+        location = /dozzle {
+            return 301 /dozzle/;
+        }
+
+        location /dozzle/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            proxy_pass $upstream_dozzle;
+            proxy_http_version 1.1;
+            proxy_buffering off;
+            proxy_read_timeout 1h;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
         # The icecast ADMIN UI (/radio/admin/*) is a full station-control

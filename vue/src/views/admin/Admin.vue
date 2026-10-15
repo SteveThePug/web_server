@@ -19,7 +19,6 @@ import CreatePlace from "./CreatePlace.vue";
 import ManagePages from "./ManagePages.vue";
 import ManageUsers from "./ManageUsers.vue";
 import ManageRadio from "./ManageRadio.vue";
-import Diagnostics from "./Diagnostics.vue";
 
 const auth = useAuthStore();
 
@@ -34,7 +33,6 @@ const sections = [
   { id: "pages", label: "Pages", component: ManagePages },
   { id: "users", label: "Manage Users", component: ManageUsers },
   { id: "radio", label: "Manage Radio", component: ManageRadio },
-  { id: "diagnostics", label: "Diagnostics", component: Diagnostics },
 ];
 
 const active = ref("place");
@@ -71,6 +69,16 @@ function handleLogout() {
           >
             {{ section.label }}
           </button>
+          <!-- Logs and incoming request bodies live in Dozzle, outside the
+               SPA (nginx serves it at /dozzle/ behind the admin check). -->
+          <a
+            class="admin-nav-link no-underline"
+            href="/dozzle/"
+            target="_blank"
+            rel="noopener"
+          >
+            Logs ↗
+          </a>
         </nav>
 
         <section class="admin-panel bdr-2 bg-surface">

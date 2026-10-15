@@ -125,7 +125,7 @@ the Vite proxy in dev).
 The backend's REST routes go through `src/api.js`, the same idea for plain JSON:
 
 ```js
-const body = await api.get("/admin/logs", { fallback: "Failed to load logs" });
+const songs = await api.get("/radio/songs", { fallback: "Failed to load songs" });
 await api.post("/radio/upload", formData, { fallback: "Upload failed" });
 ```
 

@@ -138,6 +138,9 @@ http {
 
     access_log /var/log/nginx/access.log compact;
 
+    # JSON request-body log for Dozzle; see payload_log.conf.
+    include /etc/nginx/payload_log.conf;
+
     # nginx's bundled mime.types has no entry for .mjs, so ES modules would be
     # served as application/octet-stream and browsers refuse to execute them.
     # This adds the missing mapping without editing the shipped mime.types.

@@ -4,7 +4,7 @@
  * OAuth starts — everything backend/README.md lists as "not GraphQL").
  *
  * It does two things a bare axios call does not:
- *   - prefixes `/api`, so callers name the route (`api.get("/admin/logs")`);
+ *   - prefixes `/api`, so callers name the route (`api.get("/radio/songs")`);
  *   - turns a failure into an ApiError whose `message` is the backend's
  *     `{"error": "..."}` body when there is one. Every handler reports errors
  *     in that shape, and each view used to dig it out of `err.response` itself.

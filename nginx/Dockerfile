@@ -1,6 +1,6 @@
 # =============================================================================
 # nginx image — the public edge. Stock nginx plus two tools, three config
-# templates and the two partials they include.
+# templates, the two partials they include and two static includes.
 #
 # BASE: nginx:1.27, pinned to a minor version. Official nginx images are
 #   multi-arch, so the same tag resolves to the arm64 build on the Raspberry Pi
@@ -44,5 +44,11 @@ COPY nginx_routes.conf.template /etc/nginx/nginx_routes.conf.template
 # Static security-header include, referenced from nginx.conf.template (and
 # any location that sets its own add_header). Not templated — no envsubst.
 COPY security_headers.conf /etc/nginx/security_headers.conf
+# Static http-level include for the JSON request-body log (both configs). Not
+# templated: its $request_body etc. are nginx variables, not env vars.
+COPY payload_log.conf /etc/nginx/payload_log.conf
+# The payload log's directory. Normally a bind mount (./logs/nginx); created
+# here so nginx still starts when run without it.
+RUN mkdir -p /var/log/nginx/payloads
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

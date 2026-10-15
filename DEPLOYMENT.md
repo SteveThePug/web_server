@@ -65,6 +65,8 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | vue                                           | `vue`                         | 5173 (dev only)               | `/` (dev only)                                                                                          | no                   |
 | certbot                                       | `certbot`                     | —                             | —                                                                                                       | no                   |
 | cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
+| dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by nginx `auth_request`; reads the Docker socket)                               | no                   |
+| traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
 
 Container names come from `.env`, and nginx builds its upstreams from the same
 variables. **Renaming a `*_HOST` value renames the container and repoints nginx
@@ -333,7 +335,7 @@ of deleting the directory:
 | `./jobs-data`               | The job tracker's **capture token hash** and Graph OAuth session                                    | Gitignored. Must be owned by uid 1000, the user the `jobs` image runs as.              |
 | `./gitea/data`              | Git repositories, LFS objects, avatars, sessions                                                    | The actual git data                                                                    |
 | `./gitea/config`            | Gitea's live `app.ini`                                                                              | Gitignored; generated from the template on first boot and then owned by Gitea          |
-| `./logs`                    | Backend logs                                                                                        |                                                                                        |
+| `./logs`                    | Backend logs (`go.log`); nginx's JSON request-body log in `logs/nginx/payloads.log`                  | The payload log grows without bound; rotate it on the host (§7, "Incoming request bodies") |
 | `./icecast2/fallback_music` | Radio fallback MP3s                                                                                 | Synced by `sync-secrets.sh`, not git                                                   |
 | `${OBSIDIAN_DIR}`           | The Obsidian vault (a git clone of the notes repo)                                                  | Read-write to backend and silverbullet, **read-only** to silverbullet-public           |
 
@@ -466,6 +468,40 @@ docker compose logs --tail=200 backend
 docker compose ps                      # note: `vue` Exited(0) is correct
 docker compose logs certbot            # issuance / renewal outcomes
 ```
+
+Or browse every container's logs at `https://www.<DOMAIN>/dozzle/` (admin
+login required).
+
+**Incoming request bodies.** nginx writes one JSON line per request, body
+included, to `logs/nginx/payloads.log` (`nginx/payload_log.conf`). The
+`traffic` container tails it, so in Dozzle pick **traffic** and each request
+renders as fields you can search. From a shell:
+
+```
+tail -f logs/nginx/payloads.log | jq 'select(.method=="POST")'
+jq -r 'select(.uri=="/api/graphql") | .body | fromjson? | .operationName' logs/nginx/payloads.log
+```
+
+Bodies mentioning `password`, `token` or `secret` are logged as `[redacted]`
+(that covers every login and the refresh call). Bodies over 64 KB, i.e.
+uploads, are logged with an empty `body`, and responses are never logged.
+
+The file is never rotated by the stack. On the Pi, add
+`/etc/logrotate.d/web_server`:
+
+```
+/home/<user>/web_server/logs/nginx/*.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+```
+
+`copytruncate` because nginx keeps the file open; `tail -F` in `traffic`
+follows the truncation.
 
 **Reset the database** — destructive; wipes the app database **and Gitea's**:
 

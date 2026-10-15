@@ -176,7 +176,6 @@ for the things GraphQL cannot do:
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
-| `/admin/logs` | files on disk, not the data model |
 
 ## Calling the Python service
 

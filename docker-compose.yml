@@ -117,6 +117,7 @@ services:
       - python
       - jobs
       - activity-tracker
+      - dozzle
     networks:
       app-network:
         # The site's public names, resolving to this container for everything
@@ -142,6 +143,10 @@ services:
       - uploads:/uploads
       # The SPA written by the one-shot `vue` container.
       - vue_dist:/etc/nginx/html
+      # The JSON request-body log (nginx/payload_log.conf), kept on the host so
+      # it survives rebuilds and the `traffic` container can tail it. Grows
+      # without bound unless rotated — see DEPLOYMENT.md.
+      - ./logs/nginx:/var/log/nginx/payloads
 
   # Obtains the cert once, then renews every 12h forever. Disabled in dev via
   # the `disabled` profile in docker-compose.dev.yml. Note this is the stock
@@ -575,6 +580,40 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_TRACKER_USER:-tracker}:${POSTGRES_TRACKER_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_TRACKER_DB:-tracker}?sslmode=disable
       - TRACKER_TZ=${TRACKER_TZ:-}
       - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
+
+  # Echoes nginx's JSON request-body log to its own stdout, and does nothing
+  # else. It exists so Dozzle shows the payloads as a stream of their own,
+  # rendered as JSON fields, instead of interleaved with nginx's compact access
+  # log and error output. -F re-opens the file after rotation; -n0 skips the
+  # backlog on restart, which stays in the file on the host.
+  traffic:
+    image: busybox:1.37.0
+    container_name: traffic
+    restart: always
+    command: ["tail", "-n0", "-F", "/logs/payloads.log"]
+    network_mode: none
+    volumes:
+      - ./logs/nginx:/logs:ro
+
+  # Dozzle: a live, searchable web view of every container's logs, served at
+  # /dozzle/ behind the admin login (nginx/nginx_routes.conf.template). The
+  # `traffic` container is the one to watch for incoming request bodies.
+  #
+  # The Docker socket is mounted :ro, but that only stops the file being
+  # replaced — the API behind it is still fully usable, which is effectively
+  # root on the Pi. Hence: no published port, the admin auth_request in front,
+  # and container actions and shell left at their default of off.
+  dozzle:
+    image: amir20/dozzle:v11.2.0
+    container_name: dozzle
+    restart: always
+    networks:
+      - app-network
+    environment:
+      - DOZZLE_BASE=/dozzle
+      - DOZZLE_NO_ANALYTICS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
   # Self-hosted git, served at /gitea/ and on port 3000 directly. Also the CI
   # server: .gitea/workflows/deploy.yaml redeploys this whole stack on push to
