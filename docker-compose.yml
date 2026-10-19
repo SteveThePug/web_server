@@ -555,7 +555,9 @@ services:
   # It has no database: git is its store. It keeps a clone of adamf/usaco in
   # ./usaco-data, pulled over the Docker network when Gitea's push webhook
   # fires (USACO_WEBHOOK_SECRET signs it), and commits the admin's edits
-  # (status, link, notes) back with USACO_GIT_TOKEN. ./usaco-data holds only
+  # (status, link, notes, statement, explanations) back with USACO_GIT_TOKEN.
+  # CLAUDE_API_KEY powers the admin's Explain button (USACO_CLAUDE_MODEL picks
+  # the model; blank is claude-opus-5-5). ./usaco-data holds only
   # that clone, so deleting it is safe; the image runs as uid 1000, so the
   # directory must be owned by it.
   #
@@ -575,6 +577,8 @@ services:
       - GIT_TOKEN=${USACO_GIT_TOKEN:-}
       - WEBHOOK_SECRET=${USACO_WEBHOOK_SECRET:-}
       - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - CLAUDE_MODEL=${USACO_CLAUDE_MODEL:-}
     volumes:
       - ./usaco-data:/data
 
