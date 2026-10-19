@@ -69,6 +69,7 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
 | dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by nginx `auth_request`; reads the Docker socket)                               | no                   |
 | traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
+| autoheal (restarts unhealthy nginx)           | `autoheal`                    | — (no network)                | none; reads the Docker socket                                                                           | no                   |
 | garage (S3 object store)                      | `garage`                      | 3900 S3, 3902 web, 3903 admin | none directly; `/uploads/` falls back to its web endpoint for files not on the volume                   | no                   |
 | garage-webui (Garage admin UI)                | `garage-webui`                | 3909                          | `/garage/` (admin-gated by nginx `auth_request`)                                                        | no                   |
 
@@ -88,7 +89,9 @@ in one step — never change one without the other.**
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/dozzle/`, `/garage/`, `/radio/admin/` and `/uploads/private/` are
+- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/dozzle/`, `/garage/`, `/radio/admin/`, `/uploads/private/` and
+  Gitea's history views and archives (`…/commit/`, `…/src/commit/`, `…/blame/commit/`, `…/archive/`, `…/compare/`; the
+  branch views stay public) are
   protected by an `auth_request` subrequest to the backend's `/auth/validate-admin`; a failure
   redirects to the SPA login. Most of these services have no auth of their own at that path; the
   job and activity trackers also check the session themselves. Their carve-outs, which a session
@@ -610,10 +613,27 @@ icecast source password. liquidsoap pre-empts the fallback playlist immediately
 silence. Adding MP3s to `icecast2/fallback_music/` is picked up live
 (`reload_mode="watch"`) with no restart.
 
-**Unhealthy containers are not restarted automatically.** `backend` and `python`
-define healthchecks, but the `autoheal` watchdog that acted on them was retired
-(`.deprecated/autoheal`), so `unhealthy` is only visible in `docker ps`.
-`restart: always` still brings back a container whose process exits.
+**Only nginx is restarted when unhealthy.** Docker marks a container
+`unhealthy` but never acts on it; `restart: always` only brings back a process
+that exits. The `autoheal` container restarts anything labelled
+`autoheal=true`, which today is just nginx (its healthcheck fetches
+`/nginx-health` on :80 every 30s; three misses, about 90s, and it is
+restarted). `backend` and `python` also define healthchecks, but carry no
+label, so for them `unhealthy` is only visible in `docker ps`. Add the label to
+cover another service.
+
+**Site down but every container `Up`.** That is what a stalled nginx worker
+looks like (2026-10-19: 4.6 hours, every tunnel request a `TLS handshake
+timeout` in `docker logs cloudflared`, and the Cloudflare dashboard still
+showing the tunnel healthy, since that only covers the tunnel's own link). The
+healthcheck should now catch it. If it recurs, capture the stuck worker before
+restarting, since a restart destroys the only evidence of why:
+
+```
+docker inspect nginx --format '{{.State.Health.Status}}'
+docker top nginx -o pid,stat,wchan:30,etime,cmd    # what each worker is waiting in
+docker compose restart nginx
+```
 
 ---
 

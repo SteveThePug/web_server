@@ -32,3 +32,7 @@ Watchdog that restarted any container docker marked `unhealthy` (only `backend`
 and `python` define healthchecks). It mounts the docker socket, which is
 effectively root on the host. To bring it back, layer
 `docker-compose.autoheal.yml` the same way as above.
+
+Since 2026-10-19 it is back in `docker-compose.yml`, watching only containers
+labelled `autoheal=true` (nginx). This copy is the old `all` variant, kept for
+reference.

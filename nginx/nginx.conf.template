@@ -36,6 +36,15 @@
 #   (which carry the security headers), the `graphql` rate-limit zone and its
 #   location, and the limit_req_zone declarations the shared routes refer to.
 # =============================================================================
+
+# One worker per CPU. Unset, nginx runs a single worker, and on 2026-10-19 that
+# one worker stalled for 4.6 hours: the master kept the container "Up" and the
+# tunnel stayed connected, but every request timed out in the TLS handshake.
+# With several workers a stuck one only loses the connections it holds; the
+# others keep accepting. The healthcheck in docker-compose.yml (and autoheal
+# restarting on it) covers the case where they all stall.
+worker_processes auto;
+
 events {
     worker_connections  1024;
 }
@@ -177,6 +186,15 @@ http {
         # Allow Certbot to access the ACME challenge
         location /.well-known/acme-challenge/ {
             root /var/www/certbot;
+        }
+
+        # The container healthcheck's target (docker-compose.yml). Answered by
+        # nginx itself, so it measures whether a worker is serving and nothing
+        # upstream. Unlogged, or it would put a line in the payload log every
+        # 30s. Every config's default :80 server has one, setup and dev too.
+        location = /nginx-health {
+            access_log off;
+            return 204;
         }
 
         # Redirect everything else to HTTPS

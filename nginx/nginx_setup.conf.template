@@ -45,6 +45,12 @@ http {
             root /var/www/certbot;
         }
 
+        # The container healthcheck's target; see nginx.conf.template.
+        location = /nginx-health {
+            access_log off;
+            return 204;
+        }
+
         # All other requests should return 404
         location / {
             return 404;

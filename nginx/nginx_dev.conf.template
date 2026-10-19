@@ -33,6 +33,10 @@
 #   annotated in nginx_routes.conf.template; the rate-limit reasoning is in
 #   nginx.conf.template.
 # =============================================================================
+
+# As in production; why is in nginx.conf.template.
+worker_processes auto;
+
 events {
     worker_connections  1024;
 }
@@ -88,6 +92,13 @@ http {
     server {
         listen 80;
         server_name $DOMAIN www.$DOMAIN;
+
+        # The container healthcheck's target; see nginx.conf.template. Only in
+        # this block, as in production, where it sits in the :80 server too.
+        location = /nginx-health {
+            access_log off;
+            return 204;
+        }
 
         include /etc/nginx/nginx_dev_common.conf;
 

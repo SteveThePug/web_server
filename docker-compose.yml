@@ -156,6 +156,21 @@ services:
       # it survives rebuilds and the `traffic` container can tail it. Grows
       # without bound unless rotated — see DEPLOYMENT.md.
       - ./logs/nginx:/var/log/nginx/payloads
+    # restart: always only acts when nginx's master exits. On 2026-10-19 the
+    # worker stalled while the master lived, and the site was down 4.6 hours
+    # with the container "Up". /nginx-health is answered by a worker, so a
+    # stall shows here; Docker only marks it unhealthy, and the `autoheal`
+    # label is what gets it restarted (see the autoheal service). Plain HTTP
+    # on :80 so it also passes in the first-boot setup config, which has no
+    # :443; the workers that serve :80 are the ones serving TLS.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "5", "-o", "/dev/null", "http://127.0.0.1/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - autoheal=true
 
   # Obtains the cert once, then renews every 12h forever. Disabled in dev via
   # the `disabled` profile in docker-compose.dev.yml. Note this is the stock
@@ -626,6 +641,33 @@ services:
       - DOZZLE_NO_ANALYTICS=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # Restarts any container labelled autoheal=true once Docker marks it
+  # unhealthy, which Docker itself never does (restart policies only see the
+  # process exit). Only nginx carries the label today; give it to another
+  # service with a healthcheck to cover that one too. It polls every 5s.
+  #
+  # It needs the Docker socket read-write to restart things, which is root on
+  # the host, so it gets no network at all: nothing can reach it, and it
+  # reaches nothing but the socket. For the same reason the image is pinned BY
+  # DIGEST, never a tag, so a push to Docker Hub cannot gain root here at the
+  # next pull. The digest is the multi-arch index of 1.2.0, the newest tagged
+  # release; it calls the API unversioned, so it keeps working as the engine's
+  # minimum API version moves. To bump: `docker buildx imagetools inspect
+  # willfarrell/autoheal:<tag>` and paste the top-level Digest.
+  #
+  # This is the watchdog retired on 2026-10-01 (.deprecated/autoheal), back
+  # with a label filter instead of `all`, so backend's and python's
+  # healthchecks stay informational.
+  autoheal:
+    image: willfarrell/autoheal@sha256:31f580ef0279eaced5b38d631b08c474d70d8403c1c2fdd6ddcf2e879d5f3f7c
+    container_name: autoheal
+    restart: always
+    network_mode: none
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   # S3-compatible object store holding public uploads (the `uploads` bucket).
   # The backend writes to it on :3900 once S3_ENDPOINT is set in .env; nginx
