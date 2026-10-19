@@ -54,7 +54,9 @@ async function submit() {
   );
 
   images.value = [];
-  emit("done");
+  // Only a clean run counts as done: hosts close or confirm on "done", which
+  // would hide or contradict the per-file failure rows above.
+  if (results.value.every((r) => r.ok)) emit("done");
 }
 </script>
 
