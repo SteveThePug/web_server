@@ -42,6 +42,27 @@ const activeSection = computed(() =>
   sections.find((s) => s.id === active.value),
 );
 
+// The create forms emit "done"/"cancel" and leave it to the host to react
+// (the Feed widget's modal closes on them). Here the form stays open, so
+// "done" needs a visible confirmation, and "cancel" remounts the form via
+// formKey, which is the only way to clear fields the form keeps to itself.
+const notice = ref("");
+const formKey = ref(0);
+
+function selectSection(id) {
+  active.value = id;
+  notice.value = "";
+}
+
+function onDone() {
+  notice.value = "Saved.";
+}
+
+function onCancel() {
+  notice.value = "";
+  formKey.value++;
+}
+
 // The requiresAdmin guard only runs on navigation, so logging out in place
 // would leave the panel on screen for a signed-out visitor; leave it instead.
 async function handleLogout() {
@@ -70,7 +91,7 @@ async function handleLogout() {
             :key="section.id"
             class="admin-nav-link"
             :class="{ 'is-active': active === section.id }"
-            @click="active = section.id"
+            @click="selectSection(section.id)"
           >
             {{ section.label }}
           </button>
@@ -87,7 +108,13 @@ async function handleLogout() {
         </nav>
 
         <section class="admin-panel bdr-2 bg-surface">
-          <component :is="activeSection.component" />
+          <component
+            :is="activeSection.component"
+            :key="formKey"
+            @done="onDone"
+            @cancel="onCancel"
+          />
+          <small v-if="notice" class="admin-notice">{{ notice }}</small>
         </section>
       </div>
     </div>
@@ -160,6 +187,12 @@ async function handleLogout() {
 }
 .admin-panel :deep(h1) {
   margin-top: 0;
+}
+
+.admin-notice {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-secondary);
 }
 
 @media (max-width: 700px) {
