@@ -1,0 +1,256 @@
+/*
+ * The diagram kit: every SVG on /architecture draws with these classes, so
+ * fifty-odd diagrams written separately still read as one set. Colours come
+ * from the site's design tokens (assets/styles.css), never literals.
+ *
+ * Not scoped: the classes are applied to elements inside each diagram
+ * component's own template, and a scoped block would only reach its own file.
+ * Everything is prefixed `dg-` so nothing leaks into the rest of the site.
+ *
+ * Arrowheads are <marker>s defined once on the page by DiagramDefs.vue and
+ * referenced by the edge classes below, so diagrams never declare their own
+ * (duplicate ids across many inline SVGs would collide).
+ */
+
+.dg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+/* ---- Boxes -------------------------------------------------------- */
+
+.dg-box {
+  fill: var(--color-surface);
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+.dg-box--pink {
+  stroke: var(--color-tertiary);
+}
+.dg-box--green {
+  stroke: var(--color-secondary);
+}
+.dg-box--teal {
+  stroke: var(--color-quaternary);
+  stroke-width: 2;
+}
+.dg-box--muted {
+  stroke: var(--color-muted);
+  stroke-dasharray: 4 3;
+  opacity: 0.85;
+}
+.dg-box--tint {
+  fill: var(--color-surface-tint);
+}
+.dg-box--deep {
+  fill: var(--color-surface-deep);
+}
+/* Solid accent fill: a highlighted node. Pair with .dg-text--ink. */
+.dg-box--solid {
+  fill: var(--color-primary);
+}
+.dg-box--solid-pink {
+  fill: var(--color-tertiary);
+  stroke: var(--color-tertiary);
+}
+
+/* A dashed container drawn around a set of boxes (a network, a container, a
+   layer). Put it before its children so it sits underneath. */
+.dg-group {
+  fill: none;
+  stroke: var(--color-quaternary);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.dg-group--pink {
+  stroke: var(--color-tertiary);
+  opacity: 0.7;
+}
+.dg-group--fill {
+  fill: var(--color-surface-tint);
+  fill-opacity: 0.5;
+}
+
+/* ---- Text --------------------------------------------------------- */
+
+/* Box / node titles: the condensed heading face, uppercase by nature. */
+.dg-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  fill: var(--color-primary);
+}
+.dg-title--pink {
+  fill: var(--color-tertiary);
+}
+.dg-title--lg {
+  font-size: 20px;
+}
+.dg-title--sm {
+  font-size: 13px;
+}
+.dg-text {
+  fill: var(--color-secondary);
+  font-size: 12px;
+}
+.dg-text--muted {
+  fill: var(--color-muted);
+}
+.dg-text--pink {
+  fill: var(--color-tertiary);
+}
+.dg-text--mint {
+  fill: var(--color-primary);
+}
+/* Dark text for use on .dg-box--solid / --solid-pink */
+.dg-text--ink {
+  fill: var(--color-surface-deep);
+}
+.dg-small {
+  fill: var(--color-muted);
+  font-size: 10.5px;
+}
+.dg-code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 11px;
+  fill: var(--color-tertiary);
+}
+.dg-group-label {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  fill: var(--color-quaternary);
+  filter: brightness(2.2);
+}
+/* Label sitting on a line: a halo in the page colour keeps it legible where
+   it crosses an edge. */
+.dg-edge-label {
+  font-size: 10.5px;
+  fill: var(--color-muted);
+  paint-order: stroke;
+  stroke: var(--color-surface-deep);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.dg-edge-label--pink {
+  fill: var(--color-tertiary);
+}
+.dg-edge-label--mint {
+  fill: var(--color-primary);
+}
+
+/* ---- Edges -------------------------------------------------------- */
+
+.dg-edge {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+  marker-end: url(#dg-arrow);
+}
+.dg-edge--pink {
+  stroke: var(--color-tertiary);
+  marker-end: url(#dg-arrow-pink);
+}
+.dg-edge--green {
+  stroke: var(--color-secondary);
+  marker-end: url(#dg-arrow-green);
+}
+.dg-edge--muted {
+  stroke: var(--color-muted);
+  marker-end: url(#dg-arrow-muted);
+}
+.dg-edge--dashed {
+  stroke-dasharray: 5 4;
+}
+/* Two-way: add an arrowhead at the start too. Combine with a colour class
+   and the matching --both-* class, e.g. "dg-edge dg-edge--pink dg-edge--both-pink". */
+.dg-edge--both {
+  marker-start: url(#dg-arrow-start);
+}
+.dg-edge--both-pink {
+  marker-start: url(#dg-arrow-start-pink);
+}
+.dg-edge--both-green {
+  marker-start: url(#dg-arrow-start-green);
+}
+.dg-edge--both-muted {
+  marker-start: url(#dg-arrow-start-muted);
+}
+/* A line with no arrowhead: connectors, ER relationships, axes. */
+.dg-edge--plain {
+  marker-end: none;
+}
+/* Marching ants for a live flow. Combine with any colour; motion stops for
+   people who asked for less. */
+.dg-edge--flow {
+  stroke-dasharray: 6 5;
+  animation: dg-march 1.2s linear infinite;
+}
+@keyframes dg-march {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg-edge--flow {
+    animation: none;
+  }
+}
+
+/* ---- Sequence diagrams ------------------------------------------- */
+
+.dg-lifeline {
+  stroke: var(--color-quaternary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+  filter: brightness(1.8);
+}
+.dg-activation {
+  fill: var(--color-quaternary);
+  stroke: var(--color-primary);
+  stroke-width: 1;
+}
+
+/* ---- Small marks -------------------------------------------------- */
+
+.dg-dot {
+  fill: var(--color-primary);
+}
+.dg-dot--pink {
+  fill: var(--color-tertiary);
+}
+.dg-dot--green {
+  fill: var(--color-secondary);
+}
+.dg-dot--muted {
+  fill: var(--color-muted);
+}
+/* Numbered step badge: a circle with .dg-badge-text centred on it. */
+.dg-badge {
+  fill: var(--color-tertiary);
+}
+.dg-badge-text {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  fill: var(--color-surface-deep);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+/* Divider / separator lines inside a box (table rows in an ER box, etc.) */
+.dg-rule {
+  stroke: var(--color-quaternary);
+  stroke-width: 1;
+  filter: brightness(1.8);
+}
+/* Shaded band, e.g. a highlighted lane or a time window */
+.dg-band {
+  fill: var(--color-quaternary);
+  opacity: 0.25;
+}
+.dg-band--pink {
+  fill: var(--color-tertiary);
+  opacity: 0.12;
+}

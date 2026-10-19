@@ -60,6 +60,12 @@ const router = createRouter({
                     name: "cheap-hotels",
                     component: () => import("@/views/hotels/CheapHotels.vue"),
                 },
+                {
+                    path: "architecture",
+                    name: "architecture",
+                    component: () =>
+                        import("@/views/architecture/Architecture.vue"),
+                },
                 // /shrines and the shrines under it are canvas pages, made
                 // from the admin panel's Pages tab and served by the catch-all
                 // below. The old hand-written ones (views/home/shrines/) are
