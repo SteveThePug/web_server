@@ -79,3 +79,4 @@ silverbullet/ssh/*
 # Dev notes vault (OBSIDIAN_DIR in .env.dev); only the README is tracked
 dev/notes/*
 !dev/notes/README.md
+.gstack/
