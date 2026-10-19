@@ -8,6 +8,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
@@ -21,6 +22,12 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 	userID, ok := UserIDFromCtx(ctx)
 	if !ok {
 		return nil, fmt.Errorf("unauthorized")
+	}
+
+	// The admin form submits whatever is in its fields, so an accidental click
+	// on an empty form would otherwise publish a blank post to the feed.
+	if strings.TrimSpace(input.Title) == "" {
+		return nil, fmt.Errorf("a post needs a title")
 	}
 
 	post := models.Post{Title: input.Title, Content: input.Content, AuthorID: userID}
