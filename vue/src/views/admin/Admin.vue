@@ -6,6 +6,7 @@
  * imported, since reaching this page means you want them.
  */
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import Button from "@/components/input/Button.vue";
 
@@ -21,6 +22,7 @@ import ManageUsers from "./ManageUsers.vue";
 import ManageRadio from "./ManageRadio.vue";
 
 const auth = useAuthStore();
+const router = useRouter();
 
 const sections = [
   { id: "user", label: "User", component: CreateUser },
@@ -40,8 +42,11 @@ const activeSection = computed(() =>
   sections.find((s) => s.id === active.value),
 );
 
-function handleLogout() {
-  auth.logOut();
+// The requiresAdmin guard only runs on navigation, so logging out in place
+// would leave the panel on screen for a signed-out visitor; leave it instead.
+async function handleLogout() {
+  await auth.logOut();
+  router.push("/admin/login");
 }
 </script>
 
