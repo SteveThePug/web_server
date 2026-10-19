@@ -162,8 +162,17 @@ validation — run it before pushing, since a red `test` job blocks the deploy.
 ### Development
 
 ```
+cp .env.dev .env
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
+`.env.dev` is committed and holds only dummy values, so the stack starts
+without any real credential and cannot reach a real account. Features that
+need one fail at the provider, which is the point. It must become `.env`
+rather than be passed with `--env-file`, because several services read
+`env_file: ./.env` directly. Its Postgres passwords only match a `dbdata`
+volume created with them, and as in production only `POSTGRES_DB` is created
+automatically.
 
 The override layer changes five services and disables one:
 

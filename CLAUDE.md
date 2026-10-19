@@ -15,10 +15,11 @@ Runs `go vet` + `go test` (backend), pytest in a venv built from `python/require
 ### Full stack (dev mode, HTTP only)
 
 ```
+cp .env.dev .env
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-Dev mode seeds the database with test data (`SEED_DB=true`) and disables certbot/SSL. Visit `http://localhost`.
+`.env.dev` is committed and every value in it is a dummy: local-only passwords, fake third-party keys, `DOMAIN=localhost`, background jobs that touch real accounts switched off. It has to be copied to `.env` because several services read `env_file: ./.env` directly. Never put a real credential in it. Dev mode seeds the database with test data (`SEED_DB=true`) and disables certbot/SSL. Visit `http://localhost`.
 
 ### Full stack (production, HTTPS)
 
@@ -96,7 +97,7 @@ Dockerized multi-service personal website self-hosted on `stpvm` (an x86-64 Ubun
 - **GraphQL auth is declared in the schema.** The `/api/graphql` endpoint has no guarding middleware; `AuthContextMiddleware` only makes the user *available*. A field is protected by annotating it `@admin` or `@signedIn` in `graph/schema/*.graphql` (implemented in `graph/directives.go`). `graph/directives_test.go` fails if a mutation has neither directive and is not on its short public allow-list (`login`, `logout`, `refreshToken`), so a new mutation cannot ship unguarded by accident; a new *query* is public unless you annotate it. Finer rules (post ownership, hiding private messages) stay in the resolver. See `backend/graph/doc.go`.
 - **Adding a GraphQL entity**: model in `models/models.go` (and the AutoMigrate list), schema file with directives, mapping in `gqlgen.yml`, `make generate`, fill in the resolvers; on the frontend a store built with `createCrudStore`. Model `ID uint` binds directly via `graphql.UintID` — there are no hand-written ID resolvers. Full recipe in `backend/README.md`.
 - **Spotify tokens**: Persisted to `/backend/token/spotify_token.json` inside the container, surviving restarts.
-- **Environment variables**: every variable goes in `.env.example`. One the Python service or the job tracker reads must also be added to the `python` or `jobs` service's explicit `environment:` list in `docker-compose.yml`, or the container never receives it. `.env` is edited by hand on the host; there is no admin-panel editor.
+- **Environment variables**: every variable goes in `.env.example`, and a dummy value for it in `.env.dev`. One the Python service or the job tracker reads must also be added to the `python` or `jobs` service's explicit `environment:` list in `docker-compose.yml`, or the container never receives it. `.env` is edited by hand on the host; there is no admin-panel editor.
 - **Gitea feed**: Backend proxies and caches (1 min TTL) the Gitea activity feed API.
 - **All GORM models use soft delete** (`gorm.DeletedAt` field). Note that a `uniqueIndex` still collides with soft-deleted rows.
 

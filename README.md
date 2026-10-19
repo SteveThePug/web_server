@@ -303,6 +303,7 @@ Place at least one `.mp3` file in `icecast2/fallback_music/`. Liquidsoap plays t
 Run the full stack over plain HTTP without SSL certificates:
 
 ```sh
+cp .env.dev .env   # committed, dummy values only
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
