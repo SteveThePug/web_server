@@ -51,6 +51,13 @@ networks:
     ipam:
       config:
         - subnet: 172.28.0.0/16
+  # The usaco site's code runner and nothing else but the site. internal:
+  # no route out, so code submitted to it cannot reach the internet, and
+  # being off app-network keeps it away from postgres, gitea, garage and the
+  # backend. Docker picks the subnet; nothing here pins an address on it.
+  usaco-runner-net:
+    driver: bridge
+    internal: true
 
 # PERSISTENT vs EPHEMERAL state
 #   Named volumes below survive `docker compose down` and container rebuilds;
@@ -574,8 +581,10 @@ services:
     restart: always
     depends_on:
       - gitea
+      - usaco-runner
     networks:
       - app-network
+      - usaco-runner-net
     environment:
       - GIT_REMOTE_URL=http://${GITEA_HOST}:${GITEA_PORT}/adamf/usaco.git
       - GIT_TOKEN=${USACO_GIT_TOKEN:-}
@@ -589,8 +598,47 @@ services:
       - S3_ENDPOINT=${USACO_S3_ACCESS_KEY_ID:+http://garage:3900}
       - S3_REGION=${USACO_S3_ACCESS_KEY_ID:+garage}
       - S3_BUCKET=${USACO_S3_ACCESS_KEY_ID:+usaco-audio}
+      - RUNNER_URL=http://usaco-runner:8081
     volumes:
       - ./usaco-data:/data
+
+  # The usaco site's code runner (site/Dockerfile.runner in adamf/usaco):
+  # compiles and runs solutions against their tests, and lints them, for the
+  # admin's solve page. It runs submitted code, so it has no secrets (no
+  # environment at all) and is only on usaco-runner-net, which is internal:
+  # no internet, and nothing but the site can reach it. Published by
+  # adamf/usaco's CI, which rolls it before `usaco`; pin
+  # USACO_RUNNER_IMAGE_TAG to hold a version.
+  #
+  # The hardening is the point:
+  #   read_only   the image is not writable; only /tmp is
+  #   tmpfs /tmp  one directory per request, removed after. Must NOT be
+  #               noexec: the compiled program runs from it. Its pages count
+  #               against mem_limit.
+  #   mem_limit, cpus
+  #               on top of the runner's own per-program limits (512 MB
+  #               address space, CPU time, 64 MB files, wall clock)
+  #   pids_limit  what stops a fork bomb: the runner does not set
+  #               RLIMIT_NPROC (it counts the whole uid, the server's own
+  #               threads included). The image's tini reaps the leftovers.
+  #   cap_drop, no-new-privileges
+  #               the runner needs no capabilities, and runs as uid 1000
+  usaco-runner:
+    image: adam-french.co.uk/adamf/usaco-runner:${USACO_RUNNER_IMAGE_TAG:-latest}
+    container_name: usaco-runner
+    restart: always
+    networks:
+      - usaco-runner-net
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,exec
+    mem_limit: 1g
+    cpus: 2
+    pids_limit: 128
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   # The activity tracker (time spent per app, site, walk...), served at
   # /tracker/ with the prefix stripped. Built and published by its own repo
