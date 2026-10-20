@@ -1,6 +1,10 @@
 <script setup>
 /**
  * The live CV template — the only one currently listed in CV.vue.
+ *
+ * Both sheets are fixed A4 with overflow hidden (cv-shared.css), so anything
+ * added here has to be checked in print preview: text that doesn't fit is
+ * silently clipped, not pushed onto another page.
  */
 import Project from "./Project.vue";
 </script>
@@ -33,41 +37,42 @@ import Project from "./Project.vue";
             <section>
                 <h2>Profile</h2>
                 <p>
-                    Software developer with a First Class BSc in Computer
-                    Science with Mathematics. Designs, builds and operates
-                    full-stack software end to end, from Go APIs and Vue
-                    frontends to the self-hosted infrastructure they run on.
-                    <a href="/pdf/dissertation.pdf">Dissertation</a> proved
-                    <a href="/automata">Mobile Automata</a> are computationally
-                    equivalent to Turing Machines. Integrates AI tooling (Claude
-                    Code) into everyday development.
+                    Software engineer with a First Class BSc in Computer
+                    Science with Mathematics. I build and run full-stack systems
+                    end to end, from Go services and Vue frontends to the
+                    Docker, Nginx and CI/CD infrastructure beneath them: around
+                    twenty services in production at
+                    <a href="https://www.adam-french.co.uk/architecture">
+                        adam-french.co.uk</a
+                    >. My <a href="/pdf/dissertation.pdf">dissertation</a>
+                    proved <a href="/automata">Mobile Automata</a> are
+                    computationally equivalent to Turing Machines. I use AI in
+                    my workflow (Claude Code) and in what I ship (the Claude
+                    API).
                 </p>
             </section>
 
             <section>
                 <h2>Technical Skills</h2>
-                <div class="skills-grid">
-                    <div>
-                        <strong>Languages</strong><br />
-                        <small>
-                            Go, Rust, Python, JavaScript / TypeScript, SQL
-                        </small>
-                    </div>
-                    <div>
-                        <strong>Web</strong><br />
-                        <small>
-                            Vue 3, GraphQL, REST APIs, JWT Auth, WebSockets,
-                            Tailwind CSS
-                        </small>
-                    </div>
-                    <div>
-                        <strong>Infrastructure</strong><br />
-                        <small>
-                            Docker, Nginx, PostgreSQL, Linux, Git, CI/CD (Gitea
-                            Actions)
-                        </small>
-                    </div>
-                </div>
+                <p>
+                    <strong>Languages:</strong>
+                    Go, Python, Rust, C++, JavaScript / TypeScript, SQL, Bash
+                </p>
+                <p>
+                    <strong>Backend & Web:</strong>
+                    GraphQL (gqlgen), REST, FastAPI, WebSockets, JWT, Vue 3,
+                    Pinia, Tailwind CSS
+                </p>
+                <p>
+                    <strong>Infrastructure:</strong>
+                    Docker Compose, Nginx, Linux, PostgreSQL, S3, CI/CD (Gitea
+                    Actions)
+                </p>
+                <p>
+                    <strong>AI / ML:</strong>
+                    Claude API (structured output), PyTorch, OpenCV, Tesseract
+                    OCR, Optuna
+                </p>
             </section>
 
             <section>
@@ -89,12 +94,9 @@ import Project from "./Project.vue";
                         </div>
                         <ul class="list-disc list-inside pt-1">
                             <li>Algorithms & Data Structures I & II</li>
-                            <li>Compiler Design and Construction</li>
-                            <li>Formal Languages & Finite Automata</li>
+                            <li>Compilers; Formal Languages & Automata</li>
                             <li>Graph Algorithms & Complexity Theory</li>
-                            <li>
-                                Machine Learning, Databases, Computer Processors
-                            </li>
+                            <li>Machine Learning, Databases, Processors</li>
                         </ul>
                     </div>
                     <div class="flex-1">
@@ -129,27 +131,6 @@ import Project from "./Project.vue";
                     <template #left>
                         <h4>
                             <a
-                                href="https://github.com/SteveThePug/tour"
-                            >
-                                tour.git
-                            </a>
-                        </h4>
-                    </template>
-                    <template #top>
-                        <strong>Rust</strong>
-                        <small>Aug 2025 – Present</small>
-                    </template>
-                    <p contenteditable="true">
-                        Rust CLI for building and navigating interactive,
-                        step-by-step code tutorials, with version-traversal
-                        semantics inspired by Git.
-                    </p>
-                </Project>
-
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>
-                            <a
                                 href="https://github.com/SteveThePug/web_server"
                             >
                                 web_server.git
@@ -158,19 +139,135 @@ import Project from "./Project.vue";
                     </template>
                     <template #top>
                         <strong>
-                            Nginx, Vue, Postgres, Docker, Go, Python, Gitea
-                            Actions
+                            Go, Vue, PostgreSQL, Docker, Nginx, Gitea Actions
                         </strong>
-                        <small>2025</small>
+                        <small>Nov 2025 – Present</small>
                     </template>
                     <p contenteditable="true">
-                        Self-hosted personal website with a fully automated
-                        CI/CD pipeline: Go GraphQL (gqlgen) API with JWT
-                        authentication and WebSockets, Vue 3 + Pinia frontend,
-                        and PostgreSQL, containerised behind Nginx on a
-                        Raspberry Pi. A git push builds, tests, and releases to
-                        production with no manual steps; the Nginx layer adds
-                        per-route rate limiting and automated TLS renewal.
+                        Self-hosted platform behind my website: ~20 Docker
+                        Compose services on a Linux VM: a Go GraphQL
+                        API, Vue 3 SPA, FastAPI, PostgreSQL, S3 storage, Gitea
+                        with CI, and the apps below.
+                    </p>
+                    <ul contenteditable="true">
+                        <li>
+                            Push-to-deploy CI/CD: tests gate releases; apps roll
+                            out on healthchecks.
+                        </li>
+                        <li>
+                            Schema-declared GraphQL auth; tests fail any
+                            unguarded mutation.
+                        </li>
+                        <li>
+                            Rate limiting, request logging, self-healing
+                            restarts; migrated from a Raspberry Pi to a VM.
+                        </li>
+                    </ul>
+                </Project>
+
+                <Project>
+                    <template #left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/usaco"
+                            >
+                                usaco.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Go, Vue, C++, Docker, Claude API</strong>
+                        <small>Aug 2026 – Present</small>
+                    </template>
+                    <p contenteditable="true">
+                        Bash CLI and site for my USACO, LeetCode and Codeforces
+                        solutions, live at
+                        <a href="https://www.adam-french.co.uk/usaco/">
+                            adam-french.co.uk/usaco</a
+                        >.
+                    </p>
+                    <ul contenteditable="true">
+                        <li>
+                            Git as the database: Go service indexes a clone,
+                            commits edits back.
+                        </li>
+                        <li>
+                            Sandboxed runner judges untrusted C++ and Python: no
+                            network, read-only root, CPU and memory limits.
+                        </li>
+                        <li>
+                            Claude API (JSON-schema output) explains problems,
+                            and reviews my code and recorded explanations.
+                        </li>
+                    </ul>
+                </Project>
+            </section>
+        </div>
+
+        <div class="no-print w-full h-20"></div>
+
+        <div class="cv-page justify-around">
+            <section>
+                <h2>More Projects</h2>
+
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/job-tracker"
+                            >
+                                job-tracker.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Go, GraphQL, Vue, PostgreSQL, Claude API</strong>
+                        <small>Apr 2026 – Present</small>
+                    </template>
+                    <p contenteditable="true">
+                        Application tracker with a leads inbox: pulls postings
+                        from Greenhouse, Lever, Ashby, Adzuna and Reed, scores
+                        them with Claude, and captures pages via a userscript.
+                        Split from the main site into its own service and
+                        database.
+                    </p>
+                </Project>
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>
+                            <a
+                                href="https://www.adam-french.co.uk/gitea/adamf/rowing_stats"
+                            >
+                                rowing_stats.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Python, OpenCV, PyTorch, Tesseract, Optuna</strong>
+                        <small>Jan 2026 – Oct 2026</small>
+                    </template>
+                    <p contenteditable="true">
+                        Turns phone photos of a rowing machine's monitor into a
+                        workout log: contour detection, a CNN filter and OCR
+                        that votes across six preprocessings, tuned with Optuna.
+                        Replaced a paid vision API, matching it on 91% of times.
+                    </p>
+                </Project>
+                <Project class="border-b border-dotted">
+                    <template #left>
+                        <h4>
+                            <a href="https://github.com/SteveThePug/tour">
+                                tour.git
+                            </a>
+                        </h4>
+                    </template>
+                    <template #top>
+                        <strong>Rust</strong>
+                        <small>Feb 2026 – Sep 2026</small>
+                    </template>
+                    <p contenteditable="true">
+                        CLI for authoring and stepping through code tutorials as
+                        file snapshots, with Git-style staging and commits.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -215,42 +312,6 @@ import Project from "./Project.vue";
                     </p>
                 </Project>
             </section>
-        </div>
-
-        <div class="no-print w-full h-20"></div>
-
-        <div class="cv-page justify-around">
-            <section>
-                <h2>Secondary Education</h2>
-                <div
-                    class="flex-row flex place-content-between m-auto place-items-center"
-                >
-                    <h3>University Academy of Engineering Southbank</h3>
-                    <small>Sep 2014 – Jun 2021</small>
-                </div>
-                <div class="w-full flex flex-col sm:flex-row gap-5">
-                    <div class="flex-1">
-                        <strong>A-Levels</strong>
-                        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-                            <span>Mathematics</span><span>A*</span>
-                            <span>Further Mathematics</span><span>A*</span>
-                            <span>Physics</span><span>A*</span>
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <strong>GCSEs</strong>
-                        <div class="grid grid-cols-[1fr_auto] gap-x-4">
-                            <span>Mathematics</span><span>9</span>
-                            <span>English Literature</span><span>9</span>
-                            <span>Physics</span><span>9</span>
-                            <span>English Language</span><span>8</span>
-                            <span>Biology</span><span>8</span>
-                            <span>Chemistry</span><span>8</span>
-                            <span>Computer Science</span><span>7</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <section>
                 <h2>Work Experience</h2>
@@ -270,8 +331,8 @@ import Project from "./Project.vue";
                         <small>May 2026 – Present</small>
                     </template>
                     <p contenteditable="true">
-                        Working at an all-day café in Holland Park, preparing
-                        coffee and serving food in a fast-paced environment.
+                        Coffee and table service at a busy all-day café in
+                        Holland Park.
                     </p>
                 </Project>
                 <Project class="border-b border-dotted">
@@ -287,97 +348,65 @@ import Project from "./Project.vue";
                         <small>Sep 2022 – May 2026</small>
                     </template>
                     <p contenteditable="true">
-                        Served food and drinks across Belgrave Music Hall and The
-                        Montpelier (Rose Pubs Group) in Leeds while studying.
-                        Handled busy weekend shifts in a high-volume live-music
-                        venue, managed multiple tables simultaneously, and
-                        maintained a calm, friendly demeanour during peak
-                        hours.
-                    </p>
-                </Project>
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>
-                            <a href="https://crownandanchoreastbourne.co.uk/">
-                                The Crown and Anchor
-                            </a>
-                        </h4>
-                    </template>
-                    <template #top>
-                        <small>Bartender & Waiter</small>
-                        <small>Jul 2022 – Sep 2022</small>
-                    </template>
-                    <p contenteditable="true">
-                        Worked front-of-house at a Greene King family pub in
-                        Eastbourne, pulling pints, taking orders, and ensuring a
-                        welcoming atmosphere. Built rapport with regulars and
-                        with a close-knit team during service.
-                    </p>
-                </Project>
-                <Project class="border-b border-dotted">
-                    <template #left>
-                        <h4>
-                            <a href="https://www.totherisebakery.com/">
-                                To The Rise Bakery
-                            </a>
-                        </h4>
-                    </template>
-                    <template #top>
-                        <small>Barista & Front of House</small>
-                        <small>Jun 2022 – Sep 2022</small>
-                    </template>
-                    <p contenteditable="true">
-                        Worked alongside the bakers at a bakery in Eastbourne,
-                        handling freshly baked goods for display, operating the
-                        coffee machine, and keeping equipment spotless. Built
-                        rapport with regulars and provided attentive, friendly
-                        service.
+                        Through university at Belgrave Music Hall and The
+                        Montpelier (Rose Pubs Group), Leeds: high-volume weekend
+                        service at a live-music venue.
                     </p>
                 </Project>
                 <Project>
                     <template #left>
-                        <h4>
-                            <a
-                                href="https://www.benugo.com/sites/restaurants/bfi-riverfront/"
-                            >
-                                BFI Riverfront Kitchen
-                            </a>
-                        </h4>
+                        <h4>Earlier Roles</h4>
                     </template>
                     <template #top>
-                        <small>Cashier & Waiter</small>
-                        <small>Jun 2021 – Sep 2021</small>
+                        <small>Bar, Barista & Cashier</small>
+                        <small>Jun 2021 – Sep 2022</small>
                     </template>
                     <p contenteditable="true">
-                        Operated the till, served customers, and helped
-                        coordinate table service at the BFI Southbank riverfront
-                        bar and kitchen (Benugo) on London's South Bank. Developed strong cash-handling accuracy and
-                        customer interaction skills in a fast-paced environment.
+                        <a href="https://crownandanchoreastbourne.co.uk/">
+                            The Crown and Anchor</a
+                        >
+                        and
+                        <a href="https://www.totherisebakery.com/">
+                            To The Rise Bakery</a
+                        >
+                        in Eastbourne (2022);
+                        <a
+                            href="https://www.benugo.com/sites/restaurants/bfi-riverfront/"
+                        >
+                            BFI Riverfront Kitchen</a
+                        >
+                        in London (2021).
                     </p>
                 </Project>
             </section>
-            <div class="w-full flex flex-col sm:flex-row gap-5">
-                <section class="flex-1">
-                    <h2>Soft Skills</h2>
-                    <ul class="list-disc list-inside">
-                        <li>Communication & collaboration</li>
-                        <li>Attention to detail</li>
-                        <li>Problem solving</li>
-                        <li>Adaptability</li>
-                        <li>Time management</li>
-                    </ul>
-                </section>
-                <section class="flex-1">
-                    <h2>Interests</h2>
-                    <ul class="list-disc list-inside">
-                        <li>Competitive programming (LeetCode, USACO)</li>
-                        <li>Learning Mandarin</li>
-                        <li>Rhythm Games</li>
-                        <li>Climbing, Gym</li>
-                        <li>Board games, Meetup.com</li>
-                    </ul>
-                </section>
-            </div>
+
+            <section>
+                <h2>Secondary Education</h2>
+                <div
+                    class="flex-row flex place-content-between m-auto place-items-center"
+                >
+                    <h3>University Academy of Engineering Southbank</h3>
+                    <small>Sep 2014 – Jun 2021</small>
+                </div>
+                <p>
+                    <strong>A-Levels:</strong> Mathematics A*, Further
+                    Mathematics A*, Physics A*
+                </p>
+                <p>
+                    <strong>GCSEs:</strong> Mathematics 9, English Literature 9,
+                    Physics 9, English Language 8, Biology 8, Chemistry 8,
+                    Computer Science 7
+                </p>
+            </section>
+
+            <section>
+                <h2>Interests</h2>
+                <p>
+                    Competitive programming (USACO, LeetCode, Codeforces) ·
+                    Learning Mandarin · Rowing, climbing and the gym · Rhythm
+                    games · Board games and Meetup.com
+                </p>
+            </section>
         </div>
 
         <div class="no-print w-full h-20"></div>
