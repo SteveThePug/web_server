@@ -557,7 +557,11 @@ services:
   # fires (USACO_WEBHOOK_SECRET signs it), and commits the admin's edits
   # (status, link, notes, statement, explanations) back with USACO_GIT_TOKEN.
   # CLAUDE_API_KEY powers the admin's Explain button (USACO_CLAUDE_MODEL picks
-  # the model; blank is claude-opus-5-5). ./usaco-data holds only
+  # the model; blank is claude-opus-5-5). Recording reviews also need
+  # USACO_OPENAI_API_KEY to transcribe, and keep the audio in Garage's
+  # private usaco-audio bucket when USACO_S3_* is set (the site refuses to
+  # start with only some S3_* set, so all five go together or not at all:
+  # the blank-key case blanks the rest). ./usaco-data holds only
   # that clone, so deleting it is safe; the image runs as uid 1000, so the
   # directory must be owned by it.
   #
@@ -579,6 +583,12 @@ services:
       - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
       - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
       - CLAUDE_MODEL=${USACO_CLAUDE_MODEL:-}
+      - TRANSCRIBE_API_KEY=${USACO_OPENAI_API_KEY:-}
+      - S3_ACCESS_KEY_ID=${USACO_S3_ACCESS_KEY_ID:-}
+      - S3_SECRET_ACCESS_KEY=${USACO_S3_SECRET_ACCESS_KEY:-}
+      - S3_ENDPOINT=${USACO_S3_ACCESS_KEY_ID:+http://garage:3900}
+      - S3_REGION=${USACO_S3_ACCESS_KEY_ID:+garage}
+      - S3_BUCKET=${USACO_S3_ACCESS_KEY_ID:+usaco-audio}
     volumes:
       - ./usaco-data:/data
 
