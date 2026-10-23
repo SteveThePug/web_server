@@ -87,6 +87,11 @@
 #   SILVERBULLET_PUBLIC_HOST / _PORT
 #                                  public notes viewer upstream (defaulted below)
 #   PYTHON_HOST / PYTHON_PORT      FastAPI upstream (defaulted below)
+#   RECEIPT_WEB_UPSTREAM           host:port of the receipt printer server on
+#                                  stppi, over Tailscale (defaulted below to
+#                                  a dead port, so /receipt/ reads "offline")
+#   RECEIPT_WEB_TOKEN              shared secret nginx adds to /receipt/
+#                                  requests (defaulted below to empty)
 #   DEV_MODE                       "true" only via docker-compose.dev.yml
 #   CERT_WATCH_INTERVAL            optional, seconds between certificate-watch
 #                                  polls (default 60). Production only.
@@ -107,11 +112,13 @@ export SILVERBULLET_HOST="${SILVERBULLET_HOST:-silverbullet}"
 export SILVERBULLET_PORT="${SILVERBULLET_PORT:-3000}"
 export SILVERBULLET_PUBLIC_HOST="${SILVERBULLET_PUBLIC_HOST:-silverbullet-public}"
 export SILVERBULLET_PUBLIC_PORT="${SILVERBULLET_PUBLIC_PORT:-3000}"
+export RECEIPT_WEB_UPSTREAM="${RECEIPT_WEB_UPSTREAM:-127.0.0.1:9}"
+export RECEIPT_WEB_TOKEN="${RECEIPT_WEB_TOKEN:-}"
 
 # The envsubst allow-list, defined once and reused by both full-config branches
 # and by every partial, so the lists cannot drift apart. It MUST stay
 # single-quoted here and be passed as "$ENVSUBST_VARS" (one argument) below.
-ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${SILVERBULLET_PUBLIC_HOST} ${SILVERBULLET_PUBLIC_PORT} ${PYTHON_HOST} ${PYTHON_PORT}'
+ENVSUBST_VARS='${DOMAIN} ${BACKEND_HOST} ${BACKEND_PORT} ${BACKEND_ENDPOINT} ${ICECAST_HOST} ${ICECAST_PORT} ${GITEA_HOST} ${GITEA_PORT} ${SILVERBULLET_HOST} ${SILVERBULLET_PORT} ${SILVERBULLET_PUBLIC_HOST} ${SILVERBULLET_PUBLIC_PORT} ${PYTHON_HOST} ${PYTHON_PORT} ${RECEIPT_WEB_UPSTREAM} ${RECEIPT_WEB_TOKEN}'
 
 # Render the shared proxy route table. Done ONCE, here, ahead of the three-way
 # decision, rather than inside each branch:

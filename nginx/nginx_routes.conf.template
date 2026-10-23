@@ -88,6 +88,11 @@
         # nginx_dev_common.conf.template) and the garage-webui admin UI.
         set $upstream_garage_web http://garage:3902;
         set $upstream_garage_webui http://garage-webui:3909;
+        # The receipt printer's server is the one upstream OFF this host: it
+        # runs on stppi, which reaches the printer over the home LAN, and is
+        # reached over Tailscale by IP (MagicDNS names don't resolve in this
+        # container).
+        set $upstream_receipt "http://${RECEIPT_WEB_UPSTREAM}";
 
         # ---- Backend API -----------------------------------------------------
         # Two patterns repeat through every proxied location below:
@@ -538,6 +543,45 @@
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
+        # ---- Receipt printer (/receipt/) ----
+        # The adamf/receipt_maker repo's `receipt serve`, running on stppi
+        # (not in this stack: that machine reaches the printer on the home LAN). A page
+        # for printing a note or an uploaded image, plus its API. Gated like
+        # /tracker/ on the admin session; the prefix IS stripped. The server
+        # trusts nothing without X-Receipt-Token, which only this proxy adds
+        # (proxy_set_header replaces any copy the client sent). The value is
+        # quoted so an unset token still renders a valid config. When stppi
+        # is off or unreachable the connect fails fast and @receipt_offline answers.
+        location = /receipt {
+            return 301 /receipt/;
+        }
+
+        location ^~ /receipt/ {
+            auth_request /internal/auth/admin-validate;
+            error_page 401 403 = @auth_denied;
+            error_page 502 504 = @receipt_offline;
+            limit_req zone=api burst=10 nodelay;
+            # The server caps uploads at 16 MB; this leaves room for the
+            # multipart framing around one.
+            client_max_body_size 17m;
+            rewrite ^/receipt/(.*)$ /$1 break;
+            proxy_pass $upstream_receipt;
+            proxy_connect_timeout 3s;
+            # An image print (connect, dither, send) takes a few seconds; a
+            # dead printer socket gives up after escpos's 60 s timeout.
+            proxy_read_timeout 90s;
+            proxy_set_header X-Receipt-Token "${RECEIPT_WEB_TOKEN}";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location @receipt_offline {
+            default_type text/plain;
+            return 503 "The receipt printer machine is offline.\n";
+        }
+
         # Where the tracker used to be. The SPA routes were client-side, so
         # these only catch bookmarks and typed URLs. The userscript's old
         # @updateURL lands on the third, which is how installed copies find
@@ -552,7 +596,7 @@
             return 301 /jobs/job-capture.user.js;
         }
 
-        # ---- Admin gate (/sb/, /jobs/, /tracker/, /dozzle/, /garage/, /radio/admin/, /uploads/private/) ----
+        # ---- Admin gate (/sb/, /jobs/, /tracker/, /receipt/, /dozzle/, /garage/, /radio/admin/, /uploads/private/) ----
         # (/uploads/private/ is declared in the including template, not here;
         # it points at the two locations below by name.)
         # `auth_request` makes nginx fire a subrequest here before serving the

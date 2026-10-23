@@ -107,6 +107,17 @@ async function handleLogout() {
           >
             Logs ↗
           </a>
+          <!-- The receipt printer's page is served from stppi, which reaches
+               the printer on the home LAN; nginx proxies /receipt/ there over
+               Tailscale behind the admin check. -->
+          <a
+            class="admin-nav-link no-underline"
+            href="/receipt/"
+            target="_blank"
+            rel="noopener"
+          >
+            Receipt printer ↗
+          </a>
         </nav>
 
         <section class="admin-panel bdr-2 bg-surface">
