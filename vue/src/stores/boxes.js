@@ -14,6 +14,11 @@
  * The list query returns boxes ordered by z, so a new box (given the top z)
  * belongs at the end. adminOnly boxes only come back for an admin — the
  * server filters them — so the canvas refetches when the session changes.
+ *
+ * A box with a `componentId` is linked to that component (stores/components.js):
+ * the server answers with the component's html in `html`, and editing it goes
+ * to the component. patchLinked() keeps every page already loaded in step when
+ * a component changes, without refetching them.
  */
 
 import { createCrudStore } from "@/stores/createCrudStore";
@@ -33,11 +38,15 @@ const BOX_FIELDS = `
   framed
   hideOnMobile
   adminOnly
+  componentId
 `;
 
 // The fields a duplicate copies. kind and widget/html are what make it the
-// same box; geometry is offset so the copy is visibly separate.
-const COPIED = ["page", "kind", "widget", "html", "title", "w", "h", "framed", "hideOnMobile", "adminOnly"];
+// same box — or componentId, which keeps a copy of a linked box linked;
+// geometry is offset so the copy is visibly separate.
+const COPIED = [
+  "page", "kind", "widget", "html", "title", "w", "h", "framed", "hideOnMobile", "adminOnly", "componentId",
+];
 
 const stores = new Map();
 
@@ -64,6 +73,11 @@ function defineFor(page) {
           const input = Object.fromEntries(COPIED.map((k) => [k, box[k]]));
           return create({ ...input, x: box.x + 20, y: box.y + 20, z: topZ() });
         },
+        /** Swap in a box the server answered with from outside this store. */
+        replaceLocal: (box) => {
+          const idx = items.value.findIndex((b) => b.id === box.id);
+          if (idx >= 0) items.value[idx] = box;
+        },
       };
     },
   });
@@ -73,4 +87,16 @@ function defineFor(page) {
 export function useBoxesStore(page) {
   if (!stores.has(page)) stores.set(page, defineFor(page));
   return stores.get(page)();
+}
+
+/**
+ * Apply `patch` to every loaded box linked to component `componentId`, on
+ * every page visited so far.
+ */
+export function patchLinked(componentId, patch) {
+  for (const use of stores.values()) {
+    for (const box of use().boxes) {
+      if (box.componentId === componentId) Object.assign(box, patch);
+    }
+  }
 }

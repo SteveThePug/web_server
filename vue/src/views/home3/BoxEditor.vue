@@ -13,6 +13,11 @@
  *     the panel. Saving every keystroke would push half-written markup to
  *     every visitor; leaving is the point it is finished.
  *
+ * A box linked to a component (stores/components.js) edits the component: its
+ * html is saved there, and so changes on every box linked to it. Detach gives
+ * the box its own copy — an unsaved draft is kept, and then saves to this box
+ * alone. An unlinked html box can be saved as a new component, which links it.
+ *
  * "Insert upload" uploads a file (@/uploads) and puts a tag for it at the
  * cursor — the way to add pictures to an existing box, e.g. a gallery.
  * "Choose upload" does the same with a file that is already uploaded.
@@ -25,6 +30,7 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";
+import { useComponentsStore } from "@/stores/components";
 import { ACCEPT, tagFor, uploadFile } from "@/uploads";
 import CodeEditor from "./CodeEditor.vue";
 import { FONT_SIZE, PANEL_WIDTH, fontSize, panelWidth, setPanelWidth, zoom } from "./editorPrefs";
@@ -49,13 +55,26 @@ const draftHtml = ref(props.box.html ?? "");
 const saving = ref(false);
 const dirty = computed(() => props.box.kind === "html" && draftHtml.value !== (props.box.html ?? ""));
 
+const components = useComponentsStore();
+if (!components.loaded && !components.loading) components.fetch();
+const component = computed(() =>
+  props.box.componentId ? components.components.find((c) => c.id === props.box.componentId) ?? null : null,
+);
+const savingAs = ref(false); // the "Save as component" name field is showing
+const componentName = ref("");
+
+// Where a box's html is saved: its component if it is linked, else itself.
+function storeHtml(box, html) {
+  return box.componentId ? components.update(box.componentId, { html }) : store.update(box.id, { html });
+}
+
 // Save the draft of box `id` if it differs from what is stored. Fire and
 // forget: it runs as the editor moves on or unmounts, with nothing left to
 // show progress in, so a failure is only reported through `error`.
 function flush(id) {
   const box = store.boxes.find((b) => b.id === id);
   if (!box || box.kind !== "html" || draftHtml.value === (box.html ?? "")) return;
-  store.update(id, { html: draftHtml.value }).catch((err) => emit("error", err));
+  storeHtml(box, draftHtml.value).catch((err) => emit("error", err));
 }
 
 // Switching to another box: save the old one's draft, drop its preview, start
@@ -66,6 +85,7 @@ watch(
     flush(oldId);
     emit("preview", null);
     draftHtml.value = props.box.html ?? "";
+    savingAs.value = false;
   },
 );
 
@@ -94,12 +114,36 @@ async function saveHtml() {
   if (!dirty.value || saving.value) return;
   saving.value = true;
   try {
-    await store.update(props.box.id, { html: draftHtml.value });
+    await storeHtml(props.box, draftHtml.value);
     emit("preview", null);
   } catch (err) {
     emit("error", err);
   } finally {
     saving.value = false;
+  }
+}
+
+// The draft is saved to the box first, so the component starts from what is
+// on screen.
+async function saveAsComponent() {
+  const name = componentName.value.trim();
+  if (!name) return;
+  try {
+    if (dirty.value) await store.update(props.box.id, { html: draftHtml.value });
+    await components.saveFromBox(props.box, name);
+    emit("preview", null);
+    savingAs.value = false;
+    componentName.value = "";
+  } catch (err) {
+    emit("error", err);
+  }
+}
+
+async function detach() {
+  try {
+    await components.detach(props.box);
+  } catch (err) {
+    emit("error", err);
   }
 }
 
@@ -208,6 +252,22 @@ function resizeByKey(event) {
         />
       </label>
 
+      <div v-if="box.componentId" class="linked">
+        <span>
+          Linked to <b>{{ component?.name ?? "a component" }}</b>
+          <template v-if="component"> · {{ component.uses }} box{{ component.uses === 1 ? "" : "es" }}</template>
+          — saving the html changes every linked box.
+        </span>
+        <button type="button" class="save small" title="Give this box its own copy of the html" @click="detach">
+          Detach
+        </button>
+      </div>
+      <form v-else-if="box.kind === 'html' && savingAs" class="linked" @submit.prevent="saveAsComponent">
+        <input v-model="componentName" type="text" placeholder="Component name" required class="flex-1" />
+        <button type="submit" class="save small">Save</button>
+        <button type="button" class="save small" @click="savingAs = false">Cancel</button>
+      </form>
+
       <label v-if="box.kind === 'widget'" class="field">
         <span>Widget</span>
         <select :value="box.widget" @change="save({ widget: $event.target.value })">
@@ -283,6 +343,15 @@ function resizeByKey(event) {
             @click="picking = true"
           >
             Choose upload
+          </button>
+          <button
+            v-if="!box.componentId"
+            type="button"
+            class="save"
+            title="Save this box as a reusable component, and link it"
+            @click="savingAs = true"
+          >
+            Save as component
           </button>
           <button type="button" class="save" :disabled="!dirty || saving" @click="saveHtml">
             {{ saving ? "Saving…" : dirty ? "Save" : "Saved" }}
@@ -421,5 +490,25 @@ function resizeByKey(event) {
 .save:disabled {
   opacity: 0.5;
   cursor: default;
+}
+.save.small {
+  padding: 0.1rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+.linked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  border: 1px dashed var(--color-primary);
+}
+.linked input {
+  min-width: 0;
+  padding: 3px 5px;
+  color: var(--color-secondary);
+  background: var(--color-surface-deep);
+  border: 1px solid var(--color-quaternary);
 }
 </style>

@@ -108,3 +108,11 @@ models:
         resolver: true
       hasBackground:
         resolver: true
+  Component:
+    model:
+      - adam-french.co.uk/backend/models.Component
+    fields:
+      deletedAt:
+        resolver: false
+      uses:
+        resolver: true

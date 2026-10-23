@@ -33,6 +33,10 @@ type layoutBox struct {
 	Framed       bool    `json:"framed"`
 	HideOnMobile bool    `json:"hideOnMobile"`
 	AdminOnly    bool    `json:"adminOnly"`
+	// ComponentID is the component a linked box was linked to. HTML is
+	// stored too, so that a layout outlives the component: loading links the
+	// box again if the component is still there and uses HTML if not.
+	ComponentID *uint `json:"componentId,omitempty"`
 }
 
 type layoutBackground struct {
@@ -92,12 +96,16 @@ func snapshotPage(db *gorm.DB, page, name string) (layout models.Layout, empty b
 	if err != nil {
 		return layout, false, err
 	}
+	if err := fillLinked(db, boxes); err != nil {
+		return layout, false, err
+	}
 	stored := make([]layoutBox, len(boxes))
 	for i, b := range boxes {
 		stored[i] = layoutBox{
 			Kind: b.Kind, Widget: b.Widget, HTML: b.HTML, Title: b.Title,
 			X: b.X, Y: b.Y, W: b.W, H: b.H, Z: b.Z,
 			Framed: b.Framed, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
+			ComponentID: b.ComponentID,
 		}
 	}
 	boxesJSON, err := json.Marshal(stored)
@@ -200,12 +208,20 @@ func applyLayoutTo(tx *gorm.DB, layout *models.Layout, page string, replace bool
 		}
 	}
 
+	live, err := liveComponents(tx, stored)
+	if err != nil {
+		return err
+	}
 	boxes := make([]models.Box, len(stored))
 	for i, b := range stored {
 		boxes[i] = models.Box{
 			Page: page, Kind: b.Kind, Widget: b.Widget, HTML: b.HTML, Title: b.Title,
 			X: b.X, Y: b.Y, W: b.W, H: b.H, Z: b.Z + zShift,
 			Framed: b.Framed, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
+		}
+		if b.ComponentID != nil && live[*b.ComponentID] {
+			boxes[i].ComponentID = b.ComponentID
+			boxes[i].HTML = nil
 		}
 		if err := validateBox(&boxes[i]); err != nil {
 			return err
@@ -232,4 +248,27 @@ func applyLayoutTo(tx *gorm.DB, layout *models.Layout, page string, replace bool
 		}
 	}
 	return nil
+}
+
+// liveComponents is the set of components the stored boxes were linked to
+// that still exist, so applyLayoutTo knows which boxes to link again.
+func liveComponents(db *gorm.DB, stored []layoutBox) (map[uint]bool, error) {
+	var ids []uint
+	for _, b := range stored {
+		if b.ComponentID != nil {
+			ids = append(ids, *b.ComponentID)
+		}
+	}
+	live := map[uint]bool{}
+	if len(ids) == 0 {
+		return live, nil
+	}
+	var found []uint
+	if err := db.Model(&models.Component{}).Where("id IN ?", ids).Pluck("id", &found).Error; err != nil {
+		return nil, err
+	}
+	for _, id := range found {
+		live[id] = true
+	}
+	return live, nil
 }

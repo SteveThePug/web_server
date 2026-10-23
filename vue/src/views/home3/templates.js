@@ -1,8 +1,16 @@
 /**
- * Starter HTML for the "New box" menu. Each runs inside the sandboxed iframe
- * (see HtmlBox.vue), so scripts work but can only reach APIs that allow
- * cross-origin requests from an opaque origin — i.e. that answer with
- * `Access-Control-Allow-Origin: *` and need no key. Open-Meteo is one.
+ * The built-in starter HTML. The "+ New box" menu no longer reads TEMPLATES
+ * directly: it lists saved components, and TEMPLATES is what the Components
+ * panel's "Import built-ins" turns into components (stores/components.js), so
+ * they can be edited and deleted like any other. Changing an entry here only
+ * reaches a site whose admin imports it again (after deleting the old one).
+ * The helpers at the bottom are still used directly, by dropped uploads and
+ * the starter layouts.
+ *
+ * Each runs inside the sandboxed iframe (see HtmlBox.vue), so scripts work but
+ * can only reach APIs that allow cross-origin requests from an opaque origin —
+ * i.e. that answer with `Access-Control-Allow-Origin: *` and need no key.
+ * Open-Meteo is one.
  *
  * The site's colour and font tokens are already defined in the frame
  * (frameStyles.js), so templates use var(--color-…) freely.
@@ -158,8 +166,9 @@ const videoHtml = (src) => `<style>
 <video src="${src}" controls loop muted></video>`;
 
 /**
- * Menu entries; `size` is [w, h] in canvas px. `adminOnly` sets the new
- * box's flag, which can be changed afterwards in the editor.
+ * Built-in starters; `label` becomes the component's name and `size` ([w, h]
+ * in canvas px) its default size. `adminOnly` sets a new box's flag, which can
+ * be changed afterwards in the editor.
  */
 export const TEMPLATES = [
   { label: "Note (admin only)", title: "Note", html: NOTE, size: [260, 200], framed: false, adminOnly: true },

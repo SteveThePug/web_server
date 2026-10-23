@@ -1,0 +1,64 @@
+# Components: named HTML boxes that can be placed on any canvas page, either
+# as a copy (an ordinary box) or linked (a Box whose componentId is set).
+# Linked boxes share only the html — editing a component changes every box
+# linked to it — while title, geometry, frame and visibility stay each box's
+# own. title, w, h, framed and adminOnly here are what a newly placed box
+# starts with. See models.Component and graph/component_helpers.go.
+#
+# Admin only throughout, reads included, because a component may have been
+# saved from an adminOnly note. A linked box's html still reaches visitors
+# through the boxes query, which is the point.
+
+type Component {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  name: String!
+  title: String
+  html: String!
+  w: Int!
+  h: Int!
+  framed: Boolean!
+  adminOnly: Boolean!
+  # How many boxes are linked to it.
+  uses: Int!
+}
+
+input CreateComponentInput {
+  name: String!
+  title: String
+  html: String!
+  w: Int
+  h: Int
+  framed: Boolean
+  adminOnly: Boolean
+}
+
+input UpdateComponentInput {
+  name: String
+  title: String
+  html: String
+  w: Int
+  h: Int
+  framed: Boolean
+  adminOnly: Boolean
+}
+
+extend type Query {
+  # By name.
+  components: [Component!]! @admin
+}
+
+extend type Mutation {
+  createComponent(input: CreateComponentInput!): Component! @admin
+  # A new html changes every box linked to it.
+  updateComponent(id: ID!, input: UpdateComponentInput!): Component! @admin
+  # Detaches every linked box first, giving each its own copy of the html, so
+  # no page changes.
+  deleteComponent(id: ID!): Component! @admin
+  # Makes html box `id` into a component named `name`, from its html, title,
+  # size, frame and adminOnly, and links the box to it. Answers with the box.
+  saveBoxAsComponent(id: ID!, name: String!): Box! @admin
+  # Gives linked box `id` its own copy of the component's html and unlinks it.
+  detachBox(id: ID!): Box! @admin
+}

@@ -30,14 +30,22 @@
  * The Layouts button saves the page as a named layout, or loads a saved one
  * onto it (LayoutPanel.vue, stores/layouts.js) — which is how a layout moves
  * from one page to another.
+ *
+ * "+ New box" offers the saved components (stores/components.js) as starters,
+ * each placed as an ordinary box with a copy of its html, plus the widgets.
+ * The Components button (ComponentPanel.vue) places them linked as well: a
+ * linked box shows its component's html, so editing it in BoxEditor edits
+ * every box linked to that component. Linked boxes are labelled with ⛓.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useMediaQuery } from "@vueuse/core";
 import { useAuthStore } from "@/stores/auth";
 import { useBoxesStore } from "@/stores/boxes";
 import { useBackgroundStore } from "@/stores/background";
+import { useComponentsStore } from "@/stores/components";
 import BackgroundEditor from "./BackgroundEditor.vue";
 import LayoutPanel from "./LayoutPanel.vue";
+import ComponentPanel from "./ComponentPanel.vue";
 import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import UploadPicker from "@/components/util/UploadPicker.vue";
 import BoxFrame from "./BoxFrame.vue";
@@ -46,7 +54,7 @@ import { panelWidth } from "./editorPrefs";
 import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
-import { TEMPLATES, imageHtml, videoHtml } from "./templates";
+import { imageHtml, videoHtml } from "./templates";
 import { isVideo, mediaSize, uploadFile } from "@/uploads";
 
 const props = defineProps({
@@ -72,8 +80,9 @@ store.fetch();
 const background = useBackgroundStore();
 background.show(props.page);
 onBeforeUnmount(() => background.hide(props.page));
-const backgroundOpen = ref(false);
-const layoutsOpen = ref(false);
+// Which of the left-hand panels is open: "background", "layouts",
+// "components" or null. They sit in the same place, so only one at a time.
+const panel = ref(null);
 const confirmation = ref(null);
 
 const isMobile = useMediaQuery(MOBILE_QUERY);
@@ -88,6 +97,12 @@ watch(isAdmin, () => {
 const editing = ref(false);
 const canEdit = computed(() => isAdmin.value && !isMobile.value);
 const inEditMode = computed(() => editing.value && canEdit.value);
+
+// Admin only, so fetched on first entering edit mode, for "+ New box".
+const components = useComponentsStore();
+watch(inEditMode, (on) => {
+  if (on && !components.loaded && !components.loading) components.fetch();
+});
 
 const selectedId = ref(null);
 const selected = computed(() => store.boxes.find((b) => b.id === selectedId.value) ?? null);
@@ -153,7 +168,10 @@ function onAction(box, action) {
   if (action === "front") run(() => store.bringToFront(box));
   else if (action === "back") run(() => store.sendToBack(box));
   else if (action === "duplicate") {
-    run(async () => (selectedId.value = (await store.duplicate(box)).id));
+    run(async () => {
+      selectedId.value = (await store.duplicate(box)).id;
+      if (box.componentId) components.countUse(box.componentId, 1);
+    });
   } else if (action === "delete") {
     askConfirmation({
       title: "Delete box",
@@ -162,7 +180,10 @@ function onAction(box, action) {
     }).then((confirmed) => {
       if (!confirmed) return;
       if (selectedId.value === box.id) selectedId.value = null;
-      run(() => store.remove(box.id));
+      run(async () => {
+        await store.remove(box.id);
+        if (box.componentId) components.countUse(box.componentId, -1);
+      });
     });
   }
 }
@@ -180,7 +201,8 @@ function finishConfirmation(confirmed) {
 }
 
 function labelOf(box) {
-  const name = box.title || (box.kind === "widget" ? box.widget : "HTML");
+  let name = box.title || (box.kind === "widget" ? box.widget : "HTML");
+  if (box.componentId) name = `⛓ ${name}`;
   return box.adminOnly ? `🔒 ${name}` : name;
 }
 
@@ -207,26 +229,31 @@ function addBox() {
   const choice = newChoice.value;
   newChoice.value = "";
   if (!choice) return;
-  const [kind, key] = choice.split(":");
-  const { x, y } = visibleOrigin();
-  let input;
-  if (kind === "widget") {
-    const [w, h] = WIDGETS[key].size;
-    input = { kind: "widget", widget: key, w, h };
-  } else {
-    const t = TEMPLATES[Number(key)];
-    input = {
-      kind: "html",
-      html: t.html,
-      title: t.title,
-      w: t.size[0],
-      h: t.size[1],
-      framed: t.framed ?? true,
-      adminOnly: t.adminOnly ?? false,
-    };
+  if (choice === "import") {
+    run(() => components.importBuiltins());
+    return;
   }
+  const [kind, key] = choice.split(":");
+  if (kind === "component") {
+    const component = components.components.find((c) => c.id === key);
+    if (component) placeComponent(component, false);
+    return;
+  }
+  const { x, y } = visibleOrigin();
+  const [w, h] = WIDGETS[key].size;
   run(async () => {
-    const created = await store.create({ ...input, x, y, z: store.topZ() });
+    const created = await store.create({ kind: "widget", widget: key, w, h, x, y, z: store.topZ() });
+    selectedId.value = created.id;
+  });
+}
+
+// From "+ New box" (always a copy) or the Components panel (either). The
+// panel is closed, like selecting a box closes it, since the new box opens in
+// the editor and lands where the panel would cover it.
+function placeComponent(component, linked) {
+  panel.value = null;
+  run(async () => {
+    const created = await components.place(component, props.page, { ...visibleOrigin(), z: store.topZ() }, linked);
     selectedId.value = created.id;
   });
 }
@@ -323,27 +350,14 @@ async function placePicked(url) {
 // Leaving a box saves its unsaved HTML; BoxEditor does that itself as the
 // selection changes or it unmounts.
 function select(box) {
-  backgroundOpen.value = false;
-  layoutsOpen.value = false;
+  panel.value = null;
   selectedId.value = box.id;
 }
 
-// The background and layouts panels sit in the same place, so one closes the
-// other, and either closes the box editor.
-function toggleBackground() {
-  backgroundOpen.value = !backgroundOpen.value;
-  if (backgroundOpen.value) {
-    layoutsOpen.value = false;
-    selectedId.value = null;
-  }
-}
-
-function toggleLayouts() {
-  layoutsOpen.value = !layoutsOpen.value;
-  if (layoutsOpen.value) {
-    backgroundOpen.value = false;
-    selectedId.value = null;
-  }
+// Opening a panel closes the others and the box editor.
+function togglePanel(name) {
+  panel.value = panel.value === name ? null : name;
+  if (panel.value) selectedId.value = null;
 }
 
 function toggleEdit() {
@@ -362,17 +376,22 @@ function toggleEdit() {
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
         {{ editing ? "Done" : "Edit layout" }}
       </button>
-      <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="toggleBackground">
+      <button type="button" class="bar-btn" :class="{ on: panel === 'background' }" @click="togglePanel('background')">
         Background
       </button>
-      <button type="button" class="bar-btn" :class="{ on: layoutsOpen }" @click="toggleLayouts">
+      <button type="button" class="bar-btn" :class="{ on: panel === 'layouts' }" @click="togglePanel('layouts')">
         Layouts
+      </button>
+      <button type="button" class="bar-btn" :class="{ on: panel === 'components' }" @click="togglePanel('components')">
+        Components
       </button>
       <template v-if="inEditMode">
         <select v-model="newChoice" class="bar-btn" @change="addBox">
           <option value="" disabled>+ New box…</option>
           <optgroup label="HTML">
-            <option v-for="(t, i) in TEMPLATES" :key="t.label" :value="`html:${i}`">{{ t.label }}</option>
+            <option v-if="!components.loaded" value="" disabled>Loading…</option>
+            <option v-else-if="!components.components.length" value="import">Import built-in templates</option>
+            <option v-for="c in components.components" :key="c.id" :value="`component:${c.id}`">{{ c.name }}</option>
           </optgroup>
           <optgroup label="Widget">
             <option v-for="name in Object.keys(WIDGETS)" :key="name" :value="`widget:${name}`">{{ name }}</option>
@@ -454,8 +473,9 @@ function toggleEdit() {
       </div>
     </div>
 
-    <BackgroundEditor v-if="backgroundOpen && canEdit" :page="page" @close="backgroundOpen = false" />
-    <LayoutPanel v-if="layoutsOpen && canEdit" :page="page" @close="layoutsOpen = false" />
+    <BackgroundEditor v-if="panel === 'background' && canEdit" :page="page" @close="panel = null" />
+    <LayoutPanel v-if="panel === 'layouts' && canEdit" :page="page" @close="panel = null" />
+    <ComponentPanel v-if="panel === 'components' && canEdit" @close="panel = null" @place="placeComponent" />
 
     <BoxEditor
       v-if="inEditMode && selected"

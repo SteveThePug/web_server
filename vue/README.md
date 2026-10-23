@@ -264,6 +264,21 @@ renders any page's boxes.
   page, load it on another. The copying happens on the server
   (`backend/graph/layout_helpers.go`); the browser only sees names and box
   counts. All of it is admin-only, since a layout keeps admin-only boxes.
+- **Components.** A **`Component`** (GraphQL type, `stores/components.js`) is
+  a named HTML box. "+ New box" lists them and places a copy, an ordinary box.
+  The "Components" button (`ComponentPanel.vue`) can also place one
+  **linked**: the box has a `componentId`, the server answers with the
+  component's html in its `html` (`fillLinked` in
+  `backend/graph/component_helpers.go`), and saving the html in `BoxEditor`
+  saves the component, so every linked box on every page changes. Only the
+  html is shared; title, geometry, frame and visibility stay each box's own.
+  "Save as component" in the editor makes a component from an html box and
+  links it; "Detach" gives a linked box its own copy. Deleting a component
+  detaches its boxes first, so no page changes. A layout keeps both the link
+  and the html, and loading it links again only if the component still
+  exists. The built-in starters in `templates.js` are not listed directly:
+  "Import built-ins" in the panel makes them components, after which they can
+  be edited or deleted like the rest. Admin-only throughout.
 - **Admin only.** A box or a page can be marked admin-only. The server never
   sends those to anyone else, so they are fit for private notes; admins see
   such boxes outlined, with a 🔒 in edit mode. The "Note" template starts
@@ -301,7 +316,7 @@ renders any page's boxes.
   file through `@/uploads` (see "Uploading files") and puts an `<img>`/`<video>`
   tag for it at the cursor; "Choose upload" does the same with a file already
   stored, and "+ From uploads…" in the admin bar makes a box from one, as a
-  drop would (`UploadPicker`). Starter HTML is in `templates.js`; links in a box
+  drop would (`UploadPicker`). Built-in starter HTML is in `templates.js` (imported as components, above); links in a box
   need `target="_top"` or `_blank` (the Link templates set it), or they open
   inside the frame. A canvas given a `starter` has an import button in edit
   mode (it confirms first if the page isn't empty): only `/` has one, "Import

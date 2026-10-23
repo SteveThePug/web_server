@@ -32,6 +32,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
+	Component() ComponentResolver
 	Layout() LayoutResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
@@ -78,6 +79,7 @@ type ComplexityRoot struct {
 
 	Box struct {
 		AdminOnly    func(childComplexity int) int
+		ComponentID  func(childComplexity int) int
 		CreatedAt    func(childComplexity int) int
 		Framed       func(childComplexity int) int
 		H            func(childComplexity int) int
@@ -93,6 +95,20 @@ type ComplexityRoot struct {
 		X            func(childComplexity int) int
 		Y            func(childComplexity int) int
 		Z            func(childComplexity int) int
+	}
+
+	Component struct {
+		AdminOnly func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Framed    func(childComplexity int) int
+		H         func(childComplexity int) int
+		HTML      func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Title     func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+		Uses      func(childComplexity int) int
+		W         func(childComplexity int) int
 	}
 
 	Favorite struct {
@@ -138,6 +154,7 @@ type ComplexityRoot struct {
 		CreateActivity     func(childComplexity int, input model.CreateActivityInput) int
 		CreateBookmark     func(childComplexity int, input model.CreateBookmarkInput) int
 		CreateBox          func(childComplexity int, input model.CreateBoxInput) int
+		CreateComponent    func(childComplexity int, input model.CreateComponentInput) int
 		CreateFavorite     func(childComplexity int, input model.CreateFavoriteInput) int
 		CreateLayout       func(childComplexity int, input model.CreateLayoutInput) int
 		CreatePage         func(childComplexity int, input model.CreatePageInput) int
@@ -146,18 +163,22 @@ type ComplexityRoot struct {
 		CreateUser         func(childComplexity int, input model.CreateUserInput) int
 		DeleteBookmark     func(childComplexity int, id int) int
 		DeleteBox          func(childComplexity int, id int) int
+		DeleteComponent    func(childComplexity int, id int) int
 		DeleteLayout       func(childComplexity int, id int) int
 		DeletePage         func(childComplexity int, id int) int
 		DeletePlace        func(childComplexity int, id int) int
 		DeletePost         func(childComplexity int, id int) int
 		DeleteUser         func(childComplexity int, id int) int
+		DetachBox          func(childComplexity int, id int) int
 		Login              func(childComplexity int, input model.LoginInput) int
 		Logout             func(childComplexity int) int
 		RefreshToken       func(childComplexity int) int
+		SaveBoxAsComponent func(childComplexity int, id int, name string) int
 		SetBackground      func(childComplexity int, page string, input model.BackgroundInput) int
 		SetUserAdmin       func(childComplexity int, id int, admin bool) int
 		SetUserPermissions func(childComplexity int, id int, permissions []string) int
 		UpdateBox          func(childComplexity int, id int, input model.UpdateBoxInput) int
+		UpdateComponent    func(childComplexity int, id int, input model.UpdateComponentInput) int
 		UpdateLayout       func(childComplexity int, id int, input model.UpdateLayoutInput) int
 		UpdatePage         func(childComplexity int, id int, input model.UpdatePageInput) int
 		UpdatePlace        func(childComplexity int, id int, input model.UpdatePlaceInput) int
@@ -207,6 +228,7 @@ type ComplexityRoot struct {
 		Background         func(childComplexity int, page string) int
 		Bookmarks          func(childComplexity int) int
 		Boxes              func(childComplexity int, page string) int
+		Components         func(childComplexity int) int
 		Favorites          func(childComplexity int) int
 		GiteaFeed          func(childComplexity int) int
 		Layouts            func(childComplexity int) int
@@ -293,6 +315,9 @@ type ComplexityRoot struct {
 
 // region    ************************** generated!.gotpl **************************
 
+type ComponentResolver interface {
+	Uses(ctx context.Context, obj *models.Component) (int, error)
+}
 type LayoutResolver interface {
 	BoxCount(ctx context.Context, obj *models.Layout) (int, error)
 	HasBackground(ctx context.Context, obj *models.Layout) (bool, error)
@@ -312,6 +337,11 @@ type MutationResolver interface {
 	CreateBox(ctx context.Context, input model.CreateBoxInput) (*models.Box, error)
 	UpdateBox(ctx context.Context, id int, input model.UpdateBoxInput) (*models.Box, error)
 	DeleteBox(ctx context.Context, id int) (*models.Box, error)
+	CreateComponent(ctx context.Context, input model.CreateComponentInput) (*models.Component, error)
+	UpdateComponent(ctx context.Context, id int, input model.UpdateComponentInput) (*models.Component, error)
+	DeleteComponent(ctx context.Context, id int) (*models.Component, error)
+	SaveBoxAsComponent(ctx context.Context, id int, name string) (*models.Box, error)
+	DetachBox(ctx context.Context, id int) (*models.Box, error)
 	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
 	CreateLayout(ctx context.Context, input model.CreateLayoutInput) (*models.Layout, error)
 	UpdateLayout(ctx context.Context, id int, input model.UpdateLayoutInput) (*models.Layout, error)
@@ -337,6 +367,7 @@ type QueryResolver interface {
 	Background(ctx context.Context, page string) (*models.Background, error)
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
 	Boxes(ctx context.Context, page string) ([]*models.Box, error)
+	Components(ctx context.Context) ([]*models.Component, error)
 	Favorites(ctx context.Context) ([]*models.Favorite, error)
 	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
 	Layouts(ctx context.Context) ([]*models.Layout, error)
@@ -502,6 +533,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Box.AdminOnly(childComplexity), true
+	case "Box.componentId":
+		if e.ComplexityRoot.Box.ComponentID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Box.ComponentID(childComplexity), true
 	case "Box.createdAt":
 		if e.ComplexityRoot.Box.CreatedAt == nil {
 			break
@@ -592,6 +629,73 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Box.Z(childComplexity), true
+
+	case "Component.adminOnly":
+		if e.ComplexityRoot.Component.AdminOnly == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.AdminOnly(childComplexity), true
+	case "Component.createdAt":
+		if e.ComplexityRoot.Component.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.CreatedAt(childComplexity), true
+	case "Component.framed":
+		if e.ComplexityRoot.Component.Framed == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.Framed(childComplexity), true
+	case "Component.h":
+		if e.ComplexityRoot.Component.H == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.H(childComplexity), true
+	case "Component.html":
+		if e.ComplexityRoot.Component.HTML == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.HTML(childComplexity), true
+	case "Component.id":
+		if e.ComplexityRoot.Component.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.ID(childComplexity), true
+	case "Component.name":
+		if e.ComplexityRoot.Component.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.Name(childComplexity), true
+	case "Component.title":
+		if e.ComplexityRoot.Component.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.Title(childComplexity), true
+	case "Component.updatedAt":
+		if e.ComplexityRoot.Component.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.UpdatedAt(childComplexity), true
+	case "Component.uses":
+		if e.ComplexityRoot.Component.Uses == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.Uses(childComplexity), true
+	case "Component.w":
+		if e.ComplexityRoot.Component.W == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.W(childComplexity), true
 
 	case "Favorite.createdAt":
 		if e.ComplexityRoot.Favorite.CreatedAt == nil {
@@ -802,6 +906,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateBox(childComplexity, args["input"].(model.CreateBoxInput)), true
+	case "Mutation.createComponent":
+		if e.ComplexityRoot.Mutation.CreateComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateComponent(childComplexity, args["input"].(model.CreateComponentInput)), true
 	case "Mutation.createFavorite":
 		if e.ComplexityRoot.Mutation.CreateFavorite == nil {
 			break
@@ -890,6 +1005,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteBox(childComplexity, args["id"].(int)), true
+	case "Mutation.deleteComponent":
+		if e.ComplexityRoot.Mutation.DeleteComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteComponent(childComplexity, args["id"].(int)), true
 	case "Mutation.deleteLayout":
 		if e.ComplexityRoot.Mutation.DeleteLayout == nil {
 			break
@@ -945,6 +1071,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteUser(childComplexity, args["id"].(int)), true
+	case "Mutation.detachBox":
+		if e.ComplexityRoot.Mutation.DetachBox == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_detachBox_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DetachBox(childComplexity, args["id"].(int)), true
 	case "Mutation.login":
 		if e.ComplexityRoot.Mutation.Login == nil {
 			break
@@ -968,6 +1105,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RefreshToken(childComplexity), true
+	case "Mutation.saveBoxAsComponent":
+		if e.ComplexityRoot.Mutation.SaveBoxAsComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveBoxAsComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveBoxAsComponent(childComplexity, args["id"].(int), args["name"].(string)), true
 	case "Mutation.setBackground":
 		if e.ComplexityRoot.Mutation.SetBackground == nil {
 			break
@@ -1012,6 +1160,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateBox(childComplexity, args["id"].(int), args["input"].(model.UpdateBoxInput)), true
+	case "Mutation.updateComponent":
+		if e.ComplexityRoot.Mutation.UpdateComponent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateComponent_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateComponent(childComplexity, args["id"].(int), args["input"].(model.UpdateComponentInput)), true
 	case "Mutation.updateLayout":
 		if e.ComplexityRoot.Mutation.UpdateLayout == nil {
 			break
@@ -1251,6 +1410,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Boxes(childComplexity, args["page"].(string)), true
+	case "Query.components":
+		if e.ComplexityRoot.Query.Components == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Components(childComplexity), true
 	case "Query.favorites":
 		if e.ComplexityRoot.Query.Favorites == nil {
 			break
@@ -1584,6 +1749,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateBoxInput,
+		ec.unmarshalInputCreateComponentInput,
 		ec.unmarshalInputCreateFavoriteInput,
 		ec.unmarshalInputCreateLayoutInput,
 		ec.unmarshalInputCreatePageInput,
@@ -1592,6 +1758,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputUpdateBoxInput,
+		ec.unmarshalInputUpdateComponentInput,
 		ec.unmarshalInputUpdateLayoutInput,
 		ec.unmarshalInputUpdatePageInput,
 		ec.unmarshalInputUpdatePlaceInput,
@@ -1670,7 +1837,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/background.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/layout.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/background.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/component.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/layout.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1687,6 +1854,7 @@ var sources = []*ast.Source{
 	{Name: "schema/background.graphql", Input: sourceData("schema/background.graphql"), BuiltIn: false},
 	{Name: "schema/bookmark.graphql", Input: sourceData("schema/bookmark.graphql"), BuiltIn: false},
 	{Name: "schema/box.graphql", Input: sourceData("schema/box.graphql"), BuiltIn: false},
+	{Name: "schema/component.graphql", Input: sourceData("schema/component.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
 	{Name: "schema/layout.graphql", Input: sourceData("schema/layout.graphql"), BuiltIn: false},
@@ -1802,8 +1970,38 @@ func (ec *executionContext) childFields_Box(ctx context.Context, field graphql.C
 		return ec.fieldContext_Box_hideOnMobile(ctx, field)
 	case "adminOnly":
 		return ec.fieldContext_Box_adminOnly(ctx, field)
+	case "componentId":
+		return ec.fieldContext_Box_componentId(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Box", field.Name)
+}
+
+func (ec *executionContext) childFields_Component(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Component_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_Component_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_Component_updatedAt(ctx, field)
+	case "name":
+		return ec.fieldContext_Component_name(ctx, field)
+	case "title":
+		return ec.fieldContext_Component_title(ctx, field)
+	case "html":
+		return ec.fieldContext_Component_html(ctx, field)
+	case "w":
+		return ec.fieldContext_Component_w(ctx, field)
+	case "h":
+		return ec.fieldContext_Component_h(ctx, field)
+	case "framed":
+		return ec.fieldContext_Component_framed(ctx, field)
+	case "adminOnly":
+		return ec.fieldContext_Component_adminOnly(ctx, field)
+	case "uses":
+		return ec.fieldContext_Component_uses(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Component", field.Name)
 }
 
 func (ec *executionContext) childFields_Favorite(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2280,6 +2478,20 @@ func (ec *executionContext) field_Mutation_createBox_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateComponentInput, error) {
+			return ec.unmarshalNCreateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateComponentInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createFavorite_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2392,6 +2604,20 @@ func (ec *executionContext) field_Mutation_deleteBox_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteLayout_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2462,6 +2688,20 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_detachBox_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2473,6 +2713,28 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveBoxAsComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "name",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg1
 	return args, nil
 }
 
@@ -2556,6 +2818,28 @@ func (ec *executionContext) field_Mutation_updateBox_args(ctx context.Context, r
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateBoxInput, error) {
 			return ec.unmarshalNUpdateBoxInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateBoxInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateComponentInput, error) {
+			return ec.unmarshalNUpdateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateComponentInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -3608,6 +3892,282 @@ func (ec *executionContext) _Box_adminOnly(ctx context.Context, field graphql.Co
 }
 func (ec *executionContext) fieldContext_Box_adminOnly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Box_componentId(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Box_componentId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ComponentID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *uint) graphql.Marshaler {
+			return ec.marshalOID2ᚖuint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Box_componentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Component_id(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _Component_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _Component_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _Component_name(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Component_title(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Component_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Component_html(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_html(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.HTML, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_html(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Component_w(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_w(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.W, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_w(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Component_h(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_h(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.H, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_h(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Component_framed(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_framed(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Framed, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_framed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Component_adminOnly(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_adminOnly(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AdminOnly, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_adminOnly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Component_uses(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_uses(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Component().Uses(ctx, obj)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_uses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, true, true, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _Favorite_id(ctx context.Context, field graphql.CollectedField, obj *models.Favorite) (ret graphql.Marshaler) {
@@ -4734,6 +5294,291 @@ func (ec *executionContext) fieldContext_Mutation_deleteBox(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteBox_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateComponent(ctx, fc.Args["input"].(model.CreateComponentInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Component
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Component) graphql.Marshaler {
+			return ec.marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Component(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateComponent(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateComponentInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Component
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Component) graphql.Marshaler {
+			return ec.marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Component(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteComponent(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Component
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Component) graphql.Marshaler {
+			return ec.marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponent(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Component(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveBoxAsComponent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveBoxAsComponent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveBoxAsComponent(ctx, fc.Args["id"].(int), fc.Args["name"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Box
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Box) graphql.Marshaler {
+			return ec.marshalNBox2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBox(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveBoxAsComponent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Box(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveBoxAsComponent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_detachBox(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_detachBox(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DetachBox(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.Box
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.Box) graphql.Marshaler {
+			return ec.marshalNBox2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐBox(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_detachBox(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Box(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_detachBox_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6553,6 +7398,51 @@ func (ec *executionContext) fieldContext_Query_boxes(ctx context.Context, field 
 	if fc.Args, err = ec.field_Query_boxes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_components(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_components(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Components(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal []*models.Component
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.Component) graphql.Marshaler {
+			return ec.marshalNComponent2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_components(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Component(ctx, field)
+		},
 	}
 	return fc, nil
 }
@@ -9238,7 +10128,7 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"page", "kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly"}
+	fieldsInOrder := [...]string{"page", "kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly", "componentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9329,6 +10219,85 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HideOnMobile = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
+		case "componentId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("componentId"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ComponentID = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateComponentInput(ctx context.Context, obj any) (model.CreateComponentInput, error) {
+	var it model.CreateComponentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "adminOnly"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "html":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("html"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HTML = data
+		case "w":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("w"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.W = data
+		case "h":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("h"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.H = data
+		case "framed":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("framed"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Framed = data
 		case "adminOnly":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -9744,6 +10713,78 @@ func (ec *executionContext) unmarshalInputUpdateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HideOnMobile = data
+		case "adminOnly":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AdminOnly = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateComponentInput(ctx context.Context, obj any) (model.UpdateComponentInput, error) {
+	var it model.UpdateComponentInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "adminOnly"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "html":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("html"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HTML = data
+		case "w":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("w"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.W = data
+		case "h":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("h"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.H = data
+		case "framed":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("framed"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Framed = data
 		case "adminOnly":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -10273,6 +11314,132 @@ func (ec *executionContext) _Box(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "componentId":
+			out.Values[i] = ec._Box_componentId(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var componentImplementors = []string{"Component"}
+
+func (ec *executionContext) _Component(ctx context.Context, sel ast.SelectionSet, obj *models.Component) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, componentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Component")
+		case "id":
+			out.Values[i] = ec._Component_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._Component_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Component_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._Component_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "title":
+			out.Values[i] = ec._Component_title(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "html":
+			out.Values[i] = ec._Component_html(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "w":
+			out.Values[i] = ec._Component_w(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "h":
+			out.Values[i] = ec._Component_h(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "framed":
+			out.Values[i] = ec._Component_framed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "adminOnly":
+			out.Values[i] = ec._Component_adminOnly(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "uses":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Component_uses(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.IsDeferred() {
+				deferredFieldSet.AddField(field)
+				fieldIndex := len(deferredFieldSet.Values) - 1
+				deferredFieldSet.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, deferredFieldSet)
+				})
+
+				for _, deferrable := range field.Deferrables {
+					view, ok := deferLabelToView[deferrable.Label]
+					if !ok {
+						view = deferredFieldSet.NewView()
+						deferLabelToView[deferrable.Label] = view
+					}
+					view.AddIndices(fieldIndex)
+				}
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10743,6 +11910,41 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteBox":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteBox(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveBoxAsComponent":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveBoxAsComponent(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "detachBox":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_detachBox(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -11274,6 +12476,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_boxes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "components":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_components(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -12757,6 +13981,32 @@ func (ec *executionContext) marshalNBox2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋm
 	return ec._Box(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNComponent2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponentᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Component) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponent(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐComponent(ctx context.Context, sel ast.SelectionSet, v *models.Component) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Component(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNCreateActivityInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateActivityInput(ctx context.Context, v any) (model.CreateActivityInput, error) {
 	res, err := ec.unmarshalInputCreateActivityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -12769,6 +14019,11 @@ func (ec *executionContext) unmarshalNCreateBookmarkInput2adamᚑfrenchᚗcoᚗu
 
 func (ec *executionContext) unmarshalNCreateBoxInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateBoxInput(ctx context.Context, v any) (model.CreateBoxInput, error) {
 	res, err := ec.unmarshalInputCreateBoxInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateComponentInput(ctx context.Context, v any) (model.CreateComponentInput, error) {
+	res, err := ec.unmarshalInputCreateComponentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -13253,6 +14508,11 @@ func (ec *executionContext) unmarshalNUpdateBoxInput2adamᚑfrenchᚗcoᚗukᚋb
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateComponentInput(ctx context.Context, v any) (model.UpdateComponentInput, error) {
+	res, err := ec.unmarshalInputUpdateComponentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateLayoutInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateLayoutInput(ctx context.Context, v any) (model.UpdateLayoutInput, error) {
 	res, err := ec.unmarshalInputUpdateLayoutInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -13481,6 +14741,42 @@ func (ec *executionContext) marshalOGiteaFeedItem2ᚖadamᚑfrenchᚗcoᚗukᚋb
 		return graphql.Null
 	}
 	return ec._GiteaFeedItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalIntID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalIntID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖuint(ctx context.Context, v any) (*uint, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalUintID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖuint(ctx context.Context, sel ast.SelectionSet, v *uint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalUintID(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {

@@ -7,6 +7,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
@@ -41,10 +42,29 @@ func (r *mutationResolver) CreateBox(ctx context.Context, input model.CreateBoxI
 	if input.AdminOnly != nil {
 		box.AdminOnly = *input.AdminOnly
 	}
+	// A linked box takes its html from the component, so its own is
+	// dropped rather than stored as a copy that would quietly go stale.
+	if input.ComponentID != nil {
+		id := uint(*input.ComponentID)
+		exists, err := componentExists(r.Store.DB, id)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, errors.New("there is no such component")
+		}
+		box.Kind = "html"
+		box.Widget = nil
+		box.HTML = nil
+		box.ComponentID = &id
+	}
 	if err := validateBox(&box); err != nil {
 		return nil, err
 	}
 	if err := r.Store.DB.Create(&box).Error; err != nil {
+		return nil, err
+	}
+	if err := fillLinkedOne(r.Store.DB, &box); err != nil {
 		return nil, err
 	}
 	return &box, nil
@@ -64,6 +84,11 @@ func (r *mutationResolver) UpdateBox(ctx context.Context, id int, input model.Up
 		box.Widget = input.Widget
 	}
 	if input.HTML != nil {
+		// A linked box's html is the component's; changing it here would
+		// only fork a copy. The editor sends it to updateComponent instead.
+		if box.ComponentID != nil {
+			return nil, errors.New("that box is linked to a component: edit the component, or detach the box first")
+		}
 		box.HTML = input.HTML
 	}
 	if input.Title != nil {
@@ -87,6 +112,9 @@ func (r *mutationResolver) UpdateBox(ctx context.Context, id int, input model.Up
 		return nil, err
 	}
 	if err := r.Store.DB.Save(&box).Error; err != nil {
+		return nil, err
+	}
+	if err := fillLinkedOne(r.Store.DB, &box); err != nil {
 		return nil, err
 	}
 	return &box, nil
@@ -125,6 +153,9 @@ func (r *queryResolver) Boxes(ctx context.Context, page string) ([]*models.Box, 
 	}
 	var boxes []models.Box
 	if err := query.Order("z ASC, id ASC").Find(&boxes).Error; err != nil {
+		return nil, err
+	}
+	if err := fillLinked(r.Store.DB, boxes); err != nil {
 		return nil, err
 	}
 	return ptrs(boxes), nil

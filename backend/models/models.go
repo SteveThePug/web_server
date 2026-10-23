@@ -196,6 +196,12 @@ type Box struct {
 	// AdminOnly boxes are never sent to anyone but an admin (the boxes
 	// resolver filters them out), so they suit private notes.
 	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
+	// ComponentID links an html box to a Component, whose HTML it shows
+	// instead of its own: the row's HTML is nil, and the resolvers fill it in
+	// from the component before answering (graph/component_helpers.go). There
+	// is deliberately no association field — with one, DB.Save(&box) would
+	// write the component back too.
+	ComponentID *uint `gorm:"index" json:"componentId"`
 }
 
 // Page is an admin-created canvas page, served by the SPA's catch-all route
@@ -253,4 +259,27 @@ type Layout struct {
 	Boxes string `gorm:"type:text;not null" json:"-"`
 	// Background is the page's background as JSON, or nil if it had none.
 	Background *string `gorm:"type:text" json:"-"`
+}
+
+// Component is a named HTML box that can be placed on any canvas page, either
+// as a copy (an ordinary box) or linked (a box with ComponentID set). Linked
+// boxes share only the HTML — editing it changes every one of them at once —
+// while title, geometry, frame and visibility stay each box's own, since
+// those are about where it sits on a page rather than what it is. Title, W,
+// H, Framed and AdminOnly are the defaults a newly placed box starts with.
+// Widgets are not components: a widget box is just a name, with nothing
+// worth sharing. The unique index is partial for the same reason as Page's.
+type Component struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Name      string         `gorm:"not null;index:idx_components_name,unique,where:deleted_at IS NULL" json:"name"`
+	Title     *string        `json:"title"`
+	HTML      string         `gorm:"type:text;not null" json:"html"`
+	W         int            `gorm:"not null" json:"w"`
+	H         int            `gorm:"not null" json:"h"`
+	// No gorm default on Framed, for the same reason as Box.Framed.
+	Framed    bool `gorm:"not null" json:"framed"`
+	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
 }

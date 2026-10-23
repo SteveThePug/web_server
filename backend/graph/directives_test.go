@@ -191,6 +191,7 @@ func TestGuardedQueriesArePinned(t *testing.T) {
 		"user":            "admin",
 		"places":          "signedIn",
 		"layouts":         "admin",
+		"components":      "admin",
 		"permissionTypes": "signedIn",
 	}
 	got := map[string]string{}

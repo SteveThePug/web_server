@@ -126,6 +126,9 @@ func (r *mutationResolver) ApplyLayout(ctx context.Context, id int, page string,
 	if err != nil {
 		return nil, err
 	}
+	if err := fillLinked(r.Store.DB, boxes); err != nil {
+		return nil, err
+	}
 	return ptrs(boxes), nil
 }
 

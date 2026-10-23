@@ -5,7 +5,9 @@
 # are px on a fixed 1400px-wide design canvas; see models.Box.
 #
 # kind is "widget" (a built-in Vue component named by `widget`) or "html"
-# (`html` rendered in a sandboxed iframe on the front end).
+# (`html` rendered in a sandboxed iframe on the front end). An html box with a
+# componentId is linked to that Component: its html is the component's, and
+# updateBox refuses to change it (component.graphql).
 
 type Box {
   id: ID!
@@ -24,6 +26,7 @@ type Box {
   framed: Boolean!
   hideOnMobile: Boolean!
   adminOnly: Boolean!
+  componentId: ID
 }
 
 input CreateBoxInput {
@@ -40,6 +43,9 @@ input CreateBoxInput {
   framed: Boolean
   hideOnMobile: Boolean
   adminOnly: Boolean
+  # Links the new box to this component; kind is then "html" and html is
+  # ignored.
+  componentId: ID
 }
 
 input UpdateBoxInput {

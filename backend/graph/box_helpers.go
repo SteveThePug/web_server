@@ -33,11 +33,15 @@ func validateBox(box *models.Box) error {
 			return errors.New("a widget box needs a widget name")
 		}
 	case "html":
-		if box.HTML == nil {
+		// A linked box's html lives on its component (fillLinked).
+		if box.HTML == nil && box.ComponentID == nil {
 			return errors.New("an html box needs html")
 		}
 	default:
 		return errors.New(`box kind must be "widget" or "html"`)
+	}
+	if box.ComponentID != nil && box.Kind != "html" {
+		return errors.New("only an html box can be linked to a component")
 	}
 	box.X = max(box.X, 0)
 	box.Y = max(box.Y, 0)

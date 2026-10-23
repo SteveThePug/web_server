@@ -8,6 +8,7 @@ import (
 
 func TestValidateBox(t *testing.T) {
 	str := func(s string) *string { return &s }
+	one := uint(1)
 
 	for _, c := range []struct {
 		name    string
@@ -20,6 +21,8 @@ func TestValidateBox(t *testing.T) {
 		{"html with html", models.Box{Page: "stp", Kind: "html", HTML: str("<p>hi</p>")}, false},
 		{"html with empty html", models.Box{Page: "stp", Kind: "html", HTML: str("")}, false},
 		{"html without html", models.Box{Page: "stp", Kind: "html"}, true},
+		{"linked html without html", models.Box{Page: "stp", Kind: "html", ComponentID: &one}, false},
+		{"linked widget", models.Box{Page: "stp", Kind: "widget", Widget: str("Chat"), ComponentID: &one}, true},
 		{"no page", models.Box{Kind: "widget", Widget: str("Chat")}, true},
 		{"bad page", models.Box{Page: "Shrines/GTO", Kind: "widget", Widget: str("Chat")}, true},
 		{"unknown kind", models.Box{Page: "stp", Kind: "iframe", HTML: str("x")}, true},
