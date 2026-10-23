@@ -42,7 +42,7 @@ function formatHours(minutes) {
         Steam
         <span
           class="inline-block w-2 h-2 rounded-full"
-          :class="steamStatus.online ? 'bg-green-500' : 'bg-gray-400'"
+          :class="steamStatus.online ? 'bg-secondary' : 'bg-muted'"
           :title="steamStatus.online ? 'Online' : 'Offline'"
         />
       </span>

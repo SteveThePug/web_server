@@ -51,6 +51,11 @@ function animate() {
 let resizeObserver;
 
 onMounted(() => {
+  // A visitor who asked the OS for less motion gets the text standing still.
+  // The CSS reduced-motion override in styles.css can't reach this: the
+  // movement is a transform written every frame, not a transition.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
   measureWidth();
   rafId = requestAnimationFrame(animate);
 

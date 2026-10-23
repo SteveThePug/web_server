@@ -10,7 +10,7 @@ import { useCreateForm } from "@/js/useCreateForm";
 
 const emit = defineEmits(["done", "cancel"]);
 
-const { values, submit: post } = useCreateForm({
+const { values, submit: post, error, submitting } = useCreateForm({
   mutation: `mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { id } }`,
   fields: ["title", "content"],
   resultKey: "createPost",
@@ -20,16 +20,14 @@ const { title, content } = values;
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <form class="flex flex-col" @submit.prevent="post">
     <h1>Create Post</h1>
-    <input
-      type="text"
-      v-model="title"
-      placeholder="Title"
-      @keyup.enter="post"
-    />
+    <input type="text" v-model="title" placeholder="Title" />
     <textarea class="h-50" v-model="content" placeholder="Content"></textarea>
-    <Button @click="post">Upload</Button>
-    <Button @click="emit('cancel')">Cancel</Button>
-  </div>
+    <small v-if="error" class="p-1" role="alert">{{ error }}</small>
+    <Button type="submit" :disabled="submitting">
+      {{ submitting ? "Uploading…" : "Upload" }}
+    </Button>
+    <Button type="button" @click="emit('cancel')">Cancel</Button>
+  </form>
 </template>

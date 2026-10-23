@@ -17,6 +17,7 @@ const pages = usePagesStore();
 pages.fetch();
 const removeTarget = ref(null);
 const confirmationOpen = ref(false);
+const removeError = ref("");
 
 async function remove(page) {
   removeTarget.value = page;
@@ -27,10 +28,11 @@ async function confirmRemove() {
   const page = removeTarget.value;
   removeTarget.value = null;
   if (!page) return;
+  removeError.value = "";
   try {
     await pages.remove(page.id);
   } catch (err) {
-    alert(err?.message || "Failed to delete");
+    removeError.value = err?.message || "Failed to delete";
   }
 }
 </script>
@@ -42,6 +44,9 @@ async function confirmRemove() {
       <p class="text-muted">
         The home page (/stp) and the landing page's notes are canvases too —
         edit those on the pages themselves.
+      </p>
+      <p v-if="removeError" class="text-tertiary" role="alert">
+        {{ removeError }}
       </p>
       <p v-if="pages.error" class="text-tertiary">Couldn't load the pages.</p>
       <table v-else-if="pages.pages.length" class="w-full">

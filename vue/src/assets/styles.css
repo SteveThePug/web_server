@@ -6,9 +6,11 @@
  *                   every token is BOTH a utility class in templates
  *                   (text-primary, bg-surface, font-heading) AND a CSS variable
  *                   in component <style> blocks (var(--color-primary)).
- *   3. Base         default look of plain HTML elements (the dark theme)
+ *   3. Base         default look of plain HTML elements (the dark theme),
+ *                   including the keyboard focus ring
  *   4. Components   reusable classes: gif borders, A4 sheet, halftone background
- *   5. Transitions  <Transition name="slide"> and <Transition name="fade">
+ *   5. Transitions  <Transition name="slide"> and <Transition name="fade">,
+ *                   and the reduced-motion override
  *   6. Print
  *
  * The CV pages are a light theme: src/layouts/CVLayout.vue re-points the colour
@@ -150,6 +152,26 @@ textarea::placeholder {
   opacity: 0.5;
 }
 
+/* Keyboard focus. Nothing on the site had a visible focus ring, so tabbing
+   through it was blind. Text fields get the border treatment the login form
+   had; everything else an outline. The selectors are wrapped in :where() to
+   keep their specificity just above the bare `input` rule above, so any
+   component with its own focus or outline style (BoxFrame, the hotels and
+   automata forms) still wins. Not in an @layer: unlayered rules such as
+   `input` above would then beat it whatever its specificity. */
+:where(*):focus-visible {
+  outline: 2px solid var(--color-tertiary);
+  outline-offset: 2px;
+}
+:where(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]),
+    textarea
+  ):focus-visible {
+  outline: none;
+  border-color: var(--color-tertiary);
+  box-shadow: 0 0 0 2px var(--color-quaternary);
+}
+
 table {
   color: var(--color-primary);
   border: 1px solid var(--color-primary);
@@ -253,6 +275,20 @@ th {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Visitors who ask the OS for less motion get instant route changes and
+   crossfades. The JS animation loops check the same query themselves
+   (Headline.vue for the navbar marquee). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ------------------------------------------------------------------ */

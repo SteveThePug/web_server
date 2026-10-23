@@ -12,10 +12,13 @@ const username = ref("");
 const password = ref("");
 const message = ref("");
 const error = ref("");
+const submitting = ref(false);
 
 async function handleCreate() {
+  if (submitting.value) return;
   message.value = "";
   error.value = "";
+  submitting.value = true;
   try {
     const data = await gql(
       `mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id username } }`,
@@ -26,29 +29,37 @@ async function handleCreate() {
     password.value = "";
   } catch (err) {
     error.value = err.message || "Failed to create user.";
+  } finally {
+    submitting.value = false;
   }
 }
 </script>
 
 <template>
-  <div v-if="auth.loggedIn && auth.user.admin" class="flex flex-col">
+  <form
+    v-if="auth.loggedIn && auth.user.admin"
+    class="flex flex-col"
+    @submit.prevent="handleCreate"
+  >
     <h1>Create User</h1>
-    <p v-if="message" class="text-green-500">{{ message }}</p>
-    <p v-if="error" class="text-red-500">{{ error }}</p>
+    <p v-if="message" class="text-secondary" role="status">{{ message }}</p>
+    <p v-if="error" class="text-tertiary" role="alert">{{ error }}</p>
     <input
       type="text"
       v-model="username"
       placeholder="Username"
-      @keyup.enter="handleCreate"
+      autocomplete="off"
     />
     <input
       type="password"
       v-model="password"
       placeholder="Password"
-      @keyup.enter="handleCreate"
+      autocomplete="new-password"
     />
-    <Button @click="handleCreate">Create Account</Button>
-  </div>
+    <Button type="submit" :disabled="submitting">
+      {{ submitting ? "Creating…" : "Create Account" }}
+    </Button>
+  </form>
   <div v-else-if="auth.loggedIn" class="flex flex-col">
     <p>You do not have permission to create users.</p>
   </div>

@@ -86,7 +86,9 @@ function handleLogout() {
       </div>
     </div>
 
-    <div v-else class="login-card bdr-1">
+    <!-- A real <form>, so Enter submits from either field and password
+         managers recognise it as a sign-in. -->
+    <form v-else class="login-card bdr-1" @submit.prevent="handleLogin">
       <h1>Login</h1>
       <small class="login-hint">
         Admin access is required beyond this point.
@@ -99,7 +101,7 @@ function handleLogout() {
           v-model="username"
           autocomplete="username"
           placeholder="Username"
-          @keyup.enter="handleLogin"
+          required
         />
       </label>
 
@@ -110,16 +112,18 @@ function handleLogout() {
           v-model="password"
           autocomplete="current-password"
           placeholder="Password"
-          @keyup.enter="handleLogin"
+          required
         />
       </label>
 
-      <small v-if="errorMsg" class="login-error">{{ errorMsg }}</small>
+      <small v-if="errorMsg" class="login-error" role="alert">
+        {{ errorMsg }}
+      </small>
 
-      <Button @click="handleLogin" :disabled="submitting">
+      <Button type="submit" class="mt-1 py-2" :disabled="submitting">
         {{ submitting ? "Signing in…" : "Log In" }}
       </Button>
-    </div>
+    </form>
   </main>
 </template>
 

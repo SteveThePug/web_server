@@ -85,12 +85,14 @@ async function handleLogout() {
       </header>
 
       <div class="admin-body">
-        <nav class="admin-nav">
+        <nav class="admin-nav" aria-label="Admin sections">
           <button
             v-for="section in sections"
             :key="section.id"
+            type="button"
             class="admin-nav-link"
             :class="{ 'is-active': active === section.id }"
+            :aria-current="active === section.id ? 'page' : undefined"
             @click="selectSection(section.id)"
           >
             {{ section.label }}
@@ -114,7 +116,9 @@ async function handleLogout() {
             @done="onDone"
             @cancel="onCancel"
           />
-          <small v-if="notice" class="admin-notice">{{ notice }}</small>
+          <small v-if="notice" class="admin-notice" role="status">
+            {{ notice }}
+          </small>
         </section>
       </div>
     </div>
@@ -195,9 +199,18 @@ async function handleLogout() {
   color: var(--color-secondary);
 }
 
+/* On a phone the section list would be eleven full-width rows above the
+   form; as wrapping chips it takes three or four lines. */
 @media (max-width: 700px) {
   .admin-body {
     grid-template-columns: 1fr;
+  }
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .admin-nav-link {
+    padding: 4px 8px;
   }
 }
 </style>

@@ -388,6 +388,8 @@ Note that Tailwind's spacing unit is set to **3px** (not the default 4px), so `p
 - Never hard-code a colour in a component; use a token. The one exception is `<canvas>` drawing (MobileAutomata), which can't read CSS variables.
 - Home widgets: wrap the title in `<Header>`; admin-only create forms use `<CreateToggle v-model="showCreate">` in the header's `#action` slot and render the form inside a `<Modal v-model="showCreate">` so it pops up over the page instead of replacing the widget.
 - Crossfading content in place: `<Transition name="fade">` inside a `position: relative` parent. Route changes use `<Transition name="slide">`.
+- Keyboard focus and reduced motion are handled globally in `styles.css`: every focusable element gets a pink `:focus-visible` ring (text fields a pink border instead), and `prefers-reduced-motion` collapses transitions and CSS animations. Both are low-specificity, so a component's own focus or outline style wins. A JS animation loop has to check `matchMedia("(prefers-reduced-motion: reduce)")` itself, as `Headline.vue` does.
+- Forms are real `<form @submit.prevent>` elements with `type="submit"` / `type="button"` on their buttons, not `@keyup.enter` on each input: Enter then submits from any field and password managers recognise the login. A form that saves shows its error inline and disables its button while the request is out (`useCreateForm` returns `error` and `submitting` for this).
 
 ## Production Build
 

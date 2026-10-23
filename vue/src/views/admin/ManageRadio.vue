@@ -2,8 +2,11 @@
 /**
  * Admin panel: list and upload tracks for the Icecast radio. REST
  * (multipart/form-data) rather than GraphQL because it moves files.
+ * Deleting removes the file from the radio's library for good, so it asks
+ * first; a failed list, enable/disable or delete is shown above the list.
  */
 import Button from "@/components/input/Button.vue";
+import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import { ref, onMounted } from "vue";
 import { api } from "@/api";
 
@@ -11,13 +14,19 @@ const songs = ref([]);
 const files = ref([]);
 const results = ref([]);
 const loading = ref(false);
+const error = ref("");
+const deleteTarget = ref(null);
+const confirmOpen = ref(false);
 
 async function fetchSongs() {
   try {
-    const res = await api.get("/radio/songs");
+    const res = await api.get("/radio/songs", {
+      fallback: "Couldn't load the songs",
+    });
     songs.value = res.songs;
   } catch (err) {
     console.error(err);
+    error.value = err.message;
   }
 }
 
@@ -57,22 +66,40 @@ async function upload() {
   await fetchSongs();
 }
 
-async function deleteSong(name) {
+function askDelete(song) {
+  deleteTarget.value = song;
+  confirmOpen.value = true;
+}
+
+async function deleteSong() {
+  const song = deleteTarget.value;
+  deleteTarget.value = null;
+  if (!song) return;
+  error.value = "";
   try {
-    await api.delete(`/radio/songs/${encodeURIComponent(name)}`);
+    await api.delete(`/radio/songs/${encodeURIComponent(song.name)}`, {
+      fallback: "Delete failed",
+    });
     await fetchSongs();
   } catch (err) {
     console.error(err);
+    error.value = err.message;
   }
 }
 
 async function toggleSong(song) {
   const action = song.disabled ? "enable" : "disable";
+  error.value = "";
   try {
-    await api.patch(`/radio/songs/${encodeURIComponent(song.name)}/${action}`);
+    await api.patch(
+      `/radio/songs/${encodeURIComponent(song.name)}/${action}`,
+      undefined,
+      { fallback: `Couldn't ${action} the song` },
+    );
     await fetchSongs();
   } catch (err) {
     console.error(err);
+    error.value = err.message;
   }
 }
 
@@ -94,26 +121,41 @@ onMounted(fetchSongs);
       multiple
       @change="onFileChange"
     />
-    <Button @click="upload" :disabled="loading">Upload</Button>
+    <Button @click="upload" :disabled="loading || !files.length">
+      {{ loading ? "Uploading…" : "Upload" }}
+    </Button>
+    <p v-if="error" class="text-tertiary" role="alert">{{ error }}</p>
     <div v-for="r in results" :key="r.name">
       <span class="text-primary">{{ r.name }}: </span>
-      <span :class="r.ok ? 'text-secondary' : 'text-red-500'">{{
+      <span :class="r.ok ? 'text-secondary' : 'text-tertiary'">{{
         r.status
       }}</span>
     </div>
     <div
       v-for="song in songs"
       :key="song.name"
-      class="flex flex-row items-center gap-2"
+      class="flex flex-row flex-wrap items-center gap-2"
       :class="{ 'opacity-50': song.disabled }"
     >
-      <span :class="{ 'line-through': song.disabled }">{{ song.name }}</span>
+      <span class="text-primary" :class="{ 'line-through': song.disabled }">
+        {{ song.name }}
+      </span>
       <span class="text-secondary text-sm">{{ formatSize(song.size) }}</span>
-      <span v-if="song.disabled" class="text-red-400 text-xs">disabled</span>
+      <span v-if="song.disabled" class="text-tertiary text-xs">disabled</span>
       <Button @click="toggleSong(song)">{{
         song.disabled ? "Enable" : "Disable"
       }}</Button>
-      <Button @click="deleteSong(song.name)">Delete</Button>
+      <Button @click="askDelete(song)">Delete</Button>
     </div>
+
+    <ConfirmDialog
+      v-if="deleteTarget"
+      v-model="confirmOpen"
+      title="Delete song"
+      :message="`Delete “${deleteTarget.name}” from the radio? The file is removed for good.`"
+      confirm-label="Delete"
+      @confirm="deleteSong"
+      @cancel="deleteTarget = null"
+    />
   </div>
 </template>

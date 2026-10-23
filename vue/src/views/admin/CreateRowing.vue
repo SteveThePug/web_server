@@ -16,6 +16,7 @@ const emit = defineEmits(["done", "cancel"]);
 
 const images = ref([]);
 const results = ref([]);
+const uploading = ref(false);
 
 function onFileChange(e) {
   images.value = Array.from(e.target.files);
@@ -23,7 +24,8 @@ function onFileChange(e) {
 }
 
 async function submit() {
-  if (!images.value.length) return;
+  if (!images.value.length || uploading.value) return;
+  uploading.value = true;
   results.value = images.value.map((f) => ({
     name: f.name,
     status: "Uploading...",
@@ -54,6 +56,7 @@ async function submit() {
   );
 
   images.value = [];
+  uploading.value = false;
   // Only a clean run counts as done: hosts close or confirm on "done", which
   // would hide or contradict the per-file failure rows above.
   if (results.value.every((r) => r.ok)) emit("done");
@@ -69,11 +72,13 @@ async function submit() {
       multiple
       @change="onFileChange"
     />
-    <Button @click="submit">Upload</Button>
+    <Button @click="submit" :disabled="uploading || !images.length">
+      {{ uploading ? "Reading…" : "Upload" }}
+    </Button>
     <Button @click="emit('cancel')">Cancel</Button>
     <div v-for="r in results" :key="r.name">
       <span class="text-primary">{{ r.name }}: </span>
-      <span :class="r.ok ? 'text-secondary' : 'text-red-500'">{{
+      <span :class="r.ok ? 'text-secondary' : 'text-tertiary'">{{
         r.status
       }}</span>
     </div>
