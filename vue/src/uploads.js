@@ -18,6 +18,10 @@
  *
  * A refused file (wrong type, too large) rejects with an ApiError whose
  * `message` is the backend's sentence, ready to show the user.
+ *
+ * listUploads() lists what is already stored, for reusing a file instead of
+ * uploading it again (components/util/UploadPicker.vue). It is admin-only:
+ * the listing is what would turn every unguessable URL into a known one.
  */
 import { api } from "@/api";
 
@@ -48,6 +52,16 @@ export async function uploadFile(file, { private: isPrivate = false } = {}) {
   if (isPrivate) body.append("private", "true");
   const { url } = await api.post("/uploads", body, { fallback: `Upload of ${file.name} failed` });
   return url;
+}
+
+/**
+ * Every public upload, newest first. Admin only.
+ *
+ * @returns {Promise<Array<{name: string, url: string, size: number, modified: string}>>}
+ */
+export async function listUploads() {
+  const { files } = await api.get("/uploads", { fallback: "Couldn't list uploads" });
+  return files;
 }
 
 /** What a stored file is, from its URL: "image", "video", "audio" or "file". */
@@ -86,15 +100,19 @@ export function tagFor(url) {
   }
 }
 
-/** Natural size of an image or video File, or null if it can't be read. */
+/**
+ * Natural size of an image or video — a File, or the URL of one already
+ * stored — or null if it can't be read.
+ */
 export function mediaSize(file) {
   return new Promise((resolve) => {
-    const src = URL.createObjectURL(file);
+    const isFile = typeof file !== "string";
+    const src = isFile ? URL.createObjectURL(file) : file;
     const done = (size) => {
-      URL.revokeObjectURL(src);
+      if (isFile) URL.revokeObjectURL(src);
       resolve(size);
     };
-    if (file.type.startsWith("video/")) {
+    if (isFile ? file.type.startsWith("video/") : isVideo(file)) {
       const v = document.createElement("video");
       v.onloadedmetadata = () => done({ w: v.videoWidth, h: v.videoHeight });
       v.onerror = () => done(null);

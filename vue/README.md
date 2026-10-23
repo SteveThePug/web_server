@@ -160,7 +160,10 @@ the allowed types, the 10MB limit and the file name, and stores the file in
 Garage. A refused file rejects with an `ApiError` whose message can be shown
 as-is. `kindOf(url)` says image/video/audio/file, `tagFor(url)` gives the
 markup for a box, `isUploadUrl(url)` checks a URL from someone else before
-rendering it, and `mediaSize(file)` reads an image or video's dimensions.
+rendering it, and `mediaSize(file)` reads an image or video's dimensions
+(from a `File` or a stored URL). `listUploads()` (admin only) lists every
+public upload, newest first; `components/util/UploadPicker.vue` is the modal
+that shows them as a grid to choose from.
 `{ private: true }` (admin only) is for private chat attachments; never use
 it for anything shown in a canvas box, whose sandboxed frame has no cookie.
 
@@ -239,7 +242,8 @@ renders any page's boxes.
   GraphQL, `stores/background.js`): a colour, an image, and whether the image
   fills the window, fits inside it or tiles. Admins set it with the
   "Background" button next to "Edit layout" (`BackgroundEditor.vue`), which
-  previews live and takes an uploaded or dropped image. `DefaultLayout` paints
+  previews live and takes an uploaded, dropped or already-uploaded image
+  (`UploadPicker`). `DefaultLayout` paints
   it behind the whole window, navbar included, while that canvas is mounted,
   and falls back to the halftone. Renaming or deleting a page carries its
   background along; an admin-only page's background is hidden with it.
@@ -275,7 +279,9 @@ renders any page's boxes.
   Image and video files dropped onto the canvas in edit mode are uploaded and
   each becomes an unframed box at the drop point. "Insert upload" stores a
   file through `@/uploads` (see "Uploading files") and puts an `<img>`/`<video>`
-  tag for it at the cursor. Starter HTML is in `templates.js`; links in a box
+  tag for it at the cursor; "Choose upload" does the same with a file already
+  stored, and "+ From uploads…" in the admin bar makes a box from one, as a
+  drop would (`UploadPicker`). Starter HTML is in `templates.js`; links in a box
   need `target="_top"` or `_blank` (the Link templates set it), or they open
   inside the frame. A canvas given a `starter` has an import button in edit
   mode (it confirms first if the page isn't empty): on `/stp`, "Import current

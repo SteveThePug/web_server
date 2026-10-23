@@ -49,6 +49,25 @@ func (store *Store) Upload(ctx *gin.Context) {
 	}
 }
 
+// ListUploads backs GET /uploads (admin): every public upload, newest first,
+// for the upload picker on the canvas pages (vue/src/components/util/
+// UploadPicker.vue). It answers {"files": [{name, url, size, modified}]}.
+//
+// Admin-only because the listing is the one thing that turns unguessable
+// upload URLs into known ones; see services.Uploads.List.
+func (store *Store) ListUploads(ctx *gin.Context) {
+	files, err := store.Uploads.List(ctx.Request.Context())
+	if err != nil {
+		log.Printf("[upload] listing failed: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list uploads"})
+		return
+	}
+	if files == nil {
+		files = []services.StoredFile{} // [] rather than null for the frontend
+	}
+	ctx.JSON(http.StatusOK, gin.H{"files": files})
+}
+
 // requestIsAdmin reports whether the caller's access token carries admin=true.
 //
 // This route sits in the `protected` group, which runs AuthMiddlewear but not

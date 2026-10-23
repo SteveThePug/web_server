@@ -4,13 +4,16 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -184,13 +187,51 @@ func (u *Uploads) Save(ctx context.Context, fh *multipart.FileHeader, private bo
 	return prefix + name, nil
 }
 
+// StoredFile is one public upload, as listed for the admin's upload picker.
+type StoredFile struct {
+	Name     string    `json:"name"`
+	URL      string    `json:"url"`
+	Size     int64     `json:"size"`
+	Modified time.Time `json:"modified"`
+}
+
+// List returns every public upload, newest first. Private files are never
+// listed: they live in their own store, which this doesn't touch.
+//
+// The caller must be an admin. An upload's URL is public but unguessable, and
+// that is the only thing keeping a file nobody linked to from being found; a
+// listing anyone could read would hand every one of them out.
+//
+// Only names with an extension on the allow-list are returned, so anything
+// else that ends up in the bucket or the directory (by hand, through
+// garage-webui) never reaches a page through the picker.
+func (u *Uploads) List(ctx context.Context) ([]StoredFile, error) {
+	files, err := u.public.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := files[:0]
+	for _, f := range files {
+		if _, ok := UploadTypes[strings.ToLower(filepath.Ext(f.Name))]; ok {
+			f.URL = publicURLPrefix + f.Name
+			out = append(out, f)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Modified.After(out[j].Modified) })
+	return out, nil
+}
+
 // ---- Stores ----------------------------------------------------------------
 
-// FileStore stores one file under key. r is a ReadSeeker because the S3
-// client must hash the body before sending it over plain HTTP, and because
-// FallbackFileStore rewinds it to retry; a multipart.File satisfies it.
+// FileStore stores one file under key, and lists what it holds. r is a
+// ReadSeeker because the S3 client must hash the body before sending it over
+// plain HTTP, and because FallbackFileStore rewinds it to retry; a
+// multipart.File satisfies it.
+//
+// List returns top-level files only, with URL unset (Uploads.List fills it).
 type FileStore interface {
 	Put(ctx context.Context, key, contentType string, r io.ReadSeeker, size int64) error
+	List(ctx context.Context) ([]StoredFile, error)
 }
 
 // DiskFileStore writes files into Dir, creating it if needed.
@@ -210,6 +251,31 @@ func (d DiskFileStore) Put(_ context.Context, key, _ string, r io.ReadSeeker, _ 
 		return err
 	}
 	return out.Close()
+}
+
+// List skips subdirectories, which is what keeps the private/ directory
+// (inside the public one on the volume) out of the listing. A directory that
+// doesn't exist yet just holds nothing.
+func (d DiskFileStore) List(_ context.Context) ([]StoredFile, error) {
+	entries, err := os.ReadDir(d.Dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var files []StoredFile
+	for _, e := range entries {
+		if !e.Type().IsRegular() {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue // deleted between ReadDir and here
+		}
+		files = append(files, StoredFile{Name: e.Name(), Size: info.Size(), Modified: info.ModTime()})
+	}
+	return files, nil
 }
 
 // S3FileStore writes files into one bucket of an S3-compatible server.
@@ -266,6 +332,31 @@ func (s *S3FileStore) Put(ctx context.Context, key, contentType string, r io.Rea
 	return nil
 }
 
+// List pages through the whole bucket. Keys containing "/" are skipped: they
+// are not uploads (Save never makes one) but something put under a prefix by
+// hand, and nginx's /uploads/<name> only ever serves a top-level name anyway.
+func (s *S3FileStore) List(ctx context.Context) ([]StoredFile, error) {
+	ctx, cancel := context.WithTimeout(ctx, s3Timeout)
+	defer cancel()
+
+	var files []StoredFile
+	pages := s3.NewListObjectsV2Paginator(s.client, &s3.ListObjectsV2Input{Bucket: aws.String(s.bucket)})
+	for pages.HasMorePages() {
+		page, err := pages.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("s3 list %s: %w", s.bucket, err)
+		}
+		for _, obj := range page.Contents {
+			key := aws.ToString(obj.Key)
+			if key == "" || strings.Contains(key, "/") {
+				continue
+			}
+			files = append(files, StoredFile{Name: key, Size: aws.ToInt64(obj.Size), Modified: aws.ToTime(obj.LastModified)})
+		}
+	}
+	return files, nil
+}
+
 // FallbackFileStore tries Primary and, if that fails, logs it and writes to
 // Fallback instead. The upload still succeeds and its URL still works (nginx
 // looks in both places), so a Garage outage costs a log line rather than
@@ -285,4 +376,34 @@ func (f FallbackFileStore) Put(ctx context.Context, key, contentType string, r i
 		return fmt.Errorf("rewinding for fallback after %v: %w", err, seekErr)
 	}
 	return f.Fallback.Put(ctx, key, contentType, r, size)
+}
+
+// List is the union of both stores, since nginx serves from both: the
+// fallback holds whatever was written while the primary was down (and, on
+// the live volume, the pre-Garage copies). A name in both is listed once,
+// with the primary's details. A primary that can't list is logged and the
+// fallback's files are returned alone, as for Put.
+func (f FallbackFileStore) List(ctx context.Context) ([]StoredFile, error) {
+	primary, err := f.Primary.List(ctx)
+	if err != nil {
+		log.Printf("[upload] primary store failed to list, listing fallback only: %v", err)
+		primary = nil
+	}
+	fallback, fbErr := f.Fallback.List(ctx)
+	if fbErr != nil {
+		if err != nil {
+			return nil, fmt.Errorf("listing both stores: %v; %w", err, fbErr)
+		}
+		log.Printf("[upload] fallback store failed to list: %v", fbErr)
+	}
+	seen := make(map[string]bool, len(primary))
+	for _, file := range primary {
+		seen[file.Name] = true
+	}
+	for _, file := range fallback {
+		if !seen[file.Name] {
+			primary = append(primary, file)
+		}
+	}
+	return primary, nil
 }

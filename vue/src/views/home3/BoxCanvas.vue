@@ -20,7 +20,8 @@
  * changes save on release, and the selected box opens in BoxEditor. Boxes
  * marked adminOnly are never sent to anyone else (the server filters them);
  * admins see them outlined. Image and video files dropped onto the canvas in
- * edit mode are uploaded and each becomes a box where it was dropped.
+ * edit mode are uploaded and each becomes a box where it was dropped; "+ From
+ * uploads" does the same with a file that is already uploaded.
  *
  * The canvas also owns its page's background (stores/background.js), which
  * DefaultLayout paints behind the whole window while the canvas is mounted;
@@ -33,13 +34,14 @@ import { useBoxesStore } from "@/stores/boxes";
 import { useBackgroundStore } from "@/stores/background";
 import BackgroundEditor from "./BackgroundEditor.vue";
 import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
+import UploadPicker from "@/components/util/UploadPicker.vue";
 import BoxFrame from "./BoxFrame.vue";
 import BoxEditor from "./BoxEditor.vue";
 import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
 import { TEMPLATES, imageHtml, videoHtml } from "./templates";
-import { mediaSize, uploadFile } from "@/uploads";
+import { isVideo, mediaSize, uploadFile } from "@/uploads";
 
 const props = defineProps({
   page: { type: String, required: true },
@@ -256,8 +258,26 @@ function isMedia(file) {
   return file.type.startsWith("image/") || file.type.startsWith("video/");
 }
 
-// Each file is uploaded and placed at the drop point, sized to its own
-// aspect ratio so nothing is cropped, then cascaded like visibleOrigin().
+// A box showing one stored image or video at (x, y), sized to the file's own
+// aspect ratio so nothing is cropped. Selected once made.
+async function placeMedia(url, size, title, x, y) {
+  const fit = size ? Math.min(1, DROP_MAX / Math.max(size.w, size.h)) : 1;
+  const created = await store.create({
+    kind: "html",
+    title,
+    html: isVideo(url) ? videoHtml(url) : imageHtml(url),
+    framed: false,
+    x,
+    y,
+    w: size ? Math.max(40, Math.round(size.w * fit)) : 300,
+    h: size ? Math.max(40, Math.round(size.h * fit)) : 300,
+    z: store.topZ(),
+  });
+  selectedId.value = created.id;
+}
+
+// Each file is uploaded and placed at the drop point, then cascaded like
+// visibleOrigin().
 async function onDrop(event) {
   dragOver.value = false;
   const files = [...(event.dataTransfer?.files ?? [])].filter(isMedia);
@@ -270,22 +290,7 @@ async function onDrop(event) {
   for (const file of files) {
     try {
       const [url, size] = await Promise.all([uploadFile(file), mediaSize(file)]);
-      const fit = size ? Math.min(1, DROP_MAX / Math.max(size.w, size.h)) : 1;
-      const w = size ? Math.max(40, Math.round(size.w * fit)) : 300;
-      const h = size ? Math.max(40, Math.round(size.h * fit)) : 300;
-      const video = file.type.startsWith("video/");
-      const created = await store.create({
-        kind: "html",
-        title: file.name,
-        html: video ? videoHtml(url) : imageHtml(url),
-        framed: false,
-        x,
-        y,
-        w,
-        h,
-        z: store.topZ(),
-      });
-      selectedId.value = created.id;
+      await placeMedia(url, size, file.name, x, y);
       x += 20;
       y += 20;
     } catch (err) {
@@ -293,6 +298,17 @@ async function onDrop(event) {
     } finally {
       uploading.value--;
     }
+  }
+}
+
+// A file picked from what is already uploaded goes where a new box would.
+const picking = ref(false);
+async function placePicked(url) {
+  const { x, y } = visibleOrigin();
+  try {
+    await placeMedia(url, await mediaSize(url), url.split("/").pop(), x, y);
+  } catch (err) {
+    report(err);
   }
 }
 
@@ -346,6 +362,7 @@ function toggleEdit() {
         >
           {{ importing ? "Importing…" : starterLabel }}
         </button>
+        <button type="button" class="bar-btn" @click="picking = true">+ From uploads…</button>
       </template>
       <span v-if="inEditMode" class="hint">
         {{ uploading ? `Uploading ${uploading}…` : "Drop images or videos onto the canvas to add them" }}
@@ -421,6 +438,8 @@ function toggleEdit() {
       @close="selectedId = null"
       @error="report"
     />
+
+    <UploadPicker v-if="picking" v-model="picking" :kinds="['image', 'video']" @pick="placePicked" />
 
     <ConfirmDialog
       v-if="confirmation"

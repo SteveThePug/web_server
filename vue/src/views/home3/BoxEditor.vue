@@ -15,6 +15,7 @@
  *
  * "Insert upload" uploads a file (@/uploads) and puts a tag for it at the
  * cursor — the way to add pictures to an existing box, e.g. a gallery.
+ * "Choose upload" does the same with a file that is already uploaded.
  *
  * The panel is teleported to <body>, so it is fixed to the window whatever
  * transform or stacking context the page puts around the canvas.
@@ -25,6 +26,7 @@ import { ACCEPT, tagFor, uploadFile } from "@/uploads";
 import CodeEditor from "./CodeEditor.vue";
 import { WIDGETS } from "./widgetRegistry";
 import OverlayShell from "@/components/util/OverlayShell.vue";
+import UploadPicker from "@/components/util/UploadPicker.vue";
 
 const props = defineProps({
   box: { type: Object, required: true },
@@ -36,6 +38,7 @@ const store = useBoxesStore(props.box.page);
 const codeEditor = ref(null);
 const fileInput = ref(null);
 const uploading = ref(false);
+const picking = ref(false);
 const open = ref(true);
 
 const draftHtml = ref(props.box.html ?? "");
@@ -105,14 +108,18 @@ function saveNumber(field, event) {
   save({ [field]: value });
 }
 
+function insertFile(url) {
+  const tag = tagFor(url);
+  if (!codeEditor.value?.insert(tag)) draftHtml.value += `\n${tag}`;
+}
+
 async function upload(event) {
   const file = event.target.files?.[0];
   event.target.value = "";
   if (!file) return;
   uploading.value = true;
   try {
-    const tag = tagFor(await uploadFile(file));
-    if (!codeEditor.value?.insert(tag)) draftHtml.value += `\n${tag}`;
+    insertFile(await uploadFile(file));
   } catch (err) {
     emit("error", err);
   } finally {
@@ -186,7 +193,7 @@ function close() {
 
       <template v-if="box.kind === 'html'">
         <CodeEditor ref="codeEditor" v-model="draftHtml" class="flex-1" @save="saveHtml" />
-        <footer class="flex items-center justify-between gap-2">
+        <footer class="flex flex-wrap items-center justify-between gap-2">
           <small class="text-muted">
             Runs sandboxed: scripts work, cookies and /api don't. fetch() only reaches
             keyless CORS-open APIs. Ctrl+S saves; so does leaving the box.
@@ -207,6 +214,14 @@ function close() {
           >
             {{ uploading ? "Uploading…" : "Insert upload" }}
           </button>
+          <button
+            type="button"
+            class="save"
+            title="Insert a file that is already uploaded"
+            @click="picking = true"
+          >
+            Choose upload
+          </button>
           <button type="button" class="save" :disabled="!dirty || saving" @click="saveHtml">
             {{ saving ? "Saving…" : dirty ? "Save" : "Saved" }}
           </button>
@@ -214,6 +229,12 @@ function close() {
       </template>
     </aside>
   </OverlayShell>
+  <UploadPicker
+    v-if="picking"
+    v-model="picking"
+    :kinds="['image', 'video', 'audio']"
+    @pick="insertFile"
+  />
 </template>
 
 <style scoped>

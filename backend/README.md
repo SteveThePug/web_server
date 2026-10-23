@@ -173,6 +173,7 @@ for the things GraphQL cannot do:
 | `/auth/*` | cookie handling and the status-code-only admin probe |
 | `/spotify/callback` | OAuth providers redirect a *browser* here |
 | `/uploads`, `/radio/upload`, `/rowing` (POST) | multipart file uploads |
+| `/uploads` (GET, admin) | lists the stored files, next to the endpoint that stores them |
 | `/notes/*path` | streams a file download, not JSON |
 | `/ws` | WebSocket upgrade |
 | `/rowing` (GET), `/spotify/listening`, `/spotify/recent` | predate the equivalent queries; kept working |
@@ -235,7 +236,10 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   to disk alone when `S3_ENDPOINT` is unset; private ones always to disk
   (nginx cannot gate a bucket). nginx serves `/uploads/` from the bucket
   first and disk second, so either store's files work at the same URL. A new
-  handler that takes a file calls `store.Uploads.Save`.
+  handler that takes a file calls `store.Uploads.Save`. `Uploads.List` (behind
+  admin-only `GET /uploads`, for the canvas's upload picker) returns the union
+  of bucket and disk, allow-listed types only, newest first; it is admin-only
+  because listing would give away every unguessable URL.
 - **notes.go** — path-traversal-safe file lookup for the notes directory.
 - **seed.go** — dev-only test data. Creates an admin with the password
   `password`, so it must never run in production (`SEED_DB=true` is set only

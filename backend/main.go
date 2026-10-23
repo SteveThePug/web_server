@@ -190,6 +190,7 @@ func main() {
 	// the handler checks the cookies itself to decide admin privileges.
 	r.GET("/ws", store.ConnectWebSocket)
 	protected.POST("/uploads", store.Upload)
+	admin.GET("/uploads", store.ListUploads)
 
 	// NOTES
 	admin.GET("/notes/*path", store.GetNoteFile)

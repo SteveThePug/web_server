@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Covered here: the type table (the upload trust boundary's data), Save's
@@ -21,7 +22,7 @@ import (
 // fallback — including against a real S3 client talking to a server that
 // refuses the write, since "Garage said no" is the case it exists for.
 //
-// Not covered: a successful PutObject against Garage. That needs the garage
+// Not covered: a successful PutObject or ListObjectsV2 against Garage. That needs the garage
 // container; it is checked by hand in the stack (DEPLOYMENT.md, "Garage").
 
 // fileHeader builds the *multipart.FileHeader a handler would get from
@@ -58,6 +59,17 @@ func (r *recordingStore) Put(_ context.Context, key, contentType string, rd io.R
 	r.body, _ = io.ReadAll(rd)
 	return nil
 }
+
+func (r *recordingStore) List(context.Context) ([]StoredFile, error) { return nil, nil }
+
+// listStore lists a fixed set of files, or fails.
+type listStore struct {
+	files []StoredFile
+	err   error
+}
+
+func (l listStore) Put(context.Context, string, string, io.ReadSeeker, int64) error { return nil }
+func (l listStore) List(context.Context) ([]StoredFile, error)                      { return l.files, l.err }
 
 func TestUploadTypes(t *testing.T) {
 	t.Run("nothing executable or markup is allowed", func(t *testing.T) {
@@ -207,5 +219,90 @@ func TestFallbackWhenBucketRefuses(t *testing.T) {
 	got, err := os.ReadFile(filepath.Join(dir, strings.TrimPrefix(url, "/uploads/")))
 	if err != nil || !bytes.Equal(got, img) {
 		t.Fatalf("fallback file has %d bytes (%v), want %d", len(got), err, len(img))
+	}
+}
+
+func TestDiskFileStoreList(t *testing.T) {
+	if files, err := (DiskFileStore{Dir: filepath.Join(t.TempDir(), "missing")}).List(context.Background()); err != nil || len(files) != 0 {
+		t.Fatalf("missing dir: got %v, %v; want nothing and no error", files, err)
+	}
+
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "a.png"), []byte("abc"), 0644)
+	os.MkdirAll(filepath.Join(dir, "private"), 0755)
+	os.WriteFile(filepath.Join(dir, "private", "secret.png"), []byte("x"), 0644)
+
+	files, err := (DiskFileStore{Dir: dir}).List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || files[0].Name != "a.png" || files[0].Size != 3 {
+		t.Fatalf("got %+v, want just a.png (3 bytes): private/ must not be listed", files)
+	}
+}
+
+func TestFallbackFileStoreList(t *testing.T) {
+	ctx := context.Background()
+	bucket := listStore{files: []StoredFile{{Name: "a.png", Size: 1}, {Name: "b.png"}}}
+	disk := listStore{files: []StoredFile{{Name: "a.png", Size: 2}, {Name: "c.png"}}}
+
+	files, err := FallbackFileStore{Primary: bucket, Fallback: disk}.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]int64{}
+	for _, f := range files {
+		names[f.Name] = f.Size
+	}
+	if len(files) != 3 || names["a.png"] != 1 || len(names) != 3 {
+		t.Errorf("got %+v, want a (from the bucket), b and c once each", files)
+	}
+
+	t.Run("bucket down", func(t *testing.T) {
+		files, err := FallbackFileStore{Primary: listStore{err: errors.New("down")}, Fallback: disk}.List(ctx)
+		if err != nil || len(files) != 2 {
+			t.Errorf("got %+v, %v; want the disk's two files", files, err)
+		}
+	})
+	t.Run("both down", func(t *testing.T) {
+		_, err := FallbackFileStore{Primary: listStore{err: errors.New("down")}, Fallback: listStore{err: errors.New("gone")}}.List(ctx)
+		if err == nil {
+			t.Error("want an error when neither store can list")
+		}
+	})
+}
+
+func TestFallbackListWhenBucketRefuses(t *testing.T) {
+	// The real S3 client against a server that refuses: the listing still
+	// comes back, from disk.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "on-disk.png"), pngBytes(), 0644)
+	u := NewUploads(S3Config{Endpoint: srv.URL, Region: "garage", Bucket: "uploads", AccessKeyID: "GK0", SecretAccessKey: "s"}, dir, filepath.Join(dir, "private"))
+
+	files, err := u.List(context.Background())
+	if err != nil || len(files) != 1 || files[0].URL != "/uploads/on-disk.png" {
+		t.Fatalf("got %+v, %v; want the one disk file", files, err)
+	}
+}
+
+func TestUploadsList(t *testing.T) {
+	now := time.Now()
+	u := &Uploads{public: listStore{files: []StoredFile{
+		{Name: "old.png", Modified: now.Add(-time.Hour)},
+		{Name: "page.html", Modified: now},
+		{Name: "new.JPG", Modified: now.Add(-time.Minute)},
+		{Name: "noext", Modified: now},
+	}}}
+	files, err := u.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 || files[0].URL != "/uploads/new.JPG" || files[1].URL != "/uploads/old.png" {
+		t.Fatalf("got %+v, want new.JPG then old.png, nothing off the allow-list", files)
 	}
 }

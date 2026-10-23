@@ -1,8 +1,9 @@
 <script setup>
 /**
  * The admin's background panel for one canvas page, opened from BoxCanvas's
- * "Background" button: a colour, an image (uploaded, dropped on the panel or
- * given as a URL) and how the image fills the window.
+ * "Background" button: a colour, an image (uploaded, dropped on the panel,
+ * chosen from what is already uploaded, or given as a URL) and how the image
+ * fills the window.
  *
  * Every change previews live through the background store; Cancel (or
  * closing) puts the saved one back. Saving with neither colour nor image is
@@ -13,6 +14,7 @@ import { FITS, useBackgroundStore } from "@/stores/background";
 import { ACCEPT, uploadFile, isImage } from "@/uploads";
 import OverlayShell from "@/components/util/OverlayShell.vue";
 import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
+import UploadPicker from "@/components/util/UploadPicker.vue";
 
 const props = defineProps({
   page: { type: String, required: true },
@@ -41,6 +43,7 @@ const busy = ref(false);
 const error = ref("");
 const dragOver = ref(false);
 const confirmation = ref(false);
+const picking = ref(false);
 
 async function upload(file) {
   if (!file) return;
@@ -130,13 +133,14 @@ async function confirmReset() {
         <button v-if="draft.image" type="button" class="bar-btn small" @click="draft.image = ''">✕</button>
       </span>
     </label>
-    <span class="row">
+    <span class="row flex-wrap">
       <label class="bar-btn upload">
         {{ busy ? "Working…" : "Upload image…" }}
         <input type="file" :accept="ACCEPT.images" hidden :disabled="busy" @change="upload($event.target.files[0])" />
       </label>
-      <span class="hint">or drop one on this panel</span>
+      <button type="button" class="bar-btn" :disabled="busy" @click="picking = true">Choose from uploads…</button>
     </span>
+    <span class="hint">or drop one on this panel</span>
     <img v-if="draft.image && isImage(draft.image)" :src="draft.image" alt="" class="thumb" />
 
     <label v-if="draft.image">
@@ -164,6 +168,7 @@ async function confirmReset() {
     confirm-label="Reset"
     @confirm="confirmReset"
   />
+  <UploadPicker v-if="picking" v-model="picking" @pick="draft.image = $event" />
 </template>
 
 <style scoped>
