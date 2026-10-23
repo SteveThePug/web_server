@@ -112,7 +112,7 @@ const rows = [
   { y: 76, path: "/admin/login", name: "admin-login", file: "views/admin/Login.vue",
     note: "not guarded: calls auth.ensureLoaded() itself for its \"Already signed in\" card" },
   { y: 132, path: "/admin", name: "admin", file: "views/admin/Admin.vue", admin: true,
-    note: "meta: { requiresAdmin: true }, the only flag the beforeEach guard acts on" },
+    note: "meta: { requiresAdmin: true }; the beforeEach guard's other flag, requiresSignIn, is on /account" },
   { y: 188, path: "/automata", name: "mobile-automata", file: "views/automata/MobileAutomata.vue",
     note: "Turing machine / mobile automaton drawn to a <canvas>" },
   { y: 244, path: "/hotels", name: "cheap-hotels", file: "views/hotels/CheapHotels.vue",

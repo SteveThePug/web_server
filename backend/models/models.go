@@ -39,6 +39,14 @@ type User struct {
 	// Admin gates almost every mutation. It is copied into the access token,
 	// so a change here only takes effect on the user's next token refresh.
 	Admin bool `json:"admin"`
+	// Permissions names the gated services this non-admin user may use, one
+	// key each from services.PermissionTypes (admins pass every check
+	// regardless). Unlike Admin it is never copied into a token: the gate
+	// reads it from the row, which services.Auth loads on every request
+	// anyway, so a grant or revoke takes effect on the user's next request.
+	// Stored as a JSON array in one text column; a row from before the
+	// column existed reads as NULL, i.e. no permissions.
+	Permissions []string `gorm:"serializer:json" json:"permissions"`
 	// TokenVersion is the session generation counter. Every issued JWT
 	// carries the value current at the time it was minted, and
 	// services.Auth rejects a token whose value no longer matches, so

@@ -65,7 +65,8 @@ Two layout shells, defined in `src/router/index.js`:
 | --- | --- | --- |
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint): a box canvas, page key `index`; the old fixed page is its starter layout, `views/landing/landingLayout.js` |
 | `/stp` | DefaultLayout | The personal home page: an ordinary canvas page (the `Page` with slug `stp`) served by the catch-all, see "The /stp canvas" below |
-| `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
+| `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin`. The login page is everyone's, admin or not |
+| `/account`, `/no-access` | DefaultLayout | `views/account/Account.vue`, guarded by `meta.requiresSignIn`: the gated services a non-admin has been granted. `/no-access` is where nginx's permission gate sends a signed-in visitor without the grant |
 | `/automata`, `/hotels` | DefaultLayout | |
 | `/shrines`, `/shrines/*` | DefaultLayout | All canvas pages via the catch-all: `/shrines` is an index whose links are Link boxes placed by hand |
 | `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |

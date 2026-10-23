@@ -29,6 +29,11 @@ var logQuietDrop = map[string]bool{
 	"/auth/check":          true, // front-end session check
 }
 
+// logQuietDropPrefix is the permission gate's auth_request subrequest
+// (/auth/validate/<key>), dropped on 2xx for the same reason as
+// /auth/validate-admin above: it repeats on every request to a gated page.
+const logQuietDropPrefix = "/auth/validate/"
+
 // TrafficLogFormatter renders gin's log line. Signed to gin's LogFormatter
 // signature so it plugs into gin.LoggerWithFormatter.
 func TrafficLogFormatter(params gin.LogFormatterParams) string {
@@ -63,7 +68,7 @@ func TrafficLogFormatter(params gin.LogFormatterParams) string {
 	// All-quiet: drop heartbeat endpoints that succeeded. A 4xx/5xx on them
 	// is still interesting (an expired session raging against refresh, a
 	// broken admin gate) and is kept.
-	if logQuietDrop[path] && params.StatusCode < 400 {
+	if (logQuietDrop[path] || startsWith(path, logQuietDropPrefix)) && params.StatusCode < 400 {
 		return ""
 	}
 

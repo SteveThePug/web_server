@@ -167,6 +167,7 @@ func main() {
 	r.GET("/auth/check", store.CheckToken)
 	r.POST("/auth/logout", store.Logout)
 	r.GET("/auth/validate-admin", store.ValidateAdmin)
+	r.GET("/auth/validate/:permission", store.ValidatePermission)
 
 	// SPOTIFY
 	// The callback must be open — Spotify redirects a logged-out browser to

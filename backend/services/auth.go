@@ -155,7 +155,7 @@ func tokenVersionOf(v uint) uint {
 // verifies the signature and expiry, reads the id claim, loads the row, and
 // checks the token version. Every caller that used to hand-roll this sequence
 // (handlers.Store.CheckToken, handlers.Store.RefreshToken,
-// handlers.Store.tryRefreshAndValidateAdmin and the GraphQL refreshToken
+// handlers.Store.tryRefreshAndValidate and the GraphQL refreshToken
 // resolver) now goes through here, so the checks cannot drift apart.
 //
 // The returned error is always one of the sentinels above, wrapped or not, so

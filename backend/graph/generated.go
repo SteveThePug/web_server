@@ -15,6 +15,7 @@ import (
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -132,34 +133,35 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ApplyLayout     func(childComplexity int, id int, page string, replace bool) int
-		ClearBackground func(childComplexity int, page string) int
-		CreateActivity  func(childComplexity int, input model.CreateActivityInput) int
-		CreateBookmark  func(childComplexity int, input model.CreateBookmarkInput) int
-		CreateBox       func(childComplexity int, input model.CreateBoxInput) int
-		CreateFavorite  func(childComplexity int, input model.CreateFavoriteInput) int
-		CreateLayout    func(childComplexity int, input model.CreateLayoutInput) int
-		CreatePage      func(childComplexity int, input model.CreatePageInput) int
-		CreatePlace     func(childComplexity int, input model.CreatePlaceInput) int
-		CreatePost      func(childComplexity int, input model.CreatePostInput) int
-		CreateUser      func(childComplexity int, input model.CreateUserInput) int
-		DeleteBookmark  func(childComplexity int, id int) int
-		DeleteBox       func(childComplexity int, id int) int
-		DeleteLayout    func(childComplexity int, id int) int
-		DeletePage      func(childComplexity int, id int) int
-		DeletePlace     func(childComplexity int, id int) int
-		DeletePost      func(childComplexity int, id int) int
-		DeleteUser      func(childComplexity int, id int) int
-		Login           func(childComplexity int, input model.LoginInput) int
-		Logout          func(childComplexity int) int
-		RefreshToken    func(childComplexity int) int
-		SetBackground   func(childComplexity int, page string, input model.BackgroundInput) int
-		SetUserAdmin    func(childComplexity int, id int, admin bool) int
-		UpdateBox       func(childComplexity int, id int, input model.UpdateBoxInput) int
-		UpdateLayout    func(childComplexity int, id int, input model.UpdateLayoutInput) int
-		UpdatePage      func(childComplexity int, id int, input model.UpdatePageInput) int
-		UpdatePlace     func(childComplexity int, id int, input model.UpdatePlaceInput) int
-		UpdatePost      func(childComplexity int, id int, input model.UpdatePostInput) int
+		ApplyLayout        func(childComplexity int, id int, page string, replace bool) int
+		ClearBackground    func(childComplexity int, page string) int
+		CreateActivity     func(childComplexity int, input model.CreateActivityInput) int
+		CreateBookmark     func(childComplexity int, input model.CreateBookmarkInput) int
+		CreateBox          func(childComplexity int, input model.CreateBoxInput) int
+		CreateFavorite     func(childComplexity int, input model.CreateFavoriteInput) int
+		CreateLayout       func(childComplexity int, input model.CreateLayoutInput) int
+		CreatePage         func(childComplexity int, input model.CreatePageInput) int
+		CreatePlace        func(childComplexity int, input model.CreatePlaceInput) int
+		CreatePost         func(childComplexity int, input model.CreatePostInput) int
+		CreateUser         func(childComplexity int, input model.CreateUserInput) int
+		DeleteBookmark     func(childComplexity int, id int) int
+		DeleteBox          func(childComplexity int, id int) int
+		DeleteLayout       func(childComplexity int, id int) int
+		DeletePage         func(childComplexity int, id int) int
+		DeletePlace        func(childComplexity int, id int) int
+		DeletePost         func(childComplexity int, id int) int
+		DeleteUser         func(childComplexity int, id int) int
+		Login              func(childComplexity int, input model.LoginInput) int
+		Logout             func(childComplexity int) int
+		RefreshToken       func(childComplexity int) int
+		SetBackground      func(childComplexity int, page string, input model.BackgroundInput) int
+		SetUserAdmin       func(childComplexity int, id int, admin bool) int
+		SetUserPermissions func(childComplexity int, id int, permissions []string) int
+		UpdateBox          func(childComplexity int, id int, input model.UpdateBoxInput) int
+		UpdateLayout       func(childComplexity int, id int, input model.UpdateLayoutInput) int
+		UpdatePage         func(childComplexity int, id int, input model.UpdatePageInput) int
+		UpdatePlace        func(childComplexity int, id int, input model.UpdatePlaceInput) int
+		UpdatePost         func(childComplexity int, id int, input model.UpdatePostInput) int
 	}
 
 	Page struct {
@@ -169,6 +171,12 @@ type ComplexityRoot struct {
 		Slug      func(childComplexity int) int
 		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+	}
+
+	PermissionType struct {
+		Key   func(childComplexity int) int
+		Label func(childComplexity int) int
+		Path  func(childComplexity int) int
 	}
 
 	Place struct {
@@ -206,6 +214,7 @@ type ComplexityRoot struct {
 		Messages           func(childComplexity int) int
 		Page               func(childComplexity int, slug string) int
 		Pages              func(childComplexity int) int
+		PermissionTypes    func(childComplexity int) int
 		Places             func(childComplexity int) int
 		Post               func(childComplexity int, id int) int
 		Posts              func(childComplexity int) int
@@ -271,11 +280,12 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Admin     func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Username  func(childComplexity int) int
+		Admin       func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Permissions func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+		Username    func(childComplexity int) int
 	}
 }
 
@@ -319,6 +329,7 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*models.User, error)
 	DeleteUser(ctx context.Context, id int) (*models.User, error)
 	SetUserAdmin(ctx context.Context, id int, admin bool) (*models.User, error)
+	SetUserPermissions(ctx context.Context, id int, permissions []string) (*models.User, error)
 }
 type QueryResolver interface {
 	Activities(ctx context.Context) ([]*models.Activity, error)
@@ -342,6 +353,7 @@ type QueryResolver interface {
 	SteamStatus(ctx context.Context) (*model.SteamStatus, error)
 	Users(ctx context.Context) ([]*models.User, error)
 	User(ctx context.Context, id int) (*models.User, error)
+	PermissionTypes(ctx context.Context) ([]*services.PermissionType, error)
 }
 type RowingResolver interface {
 	Time(ctx context.Context, obj *models.Rowing) (int, error)
@@ -978,6 +990,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SetUserAdmin(childComplexity, args["id"].(int), args["admin"].(bool)), true
+	case "Mutation.setUserPermissions":
+		if e.ComplexityRoot.Mutation.SetUserPermissions == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setUserPermissions_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SetUserPermissions(childComplexity, args["id"].(int), args["permissions"].([]string)), true
 	case "Mutation.updateBox":
 		if e.ComplexityRoot.Mutation.UpdateBox == nil {
 			break
@@ -1070,6 +1093,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Page.UpdatedAt(childComplexity), true
+
+	case "PermissionType.key":
+		if e.ComplexityRoot.PermissionType.Key == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PermissionType.Key(childComplexity), true
+	case "PermissionType.label":
+		if e.ComplexityRoot.PermissionType.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PermissionType.Label(childComplexity), true
+	case "PermissionType.path":
+		if e.ComplexityRoot.PermissionType.Path == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PermissionType.Path(childComplexity), true
 
 	case "Place.category":
 		if e.ComplexityRoot.Place.Category == nil {
@@ -1257,6 +1299,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Pages(childComplexity), true
+	case "Query.permissionTypes":
+		if e.ComplexityRoot.Query.PermissionTypes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.PermissionTypes(childComplexity), true
 	case "Query.places":
 		if e.ComplexityRoot.Query.Places == nil {
 			break
@@ -1505,6 +1553,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.ID(childComplexity), true
+	case "User.permissions":
+		if e.ComplexityRoot.User.Permissions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.User.Permissions(childComplexity), true
 	case "User.updatedAt":
 		if e.ComplexityRoot.User.UpdatedAt == nil {
 			break
@@ -1844,6 +1898,18 @@ func (ec *executionContext) childFields_Page(ctx context.Context, field graphql.
 	return nil, fmt.Errorf("no field named %q was found under type Page", field.Name)
 }
 
+func (ec *executionContext) childFields_PermissionType(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "key":
+		return ec.fieldContext_PermissionType_key(ctx, field)
+	case "label":
+		return ec.fieldContext_PermissionType_label(ctx, field)
+	case "path":
+		return ec.fieldContext_PermissionType_path(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PermissionType", field.Name)
+}
+
 func (ec *executionContext) childFields_Place(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -2006,6 +2072,8 @@ func (ec *executionContext) childFields_User(ctx context.Context, field graphql.
 		return ec.fieldContext_User_username(ctx, field)
 	case "admin":
 		return ec.fieldContext_User_admin(ctx, field)
+	case "permissions":
+		return ec.fieldContext_User_permissions(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 }
@@ -2449,6 +2517,28 @@ func (ec *executionContext) field_Mutation_setUserAdmin_args(ctx context.Context
 		return nil, err
 	}
 	args["admin"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setUserPermissions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "permissions",
+		func(ctx context.Context, v any) ([]string, error) {
+			return ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["permissions"] = arg1
 	return args, nil
 }
 
@@ -5619,6 +5709,63 @@ func (ec *executionContext) fieldContext_Mutation_setUserAdmin(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setUserPermissions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_setUserPermissions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SetUserPermissions(ctx, fc.Args["id"].(int), fc.Args["permissions"].([]string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.User
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.User) graphql.Marshaler {
+			return ec.marshalNUser2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐUser(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_setUserPermissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_User(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setUserPermissions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Page_id(ctx context.Context, field graphql.CollectedField, obj *models.Page) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5755,6 +5902,75 @@ func (ec *executionContext) _Page_adminOnly(ctx context.Context, field graphql.C
 }
 func (ec *executionContext) fieldContext_Page_adminOnly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Page", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _PermissionType_key(ctx context.Context, field graphql.CollectedField, obj *services.PermissionType) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PermissionType_key(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Key, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PermissionType_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PermissionType", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PermissionType_label(ctx context.Context, field graphql.CollectedField, obj *services.PermissionType) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PermissionType_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PermissionType_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PermissionType", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PermissionType_path(ctx context.Context, field graphql.CollectedField, obj *services.PermissionType) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PermissionType_path(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Path, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PermissionType_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PermissionType", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Place_id(ctx context.Context, field graphql.CollectedField, obj *models.Place) (ret graphql.Marshaler) {
@@ -6932,6 +7148,51 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_permissionTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_permissionTypes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().PermissionTypes(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.SignedIn == nil {
+					var zeroVal []*services.PermissionType
+					return zeroVal, errors.New("directive signedIn is not implemented")
+				}
+				return ec.Directives.SignedIn(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*services.PermissionType) graphql.Marshaler {
+			return ec.marshalNPermissionType2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋservicesᚐPermissionTypeᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_permissionTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PermissionType(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7750,6 +8011,29 @@ func (ec *executionContext) _User_admin(ctx context.Context, field graphql.Colle
 }
 func (ec *executionContext) fieldContext_User_admin(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _User_permissions(ctx context.Context, field graphql.CollectedField, obj *models.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_User_permissions(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Permissions, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNString2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_User_permissions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("User", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -10582,6 +10866,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setUserPermissions":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setUserPermissions(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10642,6 +10933,54 @@ func (ec *executionContext) _Page(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "adminOnly":
 			out.Values[i] = ec._Page_adminOnly(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var permissionTypeImplementors = []string{"PermissionType"}
+
+func (ec *executionContext) _PermissionType(ctx context.Context, sel ast.SelectionSet, obj *services.PermissionType) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, permissionTypeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PermissionType")
+		case "key":
+			out.Values[i] = ec._PermissionType_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._PermissionType_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "path":
+			out.Values[i] = ec._PermissionType_path(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -11299,6 +11638,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "permissionTypes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_permissionTypes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -11856,6 +12217,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "admin":
 			out.Values[i] = ec._User_admin(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "permissions":
+			out.Values[i] = ec._User_permissions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -12609,6 +12975,32 @@ func (ec *executionContext) marshalNPage2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋ
 	return ec._Page(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPermissionType2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋservicesᚐPermissionTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []*services.PermissionType) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPermissionType2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋservicesᚐPermissionType(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPermissionType2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋservicesᚐPermissionType(ctx context.Context, sel ast.SelectionSet, v *services.PermissionType) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PermissionType(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPlace2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐPlaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Place) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -12809,6 +13201,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {

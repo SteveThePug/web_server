@@ -23,8 +23,9 @@ import (
 //     handler, so only the extension allow-list it gates on is covered, as a
 //     table contract below. (The site's general uploads — validation, naming,
 //     storage — are services.Uploads, tested in services/uploads_test.go.)
-//   - Store.isAdminRequest and the refresh fallback in ValidateAdmin: both
-//     reach the database on the refresh path.
+//   - Store.isAdminRequest, and the validate endpoints past their first
+//     check: they authenticate against the database. The allow/deny rule the
+//     permission gate applies is services.HasPermission, tested there.
 //
 // What is covered: the Spotify OAuth CSRF nonce store, the TTL rules of the
 // three shared caches, the admin claim check on the upload trust boundary, and
@@ -248,6 +249,26 @@ func TestRequestIsAdmin(t *testing.T) {
 				t.Fatalf("requestIsAdmin = %v, want %v", got, c.want)
 			}
 		})
+	}
+}
+
+// --- Permission gate ------------------------------------------------------
+
+// An unknown key must be refused before any session lookup (Store has no DB
+// or Auth here, so reaching one would panic): it is how a typo in an nginx
+// location shows up as a 404 rather than as a missing grant.
+func TestValidatePermissionUnknownKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	s := &Store{}
+	for _, key := range []string{"no-such-service", "admin", ""} {
+		rec := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(rec)
+		ctx.Params = gin.Params{{Key: "permission", Value: key}}
+		ctx.Request = httptest.NewRequest("GET", "/auth/validate/"+key, nil)
+		s.ValidatePermission(ctx)
+		if ctx.Writer.Status() != 404 {
+			t.Errorf("key %q: status %d, want 404", key, ctx.Writer.Status())
+		}
 	}
 }
 

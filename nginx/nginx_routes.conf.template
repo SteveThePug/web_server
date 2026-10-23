@@ -546,19 +546,25 @@
         # ---- Receipt printer (/receipt/) ----
         # The adamf/receipt_maker repo's `receipt serve`, running on stppi
         # (not in this stack: that machine reaches the printer on the home LAN). A page
-        # for printing a note or an uploaded image, plus its API. Gated like
-        # /tracker/ on the admin session; the prefix IS stripped. The server
-        # trusts nothing without X-Receipt-Token, which only this proxy adds
-        # (proxy_set_header replaces any copy the client sent). The value is
-        # quoted so an unset token still renders a valid config. When stppi
-        # is off or unreachable the connect fails fast and @receipt_offline answers.
+        # for printing a note or an uploaded image, plus its API. Behind the
+        # permission gate on `receipt`, so an account granted it in the admin
+        # panel can print without being an admin; the prefix IS stripped. The
+        # server trusts nothing without X-Receipt-Token, which only this proxy
+        # adds (proxy_set_header replaces any copy the client sent), and is
+        # told who is printing in X-Remote-User, likewise only set here. The
+        # token is quoted so an unset one still renders a valid config. When
+        # stppi is off or unreachable the connect fails fast and
+        # @receipt_offline answers.
         location = /receipt {
             return 301 /receipt/;
         }
 
         location ^~ /receipt/ {
-            auth_request /internal/auth/admin-validate;
-            error_page 401 403 = @auth_denied;
+            set $auth_permission receipt;
+            auth_request /internal/auth/validate;
+            auth_request_set $auth_user $upstream_http_x_auth_user;
+            error_page 401 = @auth_denied;
+            error_page 403 = @auth_forbidden;
             error_page 502 504 = @receipt_offline;
             limit_req zone=api burst=10 nodelay;
             # The server caps uploads at 16 MB; this leaves room for the
@@ -571,6 +577,7 @@
             # dead printer socket gives up after escpos's 60 s timeout.
             proxy_read_timeout 90s;
             proxy_set_header X-Receipt-Token "${RECEIPT_WEB_TOKEN}";
+            proxy_set_header X-Remote-User $auth_user;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -596,7 +603,7 @@
             return 301 /jobs/job-capture.user.js;
         }
 
-        # ---- Admin gate (/sb/, /jobs/, /tracker/, /receipt/, /dozzle/, /garage/, /radio/admin/, /uploads/private/) ----
+        # ---- Admin gate (/sb/, /jobs/, /tracker/, /dozzle/, /garage/, /radio/admin/, /uploads/private/) ----
         # (/uploads/private/ is declared in the including template, not here;
         # it points at the two locations below by name.)
         # `auth_request` makes nginx fire a subrequest here before serving the
@@ -633,4 +640,42 @@
 
         location @auth_denied {
             return 302 /admin/login?redirect=$request_uri;
+        }
+
+        # ---- Permission gate (/receipt/) ----
+        # The same auth_request mechanism as the admin gate above, but asking
+        # GET /auth/validate/<key> whether the session holds one named
+        # permission (services/permissions.go; admins hold them all). A gated
+        # location sets $auth_permission and points auth_request here:
+        #
+        #   set $auth_permission <key>;
+        #   auth_request /internal/auth/validate;
+        #   error_page 401 = @auth_denied;
+        #   error_page 403 = @auth_forbidden;
+        #
+        # The variable reaches the subrequest because nginx subrequests share
+        # the parent request's variables, and `set` runs in the rewrite phase,
+        # before auth_request's access phase. It must NOT also be given a
+        # default at server level: a subrequest re-runs the server-level
+        # rewrite phase, so that `set` would blank the shared value before
+        # this location reads it. (A location that forgets to set it asks for
+        # /auth/validate/, which matches no route: denied.) 401 (not signed in) goes to the
+        # login page as before; 403 (signed in, not granted) goes to a page
+        # that says so, since sending a signed-in user to log in again only
+        # shows them "Already signed in". On success the backend returns the
+        # username in X-Auth-User, which a location can forward with
+        # auth_request_set (see /receipt/). The body/limit settings are the
+        # admin-validate location's, for the same reasons.
+        location = /internal/auth/validate {
+            internal;
+            client_max_body_size 0;
+            rewrite ^ /auth/validate/$auth_permission break;
+            proxy_pass $upstream_backend;
+            proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
+            proxy_set_header Cookie $http_cookie;
+        }
+
+        location @auth_forbidden {
+            return 302 /no-access?path=$request_uri;
         }

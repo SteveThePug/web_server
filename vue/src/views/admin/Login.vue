@@ -1,10 +1,13 @@
 <script setup>
 /**
- * Route `/admin/login`. On success redirects to `?redirect=` or to /admin.
+ * Route `/admin/login`, the one login page for everyone: admins and accounts
+ * granted a gated service (the receipt printer, say). On success redirects to
+ * `?redirect=`, or else to /admin for an admin and /account for anyone else
+ * (a non-admin would only bounce off /admin's guard back to here).
  *
  * The `?redirect=` is set by two different gates: the SPA router guard
  * (`meta.requiresAdmin`) and nginx's `auth_request` gate in front of the
- * proxied containers (/notes/, /sb/). The latter means the
+ * proxied containers (/notes/, /sb/, /receipt/). The latter means the
  * destination is frequently NOT a Vue route, so see goTo() below.
  *
  * auth.logIn() never throws — it swallows the error — so success is detected by
@@ -31,8 +34,8 @@ const errorMsg = ref("");
 
 // Send the browser to `dest`, choosing SPA navigation vs. a real page load.
 //
-// nginx bounces /notes/ and /sb/ here when the admin cookie is
-// missing; those paths belong to other containers, so router.push() would just
+// nginx bounces /notes/, /sb/, /receipt/ and the like here when the session
+// is missing; those paths belong to other containers, so router.push() would just
 // match the catch-all 404 route and never leave the SPA. Resolving the path
 // first tells us which it is: the catch-all matches everything, so landing on
 // the route named "404" means no real Vue route exists and the browser needs a
@@ -42,7 +45,7 @@ const errorMsg = ref("");
 // site-relative path — a leading "//" or a scheme would be an open redirect.
 function goTo(dest) {
   if (typeof dest !== "string" || !dest.startsWith("/") || dest.startsWith("//")) {
-    router.push("/admin");
+    router.push(home());
     return;
   }
   if (router.resolve(dest).name !== "404") {
@@ -50,6 +53,11 @@ function goTo(dest) {
   } else {
     window.location.assign(dest);
   }
+}
+
+// Where a signed-in user lands when nothing asked for anywhere in particular.
+function home() {
+  return auth.user.admin ? "/admin" : "/account";
 }
 
 async function handleLogin() {
@@ -61,7 +69,7 @@ async function handleLogin() {
     // `loggedIn` rather than by catching.
     await auth.logIn(username.value, password.value);
     if (auth.loggedIn) {
-      goTo(route.query.redirect || "/admin");
+      goTo(route.query.redirect || home());
     } else {
       errorMsg.value = "Invalid username or password";
     }
@@ -81,7 +89,9 @@ function handleLogout() {
       <h1>Already signed in</h1>
       <p>You're logged in as <code>{{ auth.user.username }}</code>.</p>
       <div class="login-actions">
-        <Button @click="router.push('/admin')">Open Admin</Button>
+        <Button @click="router.push(home())">
+          {{ auth.user.admin ? "Open Admin" : "Your Services" }}
+        </Button>
         <Button @click="handleLogout">Log Out</Button>
       </div>
     </div>
@@ -91,7 +101,7 @@ function handleLogout() {
     <form v-else class="login-card bdr-1" @submit.prevent="handleLogin">
       <h1>Login</h1>
       <small class="login-hint">
-        Admin access is required beyond this point.
+        Sign in to continue.
       </small>
 
       <label class="login-field">

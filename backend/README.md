@@ -64,6 +64,16 @@ graph/               GraphQL layer
 - `GET /auth/validate-admin` answers with a bare status code (200 / 403 / 401)
   and will transparently refresh, so returning admins are recognised without a
   visible re-login.
+- `GET /auth/validate/:permission` is the same for one named permission
+  (200 / 403 / 401, and 404 for a key that does not exist). It backs nginx's
+  *permission gate*, which lets a non-admin account into one service — the
+  receipt printer at `/receipt/` — without making it an admin. Grantable keys
+  are the registry `services.PermissionTypes` (`services/permissions.go`);
+  a user's grants are `User.Permissions`, set from the admin panel's Manage
+  Users tab (`setUserPermissions`). Admins pass every permission check. The
+  check reads the user row, not the token, so a grant or revoke applies on
+  the next request. On 200 it returns the username in `X-Auth-User`, which
+  nginx forwards to the gated service as `X-Remote-User`.
 - Tokens are stateless. **Logout only clears the browser's cookies**; nothing
   is revoked server-side, and a token that has already been issued stays valid
   until it expires. The same is true of demoting an admin: it takes effect on

@@ -109,7 +109,7 @@ async function handleLogout() {
           </a>
           <!-- The receipt printer's page is served from stppi, which reaches
                the printer on the home LAN; nginx proxies /receipt/ there over
-               Tailscale behind the admin check. -->
+               Tailscale behind the `receipt` permission gate. -->
           <a
             class="admin-nav-link no-underline"
             href="/receipt/"

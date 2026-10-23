@@ -4,6 +4,17 @@ type User {
   updatedAt: Time!
   username: String!
   admin: Boolean!
+  # Keys of the gated services this user may use (see PermissionType). Admins
+  # pass every permission check whatever this holds.
+  permissions: [String!]!
+}
+
+# One grantable service, from services.PermissionTypes: `key` is what is
+# stored and what nginx gates on, `label` and `path` are for display.
+type PermissionType {
+  key: String!
+  label: String!
+  path: String!
 }
 
 input CreateUserInput {
@@ -14,10 +25,15 @@ input CreateUserInput {
 extend type Query {
   users: [User!]! @admin
   user(id: ID!): User @admin
+  # @signedIn rather than @admin: /account lists a non-admin's own services
+  # from it. The list itself is not a secret.
+  permissionTypes: [PermissionType!]! @signedIn
 }
 
 extend type Mutation {
   createUser(input: CreateUserInput!): User! @admin
   deleteUser(id: ID!): User! @admin
   setUserAdmin(id: ID!, admin: Boolean!): User! @admin
+  # Replaces the user's whole permission list; unknown keys are rejected.
+  setUserPermissions(id: ID!, permissions: [String!]!): User! @admin
 }

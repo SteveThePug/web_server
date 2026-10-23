@@ -68,7 +68,7 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | certbot                                       | `certbot`                     | —                             | —                                                                                                       | no                   |
 | cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
 | dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by nginx `auth_request`; reads the Docker socket)                               | no                   |
-| receipt printer (`receipt serve`, adamf/receipt_maker) | — (runs on **stppi**, not in this stack) | 8765 on stppi's Tailscale IP (`RECEIPT_WEB_UPSTREAM`) | `/receipt/`, prefix stripped (admin-gated by nginx `auth_request`; nginx adds `X-Receipt-Token`). The only upstream off this host; 503 "offline" when stppi is down | no |
+| receipt printer (`receipt serve`, adamf/receipt_maker) | — (runs on **stppi**, not in this stack) | 8765 on stppi's Tailscale IP (`RECEIPT_WEB_UPSTREAM`) | `/receipt/`, prefix stripped (permission-gated on `receipt` by nginx `auth_request`; nginx adds `X-Receipt-Token` and `X-Remote-User`). The only upstream off this host; 503 "offline" when stppi is down | no |
 | traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
 | autoheal (restarts unhealthy nginx)           | `autoheal`                    | — (no network)                | none; reads the Docker socket                                                                           | no                   |
 | garage (S3 object store)                      | `garage`                      | 3900 S3, 3902 web, 3903 admin | none directly; `/uploads/` falls back to its web endpoint for files not on the volume                   | no                   |
@@ -90,7 +90,7 @@ in one step — never change one without the other.**
 - **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
   `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
   backend down (502s until it appears) instead of refusing to start.
-- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/receipt/`, `/dozzle/`, `/garage/`, `/radio/admin/`, `/uploads/private/` and
+- **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/dozzle/`, `/garage/`, `/radio/admin/`, `/uploads/private/` and
   Gitea's history views and archives (`…/commit/`, `…/src/commit/`, `…/blame/commit/`, `…/archive/`, `…/compare/`; the
   branch views stay public) are
   protected by an `auth_request` subrequest to the backend's `/auth/validate-admin`; a failure
@@ -98,6 +98,11 @@ in one step — never change one without the other.**
   job and activity trackers also check the session themselves. Their carve-outs, which a session
   cookie never reaches, stay public at nginx and are guarded by bearer tokens in the apps:
   `/jobs/api/capture` and `/jobs/job-capture.user.js`, `/tracker/api/v1/` and `/tracker/tracker.user.js`.
+- **Permission gate.** `/receipt/` asks `/auth/validate/receipt` instead, which also lets in a
+  non-admin account granted `receipt` in the admin panel's Manage Users tab. Not signed in
+  redirects to the login; signed in without the grant redirects to `/no-access`. To let a
+  friend print: create their user (admin panel → User), then tick "Receipt printer" for them
+  under Manage Users. Revoking is the same tick, and applies on their next request.
 - **Public notes privacy boundary.** `/notes/` is public, and the only thing
   keeping `private/` (and `templates/`, `.git`, `.obsidian`) off it is a pair of
   nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its

@@ -25,7 +25,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { gql } from "@/graphql";
 import axios from "axios";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore, USER_FIELDS } from "@/stores/auth";
 
 export const useHomeDataStore = defineStore("homeData", () => {
   const loaded = ref(false);
@@ -66,7 +66,7 @@ export const useHomeDataStore = defineStore("homeData", () => {
             bookmarks { id category name link }
             giteaFeed { avatarUrl repoUrl repoName opType commitMessage createdAt }
             steamStatus { online recentGames { appId name playtime2Weeks playtimeForever headerImageUrl } }
-            me { id username admin }
+            me { ${USER_FIELDS} }
           }
         `),
         fetchRadioStatus(),

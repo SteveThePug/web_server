@@ -8,9 +8,11 @@ package graph
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"adam-french.co.uk/backend/graph/model"
 	"adam-french.co.uk/backend/models"
+	"adam-french.co.uk/backend/services"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -72,6 +74,41 @@ func (r *mutationResolver) SetUserAdmin(ctx context.Context, id int, admin bool)
 	return &user, nil
 }
 
+// SetUserPermissions is the resolver for the setUserPermissions field.
+func (r *mutationResolver) SetUserPermissions(ctx context.Context, id int, permissions []string) (*models.User, error) {
+	// The whole list is replaced, so the admin panel sends every ticked box
+	// each time. An unknown key is refused rather than dropped, so a stale
+	// front end cannot silently save less than it showed. The stored list is
+	// rebuilt in registry order, which also drops duplicates.
+	want := map[string]bool{}
+	for _, key := range permissions {
+		if !services.ValidPermission(key) {
+			return nil, fmt.Errorf("unknown permission %q", key)
+		}
+		want[key] = true
+	}
+	granted := []string{}
+	for _, p := range services.PermissionTypes {
+		if want[p.Key] {
+			granted = append(granted, p.Key)
+		}
+	}
+
+	var user models.User
+	if err := r.Store.DB.First(&user, id).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	// No token bump needed: the permission gate reads this column on every
+	// request, so the change applies to the user's next one.
+	user.Permissions = granted
+	if err := r.Store.DB.Save(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
 	var users []models.User
@@ -88,4 +125,10 @@ func (r *queryResolver) User(ctx context.Context, id int) (*models.User, error) 
 		return nil, fmt.Errorf("user not found")
 	}
 	return &user, nil
+}
+
+// PermissionTypes is the resolver for the permissionTypes field.
+func (r *queryResolver) PermissionTypes(ctx context.Context) ([]*services.PermissionType, error) {
+	// A copy, so nothing downstream can write through to the registry.
+	return ptrs(slices.Clone(services.PermissionTypes)), nil
 }

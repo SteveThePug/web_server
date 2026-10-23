@@ -1,5 +1,5 @@
 /**
- * Route table and the single admin route guard.
+ * Route table and the single sign-in/admin route guard.
  *
  * Structure: two layout shells. `/` mounts DefaultLayout (navbar + footer, dark
  * theme) and holds most routes; `/cv` mounts CVLayout (light print theme).
@@ -43,6 +43,21 @@ const router = createRouter({
                     name: "admin",
                     component: () => import("@/views/admin/Admin.vue"),
                     meta: { requiresAdmin: true },
+                },
+                // A signed-in user's own page: the gated services they have
+                // been granted. /no-access is the same page with a notice,
+                // where nginx's permission gate sends a refused visitor.
+                {
+                    path: "account",
+                    name: "account",
+                    component: () => import("@/views/account/Account.vue"),
+                    meta: { requiresSignIn: true },
+                },
+                {
+                    path: "no-access",
+                    name: "no-access",
+                    component: () => import("@/views/account/Account.vue"),
+                    meta: { requiresSignIn: true },
                 },
                 {
                     path: "automata",
@@ -96,7 +111,8 @@ const router = createRouter({
     ],
 });
 
-// Guard for routes marked `meta: { requiresAdmin: true }`.
+// Guard for routes marked `meta: { requiresAdmin: true }` or
+// `meta: { requiresSignIn: true }` (any account, admin or not).
 //
 // The admin flag arrives asynchronously, so navigating straight to /admin on a
 // cold load would otherwise read an empty user and bounce a legitimate admin to
@@ -109,10 +125,11 @@ const router = createRouter({
 // as "not signed in" — and `user` is re-read on every navigation, so a login or
 // logout during the session is honoured.
 router.beforeEach(async (to) => {
-    if (!to.meta.requiresAdmin) return;
+    if (!to.meta.requiresAdmin && !to.meta.requiresSignIn) return;
     const auth = useAuthStore();
     await auth.ensureLoaded();
-    if (!auth.user.admin)
+    const allowed = to.meta.requiresAdmin ? auth.user.admin : auth.loggedIn;
+    if (!allowed)
         return { path: "/admin/login", query: { redirect: to.fullPath } };
 });
 

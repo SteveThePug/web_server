@@ -25,6 +25,15 @@ func TestTrafficFormatterDropsQuietHeartbeats(t *testing.T) {
 	}
 }
 
+func TestTrafficFormatterDropsPermissionGate(t *testing.T) {
+	if out := TrafficLogFormatter(fmtParams("GET", "/auth/validate/receipt", 200, "172.28.0.6", time.Millisecond)); out != "" {
+		t.Fatalf("permission-gate 200 should be dropped, got %q", out)
+	}
+	if out := TrafficLogFormatter(fmtParams("GET", "/auth/validate/receipt", 403, "172.28.0.6", time.Millisecond)); out == "" {
+		t.Fatal("a refused permission check must stay visible")
+	}
+}
+
 func TestTrafficFormatterKeepsHeartbeatFailures(t *testing.T) {
 	out := TrafficLogFormatter(fmtParams("GET", "/auth/validate-admin", 401, "172.28.0.6", time.Millisecond))
 	if out == "" {

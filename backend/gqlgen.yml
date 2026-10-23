@@ -34,6 +34,10 @@ models:
         resolver: false
       deletedAt:
         resolver: false
+  # Not a database model: the fixed registry in services/permissions.go.
+  PermissionType:
+    model:
+      - adam-french.co.uk/backend/services.PermissionType
   Post:
     model:
       - adam-french.co.uk/backend/models.Post

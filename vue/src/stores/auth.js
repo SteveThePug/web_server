@@ -23,6 +23,11 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { gql } from "@/graphql";
 
+// The user fields every query here selects, so `user` has the same shape
+// whichever one filled it. `permissions` is the list of gated services
+// (/receipt/ and so on) a non-admin may open; see views/Account.vue.
+export const USER_FIELDS = "id username admin permissions";
+
 export const useAuthStore = defineStore("auth", () => {
   const user = ref({});
   const loggedIn = computed(() => !!user.value.username);
@@ -71,7 +76,7 @@ export const useAuthStore = defineStore("auth", () => {
     if (resolved.value) return Promise.resolve();
     if (!pending) {
       const requestedAt = epoch;
-      pending = gql(`query Me { me { id username admin } }`)
+      pending = gql(`query Me { me { ${USER_FIELDS} } }`)
         .then((data) => adoptSession(data.me, requestedAt))
         .catch((err) => console.error("me query failed:", err))
         .finally(() => {
@@ -98,7 +103,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function logIn(username, password) {
     try {
       const data = await gql(
-        `mutation Login($input: LoginInput!) { login(input: $input) { user { id username admin } } }`,
+        `mutation Login($input: LoginInput!) { login(input: $input) { user { ${USER_FIELDS} } } }`,
         { input: { username, password } },
       );
       user.value = data.login.user;
@@ -113,7 +118,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function createUser(username, password) {
     try {
       const data = await gql(
-        `mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id username admin } }`,
+        `mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { ${USER_FIELDS} } }`,
         { input: { username, password } },
       );
       return data.createUser;
@@ -128,7 +133,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function refreshToken() {
     try {
       const data = await gql(
-        `mutation { refreshToken { user { id username admin } } }`,
+        `mutation { refreshToken { user { ${USER_FIELDS} } } }`,
       );
       user.value = data.refreshToken.user;
       markSessionChanged();
@@ -141,7 +146,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function setUserAdmin(userId, admin) {
     try {
       const data = await gql(
-        `mutation SetUserAdmin($id: ID!, $admin: Boolean!) { setUserAdmin(id: $id, admin: $admin) { id username admin } }`,
+        `mutation SetUserAdmin($id: ID!, $admin: Boolean!) { setUserAdmin(id: $id, admin: $admin) { ${USER_FIELDS} } }`,
         { id: userId, admin },
       );
       return data.setUserAdmin;
@@ -149,6 +154,34 @@ export const useAuthStore = defineStore("auth", () => {
       console.error(err);
       throw err;
     }
+  }
+
+  /** Admin-only: replace a user's permission list. Returns the updated user;
+   *  re-throws. */
+  async function setUserPermissions(userId, permissions) {
+    try {
+      const data = await gql(
+        `mutation SetUserPermissions($id: ID!, $permissions: [String!]!) { setUserPermissions(id: $id, permissions: $permissions) { ${USER_FIELDS} } }`,
+        { id: userId, permissions },
+      );
+      return data.setUserPermissions;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  /** Signed-in only: every grantable service, as [{ key, label, path }].
+   *  Re-throws. */
+  async function fetchPermissionTypes() {
+    const data = await gql(`query { permissionTypes { key label path } }`);
+    return data.permissionTypes;
+  }
+
+  /** Whether the signed-in user may open the service gated on `key`. Admins
+   *  may open them all, as on the server. */
+  function can(key) {
+    return !!user.value.admin || (user.value.permissions ?? []).includes(key);
   }
 
   return {
@@ -165,5 +198,8 @@ export const useAuthStore = defineStore("auth", () => {
     logOut,
     createUser,
     setUserAdmin,
+    setUserPermissions,
+    fetchPermissionTypes,
+    can,
   };
 });

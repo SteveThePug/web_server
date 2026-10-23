@@ -93,51 +93,86 @@ func (store *Store) AdminMiddleware(ctx *gin.Context) {
 }
 
 // ValidateAdmin backs GET /auth/validate-admin, which the front end calls to
-// decide whether to show admin UI. It answers with a bare status code and no
-// body: 200 admin, 403 authenticated but not admin, 401 not authenticated.
+// decide whether to show admin UI, nginx's admin gate calls as an
+// auth_request, and the jobs container calls with the visitor's cookies. It
+// answers with a bare status code and no body: 200 admin, 403 authenticated
+// but not admin, 401 not authenticated.
 //
 // Unlike AdminMiddleware it falls back to the refresh token, and will mint a
 // new cookie pair as a side effect, so a returning admin is recognised
 // without a visible re-login.
 func (store *Store) ValidateAdmin(ctx *gin.Context) {
-	accessToken, err := ctx.Cookie("access_token")
-	if err != nil {
-		// No access token — try refreshing
-		if !store.tryRefreshAndValidateAdmin(ctx) {
-			ctx.Status(http.StatusUnauthorized)
+	store.validateSession(ctx, func(user *models.User, claims *jwt.MapClaims) bool {
+		// On the access-token path admin is read from the token, as
+		// everywhere else; on the refresh path there is no admin claim, and
+		// the row is what makes that path pick up a revoked admin flag.
+		if claims == nil {
+			return user.Admin
 		}
-		return
-	}
-
-	_, claims, err := store.Auth.AuthenticateTokenWithClaims(store.DB, accessToken)
-	if err != nil {
-		// Expired, invalid or revoked access token — try refreshing
-		if !store.tryRefreshAndValidateAdmin(ctx) {
-			ctx.Status(http.StatusUnauthorized)
-		}
-		return
-	}
-
-	admin, ok := (*claims)["admin"].(bool)
-	if !ok || !admin {
-		ctx.Status(http.StatusForbidden)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+		admin, ok := (*claims)["admin"].(bool)
+		return ok && admin
+	})
 }
 
-// tryRefreshAndValidateAdmin re-authenticates from the refresh token.
+// ValidatePermission backs GET /auth/validate/:permission, nginx's permission
+// gate (see services/permissions.go). Same bare-status contract and refresh
+// fallback as ValidateAdmin — 200 allowed, 403 signed in without the
+// permission, 401 not signed in — plus 404 for a key that is not in
+// services.PermissionTypes, so a typo in an nginx location fails closed and
+// visibly rather than as a 403 that looks like a missing grant.
 //
-// The bool does not mean "is an admin" — it means "this function already
-// wrote the response". It returns true both for a successful admin refresh
-// (200, new cookies set) and for a valid non-admin (403), and false only when
-// it could not decide, leaving the caller to send 401. Getting this backwards
-// would send two status codes for one request.
+// The decision reads the user row, not the token, for admins as well: a
+// grant, a revoke or a demotion applies on the very next request.
+func (store *Store) ValidatePermission(ctx *gin.Context) {
+	key := ctx.Param("permission")
+	if !services.ValidPermission(key) {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	store.validateSession(ctx, func(user *models.User, _ *jwt.MapClaims) bool {
+		return services.HasPermission(user, key)
+	})
+}
+
+// validateSession is the body shared by the two validate endpoints: identify
+// the caller from the access token, or failing that the refresh token, and
+// answer 200 / 403 / 401 according to allow.
 //
-// Admin status is re-read from the database here, which is what makes the
-// refresh path pick up a revoked admin flag.
-func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
+// allow receives the access token's claims, or nil when the caller was
+// identified from the refresh token (which carries no authorisation claims).
+//
+// On 200 the username goes back in X-Auth-User, which nginx can lift with
+// auth_request_set and hand to the service behind the gate, so that service
+// knows who is using it without having accounts of its own.
+func (store *Store) validateSession(ctx *gin.Context, allow func(*models.User, *jwt.MapClaims) bool) {
+	accessToken, err := ctx.Cookie("access_token")
+	if err == nil {
+		user, claims, err := store.Auth.AuthenticateTokenWithClaims(store.DB, accessToken)
+		if err == nil {
+			if !allow(user, claims) {
+				ctx.Status(http.StatusForbidden)
+				return
+			}
+			ctx.Header("X-Auth-User", user.Username)
+			ctx.Status(http.StatusOK)
+			return
+		}
+	}
+
+	// No access token, or an expired, invalid or revoked one — try refreshing.
+	if !store.tryRefreshAndValidate(ctx, allow) {
+		ctx.Status(http.StatusUnauthorized)
+	}
+}
+
+// tryRefreshAndValidate re-authenticates from the refresh token.
+//
+// The bool does not mean "allowed" — it means "this function already wrote
+// the response". It returns true both for a successful refresh (200, new
+// cookies set) and for a valid but unauthorised user (403, no new cookies),
+// and false only when it could not decide, leaving the caller to send 401.
+// Getting this backwards would send two status codes for one request.
+func (store *Store) tryRefreshAndValidate(ctx *gin.Context, allow func(*models.User, *jwt.MapClaims) bool) bool {
 	refreshToken, err := ctx.Cookie("refresh_token")
 	if err != nil {
 		return false
@@ -150,7 +185,7 @@ func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
 		return false
 	}
 
-	if !user.Admin {
+	if !allow(user, nil) {
 		ctx.Status(http.StatusForbidden)
 		return true
 	}
@@ -162,6 +197,7 @@ func (store *Store) tryRefreshAndValidateAdmin(ctx *gin.Context) bool {
 
 	store.setAuthCookies(ctx, tokens)
 
+	ctx.Header("X-Auth-User", user.Username)
 	ctx.Status(http.StatusOK)
 	return true
 }
