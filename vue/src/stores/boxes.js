@@ -36,6 +36,7 @@ const BOX_FIELDS = `
   h
   z
   framed
+  shadow
   hideOnMobile
   adminOnly
   componentId
@@ -45,7 +46,7 @@ const BOX_FIELDS = `
 // same box — or componentId, which keeps a copy of a linked box linked;
 // geometry is offset so the copy is visibly separate.
 const COPIED = [
-  "page", "kind", "widget", "html", "title", "w", "h", "framed", "hideOnMobile", "adminOnly", "componentId",
+  "page", "kind", "widget", "html", "title", "w", "h", "framed", "shadow", "hideOnMobile", "adminOnly", "componentId",
 ];
 
 const stores = new Map();

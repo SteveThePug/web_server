@@ -38,11 +38,17 @@ func (r *mutationResolver) CreateComponent(ctx context.Context, input model.Crea
 	if input.Framed != nil {
 		c.Framed = *input.Framed
 	}
+	if input.Shadow != nil {
+		c.Shadow = *input.Shadow
+	}
 	if input.AdminOnly != nil {
 		c.AdminOnly = *input.AdminOnly
 	}
 	c.W = max(c.W, minBoxSize)
 	c.H = max(c.H, minBoxSize)
+	if err := validateShadow(&c.Shadow); err != nil {
+		return nil, err
+	}
 	if err := r.Store.DB.Create(&c).Error; err != nil {
 		return nil, err
 	}
@@ -75,11 +81,17 @@ func (r *mutationResolver) UpdateComponent(ctx context.Context, id int, input mo
 	if input.Framed != nil {
 		c.Framed = *input.Framed
 	}
+	if input.Shadow != nil {
+		c.Shadow = *input.Shadow
+	}
 	if input.AdminOnly != nil {
 		c.AdminOnly = *input.AdminOnly
 	}
 	c.W = max(c.W, minBoxSize)
 	c.H = max(c.H, minBoxSize)
+	if err := validateShadow(&c.Shadow); err != nil {
+		return nil, err
+	}
 	if err := r.Store.DB.Save(&c).Error; err != nil {
 		return nil, err
 	}
@@ -128,7 +140,7 @@ func (r *mutationResolver) SaveBoxAsComponent(ctx context.Context, id int, name 
 	}
 	c := models.Component{
 		Name: name, Title: box.Title, HTML: *box.HTML,
-		W: box.W, H: box.H, Framed: box.Framed, AdminOnly: box.AdminOnly,
+		W: box.W, H: box.H, Framed: box.Framed, Shadow: box.Shadow, AdminOnly: box.AdminOnly,
 	}
 	err = r.Store.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&c).Error; err != nil {

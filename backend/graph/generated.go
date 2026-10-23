@@ -88,6 +88,7 @@ type ComplexityRoot struct {
 		ID           func(childComplexity int) int
 		Kind         func(childComplexity int) int
 		Page         func(childComplexity int) int
+		Shadow       func(childComplexity int) int
 		Title        func(childComplexity int) int
 		UpdatedAt    func(childComplexity int) int
 		W            func(childComplexity int) int
@@ -105,6 +106,7 @@ type ComplexityRoot struct {
 		HTML      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
+		Shadow    func(childComplexity int) int
 		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		Uses      func(childComplexity int) int
@@ -587,6 +589,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Box.Page(childComplexity), true
+	case "Box.shadow":
+		if e.ComplexityRoot.Box.Shadow == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Box.Shadow(childComplexity), true
 	case "Box.title":
 		if e.ComplexityRoot.Box.Title == nil {
 			break
@@ -672,6 +680,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Component.Name(childComplexity), true
+	case "Component.shadow":
+		if e.ComplexityRoot.Component.Shadow == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Component.Shadow(childComplexity), true
 	case "Component.title":
 		if e.ComplexityRoot.Component.Title == nil {
 			break
@@ -1966,6 +1980,8 @@ func (ec *executionContext) childFields_Box(ctx context.Context, field graphql.C
 		return ec.fieldContext_Box_z(ctx, field)
 	case "framed":
 		return ec.fieldContext_Box_framed(ctx, field)
+	case "shadow":
+		return ec.fieldContext_Box_shadow(ctx, field)
 	case "hideOnMobile":
 		return ec.fieldContext_Box_hideOnMobile(ctx, field)
 	case "adminOnly":
@@ -1996,6 +2012,8 @@ func (ec *executionContext) childFields_Component(ctx context.Context, field gra
 		return ec.fieldContext_Component_h(ctx, field)
 	case "framed":
 		return ec.fieldContext_Component_framed(ctx, field)
+	case "shadow":
+		return ec.fieldContext_Component_shadow(ctx, field)
 	case "adminOnly":
 		return ec.fieldContext_Component_adminOnly(ctx, field)
 	case "uses":
@@ -3848,6 +3866,29 @@ func (ec *executionContext) fieldContext_Box_framed(_ context.Context, field gra
 	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
+func (ec *executionContext) _Box_shadow(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Box_shadow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Shadow, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Box_shadow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Box", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Box_hideOnMobile(ctx context.Context, field graphql.CollectedField, obj *models.Box) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4122,6 +4163,29 @@ func (ec *executionContext) _Component_framed(ctx context.Context, field graphql
 }
 func (ec *executionContext) fieldContext_Component_framed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Component_shadow(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Component_shadow(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Shadow, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Component_shadow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Component", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Component_adminOnly(ctx context.Context, field graphql.CollectedField, obj *models.Component) (ret graphql.Marshaler) {
@@ -10128,7 +10192,7 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"page", "kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly", "componentId"}
+	fieldsInOrder := [...]string{"page", "kind", "widget", "html", "title", "x", "y", "w", "h", "z", "framed", "shadow", "hideOnMobile", "adminOnly", "componentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10212,6 +10276,13 @@ func (ec *executionContext) unmarshalInputCreateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.Framed = data
+		case "shadow":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shadow"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Shadow = data
 		case "hideOnMobile":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hideOnMobile"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -10249,7 +10320,7 @@ func (ec *executionContext) unmarshalInputCreateComponentInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "adminOnly"}
+	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "shadow", "adminOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10298,6 +10369,13 @@ func (ec *executionContext) unmarshalInputCreateComponentInput(ctx context.Conte
 				return it, err
 			}
 			it.Framed = data
+		case "shadow":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shadow"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Shadow = data
 		case "adminOnly":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -10636,7 +10714,7 @@ func (ec *executionContext) unmarshalInputUpdateBoxInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"widget", "html", "title", "x", "y", "w", "h", "z", "framed", "hideOnMobile", "adminOnly"}
+	fieldsInOrder := [...]string{"widget", "html", "title", "x", "y", "w", "h", "z", "framed", "shadow", "hideOnMobile", "adminOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10706,6 +10784,13 @@ func (ec *executionContext) unmarshalInputUpdateBoxInput(ctx context.Context, ob
 				return it, err
 			}
 			it.Framed = data
+		case "shadow":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shadow"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Shadow = data
 		case "hideOnMobile":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hideOnMobile"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -10736,7 +10821,7 @@ func (ec *executionContext) unmarshalInputUpdateComponentInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "adminOnly"}
+	fieldsInOrder := [...]string{"name", "title", "html", "w", "h", "framed", "shadow", "adminOnly"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -10785,6 +10870,13 @@ func (ec *executionContext) unmarshalInputUpdateComponentInput(ctx context.Conte
 				return it, err
 			}
 			it.Framed = data
+		case "shadow":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shadow"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Shadow = data
 		case "adminOnly":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adminOnly"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -11304,6 +11396,11 @@ func (ec *executionContext) _Box(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "shadow":
+			out.Values[i] = ec._Box_shadow(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "hideOnMobile":
 			out.Values[i] = ec._Box_hideOnMobile(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -11394,6 +11491,11 @@ func (ec *executionContext) _Component(ctx context.Context, sel ast.SelectionSet
 			}
 		case "framed":
 			out.Values[i] = ec._Component_framed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "shadow":
+			out.Values[i] = ec._Component_shadow(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

@@ -459,7 +459,7 @@ function toggleEdit() {
         :key="box.id"
         class="stack-item"
         :class="{ framed: box.framed, 'admin-only': box.adminOnly }"
-        :style="{ height: `${box.h}px` }"
+        :style="{ height: `${box.h}px`, boxShadow: box.shadow || undefined }"
       >
         <WidgetBox v-if="box.kind === 'widget'" :name="box.widget" />
         <HtmlBox v-else :html="box.html" :title="box.title" />

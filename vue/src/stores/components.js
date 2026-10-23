@@ -28,6 +28,7 @@ const COMPONENT_FIELDS = `
   w
   h
   framed
+  shadow
   adminOnly
   uses
 `;
@@ -35,7 +36,7 @@ const COMPONENT_FIELDS = `
 // Matches BOX_FIELDS in stores/boxes.js, for the mutations that answer with
 // a box.
 const BOX_FIELDS = `
-  id page kind widget html title x y w h z framed hideOnMobile adminOnly componentId
+  id page kind widget html title x y w h z framed shadow hideOnMobile adminOnly componentId
 `;
 
 export const useComponentsStore = createCrudStore("components", {
@@ -110,6 +111,7 @@ export const useComponentsStore = createCrudStore("components", {
           w: component.w,
           h: component.h,
           framed: component.framed,
+          shadow: component.shadow,
           adminOnly: component.adminOnly,
           ...at,
         };

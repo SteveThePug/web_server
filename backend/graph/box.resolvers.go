@@ -36,6 +36,9 @@ func (r *mutationResolver) CreateBox(ctx context.Context, input model.CreateBoxI
 	if input.Framed != nil {
 		box.Framed = *input.Framed
 	}
+	if input.Shadow != nil {
+		box.Shadow = *input.Shadow
+	}
 	if input.HideOnMobile != nil {
 		box.HideOnMobile = *input.HideOnMobile
 	}
@@ -101,6 +104,9 @@ func (r *mutationResolver) UpdateBox(ctx context.Context, id int, input model.Up
 	setInt(&box.Z, input.Z)
 	if input.Framed != nil {
 		box.Framed = *input.Framed
+	}
+	if input.Shadow != nil {
+		box.Shadow = *input.Shadow
 	}
 	if input.HideOnMobile != nil {
 		box.HideOnMobile = *input.HideOnMobile

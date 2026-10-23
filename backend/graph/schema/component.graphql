@@ -2,7 +2,7 @@
 # as a copy (an ordinary box) or linked (a Box whose componentId is set).
 # Linked boxes share only the html — editing a component changes every box
 # linked to it — while title, geometry, frame and visibility stay each box's
-# own. title, w, h, framed and adminOnly here are what a newly placed box
+# own. title, w, h, framed, shadow and adminOnly here are what a newly placed box
 # starts with. See models.Component and graph/component_helpers.go.
 #
 # Admin only throughout, reads included, because a component may have been
@@ -19,6 +19,7 @@ type Component {
   w: Int!
   h: Int!
   framed: Boolean!
+  shadow: String!
   adminOnly: Boolean!
   # How many boxes are linked to it.
   uses: Int!
@@ -31,6 +32,7 @@ input CreateComponentInput {
   w: Int
   h: Int
   framed: Boolean
+  shadow: String
   adminOnly: Boolean
 }
 
@@ -41,6 +43,7 @@ input UpdateComponentInput {
   w: Int
   h: Int
   framed: Boolean
+  shadow: String
   adminOnly: Boolean
 }
 
@@ -57,7 +60,7 @@ extend type Mutation {
   # no page changes.
   deleteComponent(id: ID!): Component! @admin
   # Makes html box `id` into a component named `name`, from its html, title,
-  # size, frame and adminOnly, and links the box to it. Answers with the box.
+  # size, frame, shadow and adminOnly, and links the box to it. Answers with the box.
   saveBoxAsComponent(id: ID!, name: String!): Box! @admin
   # Gives linked box `id` its own copy of the component's html and unlinks it.
   detachBox(id: ID!): Box! @admin

@@ -24,6 +24,8 @@ type Box {
   h: Int!
   z: Int!
   framed: Boolean!
+  # A CSS box-shadow value, or "" for none.
+  shadow: String!
   hideOnMobile: Boolean!
   adminOnly: Boolean!
   componentId: ID
@@ -41,6 +43,7 @@ input CreateBoxInput {
   h: Int
   z: Int
   framed: Boolean
+  shadow: String
   hideOnMobile: Boolean
   adminOnly: Boolean
   # Links the new box to this component; kind is then "html" and html is
@@ -58,6 +61,7 @@ input UpdateBoxInput {
   h: Int
   z: Int
   framed: Boolean
+  shadow: String
   hideOnMobile: Boolean
   adminOnly: Boolean
 }

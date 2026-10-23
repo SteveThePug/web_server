@@ -3,7 +3,7 @@
  * Side panel for the selected box in edit mode.
  *
  * Two save rhythms, matching how each kind of field is used:
- *   - Settings (title, geometry, frame, mobile, widget) save as soon as they
+ *   - Settings (title, geometry, frame, shadow, mobile, widget) save as soon as they
  *     change — on blur/Enter for numbers, on change for the rest — the same
  *     "instant" model as dragging.
  *   - HTML is a draft. Typing updates the box on the canvas live (through the
@@ -101,6 +101,19 @@ watch(draftHtml, (html) => {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => emit("preview", dirty.value ? html : null), 300);
 });
+
+// Starting points for a box's shadow, which is any CSS box-shadow value.
+// Ticking "Shadow" uses the first; the text field takes anything else.
+const SHADOWS = {
+  Hard: "6px 6px 0 var(--color-quaternary)",
+  Soft: "0 6px 18px rgb(0 0 0 / 0.5)",
+  Glow: "0 0 14px var(--color-primary)",
+};
+
+function saveShadow(event) {
+  const value = event.target.value.trim();
+  if (value !== props.box.shadow) save({ shadow: value });
+}
 
 async function save(patch) {
   try {
@@ -295,6 +308,14 @@ function resizeByKey(event) {
         <label class="check">
           <input
             type="checkbox"
+            :checked="!!box.shadow"
+            @change="save({ shadow: $event.target.checked ? SHADOWS.Hard : '' })"
+          />
+          Shadow
+        </label>
+        <label class="check">
+          <input
+            type="checkbox"
             :checked="box.hideOnMobile"
             @change="save({ hideOnMobile: $event.target.checked })"
           />
@@ -304,6 +325,27 @@ function resizeByKey(event) {
           <input type="checkbox" :checked="box.adminOnly" @change="save({ adminOnly: $event.target.checked })" />
           Admin only
         </label>
+      </div>
+
+      <div v-if="box.shadow" class="shadow">
+        <button
+          v-for="(value, name) in SHADOWS"
+          :key="name"
+          type="button"
+          class="save small"
+          :class="{ active: box.shadow === value }"
+          @click="save({ shadow: value })"
+        >
+          {{ name }}
+        </button>
+        <input
+          type="text"
+          :value="box.shadow"
+          spellcheck="false"
+          title="Any CSS box-shadow value, e.g. 4px 4px 0 red, 0 0 10px #0f0"
+          @change="saveShadow"
+          @keydown.enter="$event.target.blur()"
+        />
       </div>
 
       <template v-if="box.kind === 'html'">
@@ -494,6 +536,26 @@ function resizeByKey(event) {
 .save.small {
   padding: 0.1rem 0.6rem;
   font-size: 0.95rem;
+}
+
+.shadow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.shadow .active {
+  color: var(--color-tertiary);
+  border-color: var(--color-tertiary);
+}
+.shadow input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 5px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  background: var(--color-surface-deep);
+  border: 1px solid var(--color-quaternary);
 }
 
 .linked {

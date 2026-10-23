@@ -271,7 +271,7 @@ renders any page's boxes.
   component's html in its `html` (`fillLinked` in
   `backend/graph/component_helpers.go`), and saving the html in `BoxEditor`
   saves the component, so every linked box on every page changes. Only the
-  html is shared; title, geometry, frame and visibility stay each box's own.
+  html is shared; title, geometry, frame, shadow and visibility stay each box's own.
   "Save as component" in the editor makes a component from an html box and
   links it; "Detach" gives a linked box its own copy. Deleting a component
   detaches its boxes first, so no page changes. A layout keeps both the link

@@ -90,6 +90,8 @@ const style = computed(() => ({
   // handles sit just outside its edges, where an overlapping neighbour with a
   // higher z would otherwise cover them and take the press.
   zIndex: props.selected ? 100000 : props.box.z,
+  // Applied inline because it is any CSS box-shadow value the admin typed.
+  boxShadow: props.box.shadow || undefined,
 }));
 
 </script>

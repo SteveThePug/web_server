@@ -6,6 +6,8 @@ package graph
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"adam-french.co.uk/backend/models"
 )
@@ -13,6 +15,10 @@ import (
 // minBoxSize stops a box being resized to nothing, after which it could not
 // be grabbed again on the canvas.
 const minBoxSize = 40
+
+// maxShadowLen bounds a box's shadow, which is a single CSS value: even a
+// stack of a few comma-separated shadows is well under it.
+const maxShadowLen = 200
 
 func setInt(dst *int, src *int) {
 	if src != nil {
@@ -43,9 +49,23 @@ func validateBox(box *models.Box) error {
 	if box.ComponentID != nil && box.Kind != "html" {
 		return errors.New("only an html box can be linked to a component")
 	}
+	if err := validateShadow(&box.Shadow); err != nil {
+		return err
+	}
 	box.X = max(box.X, 0)
 	box.Y = max(box.Y, 0)
 	box.W = max(box.W, minBoxSize)
 	box.H = max(box.H, minBoxSize)
+	return nil
+}
+
+// validateShadow trims a box-shadow value and bounds its length. The value is
+// not parsed: the front end sets it through a style binding, so it can only
+// ever be the one property, and an invalid value just draws no shadow.
+func validateShadow(shadow *string) error {
+	*shadow = strings.TrimSpace(*shadow)
+	if len(*shadow) > maxShadowLen {
+		return fmt.Errorf("a shadow is at most %d characters", maxShadowLen)
+	}
 	return nil
 }

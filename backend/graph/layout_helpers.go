@@ -31,6 +31,7 @@ type layoutBox struct {
 	H            int     `json:"h"`
 	Z            int     `json:"z"`
 	Framed       bool    `json:"framed"`
+	Shadow       string  `json:"shadow,omitempty"`
 	HideOnMobile bool    `json:"hideOnMobile"`
 	AdminOnly    bool    `json:"adminOnly"`
 	// ComponentID is the component a linked box was linked to. HTML is
@@ -104,7 +105,7 @@ func snapshotPage(db *gorm.DB, page, name string) (layout models.Layout, empty b
 		stored[i] = layoutBox{
 			Kind: b.Kind, Widget: b.Widget, HTML: b.HTML, Title: b.Title,
 			X: b.X, Y: b.Y, W: b.W, H: b.H, Z: b.Z,
-			Framed: b.Framed, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
+			Framed: b.Framed, Shadow: b.Shadow, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
 			ComponentID: b.ComponentID,
 		}
 	}
@@ -217,7 +218,7 @@ func applyLayoutTo(tx *gorm.DB, layout *models.Layout, page string, replace bool
 		boxes[i] = models.Box{
 			Page: page, Kind: b.Kind, Widget: b.Widget, HTML: b.HTML, Title: b.Title,
 			X: b.X, Y: b.Y, W: b.W, H: b.H, Z: b.Z + zShift,
-			Framed: b.Framed, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
+			Framed: b.Framed, Shadow: b.Shadow, HideOnMobile: b.HideOnMobile, AdminOnly: b.AdminOnly,
 		}
 		if b.ComponentID != nil && live[*b.ComponentID] {
 			boxes[i].ComponentID = b.ComponentID

@@ -42,6 +42,7 @@ type CreateBoxInput struct {
 	H            *int    `json:"h,omitempty"`
 	Z            *int    `json:"z,omitempty"`
 	Framed       *bool   `json:"framed,omitempty"`
+	Shadow       *string `json:"shadow,omitempty"`
 	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
 	AdminOnly    *bool   `json:"adminOnly,omitempty"`
 	ComponentID  *int    `json:"componentId,omitempty"`
@@ -54,6 +55,7 @@ type CreateComponentInput struct {
 	W         *int    `json:"w,omitempty"`
 	H         *int    `json:"h,omitempty"`
 	Framed    *bool   `json:"framed,omitempty"`
+	Shadow    *string `json:"shadow,omitempty"`
 	AdminOnly *bool   `json:"adminOnly,omitempty"`
 }
 
@@ -167,6 +169,7 @@ type UpdateBoxInput struct {
 	H            *int    `json:"h,omitempty"`
 	Z            *int    `json:"z,omitempty"`
 	Framed       *bool   `json:"framed,omitempty"`
+	Shadow       *string `json:"shadow,omitempty"`
 	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
 	AdminOnly    *bool   `json:"adminOnly,omitempty"`
 }
@@ -178,6 +181,7 @@ type UpdateComponentInput struct {
 	W         *int    `json:"w,omitempty"`
 	H         *int    `json:"h,omitempty"`
 	Framed    *bool   `json:"framed,omitempty"`
+	Shadow    *string `json:"shadow,omitempty"`
 	AdminOnly *bool   `json:"adminOnly,omitempty"`
 }
 

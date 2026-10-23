@@ -191,8 +191,11 @@ type Box struct {
 	// No gorm default on Framed: GORM omits zero values for defaulted columns
 	// on insert, so default:true would turn an explicit false into true.
 	// CreateBox applies the true default itself.
-	Framed       bool `gorm:"not null" json:"framed"`
-	HideOnMobile bool `gorm:"not null;default:false" json:"hideOnMobile"`
+	Framed bool `gorm:"not null" json:"framed"`
+	// Shadow is a CSS box-shadow value drawn around the box, or "" for none.
+	// It is independent of Framed, so an unframed box can still cast one.
+	Shadow       string `gorm:"not null;default:''" json:"shadow"`
+	HideOnMobile bool   `gorm:"not null;default:false" json:"hideOnMobile"`
 	// AdminOnly boxes are never sent to anyone but an admin (the boxes
 	// resolver filters them out), so they suit private notes.
 	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
@@ -266,7 +269,8 @@ type Layout struct {
 // boxes share only the HTML — editing it changes every one of them at once —
 // while title, geometry, frame and visibility stay each box's own, since
 // those are about where it sits on a page rather than what it is. Title, W,
-// H, Framed and AdminOnly are the defaults a newly placed box starts with.
+// H, Framed, Shadow and AdminOnly are the defaults a newly placed box starts
+// with.
 // Widgets are not components: a widget box is just a name, with nothing
 // worth sharing. The unique index is partial for the same reason as Page's.
 type Component struct {
@@ -280,6 +284,7 @@ type Component struct {
 	W         int            `gorm:"not null" json:"w"`
 	H         int            `gorm:"not null" json:"h"`
 	// No gorm default on Framed, for the same reason as Box.Framed.
-	Framed    bool `gorm:"not null" json:"framed"`
-	AdminOnly bool `gorm:"not null;default:false" json:"adminOnly"`
+	Framed    bool   `gorm:"not null" json:"framed"`
+	Shadow    string `gorm:"not null;default:''" json:"shadow"`
+	AdminOnly bool   `gorm:"not null;default:false" json:"adminOnly"`
 }
