@@ -14,7 +14,10 @@
  *
  * While a drag is in progress the box draws from a local `draft`. On release
  * the final geometry is emitted once as `commit`; the parent saves it. A press
- * that never moves is a click (select only) and commits nothing.
+ * that never moves is a click (select only) and commits nothing. Drags snap
+ * to the lines `targets` returns (see ./alignment.js), and the guides for
+ * what the box currently lines up with are emitted as `guides` for the canvas
+ * to draw, since a guide runs outside this box.
  */
 import { computed, toRef } from "vue";
 import { useBoxInteraction } from "./useBoxInteraction";
@@ -25,15 +28,18 @@ const props = defineProps({
   editing: { type: Boolean, default: false },
   selected: { type: Boolean, default: false },
   label: { type: String, default: "" },
+  // (box) => alignment.snapTargets(...) for that box, or null for the grid alone.
+  targets: { type: Function, default: null },
 });
 
-const emit = defineEmits(["select", "commit", "action"]);
+const emit = defineEmits(["select", "commit", "action", "guides"]);
 
 const HANDLES = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
 
 const { draft, start } = useBoxInteraction({
   box: toRef(props, "box"),
   scale: toRef(props, "scale"),
+  targets: () => props.targets?.(props.box),
   emit,
 });
 const geom = computed(() => draft.value ?? props.box);

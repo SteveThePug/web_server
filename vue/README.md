@@ -302,7 +302,13 @@ renders any page's boxes.
   `/fonts/` without CORS headers.
 - **Editing.** Admins get an "Edit layout" toggle at desktop width. Geometry
   saves on pointer release, and the box is moved locally first and put back if
-  the save fails. `BoxEditor.vue` is the side panel. Settings save on change;
+  the save fails. Dragging snaps a box's edges and centre to other boxes'
+  edges and centres and to the canvas's sides, centre and top, within 6 screen
+  px, and draws a pink guide along each line it then shares; a resize snaps
+  the dragged edge the same way. Elsewhere the 5px grid applies. The pure
+  geometry is `alignment.js`; the admin bar's "Align" button turns it off (kept
+  per browser by `editorPrefs.js`), and holding Ctrl/⌘ mid-drag skips it.
+  `BoxEditor.vue` is the side panel. Settings save on change;
   HTML is a draft that previews live and saves with Save or Ctrl/Cmd+S, or
   automatically on leaving the box (selecting another, clicking empty canvas,
   Done, ✕).

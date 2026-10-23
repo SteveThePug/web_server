@@ -1,14 +1,17 @@
 import { onUnmounted, ref, toValue } from "vue";
+import { NO_TARGETS, SNAP_PX, guidesFor, place } from "./alignment";
 
-const SNAP = 5;
-const MIN_SIZE = 40;
-
-/** Owns pointer lifecycle and optimistic geometry while a box is manipulated. */
-export function useBoxInteraction({ box, scale, emit }) {
+/**
+ * Owns pointer lifecycle and optimistic geometry while a box is manipulated.
+ *
+ * `targets` returns what the box can line up with (alignment.snapTargets), or
+ * null when snapping is off; it is asked once per drag, since nothing else
+ * moves meanwhile. The guides for each position are emitted as `guides`, and
+ * an empty list on release. Holding Ctrl/⌘ places the box on the grid alone.
+ */
+export function useBoxInteraction({ box, scale, targets, emit }) {
   const draft = ref(null);
   let drag = null;
-
-  const snap = (n) => Math.round(n / SNAP) * SNAP;
 
   function start(mode, event) {
     if (event.button !== 0) return;
@@ -16,7 +19,14 @@ export function useBoxInteraction({ box, scale, emit }) {
     event.preventDefault();
     event.target.setPointerCapture(event.pointerId);
     const { x, y, w, h } = toValue(box);
-    drag = { mode, startX: event.clientX, startY: event.clientY, from: { x, y, w, h }, moved: false };
+    drag = {
+      mode,
+      startX: event.clientX,
+      startY: event.clientY,
+      from: { x, y, w, h },
+      targets: targets?.() ?? NO_TARGETS,
+      moved: false,
+    };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", end);
     window.addEventListener("pointercancel", end);
@@ -30,24 +40,11 @@ export function useBoxInteraction({ box, scale, emit }) {
     if (!drag.moved && Math.hypot(dx, dy) < 3) return;
     drag.moved = true;
 
-    const { x, y, w, h } = drag.from;
-    const next = { x, y, w, h };
-    if (drag.mode === "move") {
-      next.x = Math.max(0, snap(x + dx));
-      next.y = Math.max(0, snap(y + dy));
-    } else {
-      if (drag.mode.includes("e")) next.w = Math.max(MIN_SIZE, snap(w + dx));
-      if (drag.mode.includes("s")) next.h = Math.max(MIN_SIZE, snap(h + dy));
-      if (drag.mode.includes("w")) {
-        next.x = Math.max(0, Math.min(snap(x + dx), x + w - MIN_SIZE));
-        next.w = x + w - next.x;
-      }
-      if (drag.mode.includes("n")) {
-        next.y = Math.max(0, Math.min(snap(y + dy), y + h - MIN_SIZE));
-        next.h = y + h - next.y;
-      }
-    }
+    const free = event.ctrlKey || event.metaKey;
+    const lines = free ? NO_TARGETS : drag.targets;
+    const next = place(drag.from, drag.mode, dx, dy, lines, SNAP_PX / factor);
     draft.value = next;
+    emit("guides", guidesFor(next, drag.mode, lines));
   }
 
   function end() {
@@ -55,6 +52,7 @@ export function useBoxInteraction({ box, scale, emit }) {
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", end);
     window.removeEventListener("pointercancel", end);
+    if (drag.moved) emit("guides", []);
     if (drag.moved && draft.value) emit("commit", { ...draft.value });
     drag = null;
     draft.value = null;

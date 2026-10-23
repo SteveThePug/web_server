@@ -17,7 +17,10 @@
  * maintain, and no editing at that width.
  *
  * Admins get an Edit toggle. In edit mode boxes drag and resize (BoxFrame),
- * changes save on release, and the selected box opens in BoxEditor. Boxes
+ * changes save on release, and the selected box opens in BoxEditor. A dragged
+ * box snaps its edges and centre to other boxes' and to the canvas's sides
+ * and centre, drawing a guide along each line it shares (./alignment.js); the
+ * Align button turns that off, and Ctrl/⌘ while dragging skips it once. Boxes
  * marked adminOnly are never sent to anyone else (the server filters them);
  * admins see them outlined. Image and video files dropped onto the canvas in
  * edit mode are uploaded and each becomes a box where it was dropped; "+ From
@@ -50,7 +53,8 @@ import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import UploadPicker from "@/components/util/UploadPicker.vue";
 import BoxFrame from "./BoxFrame.vue";
 import BoxEditor from "./BoxEditor.vue";
-import { panelWidth } from "./editorPrefs";
+import { panelWidth, snapping } from "./editorPrefs";
+import { snapTargets } from "./alignment";
 import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
@@ -130,6 +134,24 @@ const contentH = computed(() => Math.max(0, ...store.boxes.map((b) => b.y + b.h)
 // Spare room below the lowest box while editing, so there is somewhere to
 // drag to.
 const canvasH = computed(() => Math.max(400, contentH.value + (inEditMode.value ? 400 : 40)));
+
+// ---- Alignment -----------------------------------------------------------
+// What a dragged box can line up with: every other box, and the canvas. Only
+// the dragged box reports guides, so one list serves the whole canvas. One
+// function for every BoxFrame, so redrawing the guides on each pointermove
+// doesn't hand every frame a new prop and redraw it too.
+const guides = ref([]);
+function targetsFor(box) {
+  return snapping.value ? snapTargets(store.boxes.filter((b) => b.id !== box.id), CANVAS_W) : null;
+}
+
+// A guide is a 1-screen-px line, so its thickness undoes the canvas scale.
+function guideStyle(g) {
+  const thickness = `${1 / scale.value}px`;
+  return g.axis === "x"
+    ? { left: `${g.at}px`, top: `${g.from}px`, width: thickness, height: `${g.to - g.from}px` }
+    : { top: `${g.at}px`, left: `${g.from}px`, height: thickness, width: `${g.to - g.from}px` };
+}
 
 // ---- Mobile ordering -----------------------------------------------------
 const stacked = computed(() =>
@@ -407,6 +429,16 @@ function toggleEdit() {
           {{ importing ? "Importing…" : starterLabel }}
         </button>
         <button type="button" class="bar-btn" @click="picking = true">+ From uploads…</button>
+        <button
+          type="button"
+          class="bar-btn"
+          :class="{ on: snapping }"
+          :aria-pressed="snapping"
+          title="Snap dragged boxes to other boxes' edges and centres (hold Ctrl/⌘ to skip once)"
+          @click="snapping = !snapping"
+        >
+          Align: {{ snapping ? "on" : "off" }}
+        </button>
       </template>
       <span v-if="inEditMode" class="hint">
         {{ uploading ? `Uploading ${uploading}…` : "Drop images or videos onto the canvas to add them" }}
@@ -458,7 +490,9 @@ function toggleEdit() {
             :editing="inEditMode"
             :selected="inEditMode && box.id === selectedId"
             :label="labelOf(box)"
+            :targets="targetsFor"
             @select="select(box)"
+            @guides="guides = $event"
             @commit="commitGeometry(box, $event)"
             @action="onAction(box, $event)"
           >
@@ -469,6 +503,7 @@ function toggleEdit() {
               :title="box.title"
             />
           </BoxFrame>
+          <div v-for="g in guides" :key="`${g.axis}${g.at}`" class="guide" :style="guideStyle(g)" />
         </div>
       </div>
     </div>
@@ -566,6 +601,13 @@ function toggleEdit() {
   outline: 1px dashed var(--color-quaternary);
   background-image: radial-gradient(var(--color-quaternary) 1px, transparent 1px);
   background-size: 20px 20px;
+}
+/* Above every box, the lifted selected one (BoxFrame) included. */
+.guide {
+  position: absolute;
+  z-index: 100001;
+  background: var(--color-tertiary);
+  pointer-events: none;
 }
 .canvas.drag-over {
   outline: 3px dashed var(--color-primary);
