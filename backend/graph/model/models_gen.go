@@ -52,6 +52,11 @@ type CreateFavoriteInput struct {
 	Link *string `json:"link,omitempty"`
 }
 
+type CreateLayoutInput struct {
+	Name string `json:"name"`
+	Page string `json:"page"`
+}
+
 type CreatePageInput struct {
 	Slug      string `json:"slug"`
 	Title     string `json:"title"`
@@ -153,6 +158,10 @@ type UpdateBoxInput struct {
 	Framed       *bool   `json:"framed,omitempty"`
 	HideOnMobile *bool   `json:"hideOnMobile,omitempty"`
 	AdminOnly    *bool   `json:"adminOnly,omitempty"`
+}
+
+type UpdateLayoutInput struct {
+	Name *string `json:"name,omitempty"`
 }
 
 type UpdatePageInput struct {

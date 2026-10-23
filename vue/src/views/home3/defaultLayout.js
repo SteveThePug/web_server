@@ -1,6 +1,7 @@
 /**
- * The pre-Home3 /stp page (views/home/Home.vue) redrawn as boxes, for the
- * one-off "Import current layout" button on an empty canvas.
+ * The pre-Home3 /stp page (views/home/Home.vue) redrawn as boxes, offered
+ * as the "Old /stp grid" starter when a page is created
+ * (views/canvas/pageStarters.js).
  *
  * Home.vue was an A4 sheet (~800×1120px) holding a 10×10 CSS grid with 5px
  * gaps, between two 240px sidebars. The grid areas below are copied from its

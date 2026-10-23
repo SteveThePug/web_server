@@ -9,8 +9,8 @@
   <DiagramFigure id="frontend-route-tree" title="The route tree and its layouts" :min-width="800">
     <svg class="dg" viewBox="0 0 1140 640" role="img" aria-labelledby="frontend-route-tree-t">
       <title id="frontend-route-tree-t">
-        Vue Router table: DefaultLayout holding the landing page, /stp, admin routes, automata, hotels and
-        the catch-all CanvasPage; /stp2 with no layout; /cv inside CVLayout
+        Vue Router table: DefaultLayout holding the landing page, admin routes, automata, hotels and
+        the catch-all CanvasPage (which serves /stp); /stp2 with no layout; /cv inside CVLayout
       </title>
 
       <!-- Router -->
@@ -47,14 +47,13 @@
 
       <!-- Trunk to DefaultLayout children -->
       <path class="dg-edge dg-edge--plain" d="M450,211 H475" />
-      <path class="dg-edge dg-edge--plain" d="M475,43 V379" />
+      <path class="dg-edge dg-edge--plain" d="M475,43 V323" />
       <path class="dg-edge" d="M475,43 H496" />
       <path class="dg-edge" d="M475,99 H496" />
-      <path class="dg-edge" d="M475,155 H496" />
-      <path class="dg-edge dg-edge--pink" d="M475,211 H496" />
+      <path class="dg-edge dg-edge--pink" d="M475,155 H496" />
+      <path class="dg-edge" d="M475,211 H496" />
       <path class="dg-edge" d="M475,267 H496" />
       <path class="dg-edge" d="M475,323 H496" />
-      <path class="dg-edge" d="M475,379 H496" />
       <path class="dg-edge dg-edge--muted" d="M450,453 H496" />
       <path class="dg-edge" d="M450,523 H496" />
 
@@ -110,18 +109,16 @@ import DiagramFigure from "../../DiagramFigure.vue";
 const rows = [
   { y: 20, path: "/", name: "landing", file: "views/landing/Landing.vue", static: true,
     note: "BoxCanvas page=\"index\"; the canvas itself is a defineAsyncComponent chunk" },
-  { y: 76, path: "/stp", name: "home", file: "views/home3/Home3.vue",
-    note: "BoxCanvas page=\"stp\" with the defaultLayout.js starter" },
-  { y: 132, path: "/admin/login", name: "admin-login", file: "views/admin/Login.vue",
+  { y: 76, path: "/admin/login", name: "admin-login", file: "views/admin/Login.vue",
     note: "not guarded: calls auth.ensureLoaded() itself for its \"Already signed in\" card" },
-  { y: 188, path: "/admin", name: "admin", file: "views/admin/Admin.vue", admin: true,
+  { y: 132, path: "/admin", name: "admin", file: "views/admin/Admin.vue", admin: true,
     note: "meta: { requiresAdmin: true }, the only flag the beforeEach guard acts on" },
-  { y: 244, path: "/automata", name: "mobile-automata", file: "views/automata/MobileAutomata.vue",
+  { y: 188, path: "/automata", name: "mobile-automata", file: "views/automata/MobileAutomata.vue",
     note: "Turing machine / mobile automaton drawn to a <canvas>" },
-  { y: 300, path: "/hotels", name: "cheap-hotels", file: "views/hotels/CheapHotels.vue",
+  { y: 244, path: "/hotels", name: "cheap-hotels", file: "views/hotels/CheapHotels.vue",
     note: "Travelodge price scanner over /py/hotels (NDJSON streams via fetch)" },
-  { y: 356, path: "/:pathMatch(.*)*", name: "404", file: "views/canvas/CanvasPage.vue",
-    note: "any other path: query page(slug) → BoxCanvas for that slug, else the 404 view" },
+  { y: 300, path: "/:pathMatch(.*)*", name: "404", file: "views/canvas/CanvasPage.vue",
+    note: "any other path, /stp included: query page(slug) → BoxCanvas for that slug, else the 404 view" },
   { y: 430, path: "/stp2", name: "home2", file: "views/home2/Home2.vue", bare: true,
     note: "static full-bleed CSS mock: no navbar, no footer, unlinked" },
   { y: 500, path: "/cv", name: "cv", file: "views/CV/CV.vue",

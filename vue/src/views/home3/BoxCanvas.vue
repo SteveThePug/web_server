@@ -1,8 +1,8 @@
 <script setup>
 /**
  * A free-form canvas of boxes the admin arranges in the browser, for one page
- * key (see stores/boxes.js). Home3.vue (/stp), the landing page and every
- * admin-created page (views/canvas/CanvasPage.vue) are this component.
+ * key (see stores/boxes.js). The landing page and every admin-created page
+ * (views/canvas/CanvasPage.vue, /stp included) are this component.
  *
  * Every box (the `Box` GraphQL type) has a position, size and z-index in px
  * on a fixed CANVAS_W-wide design canvas. The canvas is drawn at that width
@@ -26,6 +26,10 @@
  * The canvas also owns its page's background (stores/background.js), which
  * DefaultLayout paints behind the whole window while the canvas is mounted;
  * admins change it with the Background button.
+ *
+ * The Layouts button saves the page as a named layout, or loads a saved one
+ * onto it (LayoutPanel.vue, stores/layouts.js) — which is how a layout moves
+ * from one page to another.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useMediaQuery } from "@vueuse/core";
@@ -33,6 +37,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useBoxesStore } from "@/stores/boxes";
 import { useBackgroundStore } from "@/stores/background";
 import BackgroundEditor from "./BackgroundEditor.vue";
+import LayoutPanel from "./LayoutPanel.vue";
 import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import UploadPicker from "@/components/util/UploadPicker.vue";
 import BoxFrame from "./BoxFrame.vue";
@@ -67,6 +72,7 @@ const background = useBackgroundStore();
 background.show(props.page);
 onBeforeUnmount(() => background.hide(props.page));
 const backgroundOpen = ref(false);
+const layoutsOpen = ref(false);
 const confirmation = ref(null);
 
 const isMobile = useMediaQuery(MOBILE_QUERY);
@@ -317,12 +323,26 @@ async function placePicked(url) {
 // selection changes or it unmounts.
 function select(box) {
   backgroundOpen.value = false;
+  layoutsOpen.value = false;
   selectedId.value = box.id;
 }
 
+// The background and layouts panels sit in the same place, so one closes the
+// other, and either closes the box editor.
 function toggleBackground() {
   backgroundOpen.value = !backgroundOpen.value;
-  if (backgroundOpen.value) selectedId.value = null;
+  if (backgroundOpen.value) {
+    layoutsOpen.value = false;
+    selectedId.value = null;
+  }
+}
+
+function toggleLayouts() {
+  layoutsOpen.value = !layoutsOpen.value;
+  if (layoutsOpen.value) {
+    backgroundOpen.value = false;
+    selectedId.value = null;
+  }
 }
 
 function toggleEdit() {
@@ -340,8 +360,11 @@ function toggleEdit() {
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
         {{ editing ? "Done" : "Edit layout" }}
       </button>
-       <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="toggleBackground">
+      <button type="button" class="bar-btn" :class="{ on: backgroundOpen }" @click="toggleBackground">
         Background
+      </button>
+      <button type="button" class="bar-btn" :class="{ on: layoutsOpen }" @click="toggleLayouts">
+        Layouts
       </button>
       <template v-if="inEditMode">
         <select v-model="newChoice" class="bar-btn" @change="addBox">
@@ -430,6 +453,7 @@ function toggleEdit() {
     </div>
 
     <BackgroundEditor v-if="backgroundOpen && canEdit" :page="page" @close="backgroundOpen = false" />
+    <LayoutPanel v-if="layoutsOpen && canEdit" :page="page" @close="layoutsOpen = false" />
 
     <BoxEditor
       v-if="inEditMode && selected"

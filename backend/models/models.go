@@ -157,9 +157,9 @@ type Place struct {
 }
 
 // Box is one panel on a canvas page. Page names the canvas it belongs to:
-// "stp" for the home page, "index" for the landing page's overlay, or a
-// Page.Slug for an admin-created page — it is a key, not a foreign key, so the
-// built-in canvases need no Page row. Its position and size are in px on a
+// "index" for the landing page, or a Page.Slug for an admin-created page
+// (the home page is the Page "stp") — it is a key, not a foreign key, so the
+// built-in landing canvas needs no Page row. Its position and size are in px on a
 // fixed 1400px-wide design canvas, which the page scales down on narrower
 // screens — so the stored numbers mean the same thing for every visitor. Kind "widget" renders a built-in Vue component named by Widget;
 // kind "html" renders HTML in a sandboxed iframe on the front end, which is
@@ -207,7 +207,7 @@ type Page struct {
 }
 
 // Background is the page background behind one canvas (Page is the same page
-// key a Box has: "index" for the landing page, "stp", or a Page's slug), so
+// key a Box has: "index" for the landing page, or a Page's slug), so
 // built-in canvases and admin-created pages are set the same way. A page with
 // no row shows the theme's halftone; deleting the row is "reset to default".
 // The unique index is partial for the same reason as Page's.
@@ -223,4 +223,26 @@ type Background struct {
 	Image string `gorm:"not null;default:''" json:"image"`
 	// Fit is how Image fills the window: "cover", "contain" or "tile".
 	Fit string `gorm:"not null;default:cover" json:"fit"`
+}
+
+// Layout is a named copy of one canvas page's boxes and background, saved so
+// it can be loaded onto any page later (graph/layout_helpers.go). It is a
+// snapshot, not a link: loading it creates new boxes that belong to the
+// target page, so editing either page afterwards never touches the other or
+// the layout. The content is JSON rather than child rows because nothing
+// queries inside it — it is only ever written whole and read whole. The
+// unique index is partial for the same reason as Page's.
+type Layout struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Name      string         `gorm:"not null;index:idx_layouts_name,unique,where:deleted_at IS NULL" json:"name"`
+	// SourcePage is the page key it was saved from, for the list only.
+	SourcePage string `gorm:"not null" json:"sourcePage"`
+	// Boxes is a JSON array of the boxes' content and geometry, without id
+	// or page.
+	Boxes string `gorm:"type:text;not null" json:"-"`
+	// Background is the page's background as JSON, or nil if it had none.
+	Background *string `gorm:"type:text" json:"-"`
 }

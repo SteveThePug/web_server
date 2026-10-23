@@ -34,11 +34,6 @@ const router = createRouter({
                     component: Landing,
                 },
                 {
-                    path: "stp",
-                    name: "home",
-                    component: () => import("@/views/home3/Home3.vue"),
-                },
-                {
                     path: "admin/login",
                     name: "admin-login",
                     component: () => import("@/views/admin/Login.vue"),
@@ -66,9 +61,10 @@ const router = createRouter({
                     component: () =>
                         import("@/views/architecture/Architecture.vue"),
                 },
-                // /shrines and the shrines under it are canvas pages, made
-                // from the admin panel's Pages tab and served by the catch-all
-                // below. The old hand-written ones (views/home/shrines/) are
+                // /stp, /shrines and the shrines under it are canvas pages,
+                // made from the admin panel's Pages tab and served by the
+                // catch-all below. /stp's old route (views/home3/Home3.vue)
+                // and the hand-written shrines (views/home/shrines/) are
                 // unrouted.
                 // Anything else is an admin-created canvas page if one exists
                 // at that address (the Page GraphQL type), else the 404.

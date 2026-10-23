@@ -1,5 +1,5 @@
-# Boxes on a canvas page: the home page (/stp, page "stp"), the landing
-# page's overlay (page "index") or an admin-created Page (page = its slug).
+# Boxes on a canvas page: the landing page (page "index") or an
+# admin-created Page (page = its slug; the home page /stp is the Page "stp").
 # Anyone may read a page's layout — it is the page — but only an admin may
 # change it, and adminOnly boxes are only ever returned to an admin. x/y/w/h
 # are px on a fixed 1400px-wide design canvas; see models.Box.

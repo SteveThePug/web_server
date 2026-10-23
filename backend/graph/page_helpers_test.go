@@ -21,8 +21,9 @@ func TestValidateSlug(t *testing.T) {
 		{"shrines/demoman", true},   // no longer an SPA route
 		{"admin/pages", false},      // under an SPA route
 		{"jobs/x", false},           // under an nginx route
-		{"stp", false},              // a built-in canvas's key
-		{"index", false},            // likewise
+		{"stp", true},               // the home page is a canvas page too
+		{"stp2", false},             // an SPA route
+		{"index", false},            // the landing canvas's key
 		{"stp-fan-page", true},      // only whole segments are reserved
 	} {
 		err := validateSlug(c.slug)

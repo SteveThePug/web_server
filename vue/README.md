@@ -64,7 +64,7 @@ Two layout shells, defined in `src/router/index.js`:
 | Path | Layout | Notes |
 | --- | --- | --- |
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint): a box canvas, page key `index`; the old fixed page is its starter layout, `views/landing/landingLayout.js` |
-| `/stp` | DefaultLayout | The personal home page: an admin-editable canvas of boxes (`views/home3/`, see "The /stp canvas" below) |
+| `/stp` | DefaultLayout | The personal home page: an ordinary canvas page (the `Page` with slug `stp`) served by the catch-all, see "The /stp canvas" below |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin` |
 | `/automata`, `/hotels` | DefaultLayout | |
 | `/shrines`, `/shrines/*` | DefaultLayout | All canvas pages via the catch-all: `/shrines` is an index whose links are Link boxes placed by hand |
@@ -227,14 +227,18 @@ so every visitor sees the saved layout. The canvas is `views/home3/BoxCanvas.vue
 and it is not only `/stp`: every box has a `page` key, and the same component
 renders any page's boxes.
 
-- **Pages.** `"stp"` is `/stp` (`Home3.vue`). `"index"` is the landing page
+- **Pages.** `"index"` is the landing page
   (`Landing.vue`), which is nothing but the canvas. Any other key is the slug of a **`Page`** (GraphQL
   type, `stores/pages.js`), an admin-created page served at `/<slug>` by the
   router's catch-all (`views/canvas/CanvasPage.vue`). Pages are created from
   the admin panel's Pages tab (which also has a "New shrine" form, a blank page
   under `shrines/`), or from the 404 of the address you want; each can start
-  from a layout in `views/canvas/pageStarters.js` (Blank, Notes board). Title, address and visibility are under "Page
+  from a layout in `views/canvas/pageStarters.js` (Blank, Notes board, Old /stp grid). Title, address and visibility are under "Page
   settings" on the page; renaming moves its boxes, deleting takes them too.
+  `/stp` is one of these pages too (slug `stp`): it used to have its own route
+  (`Home3.vue`, now legacy), and the backend creates its `Page` row once at
+  start-up (`ensureStpPage` in `backend/services/database.go`), so it can be
+  renamed, hidden or deleted like any other.
   The server refuses slugs that an SPA or nginx route would answer first
   (`validateSlug` in `backend/graph/page_helpers.go`) — add to that list when
   adding a route.
@@ -247,6 +251,18 @@ renders any page's boxes.
   it behind the whole window, navbar included, while that canvas is mounted,
   and falls back to the halftone. Renaming or deleting a page carries its
   background along; an admin-only page's background is hidden with it.
+- **Saved layouts.** A **`Layout`** (GraphQL type, `stores/layouts.js`) is a
+  named copy of one page's boxes and background, made with the "Layouts"
+  button next to "Background" (`LayoutPanel.vue`). "Load here" copies a layout
+  onto the page on screen; the admin panel's Pages tab copies one onto any page
+  without opening it. Loading onto a page with boxes asks whether to replace
+  them or add on top (copies stacked above). A replace first saves the page
+  as a layout called "<page> before <layout>, <time>", so it can be undone by
+  loading that back. They are copies, not links: editing a page never changes
+  a layout or another page. That is also how a layout moves: save it on one
+  page, load it on another. The copying happens on the server
+  (`backend/graph/layout_helpers.go`); the browser only sees names and box
+  counts. All of it is admin-only, since a layout keeps admin-only boxes.
 - **Admin only.** A box or a page can be marked admin-only. The server never
   sends those to anyone else, so they are fit for private notes; admins see
   such boxes outlined, with a 🔒 in edit mode. The "Note" template starts
@@ -284,9 +300,9 @@ renders any page's boxes.
   drop would (`UploadPicker`). Starter HTML is in `templates.js`; links in a box
   need `target="_top"` or `_blank` (the Link templates set it), or they open
   inside the frame. A canvas given a `starter` has an import button in edit
-  mode (it confirms first if the page isn't empty): on `/stp`, "Import current
-  layout" recreates the old `Home.vue` grid from `defaultLayout.js`; on `/`,
-  "Import old landing page" recreates the old bio and links.
+  mode (it confirms first if the page isn't empty): only `/` has one, "Import
+  old landing page", which recreates the old bio and links. The old `Home.vue`
+  grid (`defaultLayout.js`) is the "Old /stp grid" starter for a new page.
 - **Phones (≤700px)** get no canvas: boxes stack full-width in `(y, x)` order at
   their saved height, skipping any with `hideOnMobile`. There is no separate
   mobile layout. To change the order, move boxes on the desktop canvas.
@@ -331,7 +347,7 @@ in its header comment; the summary:
 
 | File | Status |
 | --- | --- |
-| `views/home3/Home3.vue` | live (`/stp`) — the box canvas; its widget boxes use **Intro3** and **Gym2** |
+| `views/home3/Home3.vue` | legacy: `/stp`'s old route, before it became a canvas `Page`; no route. The rest of `views/home3/` (`BoxCanvas.vue` and friends) is live |
 | `views/home/shrines/{Shrines,Demoman,GTO,Evangelion,Skipskipbenben}.vue` | the old `/shrines` index and hand-written shrines (Demoman a video wall, the rest `<Wip />`), unrouted; shrines are canvas pages now |
 | `views/home/Home.vue` | legacy fixed grid that `/stp` used to be; no route. Its widgets are still live through `home3/widgetRegistry.js` |
 | `views/home/Intro.vue` | superseded by `Intro2.vue`; not imported |

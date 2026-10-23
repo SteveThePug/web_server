@@ -24,11 +24,11 @@ const maxSlugLen = 100
 // reservedFirstSegments are paths a page could never be reached at, because
 // nginx or one of the SPA's own routes answers them first (see
 // nginx/nginx_routes.conf.template and vue/src/router/index.js), plus the
-// built-in canvases' page keys, whose boxes a page of the same slug would
-// share. "shrines" is deliberately absent: /shrines and the shrine pages under
-// it are all canvas pages.
+// landing page's key "index", whose boxes a page of the same slug would
+// share. "shrines" and "stp" are deliberately absent: /shrines, the shrine
+// pages under it and the home page /stp are all canvas pages.
 var reservedFirstSegments = map[string]bool{
-	"stp": true, "stp2": true, "index": true, "admin": true, "cv": true,
+	"stp2": true, "index": true, "admin": true, "cv": true,
 	"automata": true, "hotels": true, "api": true, "py": true, "radio": true,
 	"gitea": true, "notes": true, "sb": true, "jobs": true, "tracker": true,
 	"usaco": true, "uploads": true, "img": true, "fonts": true, "pdf": true,
@@ -52,7 +52,7 @@ func validateSlug(slug string) error {
 }
 
 // pageHiddenFrom reports whether the page with this key is an adminOnly page
-// and the caller is not an admin. A key with no Page row (a built-in canvas,
+// and the caller is not an admin. A key with no Page row (the landing page,
 // or a page that doesn't exist) is not hidden.
 func pageHiddenFrom(ctx context.Context, db *gorm.DB, key string) (bool, error) {
 	if IsAdminFromCtx(ctx) {

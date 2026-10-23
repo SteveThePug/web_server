@@ -7,9 +7,12 @@ defineProps({
   title: { type: String, default: "Are you sure?" },
   message: { type: String, required: true },
   confirmLabel: { type: String, default: "Confirm" },
+  // A second, milder choice beside the confirm button, e.g. "Add on top"
+  // next to "Replace". Omitted, there are only Confirm and Cancel.
+  secondaryLabel: { type: String, default: "" },
 });
 
-const emit = defineEmits(["confirm", "cancel"]);
+const emit = defineEmits(["confirm", "secondary", "cancel"]);
 
 function cancel() {
   open.value = false;
@@ -20,6 +23,11 @@ function confirm() {
   open.value = false;
   emit("confirm");
 }
+
+function secondary() {
+  open.value = false;
+  emit("secondary");
+}
 </script>
 
 <template>
@@ -29,6 +37,7 @@ function confirm() {
       <p>{{ message }}</p>
       <div class="actions">
         <button type="button" class="confirm-button" @click="confirm">{{ confirmLabel }}</button>
+        <button v-if="secondaryLabel" type="button" @click="secondary">{{ secondaryLabel }}</button>
         <button type="button" class="cancel-button" @click="cancel">Cancel</button>
       </div>
     </div>

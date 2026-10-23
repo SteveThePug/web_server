@@ -54,12 +54,29 @@ func migrateDatabase(db *gorm.DB) error {
 		&models.Box{},
 		&models.Page{},
 		&models.Background{},
+		&models.Layout{},
 	)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return ensureStpPage(db)
+}
+
+// ensureStpPage turns the home page (/stp) into an ordinary canvas Page once.
+// It used to be a built-in canvas with its own route; its boxes and
+// background were already keyed "stp", so a Page row with that slug is all
+// it takes. Unscoped, so that deleting the page on purpose sticks rather than
+// bringing it back on the next start.
+func ensureStpPage(db *gorm.DB) error {
+	var count int64
+	if err := db.Unscoped().Model(&models.Page{}).Where("slug = ?", "stp").Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	return db.Create(&models.Page{Slug: "stp", Title: "STP"}).Error
 }
 
 // InitDatabase connects to Postgres and runs the auto-migration.

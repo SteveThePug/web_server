@@ -1,6 +1,6 @@
 /**
  * Page backgrounds (the `Background` GraphQL type), one per canvas page key —
- * "index" for the landing page, "stp", or a Page slug such as
+ * "index" for the landing page, or a Page slug such as "stp" or
  * "shrines/evangelion" — and which one is on screen.
  *
  * DefaultLayout paints `style` behind everything, navbar included, so a

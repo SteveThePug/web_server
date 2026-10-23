@@ -1,0 +1,48 @@
+# Saved layouts: a named copy of one canvas page's boxes and background,
+# which can be loaded onto any canvas page — the landing page ("index") or a
+# Page's slug. Loading copies: the new boxes belong to the target page, so
+# editing a page afterwards never changes the layout or another page. Moving
+# a layout is saving it on one page and loading it on another with
+# replace: true. See models.Layout and graph/layout_helpers.go.
+#
+# Admin only throughout, reads included, because a layout keeps a page's
+# adminOnly boxes along with the rest.
+
+type Layout {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  name: String!
+  # The page key it was saved from.
+  sourcePage: String!
+  boxCount: Int!
+  hasBackground: Boolean!
+}
+
+input CreateLayoutInput {
+  name: String!
+  # The page key to save, as it is now.
+  page: String!
+}
+
+input UpdateLayoutInput {
+  name: String
+}
+
+extend type Query {
+  # Newest first.
+  layouts: [Layout!]! @admin
+}
+
+extend type Mutation {
+  createLayout(input: CreateLayoutInput!): Layout! @admin
+  # Renames it; what a layout holds never changes after it is saved.
+  updateLayout(id: ID!, input: UpdateLayoutInput!): Layout! @admin
+  deleteLayout(id: ID!): Layout! @admin
+  # Copies the layout onto `page` and answers with that page's boxes.
+  # replace: false adds the copies on top of what is there, leaving the
+  # background alone. replace: true first saves the page as a layout named
+  # "<page> before <layout>, <time>", then swaps its boxes and background
+  # for the layout's.
+  applyLayout(id: ID!, page: String!, replace: Boolean!): [Box!]! @admin
+}

@@ -94,3 +94,13 @@ models:
     fields:
       deletedAt:
         resolver: false
+  Layout:
+    model:
+      - adam-french.co.uk/backend/models.Layout
+    fields:
+      deletedAt:
+        resolver: false
+      boxCount:
+        resolver: true
+      hasBackground:
+        resolver: true

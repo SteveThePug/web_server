@@ -1,8 +1,9 @@
 <script setup>
 /**
- * STATUS: legacy — no route points here. `/stp` is now views/home3/Home3.vue,
- * the admin-editable box canvas; views/home3/defaultLayout.js is this page's
- * arrangement redrawn as boxes. Kept for reference.
+ * STATUS: legacy — no route points here. `/stp` is now a canvas page (see
+ * views/canvas/CanvasPage.vue); views/home3/defaultLayout.js is this page's
+ * arrangement redrawn as boxes, offered as the "Old /stp grid" starter.
+ * Kept for reference.
  *
  * Was route `/stp` — the personal home page: an A4-shaped widget grid flanked by two
  * sidebars.

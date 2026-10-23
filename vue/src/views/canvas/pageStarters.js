@@ -3,7 +3,12 @@
  * (PageForm.vue). Each `boxes(title)` returns box inputs for
  * stores/boxes.js — without `page`, which the store adds. Everything is an
  * ordinary box afterwards: move it, edit it, delete it.
+ *
+ * These are built into the code; layouts saved from a page in the browser
+ * live in stores/layouts.js and are loaded from the canvas's Layouts panel.
  */
+import { defaultLayout } from "@/views/home3/defaultLayout";
+
 const html = (title, body, geom, extra = {}) => ({ kind: "html", title, html: body, ...geom, ...extra });
 
 function notes() {
@@ -29,4 +34,7 @@ function notes() {
 export const STARTERS = [
   { id: "blank", label: "Blank", boxes: () => [] },
   { id: "notes", label: "Notes board (admin-only notes)", boxes: notes },
+  // What /stp's "Import current layout" button used to add, from when /stp
+  // was its own route.
+  { id: "stp-grid", label: "Old /stp grid", boxes: defaultLayout },
 ];

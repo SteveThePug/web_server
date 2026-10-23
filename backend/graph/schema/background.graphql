@@ -1,6 +1,6 @@
 # The background behind a canvas page, keyed by the same page key as its
-# boxes ("index" for the landing page, "stp", or a Page's slug), so the
-# landing page and every shrine are set the same way. Edited from the
+# boxes ("index" for the landing page, or a Page's slug), so the landing
+# page and every other canvas page are set the same way. Edited from the
 # canvas's "Background" button; see models.Background.
 #
 # Anyone may read it, as part of the page, except that an adminOnly page's

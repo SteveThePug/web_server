@@ -2,8 +2,8 @@
  * Boxes on one canvas page (views/home3/BoxCanvas.vue) — full CRUD, built on
  * createCrudStore().
  *
- * `useBoxesStore(page)` returns the store for that page key: "stp" for the
- * home page, "index" for the landing page's overlay, or a Page slug. Each key
+ * `useBoxesStore(page)` returns the store for that page key: "index" for the
+ * landing page, or a Page slug ("stp" for the home page). Each key
  * gets its own Pinia store (id `boxes:<page>`), so moving between pages
  * neither refetches a page already visited nor mixes two pages' boxes.
  *
