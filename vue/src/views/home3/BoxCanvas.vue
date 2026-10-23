@@ -42,6 +42,7 @@ import ConfirmDialog from "@/components/util/ConfirmDialog.vue";
 import UploadPicker from "@/components/util/UploadPicker.vue";
 import BoxFrame from "./BoxFrame.vue";
 import BoxEditor from "./BoxEditor.vue";
+import { panelWidth } from "./editorPrefs";
 import HtmlBox from "./HtmlBox.vue";
 import WidgetBox from "./WidgetBox.vue";
 import { WIDGETS } from "./widgetRegistry";
@@ -355,6 +356,7 @@ function toggleEdit() {
   <div
     class="box-canvas"
     :class="{ 'with-editor': inEditMode && selected }"
+    :style="{ '--editor-width': `${panelWidth}px` }"
   >
     <div v-if="canEdit" class="admin-bar">
       <button type="button" class="bar-btn" :class="{ on: editing }" @click="toggleEdit">
@@ -483,9 +485,10 @@ function toggleEdit() {
   box-sizing: border-box;
 }
 /* Leave room for the fixed editor panel so the canvas rescales beside it
-   instead of disappearing under it. */
+   instead of disappearing under it. The width is the admin's chosen one
+   (./editorPrefs), so the canvas follows the panel's edge as it is dragged. */
 .box-canvas.with-editor {
-  padding-right: calc(min(460px, 100vw) + 16px);
+  padding-right: calc(min(var(--editor-width), 100vw) + 16px);
 }
 
 .admin-bar {

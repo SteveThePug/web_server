@@ -9,13 +9,18 @@
  * The document is owned by CodeMirror; `modelValue` is pushed in only when it
  * differs from what the editor already holds, otherwise every keystroke would
  * round-trip through the parent and reset the cursor.
+ *
+ * `fontSize` scales the code. Ctrl/Cmd with +, - or 0 inside the editor asks
+ * the parent to change it (`zoom` with +1, -1 or 0 for reset) instead of
+ * zooming the whole page.
  */
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   modelValue: { type: String, default: "" },
+  fontSize: { type: Number, default: 13 },
 });
-const emit = defineEmits(["update:modelValue", "save"]);
+const emit = defineEmits(["update:modelValue", "save", "zoom"]);
 
 const host = ref(null);
 const failed = ref(false);
@@ -34,7 +39,7 @@ onMounted(async () => {
 
   const theme = EditorView.theme(
     {
-      "&": { height: "100%", fontSize: "13px", backgroundColor: "var(--color-surface-deep)", color: "var(--color-muted)" },
+      "&": { height: "100%", fontSize: "var(--code-font-size)", backgroundColor: "var(--color-surface-deep)", color: "var(--color-muted)" },
       ".cm-content": { caretColor: "var(--color-primary)" },
       ".cm-gutters": { backgroundColor: "var(--color-surface)", color: "var(--color-quaternary)", border: "none" },
       // The selection is drawn in a layer *behind* the text, so an opaque
@@ -58,7 +63,13 @@ onMounted(async () => {
     doc: props.modelValue,
     extensions: [
       // Before basicSetup so Mod-s wins over the browser's "save page".
-      keymap.of([{ key: "Mod-s", preventDefault: true, run: () => (emit("save"), true) }]),
+      keymap.of([
+        { key: "Mod-s", preventDefault: true, run: () => (emit("save"), true) },
+        { key: "Mod-=", preventDefault: true, run: () => (emit("zoom", 1), true) },
+        { key: "Mod-+", preventDefault: true, run: () => (emit("zoom", 1), true) },
+        { key: "Mod--", preventDefault: true, run: () => (emit("zoom", -1), true) },
+        { key: "Mod-0", preventDefault: true, run: () => (emit("zoom", 0), true) },
+      ]),
       basicSetup,
       html(),
       theme,
@@ -79,6 +90,14 @@ watch(
   },
 );
 
+// The size comes in through a CSS variable, which CodeMirror can't see change:
+// have it re-measure line heights once the new size is applied, or clicks and
+// the cursor land on the wrong line.
+watch(
+  () => props.fontSize,
+  () => nextTick(() => view?.requestMeasure()),
+);
+
 onBeforeUnmount(() => view?.destroy());
 
 /** Put text at the cursor (replacing any selection); false if the editor
@@ -94,7 +113,7 @@ defineExpose({ insert });
 </script>
 
 <template>
-  <div ref="host" class="code-editor">
+  <div ref="host" class="code-editor" :style="{ '--code-font-size': `${fontSize}px` }">
     <p v-if="failed" class="p-2 text-tertiary">Couldn't load the editor.</p>
   </div>
 </template>

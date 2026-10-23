@@ -18,12 +18,16 @@
  * "Choose upload" does the same with a file that is already uploaded.
  *
  * The panel is teleported to <body>, so it is fixed to the window whatever
- * transform or stacking context the page puts around the canvas.
+ * transform or stacking context the page puts around the canvas. Its width
+ * (drag the left edge; double-click it to reset) and the code's text size
+ * (A−/A+, or Ctrl/Cmd with +, - or 0 in the editor) are remembered per
+ * browser through ./editorPrefs.
  */
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useBoxesStore } from "@/stores/boxes";
 import { ACCEPT, tagFor, uploadFile } from "@/uploads";
 import CodeEditor from "./CodeEditor.vue";
+import { FONT_SIZE, PANEL_WIDTH, fontSize, panelWidth, setPanelWidth, zoom } from "./editorPrefs";
 import { WIDGETS } from "./widgetRegistry";
 import OverlayShell from "@/components/util/OverlayShell.vue";
 import UploadPicker from "@/components/util/UploadPicker.vue";
@@ -131,16 +135,67 @@ function close() {
   open.value = false;
   emit("close");
 }
+
+// The panel is pinned to the right of the window, so its width is simply the
+// distance from the pointer to that edge. Pointer capture keeps the drag
+// alive when the pointer crosses a box's iframe, which would otherwise take
+// the events.
+function startResize(event) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  const handle = event.currentTarget;
+  handle.setPointerCapture(event.pointerId);
+  const move = (e) => setPanelWidth(window.innerWidth - e.clientX);
+  const end = () => {
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", end);
+    handle.removeEventListener("pointercancel", end);
+  };
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
+}
+
+function resizeByKey(event) {
+  const step = event.shiftKey ? 100 : 20;
+  if (event.key === "ArrowLeft") setPanelWidth(panelWidth.value + step);
+  else if (event.key === "ArrowRight") setPanelWidth(panelWidth.value - step);
+  else return;
+  event.preventDefault();
+}
 </script>
 
 <template>
   <OverlayShell v-model="open" title="Box editor" @close="close">
-    <aside class="box-editor">
+    <aside class="box-editor" :style="{ '--editor-width': `${panelWidth}px` }">
       <header class="flex items-center justify-between gap-2">
         <h3 class="m-0">
           {{ box.kind === "widget" ? `Widget · ${box.widget}` : "HTML box" }}
         </h3>
-        <button type="button" class="close" title="Close" @click="close">✕</button>
+        <div class="flex items-center gap-2">
+          <div v-if="box.kind === 'html'" class="zoom" role="group" aria-label="Code text size">
+            <button
+              type="button"
+              title="Smaller code (Ctrl/Cmd -)"
+              :disabled="fontSize <= FONT_SIZE.min"
+              @click="zoom(-1)"
+            >
+              A−
+            </button>
+            <button type="button" title="Reset code size (Ctrl/Cmd 0)" @click="zoom(0)">
+              {{ fontSize }}px
+            </button>
+            <button
+              type="button"
+              title="Larger code (Ctrl/Cmd +)"
+              :disabled="fontSize >= FONT_SIZE.max"
+              @click="zoom(1)"
+            >
+              A+
+            </button>
+          </div>
+          <button type="button" class="close" title="Close" @click="close">✕</button>
+        </div>
       </header>
 
       <label class="field">
@@ -192,7 +247,14 @@ function close() {
       </div>
 
       <template v-if="box.kind === 'html'">
-        <CodeEditor ref="codeEditor" v-model="draftHtml" class="flex-1" @save="saveHtml" />
+        <CodeEditor
+          ref="codeEditor"
+          v-model="draftHtml"
+          :font-size="fontSize"
+          class="flex-1"
+          @save="saveHtml"
+          @zoom="zoom"
+        />
         <footer class="flex flex-wrap items-center justify-between gap-2">
           <small class="text-muted">
             Runs sandboxed: scripts work, cookies and /api don't. fetch() only reaches
@@ -227,6 +289,21 @@ function close() {
           </button>
         </footer>
       </template>
+
+      <!-- Last in the panel so the opening focus lands on a header button, not here. -->
+      <div
+        class="resize-handle"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize editor"
+        :aria-valuenow="panelWidth"
+        :aria-valuemin="PANEL_WIDTH.min"
+        tabindex="0"
+        title="Drag to resize · double-click to reset"
+        @pointerdown="startResize"
+        @dblclick="setPanelWidth(PANEL_WIDTH.default)"
+        @keydown="resizeByKey"
+      />
     </aside>
   </OverlayShell>
   <UploadPicker
@@ -243,7 +320,7 @@ function close() {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(460px, 100vw);
+  width: min(var(--editor-width), 100vw);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -252,6 +329,45 @@ function close() {
   background: var(--color-surface);
   border-left: 2px solid var(--color-primary);
   color: var(--color-secondary);
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.resize-handle:hover,
+.resize-handle:focus-visible,
+.resize-handle:active {
+  background: linear-gradient(to right, transparent 3px, var(--color-primary) 3px 6px, transparent 6px);
+  outline: none;
+}
+
+.zoom {
+  display: flex;
+}
+.zoom button {
+  min-width: 2rem;
+  padding: 0 0.4rem;
+  color: var(--color-primary);
+  background: var(--color-link-bg);
+  border: 1px solid var(--color-quaternary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.zoom button + button {
+  border-left: none;
+}
+.zoom button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+.zoom button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .close {

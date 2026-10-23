@@ -291,7 +291,10 @@ renders any page's boxes.
   automatically on leaving the box (selecting another, clicking empty canvas,
   Done, ✕).
   CodeMirror is loaded only when that panel opens; the panel is teleported to
-  `<body>`.
+  `<body>`. Its width (drag the left edge, double-click to reset) and the
+  code's text size (A−/A+, or Ctrl/Cmd +/−/0 in the editor) are kept per
+  browser in localStorage by `editorPrefs.js`; the canvas pads itself by the
+  same width so it rescales beside the panel.
   Image and video files dropped onto the canvas in edit mode are uploaded and
   each becomes an unframed box at the drop point. "Insert upload" stores a
   file through `@/uploads` (see "Uploading files") and puts an `<img>`/`<video>`
