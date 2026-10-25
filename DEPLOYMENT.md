@@ -275,6 +275,17 @@ against a name it covers. `https://nginx` would fail that check and need No
 TLS Verify. The flip side: **an expired certificate now takes the tunnel down
 with a 502**, which is why renewal over DNS-01 (step 5) matters.
 
+An alias only exists while nginx is running, so cloudflared also pins both
+names to nginx's fixed address (`172.28.255.251`) with `extra_hosts`. Without
+that, while nginx is stopped for a deploy or the weekly maintenance, the name
+falls through to public DNS, resolves to Cloudflare itself, and visitors see
+Cloudflare error 1000 instead of a 502.
+
+The aliases have a side effect for anything else on `app-network` that uses
+the public name for a port nginx does not serve. `silverbullet-git` pushes to
+Gitea's SSH on `<DOMAIN>:2222`, so it maps `<DOMAIN>` to the host gateway
+instead, where Gitea publishes that port.
+
 Setup, once:
 
 1. Cloudflare dashboard → the domain must be on Cloudflare DNS.

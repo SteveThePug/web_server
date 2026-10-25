@@ -146,6 +146,11 @@ services:
         aliases:
           - ${DOMAIN}
           - www.${DOMAIN}
+        # Fixed for cloudflared's extra_hosts (see there): an alias only
+        # exists while nginx is running, and this address is pinned to the
+        # same names for when it is not. Top of the /16 beside cloudflared's,
+        # away from docker's dynamic allocations.
+        ipv4_address: 172.28.255.251
     ports:
       - 80:80
       - 443:443
@@ -227,6 +232,15 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       - nginx
+    # Pins the tunnel origin's names to nginx's fixed address. nginx's aliases
+    # vanish while it is stopped (every deploy and the weekly maintenance), and
+    # docker's DNS then forwards the name to public DNS, which answers with
+    # Cloudflare's own IPs: the tunnel sent requests back to the edge and
+    # visitors got error 1000. /etc/hosts wins over DNS, so a stopped nginx is
+    # now a refused connection, which cloudflared reports as a plain 502.
+    extra_hosts:
+      - "${DOMAIN}:172.28.255.251"
+      - "www.${DOMAIN}:172.28.255.251"
     networks:
       app-network:
         ipv4_address: 172.28.255.250
@@ -453,6 +467,13 @@ services:
     restart: always
     networks:
       - app-network
+    # The vault's remotes are ssh://git@DOMAIN:2222/..., but nginx's network
+    # aliases make DOMAIN resolve to nginx on app-network, which has no :2222,
+    # so every pull and push was refused. /etc/hosts wins over Docker's DNS, so
+    # this sends DOMAIN back to the host, where gitea publishes 2222. The name
+    # is unchanged, so known_hosts still matches.
+    extra_hosts:
+      - "${DOMAIN}:host-gateway"
     # Same uid SilverBullet writes as, so commits don't leave root-owned objects
     # in .git that the host user can no longer clean up.
     user: "1000:1000"

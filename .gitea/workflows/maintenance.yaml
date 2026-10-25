@@ -2,7 +2,10 @@ name: Weekly Maintenance
 
 on:
     schedule:
-        - cron: "0 1 * * 0"
+        # 05:00 UTC Sunday (06:00 in BST). The upgrade restarts dockerd and
+        # every container, so it runs when nobody is likely to be mid-edit;
+        # 01:00 kept catching late-night SilverBullet saves.
+        - cron: "0 5 * * 0"
     workflow_dispatch:
 
 jobs:
