@@ -1,6 +1,6 @@
 <script setup>
 /**
- * The Places-to-go table inside the Collage widget. Sign-in only.
+ * The Places-to-go table inside the Places widget (Places.vue). Sign-in only.
  *
  * Fetches lazily and at most once: onMounted covers an already-signed-in visitor,
  * the `loggedIn` watcher covers someone who signs in while the page is open, and

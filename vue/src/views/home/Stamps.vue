@@ -129,8 +129,8 @@ function bounce() {
 
 onMounted(() => {
     fitWall();
-    // The cell's size follows the home grid's breakpoints (and the scrollbars
-    // appearing inside it), not just window resizes, so observe the element.
+    // The cell's size follows the box it sits in, not just window resizes, so
+    // observe the element.
     resizeObserver = new ResizeObserver(fitWall);
     resizeObserver.observe(touchscreen.value.$el);
     animId = requestAnimationFrame(bounce);
@@ -143,7 +143,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Touchscreen ref="touchscreen">
+    <Touchscreen ref="touchscreen" class="stamp-wall">
         <div class="wall" :style="{ '--cols': cols }">
             <template v-for="(stamp, i) in cells" :key="i">
                 <Link v-if="stamp.href" bare :href="stamp.href">
@@ -160,6 +160,15 @@ img {
     display: block;
     width: 89px;
     height: 59px;
+}
+
+/* The wall drifts by itself and can be dragged, so scrollbars are only noise.
+   Hidden rather than overflow: hidden, which would stop both. */
+.stamp-wall {
+    scrollbar-width: none;
+}
+.stamp-wall::-webkit-scrollbar {
+    display: none;
 }
 
 /* Fixed tracks rather than flex-wrap: the wall's size comes from --cols (set

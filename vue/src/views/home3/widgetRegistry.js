@@ -17,6 +17,7 @@ export const WIDGETS = {
   Feed: { component: lazy(() => import("@/views/home/Feed.vue")), size: [235, 440] },
   Links: { component: lazy(() => import("@/views/home/Links.vue")), size: [155, 440] },
   Collage: { component: lazy(() => import("@/views/home/Collage.vue")), size: [395, 440] },
+  Places: { component: lazy(() => import("@/views/home/Places.vue")), size: [395, 440] },
   Consumption: { component: lazy(() => import("@/views/home/Consumption.vue")), size: [315, 220] },
   Favorites: { component: lazy(() => import("@/views/home/Favorites.vue")), size: [235, 220] },
   Gym: { component: lazy(() => import("@/views/home/Gym2.vue")), size: [235, 220] },
@@ -27,5 +28,6 @@ export const WIDGETS = {
   Timer: { component: lazy(() => import("@/components/util/Timer.vue")), size: [240, 130] },
   Radio: { component: lazy(() => import("@/components/util/Radio.vue")), size: [240, 160] },
   Chat: { component: lazy(() => import("@/components/util/Chat.vue")), size: [240, 450] },
+  PrivateChat: { component: lazy(() => import("@/components/util/PrivateChat.vue")), size: [240, 450] },
   Commits: { component: lazy(() => import("@/components/util/CommitHistory.vue")), size: [240, 400] },
 };

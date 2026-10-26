@@ -1,5 +1,5 @@
 /**
- * Places-to-go list (the "Places" tab inside the Collage widget) — full CRUD,
+ * Places-to-go list (the Places widget, views/home/Places.vue) — full CRUD,
  * built on createCrudStore().
  *
  * Not part of the homeData query because it is sign-in-only; PlacesTable.vue

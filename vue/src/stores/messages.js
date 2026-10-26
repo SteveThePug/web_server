@@ -1,14 +1,20 @@
 /**
- * WebSocket-backed chat, used by components/util/Chat.vue.
+ * WebSocket-backed chat, used by components/util/ChatPanel.vue (behind both the
+ * public Chat and the admins-only PrivateChat widgets).
  *
  * Owns one socket at a time, auto-reconnects with exponential backoff (1s
  * doubling to a 30s ceiling, reset on a successful open) and refuses to reconnect
- * after an intentional disconnect().
+ * after an intentional close.
+ *
+ * Both chat widgets can be on screen at once and share the socket (it carries
+ * both channels), so connect()/disconnect() are counted: the socket opens with
+ * the first widget and closes with the last.
  */
 
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { uploadFile } from "@/uploads";
+import { useAuthStore } from "@/stores/auth";
 
 /**
  * Same-origin ws:// or wss:// URL for the chat socket, derived from the page's
@@ -32,11 +38,25 @@ export const useMessagesStore = defineStore("messages", () => {
   let intentionalClose = false;
   let reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
   let reconnectTimer = null;
+  // How many mounted widgets want the socket open.
+  let users = 0;
 
   const messagesCount = computed(() => messages.value.length);
 
-  /** Open the socket (no-op if one already exists) and arm auto-reconnect. */
+  /** Register a widget that needs the socket, opening it if it is the first. */
   function connect() {
+    users++;
+    open();
+  }
+
+  /** Release a connect(); the socket closes once no widget holds it. */
+  function disconnect() {
+    users = Math.max(0, users - 1);
+    if (users === 0) close();
+  }
+
+  /** Open the socket (no-op if one already exists) and arm auto-reconnect. */
+  function open() {
     if (socket.value) return;
     intentionalClose = false;
     clearTimeout(reconnectTimer);
@@ -93,7 +113,7 @@ export const useMessagesStore = defineStore("messages", () => {
       socket.value = null;
       if (!intentionalClose) {
         reconnectTimer = setTimeout(() => {
-          connect();
+          open();
         }, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS);
       }
@@ -103,9 +123,9 @@ export const useMessagesStore = defineStore("messages", () => {
   /**
    * Close the socket and suppress auto-reconnect. Clearing `socket.value`
    * *before* calling close() is what makes the onclose guard above see a stale
-   * socket, so a later connect() is not fought over by the dying one.
+   * socket, so a later open() is not fought over by the dying one.
    */
-  function disconnect() {
+  function close() {
     intentionalClose = true;
     clearTimeout(reconnectTimer);
     if (!socket.value) return;
@@ -114,6 +134,19 @@ export const useMessagesStore = defineStore("messages", () => {
     isConnected.value = false;
     ws.close();
   }
+
+  // Admin status is fixed when the socket connects (from the auth cookies), so
+  // reopen after a login/logout to pick up or drop private messages. Here
+  // rather than in the widgets so two mounted chats reconnect once, not twice.
+  const auth = useAuthStore();
+  watch(
+    () => !!auth.user.admin,
+    () => {
+      if (users === 0) return;
+      close();
+      open();
+    },
+  );
 
   /** Send a chat line. Silently drops it if the socket is not open. */
   function sendMessage(text, isPrivate = false) {
