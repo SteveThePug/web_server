@@ -631,6 +631,18 @@ against this stack, so it cannot be a container in it. Registration is one-shot 
 `.runner` is the lasting credential; re-registering needs that file deleted _and_
 a fresh token.
 
+**Dependency updates (Renovate).** Dependabot is GitHub-only, so
+`.gitea/workflows/renovate.yaml` runs Renovate on the same runner every Monday
+at 04:00 UTC (or by hand from the Actions tab), configured by
+`renovate.json5`. It opens PRs from `renovate/*` branches, which get the
+normal `test` job; nothing automerges, because merging to `main` deploys. It
+needs a `RENOVATE_TOKEN` repo Actions secret: create a `renovate` Gitea user,
+add it to this repo as a collaborator with write access, and mint a token for
+it with `read:user`, `read:organization`, `write:repository` and
+`write:issue`. `RENOVATE_GITHUB_COM_TOKEN` (any github.com token, no scopes)
+is optional and lifts GitHub's rate limit on release-note lookups. The first
+run opens a "Dependency Dashboard" issue listing everything pending.
+
 **Go live on the radio:** point a broadcasting client (e.g. butt) at the host's
 Tailscale name (not the domain, which resolves to Cloudflare) on
 `${LIQUIDSOAP_HARBOR_PORT}` with mount `${LIQUIDSOAP_HARBOR_MOUNT}` and the

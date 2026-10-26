@@ -1,0 +1,115 @@
+// =============================================================================
+// renovate.json5 — dependency-update PRs (this repo's Dependabot).
+//
+// WHY RENOVATE AND NOT DEPENDABOT
+//   Dependabot only runs on GitHub, and this repo lives on the self-hosted
+//   Gitea. Renovate does the same job against Gitea's API. It is run by
+//   .gitea/workflows/renovate.yaml on the stack's own runner, which is where
+//   the platform, endpoint and token are set; this file is only *what* to
+//   update.
+//
+// WHAT IT WATCHES
+//   gomod           backend/go.mod (go.sum and `go mod tidy` come along)
+//   npm             vue/package.json + package-lock.json
+//   pip_requirements python/requirements.txt, requirements-dev.txt
+//   dockerfile      every */Dockerfile FROM line
+//   docker-compose  every image: in docker-compose*.yml
+//   custom (below)  the images deploy.yaml and renovate.yaml `docker run`
+//
+// NOTHING IS AUTOMERGED, on purpose: a merge to main IS a deploy. Each
+// Renovate branch is pushed to Gitea, so deploy.yaml's `test` job runs on it
+// (go vet/test and pytest) — but that job skips the Vue build, so an npm PR is
+// only proven by `make check-vue` locally or by the deploy itself (where a
+// failed build stops before any container is replaced).
+// =============================================================================
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+  timezone: "Europe/London",
+
+  // Replaces config:recommended's list rather than adding to it. .deprecated/
+  // holds parked services whose manifests are not built any more.
+  ignorePaths: ["**/node_modules/**", ".deprecated/**"],
+
+  // A release has to have been out this long before a PR proposes it, so a
+  // compromised or quickly-yanked version never reaches a branch.
+  minimumReleaseAge: "3 days",
+
+  postUpdateOptions: ["gomodTidy"],
+
+  customManagers: [
+    {
+      // deploy.yaml runs the tests in `docker run golang:… / python:…`, which
+      // no built-in manager reads. They must match backend/Dockerfile and
+      // python/Dockerfile (see deploy.yaml's header), so they share those
+      // images' groups below and land in the same PR. Also matches the
+      // Renovate image in renovate.yaml, and the copies in comments, which
+      // keeps those accurate.
+      customType: "regex",
+      managerFilePatterns: ["/^\\.gitea/workflows/[^/]+\\.ya?ml$/"],
+      matchStrings: ["(?<depName>golang|python|renovate/renovate):(?<currentValue>[0-9][\\w.-]*)"],
+      datasourceTemplate: "docker",
+    },
+  ],
+
+  packageRules: [
+    // The job tracker, usaco and activity-tracker images are built by their
+    // own repos and roll themselves out on `:latest`; there is nothing here
+    // to bump.
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["adam-french.co.uk/**"],
+      enabled: false,
+    },
+
+    // A Postgres major needs a dump and restore of the dbdata volume (the new
+    // server refuses the old data directory), so it is done by hand, never
+    // from a PR.
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["postgres"],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+    },
+
+    // Non-major updates batched per ecosystem, so the runner tests one branch
+    // a week per language instead of one per package. Majors stay separate.
+    // These come before the named groups below because a later matching rule
+    // wins: gqlgen and the go directive must not be swept in here.
+    {
+      matchManagers: ["gomod"],
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      groupName: "Go modules (non-major)",
+    },
+    {
+      matchManagers: ["npm"],
+      matchUpdateTypes: ["minor", "patch"],
+      groupName: "npm (non-major)",
+    },
+    {
+      matchManagers: ["pip_requirements"],
+      matchUpdateTypes: ["minor", "patch"],
+      groupName: "Python packages (non-major)",
+    },
+
+    // One PR per toolchain: the Dockerfile base, the CI test image and (for
+    // Go) the go.mod `go` directive move together.
+    {
+      matchPackageNames: ["golang", "go"],
+      groupName: "Go toolchain",
+    },
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["python"],
+      groupName: "Python image",
+    },
+
+    // gqlgen's runtime and gqlparser are versioned together. If a bump breaks
+    // the build, regenerate (`go run github.com/99designs/gqlgen generate`)
+    // on the branch.
+    {
+      matchPackageNames: ["github.com/99designs/gqlgen", "github.com/vektah/gqlparser/**"],
+      groupName: "gqlgen",
+    },
+  ],
+}

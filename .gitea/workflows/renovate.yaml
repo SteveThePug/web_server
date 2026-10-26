@@ -1,0 +1,71 @@
+# =============================================================================
+# renovate.yaml — weekly dependency-update PRs, opened against this repo.
+#
+# Renovate stands in for Dependabot, which does not exist outside GitHub. What
+# it updates is configured in /renovate.json5; this file is only how it runs.
+#
+# HOW IT RUNS
+#   The same host-mode act_runner as deploy.yaml, so (as there) nothing but
+#   git and docker is assumed on the host: Renovate runs from its own image.
+#   --network host lets the container reach Gitea on localhost:3000, the port
+#   the runner itself registers against, so this keeps working while nginx or
+#   the tunnel is down. RENOVATE_GIT_URL=endpoint matters for the same reason:
+#   without it Renovate clones from the URL Gitea advertises, which is
+#   ROOT_URL — the public https://…/gitea/ path.
+#
+# WHAT HAPPENS AFTER
+#   Each update is pushed as a renovate/* branch, which triggers deploy.yaml's
+#   `test` job like any other push (and never its `deploy` job, which is
+#   main-only). Nothing is merged automatically: merging is deploying.
+#   Renovate also keeps a "Dependency Dashboard" issue open listing everything
+#   pending; ticking a box there is picked up on the next run, so run this
+#   workflow by hand (workflow_dispatch) to act on it sooner.
+#
+# THE TOKEN
+#   RENOVATE_TOKEN is a repo Actions secret: a Gitea access token for the
+#   account the PRs come from (a dedicated `renovate` user with write access
+#   to this repo, ideally), scopes read:user, read:organization,
+#   write:repository, write:issue.
+#   RENOVATE_GITHUB_COM_TOKEN is optional: any github.com token with no
+#   scopes. Without it Renovate is rate-limited by GitHub and leaves release
+#   notes out of the PRs. (Gitea refuses secret names starting GITHUB_, hence
+#   the prefix.) Both reach the container as `-e NAME` with no value, so they
+#   are copied from this step's env and never appear in the process list.
+#
+# The renovate/renovate:44 tag floats within the major (--pull always picks
+# up the newest 44.x each week); Renovate itself proposes the next major via
+# the regex manager in renovate.json5.
+# =============================================================================
+name: Renovate
+
+on:
+    schedule:
+        # 04:00 UTC Monday: clear of the Sunday 05:00 maintenance rebuild, and
+        # done before the working week so the PRs are waiting.
+        - cron: "0 4 * * 1"
+    workflow_dispatch:
+
+jobs:
+    renovate:
+        runs-on: self-hosted
+        steps:
+            - name: Run Renovate
+              shell: bash
+              env:
+                  RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+                  GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
+              run: |
+                  set -eu
+                  if [ -z "$RENOVATE_TOKEN" ]; then
+                      echo "The RENOVATE_TOKEN Actions secret is not set (repo Settings -> Actions -> Secrets)."
+                      exit 1
+                  fi
+                  docker run --rm --pull always --network host \
+                      -e RENOVATE_PLATFORM=gitea \
+                      -e RENOVATE_ENDPOINT=http://localhost:3000/api/v1 \
+                      -e RENOVATE_GIT_URL=endpoint \
+                      -e RENOVATE_REPOSITORIES=adamf/web_server \
+                      -e RENOVATE_TOKEN \
+                      -e GITHUB_COM_TOKEN \
+                      -e LOG_LEVEL=info \
+                      renovate/renovate:44

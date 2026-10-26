@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 make check
 ```
 
-Runs `go vet` + `go test` (backend), pytest in a venv built from `python/requirements-dev.txt` (kept in `/.venv/`), a Vite build, and `docker compose config` for both compose files. Each part is also its own target (`check-backend`, `check-python`, `check-vue`, `check-compose`); `make help` lists them. The Gitea deploy workflow runs the backend and Python checks in containers on every push, and `main` only deploys if they pass — so run `make check` before pushing.
+Runs `go vet` + `go test` (backend), pytest in a venv built from `python/requirements-dev.txt` (kept in `/.venv/`), a Vite build, and `docker compose config` for both compose files. Each part is also its own target (`check-backend`, `check-python`, `check-vue`, `check-compose`); `make help` lists them. The Gitea deploy workflow runs the backend and Python checks in containers on every push, and `main` only deploys if they pass — so run `make check` before pushing. Dependency-update PRs come from Renovate (`renovate.json5`, run weekly by `.gitea/workflows/renovate.yaml`), since Dependabot is GitHub-only; that `test` job skips the Vue build, so run `make check-vue` on an npm PR before merging it.
 
 ### Full stack (dev mode, HTTP only)
 
