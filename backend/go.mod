@@ -4,19 +4,19 @@ go 1.26
 
 require (
 	github.com/99designs/gqlgen v0.17.95
-	github.com/aws/aws-sdk-go-v2 v1.47.3
-	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.3
-	github.com/gin-gonic/gin v1.11.0
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/aws/aws-sdk-go-v2 v1.47.4
+	github.com/aws/aws-sdk-go-v2/credentials v1.20.10
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.5
+	github.com/gin-gonic/gin v1.12.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/vektah/gqlparser/v2 v2.5.37
 	github.com/zmb3/spotify/v2 v2.4.3
-	golang.org/x/crypto v0.55.0
-	golang.org/x/oauth2 v0.30.0
-	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.31.1
+	golang.org/x/crypto v0.58.0
+	golang.org/x/oauth2 v0.37.0
+	gorm.io/driver/postgres v1.6.3
+	gorm.io/gorm v1.31.2
 )
 
 require (
