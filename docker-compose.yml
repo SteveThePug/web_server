@@ -462,7 +462,7 @@ services:
   # inside the container. Since SilverBullet itself runs with no SB_USER, that
   # gate is the only thing protecting it, so the blast radius stays here.
   silverbullet-git:
-    image: alpine/git:v2.49.1
+    image: alpine/git:v2.52.0
     container_name: "${SILVERBULLET_GIT_HOST:-silverbullet-git}"
     restart: always
     networks:
