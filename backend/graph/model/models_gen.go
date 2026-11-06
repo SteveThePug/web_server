@@ -59,6 +59,16 @@ type CreateComponentInput struct {
 	AdminOnly *bool   `json:"adminOnly,omitempty"`
 }
 
+type CreateCoverLetterInput struct {
+	Name string `json:"name"`
+	Body string `json:"body"`
+}
+
+type CreateCoverSnippetInput struct {
+	Text    string  `json:"text"`
+	Section *string `json:"section,omitempty"`
+}
+
 type CreateFavoriteInput struct {
 	Type string  `json:"type"`
 	Name string  `json:"name"`
@@ -183,6 +193,16 @@ type UpdateComponentInput struct {
 	Framed    *bool   `json:"framed,omitempty"`
 	Shadow    *string `json:"shadow,omitempty"`
 	AdminOnly *bool   `json:"adminOnly,omitempty"`
+}
+
+type UpdateCoverLetterInput struct {
+	Name *string `json:"name,omitempty"`
+	Body *string `json:"body,omitempty"`
+}
+
+type UpdateCoverSnippetInput struct {
+	Text    *string `json:"text,omitempty"`
+	Section *string `json:"section,omitempty"`
 }
 
 type UpdateLayoutInput struct {

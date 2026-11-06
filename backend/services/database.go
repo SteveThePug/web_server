@@ -56,6 +56,8 @@ func migrateDatabase(db *gorm.DB) error {
 		&models.Background{},
 		&models.Layout{},
 		&models.Component{},
+		&models.CoverLetter{},
+		&models.CoverSnippet{},
 	)
 	if err != nil {
 		return err

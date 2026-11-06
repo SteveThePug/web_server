@@ -1,0 +1,60 @@
+# Cover letters: saved letters from the /cv Cover Letter tab, and the bank of
+# reusable paragraphs dragged into them. A letter's body is JSON the frontend
+# owns (views/CV/coverLetter.js); the server only checks it is a JSON object
+# of a sane size. See models.CoverLetter and graph/cover_letter_helpers.go.
+#
+# Admin only throughout, reads included: /cv is public, but the letters are
+# drafts addressed to particular employers.
+
+type CoverLetter {
+  id: ID!
+  createdAt: Time!
+  updatedAt: Time!
+  name: String!
+  # The whole letter, as a JSON object.
+  body: String!
+}
+
+type CoverSnippet {
+  id: ID!
+  createdAt: Time!
+  text: String!
+  # The section title it was written for; "" for none. Only groups the bank.
+  section: String!
+}
+
+input CreateCoverLetterInput {
+  name: String!
+  body: String!
+}
+
+input UpdateCoverLetterInput {
+  name: String
+  body: String
+}
+
+input CreateCoverSnippetInput {
+  text: String!
+  section: String
+}
+
+input UpdateCoverSnippetInput {
+  text: String
+  section: String
+}
+
+extend type Query {
+  # Most recently updated first.
+  coverLetters: [CoverLetter!]! @admin
+  # By section, then newest first.
+  coverSnippets: [CoverSnippet!]! @admin
+}
+
+extend type Mutation {
+  createCoverLetter(input: CreateCoverLetterInput!): CoverLetter! @admin
+  updateCoverLetter(id: ID!, input: UpdateCoverLetterInput!): CoverLetter! @admin
+  deleteCoverLetter(id: ID!): CoverLetter! @admin
+  createCoverSnippet(input: CreateCoverSnippetInput!): CoverSnippet! @admin
+  updateCoverSnippet(id: ID!, input: UpdateCoverSnippetInput!): CoverSnippet! @admin
+  deleteCoverSnippet(id: ID!): CoverSnippet! @admin
+}

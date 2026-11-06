@@ -116,3 +116,15 @@ models:
         resolver: false
       uses:
         resolver: true
+  CoverLetter:
+    model:
+      - adam-french.co.uk/backend/models.CoverLetter
+    fields:
+      deletedAt:
+        resolver: false
+  CoverSnippet:
+    model:
+      - adam-french.co.uk/backend/models.CoverSnippet
+    fields:
+      deletedAt:
+        resolver: false

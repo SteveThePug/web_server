@@ -381,7 +381,7 @@ in its header comment; the summary:
 | `views/home/BadApple.vue` | unfinished ASCII video player; not imported |
 | `views/CV/CVProgramming.vue` | live — the only CV template listed in `CV.vue` |
 | `views/CV/CV{General,Backend,Frontend,Security,Electrical,Hospitality,Analyst,Temp}.vue` | commented out of `CV.vue`'s list; unreachable |
-| `views/unused/CoverLetters.vue` | **live** despite the directory — it is the "Cover Letter" tab on `/cv` |
+| `views/CV/CoverLetters.vue` (+ `CoverSnippetBank.vue`, `coverLetter.js`) | live — the "Cover Letter" tab on `/cv`. Sections of draggable paragraphs; an admin also gets saved letters (`CoverLetter`) and a paragraph bank (`CoverSnippet`), both `@admin` |
 | `views/unused/Notes.vue` | no route points at it; not imported |
 | `components/util/{MusicPlayer,ObjectTable}.vue` | not imported |
 | `components/elle/Elle.vue`, `components/borders/UtenaFrame.vue` | decorative; not imported |

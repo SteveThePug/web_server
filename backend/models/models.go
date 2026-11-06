@@ -288,3 +288,29 @@ type Component struct {
 	Shadow    string `gorm:"not null;default:''" json:"shadow"`
 	AdminOnly bool   `gorm:"not null;default:false" json:"adminOnly"`
 }
+
+// CoverLetter is a saved letter from the /cv Cover Letter tab. Body is the
+// whole letter as JSON (contact block, sections, paragraphs; the shape is
+// views/CV/coverLetter.js's) because only the frontend ever reads inside it —
+// the same reasoning as Layout.Boxes. The unique index is partial for the
+// same reason as Page's.
+type CoverLetter struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Name      string         `gorm:"not null;index:idx_cover_letters_name,unique,where:deleted_at IS NULL" json:"name"`
+	Body      string         `gorm:"type:text;not null" json:"body"`
+}
+
+// CoverSnippet is a reusable paragraph in the cover-letter bank, dragged into
+// a letter as a copy. Section is the title of the section it was written for,
+// only used to group the bank; a snippet can be dropped into any section.
+type CoverSnippet struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
+	Text      string         `gorm:"type:text;not null" json:"text"`
+	Section   string         `gorm:"not null;default:''" json:"section"`
+}

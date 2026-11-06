@@ -113,6 +113,21 @@ type ComplexityRoot struct {
 		W         func(childComplexity int) int
 	}
 
+	CoverLetter struct {
+		Body      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
+	}
+
+	CoverSnippet struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Section   func(childComplexity int) int
+		Text      func(childComplexity int) int
+	}
+
 	Favorite struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -157,6 +172,8 @@ type ComplexityRoot struct {
 		CreateBookmark     func(childComplexity int, input model.CreateBookmarkInput) int
 		CreateBox          func(childComplexity int, input model.CreateBoxInput) int
 		CreateComponent    func(childComplexity int, input model.CreateComponentInput) int
+		CreateCoverLetter  func(childComplexity int, input model.CreateCoverLetterInput) int
+		CreateCoverSnippet func(childComplexity int, input model.CreateCoverSnippetInput) int
 		CreateFavorite     func(childComplexity int, input model.CreateFavoriteInput) int
 		CreateLayout       func(childComplexity int, input model.CreateLayoutInput) int
 		CreatePage         func(childComplexity int, input model.CreatePageInput) int
@@ -166,6 +183,8 @@ type ComplexityRoot struct {
 		DeleteBookmark     func(childComplexity int, id int) int
 		DeleteBox          func(childComplexity int, id int) int
 		DeleteComponent    func(childComplexity int, id int) int
+		DeleteCoverLetter  func(childComplexity int, id int) int
+		DeleteCoverSnippet func(childComplexity int, id int) int
 		DeleteLayout       func(childComplexity int, id int) int
 		DeletePage         func(childComplexity int, id int) int
 		DeletePlace        func(childComplexity int, id int) int
@@ -181,6 +200,8 @@ type ComplexityRoot struct {
 		SetUserPermissions func(childComplexity int, id int, permissions []string) int
 		UpdateBox          func(childComplexity int, id int, input model.UpdateBoxInput) int
 		UpdateComponent    func(childComplexity int, id int, input model.UpdateComponentInput) int
+		UpdateCoverLetter  func(childComplexity int, id int, input model.UpdateCoverLetterInput) int
+		UpdateCoverSnippet func(childComplexity int, id int, input model.UpdateCoverSnippetInput) int
 		UpdateLayout       func(childComplexity int, id int, input model.UpdateLayoutInput) int
 		UpdatePage         func(childComplexity int, id int, input model.UpdatePageInput) int
 		UpdatePlace        func(childComplexity int, id int, input model.UpdatePlaceInput) int
@@ -231,6 +252,8 @@ type ComplexityRoot struct {
 		Bookmarks          func(childComplexity int) int
 		Boxes              func(childComplexity int, page string) int
 		Components         func(childComplexity int) int
+		CoverLetters       func(childComplexity int) int
+		CoverSnippets      func(childComplexity int) int
 		Favorites          func(childComplexity int) int
 		GiteaFeed          func(childComplexity int) int
 		Layouts            func(childComplexity int) int
@@ -344,6 +367,12 @@ type MutationResolver interface {
 	DeleteComponent(ctx context.Context, id int) (*models.Component, error)
 	SaveBoxAsComponent(ctx context.Context, id int, name string) (*models.Box, error)
 	DetachBox(ctx context.Context, id int) (*models.Box, error)
+	CreateCoverLetter(ctx context.Context, input model.CreateCoverLetterInput) (*models.CoverLetter, error)
+	UpdateCoverLetter(ctx context.Context, id int, input model.UpdateCoverLetterInput) (*models.CoverLetter, error)
+	DeleteCoverLetter(ctx context.Context, id int) (*models.CoverLetter, error)
+	CreateCoverSnippet(ctx context.Context, input model.CreateCoverSnippetInput) (*models.CoverSnippet, error)
+	UpdateCoverSnippet(ctx context.Context, id int, input model.UpdateCoverSnippetInput) (*models.CoverSnippet, error)
+	DeleteCoverSnippet(ctx context.Context, id int) (*models.CoverSnippet, error)
 	CreateFavorite(ctx context.Context, input model.CreateFavoriteInput) (*models.Favorite, error)
 	CreateLayout(ctx context.Context, input model.CreateLayoutInput) (*models.Layout, error)
 	UpdateLayout(ctx context.Context, id int, input model.UpdateLayoutInput) (*models.Layout, error)
@@ -370,6 +399,8 @@ type QueryResolver interface {
 	Bookmarks(ctx context.Context) ([]*models.Bookmark, error)
 	Boxes(ctx context.Context, page string) ([]*models.Box, error)
 	Components(ctx context.Context) ([]*models.Component, error)
+	CoverLetters(ctx context.Context) ([]*models.CoverLetter, error)
+	CoverSnippets(ctx context.Context) ([]*models.CoverSnippet, error)
 	Favorites(ctx context.Context) ([]*models.Favorite, error)
 	GiteaFeed(ctx context.Context) (*model.GiteaFeedItem, error)
 	Layouts(ctx context.Context) ([]*models.Layout, error)
@@ -711,6 +742,62 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Component.W(childComplexity), true
 
+	case "CoverLetter.body":
+		if e.ComplexityRoot.CoverLetter.Body == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverLetter.Body(childComplexity), true
+	case "CoverLetter.createdAt":
+		if e.ComplexityRoot.CoverLetter.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverLetter.CreatedAt(childComplexity), true
+	case "CoverLetter.id":
+		if e.ComplexityRoot.CoverLetter.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverLetter.ID(childComplexity), true
+	case "CoverLetter.name":
+		if e.ComplexityRoot.CoverLetter.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverLetter.Name(childComplexity), true
+	case "CoverLetter.updatedAt":
+		if e.ComplexityRoot.CoverLetter.UpdatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverLetter.UpdatedAt(childComplexity), true
+
+	case "CoverSnippet.createdAt":
+		if e.ComplexityRoot.CoverSnippet.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverSnippet.CreatedAt(childComplexity), true
+	case "CoverSnippet.id":
+		if e.ComplexityRoot.CoverSnippet.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverSnippet.ID(childComplexity), true
+	case "CoverSnippet.section":
+		if e.ComplexityRoot.CoverSnippet.Section == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverSnippet.Section(childComplexity), true
+	case "CoverSnippet.text":
+		if e.ComplexityRoot.CoverSnippet.Text == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CoverSnippet.Text(childComplexity), true
+
 	case "Favorite.createdAt":
 		if e.ComplexityRoot.Favorite.CreatedAt == nil {
 			break
@@ -931,6 +1018,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateComponent(childComplexity, args["input"].(model.CreateComponentInput)), true
+	case "Mutation.createCoverLetter":
+		if e.ComplexityRoot.Mutation.CreateCoverLetter == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCoverLetter_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateCoverLetter(childComplexity, args["input"].(model.CreateCoverLetterInput)), true
+	case "Mutation.createCoverSnippet":
+		if e.ComplexityRoot.Mutation.CreateCoverSnippet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCoverSnippet_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateCoverSnippet(childComplexity, args["input"].(model.CreateCoverSnippetInput)), true
 	case "Mutation.createFavorite":
 		if e.ComplexityRoot.Mutation.CreateFavorite == nil {
 			break
@@ -1030,6 +1139,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteComponent(childComplexity, args["id"].(int)), true
+	case "Mutation.deleteCoverLetter":
+		if e.ComplexityRoot.Mutation.DeleteCoverLetter == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteCoverLetter_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteCoverLetter(childComplexity, args["id"].(int)), true
+	case "Mutation.deleteCoverSnippet":
+		if e.ComplexityRoot.Mutation.DeleteCoverSnippet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteCoverSnippet_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteCoverSnippet(childComplexity, args["id"].(int)), true
 	case "Mutation.deleteLayout":
 		if e.ComplexityRoot.Mutation.DeleteLayout == nil {
 			break
@@ -1185,6 +1316,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateComponent(childComplexity, args["id"].(int), args["input"].(model.UpdateComponentInput)), true
+	case "Mutation.updateCoverLetter":
+		if e.ComplexityRoot.Mutation.UpdateCoverLetter == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCoverLetter_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateCoverLetter(childComplexity, args["id"].(int), args["input"].(model.UpdateCoverLetterInput)), true
+	case "Mutation.updateCoverSnippet":
+		if e.ComplexityRoot.Mutation.UpdateCoverSnippet == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCoverSnippet_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateCoverSnippet(childComplexity, args["id"].(int), args["input"].(model.UpdateCoverSnippetInput)), true
 	case "Mutation.updateLayout":
 		if e.ComplexityRoot.Mutation.UpdateLayout == nil {
 			break
@@ -1430,6 +1583,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Components(childComplexity), true
+	case "Query.coverLetters":
+		if e.ComplexityRoot.Query.CoverLetters == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.CoverLetters(childComplexity), true
+	case "Query.coverSnippets":
+		if e.ComplexityRoot.Query.CoverSnippets == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.CoverSnippets(childComplexity), true
 	case "Query.favorites":
 		if e.ComplexityRoot.Query.Favorites == nil {
 			break
@@ -1764,6 +1929,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateBookmarkInput,
 		ec.unmarshalInputCreateBoxInput,
 		ec.unmarshalInputCreateComponentInput,
+		ec.unmarshalInputCreateCoverLetterInput,
+		ec.unmarshalInputCreateCoverSnippetInput,
 		ec.unmarshalInputCreateFavoriteInput,
 		ec.unmarshalInputCreateLayoutInput,
 		ec.unmarshalInputCreatePageInput,
@@ -1773,6 +1940,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputUpdateBoxInput,
 		ec.unmarshalInputUpdateComponentInput,
+		ec.unmarshalInputUpdateCoverLetterInput,
+		ec.unmarshalInputUpdateCoverSnippetInput,
 		ec.unmarshalInputUpdateLayoutInput,
 		ec.unmarshalInputUpdatePageInput,
 		ec.unmarshalInputUpdatePlaceInput,
@@ -1851,7 +2020,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/background.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/component.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/layout.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
+//go:embed "schema/activity.graphql" "schema/auth.graphql" "schema/background.graphql" "schema/bookmark.graphql" "schema/box.graphql" "schema/component.graphql" "schema/cover_letter.graphql" "schema/favorite.graphql" "schema/gitea.graphql" "schema/layout.graphql" "schema/message.graphql" "schema/page.graphql" "schema/place.graphql" "schema/post.graphql" "schema/rowing.graphql" "schema/schema.graphql" "schema/spotify.graphql" "schema/steam.graphql" "schema/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1869,6 +2038,7 @@ var sources = []*ast.Source{
 	{Name: "schema/bookmark.graphql", Input: sourceData("schema/bookmark.graphql"), BuiltIn: false},
 	{Name: "schema/box.graphql", Input: sourceData("schema/box.graphql"), BuiltIn: false},
 	{Name: "schema/component.graphql", Input: sourceData("schema/component.graphql"), BuiltIn: false},
+	{Name: "schema/cover_letter.graphql", Input: sourceData("schema/cover_letter.graphql"), BuiltIn: false},
 	{Name: "schema/favorite.graphql", Input: sourceData("schema/favorite.graphql"), BuiltIn: false},
 	{Name: "schema/gitea.graphql", Input: sourceData("schema/gitea.graphql"), BuiltIn: false},
 	{Name: "schema/layout.graphql", Input: sourceData("schema/layout.graphql"), BuiltIn: false},
@@ -2020,6 +2190,36 @@ func (ec *executionContext) childFields_Component(ctx context.Context, field gra
 		return ec.fieldContext_Component_uses(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Component", field.Name)
+}
+
+func (ec *executionContext) childFields_CoverLetter(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_CoverLetter_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_CoverLetter_createdAt(ctx, field)
+	case "updatedAt":
+		return ec.fieldContext_CoverLetter_updatedAt(ctx, field)
+	case "name":
+		return ec.fieldContext_CoverLetter_name(ctx, field)
+	case "body":
+		return ec.fieldContext_CoverLetter_body(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CoverLetter", field.Name)
+}
+
+func (ec *executionContext) childFields_CoverSnippet(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_CoverSnippet_id(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_CoverSnippet_createdAt(ctx, field)
+	case "text":
+		return ec.fieldContext_CoverSnippet_text(ctx, field)
+	case "section":
+		return ec.fieldContext_CoverSnippet_section(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CoverSnippet", field.Name)
 }
 
 func (ec *executionContext) childFields_Favorite(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2510,6 +2710,34 @@ func (ec *executionContext) field_Mutation_createComponent_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createCoverLetter_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateCoverLetterInput, error) {
+			return ec.unmarshalNCreateCoverLetterInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateCoverLetterInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createCoverSnippet_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.CreateCoverSnippetInput, error) {
+			return ec.unmarshalNCreateCoverSnippetInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateCoverSnippetInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createFavorite_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2623,6 +2851,34 @@ func (ec *executionContext) field_Mutation_deleteBox_args(ctx context.Context, r
 }
 
 func (ec *executionContext) field_Mutation_deleteComponent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteCoverLetter_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteCoverSnippet_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -2858,6 +3114,50 @@ func (ec *executionContext) field_Mutation_updateComponent_args(ctx context.Cont
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (model.UpdateComponentInput, error) {
 			return ec.unmarshalNUpdateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateComponentInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCoverLetter_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateCoverLetterInput, error) {
+			return ec.unmarshalNUpdateCoverLetterInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateCoverLetterInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCoverSnippet_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNID2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (model.UpdateCoverSnippetInput, error) {
+			return ec.unmarshalNUpdateCoverSnippetInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateCoverSnippetInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -4232,6 +4532,213 @@ func (ec *executionContext) _Component_uses(ctx context.Context, field graphql.C
 }
 func (ec *executionContext) fieldContext_Component_uses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Component", field, true, true, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CoverLetter_id(ctx context.Context, field graphql.CollectedField, obj *models.CoverLetter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverLetter_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverLetter_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverLetter", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _CoverLetter_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.CoverLetter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverLetter_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverLetter_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverLetter", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CoverLetter_updatedAt(ctx context.Context, field graphql.CollectedField, obj *models.CoverLetter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverLetter_updatedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverLetter_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverLetter", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CoverLetter_name(ctx context.Context, field graphql.CollectedField, obj *models.CoverLetter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverLetter_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverLetter_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverLetter", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CoverLetter_body(ctx context.Context, field graphql.CollectedField, obj *models.CoverLetter) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverLetter_body(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Body, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverLetter_body(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverLetter", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CoverSnippet_id(ctx context.Context, field graphql.CollectedField, obj *models.CoverSnippet) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverSnippet_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v uint) graphql.Marshaler {
+			return ec.marshalNID2uint(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverSnippet_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverSnippet", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _CoverSnippet_createdAt(ctx context.Context, field graphql.CollectedField, obj *models.CoverSnippet) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverSnippet_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverSnippet_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverSnippet", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CoverSnippet_text(ctx context.Context, field graphql.CollectedField, obj *models.CoverSnippet) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverSnippet_text(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverSnippet_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverSnippet", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CoverSnippet_section(ctx context.Context, field graphql.CollectedField, obj *models.CoverSnippet) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CoverSnippet_section(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Section, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CoverSnippet_section(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CoverSnippet", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Favorite_id(ctx context.Context, field graphql.CollectedField, obj *models.Favorite) (ret graphql.Marshaler) {
@@ -5643,6 +6150,348 @@ func (ec *executionContext) fieldContext_Mutation_detachBox(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_detachBox_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createCoverLetter(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createCoverLetter(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateCoverLetter(ctx, fc.Args["input"].(model.CreateCoverLetterInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverLetter
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverLetter) graphql.Marshaler {
+			return ec.marshalNCoverLetter2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetter(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createCoverLetter(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverLetter(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCoverLetter_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateCoverLetter(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateCoverLetter(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateCoverLetter(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateCoverLetterInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverLetter
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverLetter) graphql.Marshaler {
+			return ec.marshalNCoverLetter2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetter(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateCoverLetter(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverLetter(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateCoverLetter_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteCoverLetter(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteCoverLetter(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteCoverLetter(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverLetter
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverLetter) graphql.Marshaler {
+			return ec.marshalNCoverLetter2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetter(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteCoverLetter(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverLetter(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteCoverLetter_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createCoverSnippet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createCoverSnippet(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateCoverSnippet(ctx, fc.Args["input"].(model.CreateCoverSnippetInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverSnippet
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverSnippet) graphql.Marshaler {
+			return ec.marshalNCoverSnippet2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippet(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createCoverSnippet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverSnippet(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCoverSnippet_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateCoverSnippet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateCoverSnippet(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateCoverSnippet(ctx, fc.Args["id"].(int), fc.Args["input"].(model.UpdateCoverSnippetInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverSnippet
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverSnippet) graphql.Marshaler {
+			return ec.marshalNCoverSnippet2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippet(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateCoverSnippet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverSnippet(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateCoverSnippet_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteCoverSnippet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteCoverSnippet(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteCoverSnippet(ctx, fc.Args["id"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal *models.CoverSnippet
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *models.CoverSnippet) graphql.Marshaler {
+			return ec.marshalNCoverSnippet2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippet(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteCoverSnippet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverSnippet(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteCoverSnippet_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7506,6 +8355,96 @@ func (ec *executionContext) fieldContext_Query_components(_ context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_Component(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_coverLetters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_coverLetters(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().CoverLetters(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal []*models.CoverLetter
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.CoverLetter) graphql.Marshaler {
+			return ec.marshalNCoverLetter2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetterᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_coverLetters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverLetter(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_coverSnippets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_coverSnippets(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().CoverSnippets(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Admin == nil {
+					var zeroVal []*models.CoverSnippet
+					return zeroVal, errors.New("directive admin is not implemented")
+				}
+				return ec.Directives.Admin(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v []*models.CoverSnippet) graphql.Marshaler {
+			return ec.marshalNCoverSnippet2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippetᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_coverSnippets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CoverSnippet(ctx, field)
 		},
 	}
 	return fc, nil
@@ -10388,6 +11327,80 @@ func (ec *executionContext) unmarshalInputCreateComponentInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateCoverLetterInput(ctx context.Context, obj any) (model.CreateCoverLetterInput, error) {
+	var it model.CreateCoverLetterInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateCoverSnippetInput(ctx context.Context, obj any) (model.CreateCoverSnippetInput, error) {
+	var it model.CreateCoverSnippetInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"text", "section"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "text":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Text = data
+		case "section":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("section"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Section = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateFavoriteInput(ctx context.Context, obj any) (model.CreateFavoriteInput, error) {
 	var it model.CreateFavoriteInput
 	if obj == nil {
@@ -10884,6 +11897,80 @@ func (ec *executionContext) unmarshalInputUpdateComponentInput(ctx context.Conte
 				return it, err
 			}
 			it.AdminOnly = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateCoverLetterInput(ctx context.Context, obj any) (model.UpdateCoverLetterInput, error) {
+	var it model.UpdateCoverLetterInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "body"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "body":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Body = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateCoverSnippetInput(ctx context.Context, obj any) (model.UpdateCoverSnippetInput, error) {
+	var it model.UpdateCoverSnippetInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"text", "section"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "text":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Text = data
+		case "section":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("section"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Section = data
 		}
 	}
 	return it, nil
@@ -11563,6 +12650,117 @@ func (ec *executionContext) _Component(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var coverLetterImplementors = []string{"CoverLetter"}
+
+func (ec *executionContext) _CoverLetter(ctx context.Context, sel ast.SelectionSet, obj *models.CoverLetter) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, coverLetterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CoverLetter")
+		case "id":
+			out.Values[i] = ec._CoverLetter_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._CoverLetter_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._CoverLetter_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._CoverLetter_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "body":
+			out.Values[i] = ec._CoverLetter_body(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var coverSnippetImplementors = []string{"CoverSnippet"}
+
+func (ec *executionContext) _CoverSnippet(ctx context.Context, sel ast.SelectionSet, obj *models.CoverSnippet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, coverSnippetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CoverSnippet")
+		case "id":
+			out.Values[i] = ec._CoverSnippet_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._CoverSnippet_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._CoverSnippet_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "section":
+			out.Values[i] = ec._CoverSnippet_section(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var favoriteImplementors = []string{"Favorite"}
 
 func (ec *executionContext) _Favorite(ctx context.Context, sel ast.SelectionSet, obj *models.Favorite) graphql.Marshaler {
@@ -12047,6 +13245,48 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "detachBox":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_detachBox(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createCoverLetter":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCoverLetter(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateCoverLetter":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateCoverLetter(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteCoverLetter":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteCoverLetter(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createCoverSnippet":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCoverSnippet(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateCoverSnippet":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateCoverSnippet(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteCoverSnippet":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteCoverSnippet(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -12600,6 +13840,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_components(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "coverLetters":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_coverLetters(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "coverSnippets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_coverSnippets(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -14109,6 +15393,58 @@ func (ec *executionContext) marshalNComponent2ᚖadamᚑfrenchᚗcoᚗukᚋbacke
 	return ec._Component(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCoverLetter2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetterᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.CoverLetter) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCoverLetter2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetter(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCoverLetter2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverLetter(ctx context.Context, sel ast.SelectionSet, v *models.CoverLetter) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CoverLetter(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCoverSnippet2ᚕᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippetᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.CoverSnippet) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCoverSnippet2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippet(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCoverSnippet2ᚖadamᚑfrenchᚗcoᚗukᚋbackendᚋmodelsᚐCoverSnippet(ctx context.Context, sel ast.SelectionSet, v *models.CoverSnippet) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CoverSnippet(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNCreateActivityInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateActivityInput(ctx context.Context, v any) (model.CreateActivityInput, error) {
 	res, err := ec.unmarshalInputCreateActivityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -14126,6 +15462,16 @@ func (ec *executionContext) unmarshalNCreateBoxInput2adamᚑfrenchᚗcoᚗukᚋb
 
 func (ec *executionContext) unmarshalNCreateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateComponentInput(ctx context.Context, v any) (model.CreateComponentInput, error) {
 	res, err := ec.unmarshalInputCreateComponentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateCoverLetterInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateCoverLetterInput(ctx context.Context, v any) (model.CreateCoverLetterInput, error) {
+	res, err := ec.unmarshalInputCreateCoverLetterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateCoverSnippetInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐCreateCoverSnippetInput(ctx context.Context, v any) (model.CreateCoverSnippetInput, error) {
+	res, err := ec.unmarshalInputCreateCoverSnippetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -14612,6 +15958,16 @@ func (ec *executionContext) unmarshalNUpdateBoxInput2adamᚑfrenchᚗcoᚗukᚋb
 
 func (ec *executionContext) unmarshalNUpdateComponentInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateComponentInput(ctx context.Context, v any) (model.UpdateComponentInput, error) {
 	res, err := ec.unmarshalInputUpdateComponentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateCoverLetterInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateCoverLetterInput(ctx context.Context, v any) (model.UpdateCoverLetterInput, error) {
+	res, err := ec.unmarshalInputUpdateCoverLetterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateCoverSnippetInput2adamᚑfrenchᚗcoᚗukᚋbackendᚋgraphᚋmodelᚐUpdateCoverSnippetInput(ctx context.Context, v any) (model.UpdateCoverSnippetInput, error) {
+	res, err := ec.unmarshalInputUpdateCoverSnippetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
