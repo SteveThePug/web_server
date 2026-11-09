@@ -706,7 +706,7 @@ services:
   # log and error output. -F re-opens the file after rotation; -n0 skips the
   # backlog on restart, which stays in the file on the host.
   traffic:
-    image: busybox:1.37.0
+    image: busybox:1.38.0
     container_name: traffic
     restart: always
     command: ["tail", "-n0", "-F", "/logs/payloads.log"]
