@@ -193,7 +193,7 @@ services:
   # with CLOUDFLARE_DNS_API_TOKEN set it validates over DNS, so renewal needs
   # no inbound port, and without it falls back to the webroot method.
   certbot:
-    image: certbot/dns-cloudflare:v3.1.0
+    image: certbot/dns-cloudflare:v3.3.0
     container_name: certbot
     volumes:
       - ./certbot/entrypoint.sh:/entrypoint.sh
