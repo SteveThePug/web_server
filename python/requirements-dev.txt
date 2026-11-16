@@ -6,7 +6,7 @@
 #   python -m pytest tests -q
 -r requirements.txt
 
-pytest==9.0.3
+pytest==9.2.0
 # fastapi.testclient.TestClient is built on httpx and refuses to import
 # without it. Nothing at runtime pulls it in: the Anthropic SDK brings httpx2,
 # a different package, which is what the tests import for request objects.

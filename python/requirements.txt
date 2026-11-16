@@ -1,7 +1,7 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-requests==2.32.3
-anthropic==1.12.1
+fastapi==0.162.5
+uvicorn[standard]==0.54.0
+requests==2.34.2
+anthropic==1.17.0
 
 # Runtime only - this is all the Docker image installs. What the test suite
 # (python/tests) needs on top lives in requirements-dev.txt.
