@@ -14,7 +14,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server stands in for nginx and proxies four prefixes. Each target
+The Vite dev server stands in for Caddy and proxies four prefixes. Each target
 is an environment variable, read in `vite.config.js` from the shell or from
 `vue/.env.local`:
 
@@ -22,11 +22,11 @@ is an environment variable, read in `vite.config.js` from the shell or from
 | --- | --- | --- | --- |
 | `/api` | `VITE_PROXY_API` | `http://localhost:8080` | Go backend |
 | `/gitea` | `VITE_PROXY_GITEA` | `http://localhost:3000` | Gitea |
-| `/py` | `VITE_PROXY_PY` | `http://localhost:8000` | FastAPI (the `/py` prefix is stripped, as nginx does in production) |
+| `/py` | `VITE_PROXY_PY` | `http://localhost:8000` | FastAPI (the `/py` prefix is stripped, as Caddy does in production) |
 | `/radio` | `VITE_PROXY_RADIO` | `http://localhost:8000` | Icecast2 |
 
 **The defaults are not "where the compose stack is".** The stack publishes only
-nginx (80/443), Gitea (3000) and the liquidsoap harbor port to the host; the
+Caddy (80/443), Gitea (3000) and the liquidsoap harbor port to the host; the
 backend, the Python service and Icecast are reachable only inside the Docker
 network. The defaults are each service's own port, i.e. where it listens when
 you run it directly on the host (`go run .`, `uvicorn app.main:app`). `/py` and
@@ -34,10 +34,10 @@ you run it directly on the host (`go run .`, `uvicorn app.main:app`). `/py` and
 can be right at a time — normally `/py`, with the radio simply reading as
 offline.
 
-To use a running compose stack instead, point the prefix at its nginx, e.g.
+To use a running compose stack instead, point the prefix at its Caddy, e.g.
 `VITE_PROXY_API=http://localhost npm run dev`. That works for `/api`, `/gitea`
 and `/radio`, which are forwarded with the path intact. It does not work for
-`/py`, because the proxy strips the prefix nginx routes on — `VITE_PROXY_PY`
+`/py`, because the proxy strips the prefix Caddy routes on — `VITE_PROXY_PY`
 has to be a bare uvicorn.
 
 ## Structure
@@ -66,10 +66,10 @@ Two layout shells, defined in `src/router/index.js`:
 | `/` | DefaultLayout | Landing page (statically imported — it's the first paint): a box canvas, page key `index`; the old fixed page is its starter layout, `views/landing/landingLayout.js` |
 | `/stp` | DefaultLayout | The personal home page: an ordinary canvas page (the `Page` with slug `stp`) served by the catch-all, see "The /stp canvas" below |
 | `/admin`, `/admin/login` | DefaultLayout | `/admin` is guarded by `meta.requiresAdmin`. The login page is everyone's, admin or not |
-| `/account`, `/no-access` | DefaultLayout | `views/account/Account.vue`, guarded by `meta.requiresSignIn`: the gated services a non-admin has been granted. `/no-access` is where nginx's permission gate sends a signed-in visitor without the grant |
+| `/account`, `/no-access` | DefaultLayout | `views/account/Account.vue`, guarded by `meta.requiresSignIn`: the gated services a non-admin has been granted. `/no-access` is where Caddy's permission gate sends a signed-in visitor without the grant |
 | `/automata`, `/hotels` | DefaultLayout | |
 | `/shrines`, `/shrines/*` | DefaultLayout | All canvas pages via the catch-all: `/shrines` is an index whose links are Link boxes placed by hand |
-| `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); nginx redirects the old `/cv/jobs` and `/cv/leads` there |
+| `/cv` | CVLayout | Light print theme. Its Jobs button goes to `/jobs/`, the separate job tracker app (`adamf/job-tracker`); Caddy redirects the old `/cv/jobs` and `/cv/leads` there |
 | `/stp2` | (none) | Bare full-bleed mock, deliberately outside both layouts |
 | `:pathMatch(.*)*` | DefaultLayout | `views/canvas/CanvasPage.vue`: an admin-created canvas page if one exists at the path, else the 404 (with a "create a page here" form for admins) |
 
@@ -118,7 +118,7 @@ const data = await gql(`query { ... }`, variables);
 
 It POSTs to `/api/graphql` and throws on an error response with no data. Auth
 rides along in **HTTP-only cookies** set by the Go backend, so nothing here
-touches tokens — the request just has to be same-origin (nginx in production,
+touches tokens — the request just has to be same-origin (Caddy in production,
 the Vite proxy in dev).
 
 The backend's REST routes go through `src/api.js`, the same idea for plain JSON:
@@ -240,7 +240,7 @@ renders any page's boxes.
   (`Home3.vue`, now legacy), and the backend creates its `Page` row once at
   start-up (`ensureStpPage` in `backend/services/database.go`), so it can be
   renamed, hidden or deleted like any other.
-  The server refuses slugs that an SPA or nginx route would answer first
+  The server refuses slugs that an SPA or Caddy route would answer first
   (`validateSlug` in `backend/graph/page_helpers.go`) — add to that list when
   adding a route.
 - **Backgrounds.** Each page key can have its own background (`Background` in
@@ -357,10 +357,10 @@ renders any page's boxes.
 
 - **Dev** (`npm run dev`): Vite serves the SPA and proxies `/api`, `/gitea`,
   `/radio` and `/py` to the `VITE_PROXY_*` targets (see Development above and
-  `vite.config.js`). The `/py` proxy strips the prefix, matching what nginx
+  `vite.config.js`). The `/py` proxy strips the prefix, matching what Caddy
   does in production.
-- **Production** (`npm run build`): `dist/` is built into the nginx container
-  and served as static files, with nginx doing the same reverse-proxying.
+- **Production** (`npm run build`): `dist/` is written into the `vue_dist`
+  volume and served as static files by Caddy, which does the same reverse-proxying.
 
 `npm run build` is a plain `vite build`. It is also the local check that the
 app still compiles — there is no test runner or linter.
@@ -438,7 +438,7 @@ Note that Tailwind's spacing unit is set to **3px** (not the default 4px), so `p
 npm run build
 ```
 
-In production, the built `dist/` is served by Nginx inside a Docker container (see `../Dockerfile`).
+In production, the built `dist/` is served by Caddy from the `vue_dist` volume (see `../Dockerfile` and `../../caddy/`).
 
 ## Recommended IDE Setup
 

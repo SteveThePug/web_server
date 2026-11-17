@@ -34,8 +34,8 @@ type ExtractedRowingData struct {
 	Distance    uint64 `json:"distance"`
 }
 
-// rowingReadPath is the Python route. It is internal: nginx refuses
-// /py/internal/ and the route itself refuses anything nginx forwarded, so the
+// rowingReadPath is the Python route. It is internal: Caddy refuses
+// /py/internal/ and the route itself refuses anything Caddy forwarded, so the
 // only way in is the direct container-to-container call services.CallPython
 // makes.
 const rowingReadPath = "/internal/rowing/read"

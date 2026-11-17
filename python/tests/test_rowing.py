@@ -125,8 +125,8 @@ def test_route_returns_reading(fake_claude, http):
 
 
 @pytest.mark.parametrize("header", ["X-Real-IP", "X-Forwarded-For"])
-def test_route_refuses_requests_proxied_by_nginx(fake_claude, http, header):
-    """nginx sets these on everything it forwards; the Go backend sets neither."""
+def test_route_refuses_requests_proxied_by_the_edge(fake_claude, http, header):
+    """Caddy sets these on everything it forwards; the Go backend sets neither."""
     res = http.post("/internal/rowing/read", json=BODY, headers={header: "203.0.113.9"})
     assert res.status_code == 404
     assert fake_claude.calls == []

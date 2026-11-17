@@ -12,7 +12,7 @@ import (
 // RateLimiter is an in-memory sliding-window limiter keyed by an arbitrary
 // string (in practice the client IP). It is process-local: restarting the
 // backend clears every window, and a multi-replica deployment would limit
-// per replica rather than globally. Nginx applies its own rate limits in
+// per replica rather than globally. Caddy applies its own rate limits in
 // front of this, so this layer is a second line of defence, not the only one.
 type RateLimiter struct {
 	mu sync.Mutex

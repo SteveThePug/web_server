@@ -22,7 +22,7 @@
 #   would fail certificate verification without a trust store.
 #
 # EXPOSE 8080 is documentation only; the port is never published to the host.
-# nginx reaches it over app-network as BACKEND_HOST:BACKEND_PORT.
+# Caddy reaches it over app-network as BACKEND_HOST:BACKEND_PORT.
 #
 # Base images are multi-arch, so this builds unchanged on arm64 (the Pi) and
 # amd64 (a dev laptop) with no platform pin.

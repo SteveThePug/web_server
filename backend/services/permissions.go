@@ -10,17 +10,17 @@ import (
 // service (the receipt printer, say) without being made an admin.
 //
 // A permission is a key from PermissionTypes stored in models.User.Permissions.
-// nginx gates a service on one key by asking GET /auth/validate/<key>
+// Caddy gates a service on one key by asking GET /auth/validate/<key>
 // (handlers.Store.ValidatePermission); admins pass every such check, so
 // moving a service from the admin gate to a permission gate never locks an
 // admin out. Services that are not listed here stay admin-only.
 //
-// Adding a grantable service is one entry below plus swapping that location's
-// nginx gate from /internal/auth/admin-validate to the permission gate (see
-// "Permission gate" in nginx/nginx_routes.conf.template).
+// Adding a grantable service is one entry below plus swapping its route in
+// caddy/routes.caddy from `import admin_gate` to `import permission_gate
+// <key>` (the snippet is in caddy/Caddyfile).
 
 // PermissionType describes one grantable service. Key is what is stored and
-// what nginx names; Label and Path are for the admin panel's checkboxes and
+// what Caddy names; Label and Path are for the admin panel's checkboxes and
 // the signed-in user's /account list of links.
 type PermissionType struct {
 	Key   string

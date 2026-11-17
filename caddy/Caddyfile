@@ -89,8 +89,8 @@
 
 	# The payload log: one JSON line per request, body included (log_append
 	# in `logging`), for seeing what actually arrives at the edge.
-	# logs/caddy/ on the host; from the cutover the `traffic` container tails
-	# it so Dozzle shows it as its own stream. Caddy rotates it itself, and
+	# logs/caddy/ on the host; the `traffic` container tails it so Dozzle
+	# shows it as its own stream. Caddy rotates it itself, and
 	# `tail -F` follows the rotation. 0644 so `jq` on the host can read it
 	# unprivileged (Caddy's default is 0600).
 	#

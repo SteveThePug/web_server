@@ -55,7 +55,9 @@ Time budgets
   Every network path takes an optional `deadline` (a time.monotonic() value).
   Passing it down instead of using a wall-clock timeout lets a long run degrade
   gracefully: work already done is returned with summary["truncated"] = True
-  instead of the whole request dying at the nginx 300s proxy timeout.
+  instead of the whole request being cut off by a proxy timeout. (nginx cut at
+  300s; Caddy sets no upstream timeout, but the budgets below still bound a
+  run, and Cloudflare gives up on an origin that sends nothing for 100s.)
 """
 
 import logging
@@ -102,8 +104,9 @@ ORIGINS = {
 # Rough Greater London bounding box for custom "lat,lon" origins.
 LONDON_BOX = (51.25, 51.75, -0.55, 0.35)  # min lat, max lat, min lon, max lon
 
-# Wall-clock budget for one run_search call. Nginx cuts the connection at
-# 300s, so stop pricing transport well before that and return what we have.
+# Wall-clock budget for one run_search call. Set when nginx cut the connection
+# at 300s: stop pricing transport well before that and return what we have.
+# Caddy has no such cut, but the budget still keeps a run bounded.
 SEARCH_DEADLINE_S = 200
 
 # A date-range scan fetches one Travelodge search per candidate night, then

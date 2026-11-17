@@ -34,7 +34,7 @@ type Store struct {
 	LoginLimiter  *services.RateLimiter
 
 	// Base URL of the Python service on the Docker network, no trailing
-	// slash. Used for the calls that bypass nginx, all through
+	// slash. Used for the calls that bypass Caddy, all through
 	// services.CallPython: reading a rowing display photo (handle_rowing.go).
 	PythonURL string
 

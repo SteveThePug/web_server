@@ -2,7 +2,7 @@
 # Vue frontend image — builds the SPA.
 #
 # THIS IS A BUILD CONTAINER, NOT A SERVER. In production the container runs
-# `vite build` into /output (the shared vue_dist volume) and EXITS. nginx then
+# `vite build` into /output (the shared vue_dist volume) and EXITS. Caddy then
 # serves those files. Seeing `vue` as Exited(0) in `docker compose ps` is the
 # success case, not a failure. The dev override replaces the CMD with the Vite
 # dev server, and then it does stay running.

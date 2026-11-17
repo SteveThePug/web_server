@@ -12,17 +12,15 @@
 #   - vue      : one-shot `vite build` becomes the long-running Vite dev server
 #                with the source bind-mounted for hot reload.
 #   - backend  : dev flags on, including database seeding.
-#   - nginx    : DEV_MODE=true, which makes its entrypoint render
-#                nginx_dev.conf.template and self-sign a localhost certificate.
-#   - caddy    : CADDY_SITE=dev, which loads caddy/sites/dev.caddy. Until the
-#                cutover it runs beside nginx, on 127.0.0.1:8880 / :8443.
+#   - caddy    : CADDY_SITE=dev, which loads caddy/sites/dev.caddy instead of
+#                the production sites: no redirects, no security headers, a
+#                certificate from Caddy's own local CA, `/` proxied to Vite.
 #   - python   : uvicorn --reload with the app source bind-mounted.
-#   - certbot  : disabled entirely.
 #   - cloudflared : disabled entirely.
 #
 # HOW TO REACH IT
-#   http://localhost (HTTPS also works on :443 with the self-signed cert, which
-#   the browser will warn about — that is expected).
+#   http://localhost (HTTPS also works on :443 with the local-CA certificate,
+#   which the browser will warn about — that is expected).
 #
 # NOT USED ON THE PI. The deploy workflow runs plain `docker compose up`.
 # =============================================================================
@@ -30,7 +28,7 @@
 services:
     vue:
         # Replaces the one-shot `vite build`: the container now stays up serving
-        # the Vite dev server on :5173, which nginx_dev.conf proxies `/` to.
+        # the Vite dev server on :5173, which caddy/sites/dev.caddy proxies `/` to.
         command: ["npm", "run", "dev"]
         volumes:
             - ./vue:/app
@@ -57,21 +55,11 @@ services:
             # because dev uses a throwaway local dbdata volume; it is NEVER set
             # in production — seeding a live database would inject fake content.
             - SEED_DB=true
-    nginx:
-        environment:
-            # The single switch that selects nginx_dev.conf.template and the
-            # self-signed localhost certificate. See nginx/entrypoint.sh.
-            - DEV_MODE=true
-        # Same mapping as the base file; restated because compose replaces the
-        # `ports` list rather than merging it, so omitting it here would be fine
-        # but restating it makes the dev surface explicit.
-        ports:
-            - 80:80
-            - 443:443
     caddy:
         environment:
-            # Loads caddy/sites/dev.caddy instead of the production sites:
-            # localhost on http and https, `tls internal`, `/` -> Vite.
+            # The single switch that loads caddy/sites/dev.caddy instead of
+            # the production sites: localhost on http and https, `tls
+            # internal`, `/` -> Vite.
             - CADDY_SITE=dev
     python:
         # Same command as the Dockerfile's CMD plus --reload, paired with the
@@ -91,17 +79,12 @@ services:
             - GQL_PLAYGROUND=true
             - GQL_INTROSPECTION=true
             - MSGRAPH_REDIRECT_URI=https://localhost/jobs/api/email/callback
-    certbot:
+    cloudflared:
         # Profiles are opt-in: a service with a profile is only started when
         # that profile is explicitly requested. Nothing ever requests
-        # "disabled", so this is the idiomatic way to switch a service off in an
-        # override file. Dev gets TLS from nginx's self-signed cert instead, and
-        # Let's Encrypt could not validate localhost anyway.
-        profiles:
-            - disabled
-    cloudflared:
-        # Same profile trick as certbot. A dev stack must never join the
-        # production tunnel: Cloudflare would load-balance real visitors onto
-        # this machine's seeded database.
+        # "disabled", so this is the idiomatic way to switch a service off in
+        # an override file. A dev stack must never join the production tunnel:
+        # Cloudflare would load-balance real visitors onto this machine's
+        # seeded database.
         profiles:
             - disabled

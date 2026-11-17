@@ -3,7 +3,7 @@
 The Vue frontend splits the response on newlines and JSON-parses each line, so
 the contract under test is: one complete JSON object per line, the documented
 event names, the right payload key per event kind, `exclude_none` dropping
-absent keys, and the framing headers that stop nginx buffering the stream.
+absent keys, and the framing headers that stop a buffering proxy holding the stream.
 
 No scraping and no network happens here: `_run_events` takes the upstream
 generator as a callable, so a fake generator stands in for travelodge and the
@@ -134,8 +134,8 @@ def test_ndjson_omits_none_fields():
 def test_ndjson_headers_defeat_proxy_buffering():
     response = main._ndjson(iter([]))
     assert response.media_type == "application/x-ndjson"
-    # Without X-Accel-Buffering nginx holds the whole response and the stream
-    # is pointless.
+    # Without X-Accel-Buffering an nginx-style proxy holds the whole response
+    # and the stream is pointless. (Caddy streams it regardless.)
     assert response.headers["x-accel-buffering"] == "no"
     assert response.headers["cache-control"] == "no-cache"
 

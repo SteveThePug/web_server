@@ -16,7 +16,7 @@ import (
 // (handlers/handle_rowing.go); the job posting reader, email classifier and
 // lead scorer went with the job tracker to its own repo.
 //
-// The routes are internal in a specific sense: nginx answers 404 for
+// The routes are internal in a specific sense: Caddy answers 404 for
 // /py/internal/, and each route itself refuses a request carrying a proxy
 // header, so the only way in is this direct container-to-container call. That
 // is why the request below sets nothing but Content-Type.

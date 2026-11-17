@@ -255,7 +255,7 @@ func TestRequestIsAdmin(t *testing.T) {
 // --- Permission gate ------------------------------------------------------
 
 // An unknown key must be refused before any session lookup (Store has no DB
-// or Auth here, so reaching one would panic): it is how a typo in an nginx
+// or Auth here, so reaching one would panic): it is how a typo in a Caddy
 // location shows up as a 404 rather than as a missing grant.
 func TestValidatePermissionUnknownKey(t *testing.T) {
 	gin.SetMode(gin.TestMode)

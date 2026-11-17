@@ -25,7 +25,7 @@
 #      with the same credentials and the backend needs no change.
 #   4. Grants that key read+write on the bucket. garage-webui also browses
 #      with it: it borrows the first key that has access to a bucket.
-#   5. Opens the bucket on the website endpoint, which is what nginx serves
+#   5. Opens the bucket on the website endpoint, which is what Caddy serves
 #      /uploads/ from, anonymously.
 #
 # ENV / .env

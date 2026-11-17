@@ -27,24 +27,25 @@
 #   inline defaults.
 #
 # NAMING CONVENTION / WHY container_name IS SET FROM env
-#   Service discovery is by container name on app-network. nginx builds its
-#   upstreams from the same ${*_HOST} variables (nginx/entrypoint.sh), so
-#   naming the containers from .env keeps the proxy and the containers in sync
-#   from one source of truth. Renaming a *_HOST value renames the container AND
-#   repoints nginx at it — do not change one without the other.
+#   Service discovery is by container name on app-network. Caddy builds its
+#   upstreams from the same ${*_HOST} variables (the caddy service's
+#   environment list), so naming the containers from .env keeps the proxy and
+#   the containers in sync from one source of truth. Renaming a *_HOST value
+#   renames the container AND repoints Caddy at it — do not change one without
+#   the other.
 #
 # WHAT IS PUBLISHED TO THE HOST
-#   Only nginx (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
+#   Only caddy (80, 443), gitea (3000 HTTP, 2222 SSH) and the liquidsoap harbor
 #   port. Everything else is reachable only from inside app-network, which is
 #   why the backend, db, silverbullet and python have no `ports:` — they are
-#   deliberately not exposed and are reached through nginx. Web traffic can
+#   deliberately not exposed and are reached through Caddy. Web traffic can
 #   also arrive through the `cloudflared` tunnel, which publishes nothing.
 # =============================================================================
 
 networks:
   # One flat bridge network; every service resolves every other by container
-  # name via docker's embedded DNS at 172.28.0.11 (nginx configs point their
-  # `resolver` there). The subnet is pinned explicitly so it cannot collide
+  # name via docker's embedded DNS at 127.0.0.11 (Caddy resolves an upstream
+  # through it each time it dials one). The subnet is pinned explicitly so it cannot collide
   # with the Pi's LAN range or wander between compose versions.
   app-network:
     driver: bridge
@@ -63,7 +64,7 @@ networks:
 #   Named volumes below survive `docker compose down` and container rebuilds;
 #   they are only destroyed by `docker compose down -v` or an explicit
 #   `docker volume rm`. Bind mounts (./gitea/data, ./backend/token, ./logs,
-#   ./certbot/conf) live in the repo checkout on the Pi and survive everything
+#   ./caddy/data) live in the repo checkout on the Pi and survive everything
 #   short of deleting the directory. Anything inside a container's own
 #   filesystem is ephemeral and gone on rebuild.
 volumes:
@@ -71,10 +72,10 @@ volumes:
   # Deleting this wipes posts, users, messages and every git repo's metadata.
   dbdata:
   # File upload — PERSISTENT. Written by the backend at /backend/uploads,
-  # served read-only by nginx at /uploads/. Shared so nginx can serve user
+  # served read-only by Caddy at /uploads/. Shared so Caddy can serve user
   # uploads without proxying through the Go process. Since Garage, it holds
   # private attachments (always), the uploads from before the bucket, and any
-  # upload the backend wrote here because Garage refused it. nginx serves
+  # upload the backend wrote here because Garage refused it. Caddy serves
   # /uploads/ from the bucket first and only then from here.
   uploads:
   # Garage object store — PERSISTENT, both. garage_meta is the metadata DB
@@ -84,8 +85,8 @@ volumes:
   garage_meta:
   garage_data:
   # Vue build — EPHEMERAL in spirit but a named volume for handoff: the
-  # one-shot `vue` container writes the built SPA here and exits; nginx mounts
-  # it at /etc/nginx/html and serves it. Repopulated on every rebuild.
+  # one-shot `vue` container writes the built SPA here and exits; Caddy mounts
+  # it at /srv/www and serves it. Repopulated on every rebuild.
   vue_dist:
   # Caddy's /config: the JSON it autosaves on each config load. Nothing in it
   # is needed across restarts (the Caddyfile is the source); named only so
@@ -109,103 +110,17 @@ services:
     networks:
       - app-network
 
-  # The only public entrypoint. Terminates TLS, serves the SPA, reverse-proxies
-  # everything else. Its config is chosen at container start — see
-  # nginx/entrypoint.sh for the DEV_MODE / cert-present / bootstrap decision.
-  #
-  # START ORDERING: these `depends_on` entries are the plain list form, which
-  # only waits for each container to be *created and started*, NOT for it to be
-  # ready or healthy. That is deliberate — nginx's `resolver 127.0.0.11` means
-  # upstreams are resolved per-request, so a late-starting backend produces a
-  # temporary 502 rather than a failed nginx boot. The one ordering nginx
-  # genuinely cares about (the Vue build finishing) is handled by the polling
-  # loop in its entrypoint, because depends_on cannot express "wait for a
-  # one-shot container to exit successfully" here.
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: nginx
-    env_file: ./.env
-    restart: always
-    depends_on:
-      - vue
-      - backend
-      - icecast2
-      - gitea
-      - silverbullet
-      - silverbullet-public
-      - python
-      - jobs
-      - activity-tracker
-      - dozzle
-    networks:
-      app-network:
-        # The site's public names, resolving to this container for everything
-        # on app-network. They exist for cloudflared: its tunnel origin is
-        # https://www.DOMAIN, which lands here over the bridge with a name the
-        # Let's Encrypt certificate actually covers, so the tunnel verifies
-        # TLS with no extra dashboard settings (`https://nginx` would fail the
-        # name check). Any other container that calls the public site now
-        # reaches nginx directly instead of hairpinning through the internet.
-        aliases:
-          - ${DOMAIN}
-          - www.${DOMAIN}
-        # Fixed for cloudflared's extra_hosts (see there): an alias only
-        # exists while nginx is running, and this address is pinned to the
-        # same names for when it is not. Top of the /16 beside cloudflared's,
-        # away from docker's dynamic allocations.
-        ipv4_address: 172.28.255.251
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      # Shared with certbot: the cert store nginx reads and certbot writes.
-      # PERSISTENT, and private key material — gitignored, never commit.
-      - ./certbot/conf:/etc/letsencrypt
-      # Shared with certbot: the ACME HTTP-01 challenge webroot. certbot drops
-      # tokens in, nginx serves them on port 80.
-      - ./certbot/www:/var/www/certbot
-      - uploads:/uploads
-      # The SPA written by the one-shot `vue` container.
-      - vue_dist:/etc/nginx/html
-      # The JSON request-body log (nginx/payload_log.conf), kept on the host so
-      # it survives rebuilds and the `traffic` container can tail it. Grows
-      # without bound unless rotated — see DEPLOYMENT.md.
-      - ./logs/nginx:/var/log/nginx/payloads
-    # restart: always only acts when nginx's master exits. On 2026-10-19 the
-    # worker stalled while the master lived, and the site was down 4.6 hours
-    # with the container "Up". /nginx-health is answered by a worker, so a
-    # stall shows here; Docker only marks it unhealthy, and the `autoheal`
-    # label is what gets it restarted (see the autoheal service). Plain HTTP
-    # on :80 so it also passes in the first-boot setup config, which has no
-    # :443; the workers that serve :80 are the ones serving TLS.
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "--max-time", "5", "-o", "/dev/null", "http://127.0.0.1/nginx-health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    labels:
-      - autoheal=true
-
-  # The replacement edge (caddy/Caddyfile), RUNNING BESIDE nginx until the
-  # cutover. While it does:
-  #   - it is reachable only from this host, on 127.0.0.1:8880 (http) and
-  #     127.0.0.1:8443 (https), so the public site is still nginx;
-  #   - it holds no network aliases and a fixed address of its own, so nothing
-  #     on app-network (cloudflared included) is sent to it;
-  #   - it obtains its certificates over DNS-01 into ./caddy/data, which needs
-  #     no inbound port, so they are ready before it takes over;
-  #   - autoheal ignores it.
-  # Compare the two with caddy/edge_test.sh (its header has the commands).
-  # The cutover gives it nginx's ports, aliases, address and autoheal label,
-  # and removes nginx and certbot.
+  # The only public entrypoint: Caddy (caddy/Caddyfile). Terminates TLS,
+  # serves the SPA, reverse-proxies everything else, and obtains and renews
+  # its own certificates over DNS-01 into ./caddy/data, with no reload and no
+  # inbound port. It replaced nginx and the certbot container on 2026-11-17;
+  # nginx/ and certbot/ stay in the repo until that has settled, as the
+  # rollback.
   #
   # ENVIRONMENT: an explicit list, not the whole .env, so the edge never sees
   # the database password or the JWT secret. A variable the Caddyfile reads
   # must be added here, or it reaches Caddy empty. The ${X:-default} forms
-  # are the defaults nginx/entrypoint.sh gave the optional services; they live
+  # are the defaults nginx's entrypoint gave the optional services; they live
   # here because Caddy's own {$X:default} keeps a variable that is set but
   # empty, which is how a blank line in .env arrives.
   #
@@ -240,66 +155,67 @@ services:
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN:-}
     networks:
       app-network:
-        # Beside nginx's .251 and cloudflared's .250. Becomes .251 at the
-        # cutover.
-        ipv4_address: 172.28.255.252
+        # The site's public names, resolving to this container for everything
+        # on app-network. They exist for cloudflared: its tunnel origin is
+        # https://www.DOMAIN, which lands here over the bridge with a name the
+        # Let's Encrypt certificate actually covers, so the tunnel verifies
+        # TLS with no extra dashboard settings (`https://caddy` would fail the
+        # name check). Any other container that calls the public site now
+        # reaches Caddy directly instead of hairpinning through the internet.
+        aliases:
+          - ${DOMAIN}
+          - www.${DOMAIN}
+        # Fixed for cloudflared's extra_hosts (see there): an alias only
+        # exists while Caddy is running, and this address is pinned to the
+        # same names for when it is not. Top of the /16 beside cloudflared's,
+        # away from docker's dynamic allocations.
+        ipv4_address: 172.28.255.251
     ports:
-      - 127.0.0.1:8880:80
-      - 127.0.0.1:8443:443
+      - 80:80
+      - 443:443
     volumes:
       # The certificates, their keys and the ACME account. PERSISTENT and
       # private key material: gitignored, never commit. Losing it only costs
-      # a re-issue on the next start (about a minute over DNS-01).
+      # a re-issue on the next start (seconds over DNS-01), during which the
+      # tunnel, which verifies the certificate, serves 502s.
       - ./caddy/data:/data
       - caddy_config:/config
       - uploads:/srv/uploads:ro
       # The SPA written by the one-shot `vue` container.
       - vue_dist:/srv/www:ro
-      # The JSON request-body log, tailed by `traffic` after the cutover.
+      # The JSON request-body log, kept on the host so it survives rebuilds
+      # and the `traffic` container can tail it. Caddy rotates it itself
+      # (50 MiB, five files kept).
       - ./logs/caddy:/var/log/caddy
-    # Answered by Caddy itself (http://127.0.0.1 in the Caddyfile). The image
-    # has busybox wget, not curl.
+    # restart: always only acts when the process exits. On 2026-10-19 nginx's
+    # worker stalled while its master lived, and the site was down 4.6 hours
+    # with the container "Up". /caddy-health (http://127.0.0.1 in the
+    # Caddyfile) is answered by Caddy's own server, so a hung server shows
+    # here; Docker only marks it unhealthy, and the `autoheal` label is what
+    # gets it restarted (see the autoheal service). The image has busybox
+    # wget, not curl.
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/caddy-health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # Obtains the cert once, then renews every 12h forever. Disabled in dev via
-  # the `disabled` profile in docker-compose.dev.yml. Note this is the stock
-  # certbot image with our script bind-mounted over the entrypoint, so editing
-  # certbot/entrypoint.sh takes effect on restart with no rebuild. Version is
-  # pinned so a certbot release cannot change behaviour under us on redeploy.
-  # The dns-cloudflare variant is plain certbot plus the Cloudflare DNS plugin:
-  # with CLOUDFLARE_DNS_API_TOKEN set it validates over DNS, so renewal needs
-  # no inbound port, and without it falls back to the webroot method.
-  certbot:
-    image: certbot/dns-cloudflare:v3.1.0
-    container_name: certbot
-    volumes:
-      - ./certbot/entrypoint.sh:/entrypoint.sh
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: ["/entrypoint.sh"]
-    env_file:
-      - .env
-    networks:
-      - app-network
+    labels:
+      - autoheal=true
 
   # Cloudflare Tunnel: an OUTBOUND connection from here to Cloudflare's edge,
-  # which then forwards visitors' requests back down it to nginx. Nothing is
+  # which then forwards visitors' requests back down it to Caddy. Nothing is
   # published to the host, so with the tunnel live the router's 80/443
   # forwards can be closed. The tunnel is "remotely managed": its public
   # hostnames and origin settings live in the Cloudflare dashboard, and this
   # container only needs the token. The routing set up there (DEPLOYMENT.md,
-  # "Cloudflare Tunnel") is https://www.DOMAIN, which nginx's network aliases
-  # resolve to nginx itself, so the certificate verifies; nginx's config,
+  # "Cloudflare Tunnel") is https://www.DOMAIN, which Caddy's network aliases
+  # resolve to Caddy itself, so the certificate verifies; Caddy's config,
   # redirects and security headers apply to tunnel traffic exactly as to
   # direct traffic, and both paths work side by side.
   #
-  # Fixed address so nginx can trust the CF-Connecting-IP header from this
-  # container and no other (set_real_ip_from in nginx.conf.template). It sits
+  # Fixed address so Caddy can trust the CF-Connecting-IP header from this
+  # container and no other (trusted_proxies in caddy/Caddyfile). It sits
   # at the top of the /16 because docker hands out dynamic addresses from the
   # bottom; the two must change together.
   #
@@ -313,12 +229,12 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
-      - nginx
-    # Pins the tunnel origin's names to nginx's fixed address. nginx's aliases
+      - caddy
+    # Pins the tunnel origin's names to Caddy's fixed address. Its aliases
     # vanish while it is stopped (every deploy and the weekly maintenance), and
     # docker's DNS then forwards the name to public DNS, which answers with
     # Cloudflare's own IPs: the tunnel sent requests back to the edge and
-    # visitors got error 1000. /etc/hosts wins over DNS, so a stopped nginx is
+    # visitors got error 1000. /etc/hosts wins over DNS, so a stopped Caddy is
     # now a refused connection, which cloudflared reports as a plain 502.
     extra_hosts:
       - "${DOMAIN}:172.28.255.251"
@@ -360,7 +276,7 @@ services:
       # read-only into silverbullet-public (the /notes/ site).
       - ${OBSIDIAN_DIR}:/backend/notes
       - ./logs:/backend/logs
-      # Same named volume nginx serves at /uploads/ — backend writes, nginx reads.
+      # Same named volume Caddy serves at /uploads/ — backend writes, Caddy reads.
       - uploads:/backend/uploads
       # Shared with icecast2, which plays these as the radio fallback playlist;
       # the backend reads them to report what is queued.
@@ -418,12 +334,12 @@ services:
   # listeners connect to, proxied at /radio/) and liquidsoap (the source that
   # feeds it). See icecast2/entrypoint.sh.
   #
-  # This is the only non-nginx service that publishes a host port, and it has
+  # This is the only non-Caddy service that publishes a host port, and it has
   # to: LIQUIDSOAP_HARBOR_PORT is the live-DJ input. A broadcasting client
   # (e.g. butt) connects straight to the Pi on that port, by its Tailscale
   # name now that the public domain resolves to Cloudflare, with the icecast
   # source password and pre-empts the fallback playlist. It is NOT proxied
-  # through nginx because it is a raw source protocol, not HTTP the SPA uses.
+  # through Caddy because it is a raw source protocol, not HTTP the SPA uses.
   # Note the host:container mapping uses the same variable on both sides, so
   # the published port always matches what liquidsoap actually binds.
   icecast2:
@@ -442,7 +358,7 @@ services:
       - "${LIQUIDSOAP_HARBOR_PORT:-8001}:${LIQUIDSOAP_HARBOR_PORT:-8001}"
 
   # Browser-based editor for the vault, so notes are editable from a phone.
-  # Proxied at /sb/ behind the nginx admin gate. The public site at /notes/ is
+  # Proxied at /sb/ behind Caddy's admin gate. The public site at /notes/ is
   # a SECOND, read-only SilverBullet over the same folder (silverbullet-public,
   # below).
   #
@@ -460,7 +376,7 @@ services:
     environment:
       SB_PORT: "${SILVERBULLET_PORT:-3000}"
       # The app builds its service-worker scope and asset URLs from this, which
-      # is why nginx must NOT strip the /sb/ prefix. See nginx.conf.template.
+      # is why Caddy must NOT strip the /sb/ prefix. See caddy/routes.caddy.
       SB_URL_PREFIX: /sb
       # Only .obsidian: it is editor config and plugin JS, not notes.
       #
@@ -495,14 +411,14 @@ services:
   #                          URL /notes/private/x (server-rendered with the
   #                          note's content), nor /.fs/.git/ — SilverBullet
   #                          only applies it to listing (checked in 2.11.0).
-  #   2. nginx deny blocks   404 any private/ or templates/ segment and any
+  #   2. Caddy deny rules    404 any private/ or templates/ segment and any
   #                          nested dot-folder under /notes/; this is what
   #                          actually closes those holes. Keep its folder list
   #                          in step with the one below.
   #   3. SB_REVISIONS        the default ("unmanaged") serves history from the
   #                          vault's own .git, i.e. every version of every file
   #                          including private/ and deleted ones. Disabled here,
-  #                          and nginx blocks /notes/.revisions as well.
+  #                          and Caddy blocks /notes/.revisions as well.
   #
   # SB_READ_ONLY rejects writes server-side and also disables the shell and the
   # /.proxy endpoint (otherwise an open fetch proxy). The :ro mount is a second
@@ -519,13 +435,13 @@ services:
       - app-network
     environment:
       SB_PORT: "${SILVERBULLET_PUBLIC_PORT:-3000}"
-      # Same reason as the editor's SB_URL_PREFIX: nginx must not strip /notes/.
+      # Same reason as the editor's SB_URL_PREFIX: Caddy must not strip /notes/.
       SB_URL_PREFIX: /notes
       SB_READ_ONLY: "true"
       SB_REVISIONS: disabled
       # Newline separated (commas are silently ignored). Gitignore semantics,
       # so these match at any depth. Must match the folder list in the
-      # /notes/ deny regex in nginx/nginx_routes.conf.template, or a new entry here is
+      # /notes/ deny regex in caddy/routes.caddy, or a new entry here is
       # hidden from the list but still publicly fetchable.
       SB_SPACE_IGNORE: |
         private/
@@ -540,7 +456,7 @@ services:
   # writes, and pulls what Obsidian pushes from elsewhere.
   #
   # WHY A SEPARATE CONTAINER and not SilverBullet's own shell backend: enabling
-  # that would give anyone who gets past the nginx admin gate command execution
+  # that would give anyone who gets past Caddy's admin gate command execution
   # inside the container. Since SilverBullet itself runs with no SB_USER, that
   # gate is the only thing protecting it, so the blast radius stays here.
   silverbullet-git:
@@ -549,8 +465,8 @@ services:
     restart: always
     networks:
       - app-network
-    # The vault's remotes are ssh://git@DOMAIN:2222/..., but nginx's network
-    # aliases make DOMAIN resolve to nginx on app-network, which has no :2222,
+    # The vault's remotes are ssh://git@DOMAIN:2222/..., but Caddy's network
+    # aliases make DOMAIN resolve to Caddy on app-network, which has no :2222,
     # so every pull and push was refused. /etc/hosts wins over Docker's DNS, so
     # this sends DOMAIN back to the host, where gitea publishes 2222. The name
     # is unchanged, so known_hosts still matches.
@@ -576,7 +492,7 @@ services:
       # ssh will not run for a uid with no passwd entry; see the file's comment.
       - ./silverbullet/passwd:/etc/passwd:ro
 
-  # FastAPI side-service, proxied at /py/ with the prefix stripped by nginx.
+  # FastAPI side-service, proxied at /py/ with the prefix stripped by Caddy.
   # ROOT_PATH=/py tells FastAPI it is mounted under a prefix so the generated
   # OpenAPI/Swagger URLs (/py/docs) are correct even though the app's own
   # routes are written relative to /.
@@ -584,7 +500,7 @@ services:
   # than `env_file: ./.env` — it only gets the variables it needs and never
   # sees the database password, Spotify secrets, or the other API keys.
   # CLAUDE_API_KEY is the one secret on the list: the rowing photo reader
-  # (POST /internal/rowing/read, called by the backend, blocked at nginx)
+  # (POST /internal/rowing/read, called by the backend, blocked at Caddy)
   # makes its Claude call here.
   python:
     build:
@@ -616,10 +532,10 @@ services:
   # database role of its own. A variable the tracker reads must be added to
   # the list below as well as .env.example.
   #
-  # It has no login. nginx's auth_request gates /jobs/ like /sb/ (except the
+  # It has no login. Caddy's admin gate gates /jobs/ like /sb/ (except the
   # bearer-token capture API and the userscript), and the tracker checks
   # again itself: AUTH_VALIDATE_URL is the backend's validate-admin route
-  # (the one nginx's auth_request uses), which it asks with the visitor's
+  # (the one Caddy's admin gate uses), which it asks with the visitor's
   # cookies on each admin request.
   #
   # ./jobs-data holds the Microsoft Graph session and the capture token. The
@@ -764,7 +680,7 @@ services:
   # Two kinds of auth. Collectors send per-device bearer keys, made on the
   # tracker's /tracker/setup page or with `docker exec activity-tracker
   # tracker apikey create`. The dashboard and setup pages have no login of
-  # their own: nginx's auth_request gates them like /sb/ (everything but
+  # their own: Caddy's admin gate gates them like /sb/ (everything but
   # /tracker/api/v1/ and the userscript), and like jobs the tracker also asks
   # AUTH_VALIDATE_URL (the backend's validate-admin) with the visitor's
   # cookies and sends anyone else to /admin/login.
@@ -782,9 +698,9 @@ services:
       - TRACKER_TZ=${TRACKER_TZ:-}
       - AUTH_VALIDATE_URL=http://${BACKEND_HOST}:${BACKEND_PORT}/auth/validate-admin
 
-  # Echoes nginx's JSON request-body log to its own stdout, and does nothing
+  # Echoes Caddy's JSON request-body log to its own stdout, and does nothing
   # else. It exists so Dozzle shows the payloads as a stream of their own,
-  # rendered as JSON fields, instead of interleaved with nginx's compact access
+  # rendered as JSON fields, instead of interleaved with Caddy's compact access
   # log and error output. -F re-opens the file after rotation; -n0 skips the
   # backlog on restart, which stays in the file on the host.
   traffic:
@@ -794,10 +710,10 @@ services:
     command: ["tail", "-n0", "-F", "/logs/payloads.log"]
     network_mode: none
     volumes:
-      - ./logs/nginx:/logs:ro
+      - ./logs/caddy:/logs:ro
 
   # Dozzle: a live, searchable web view of every container's logs, served at
-  # /dozzle/ behind the admin login (nginx/nginx_routes.conf.template). The
+  # /dozzle/ behind the admin login (caddy/routes.caddy). The
   # `traffic` container is the one to watch for incoming request bodies.
   #
   # The Docker socket is mounted :ro, but that only stops the file being
@@ -818,7 +734,7 @@ services:
 
   # Restarts any container labelled autoheal=true once Docker marks it
   # unhealthy, which Docker itself never does (restart policies only see the
-  # process exit). Only nginx carries the label today; give it to another
+  # process exit). Only caddy carries the label today; give it to another
   # service with a healthcheck to cover that one too. It polls every 5s.
   #
   # It needs the Docker socket read-write to restart things, which is root on
@@ -844,16 +760,16 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   # S3-compatible object store holding public uploads (the `uploads` bucket).
-  # The backend writes to it on :3900 once S3_ENDPOINT is set in .env; nginx
+  # The backend writes to it on :3900 once S3_ENDPOINT is set in .env; Caddy
   # serves /uploads/ from it anonymously on :3902, falling back to the
   # `uploads` volume; garage-webui manages it via :3903. Nothing is published
   # to the host. Config is garage/garage.toml (no secrets in it); the two
   # secrets come from .env through the explicit list below.
   #
-  # Nothing depends on this container being up. nginx is deliberately NOT
-  # given it in depends_on: its upstream is a variable, so a missing or
-  # crash-looping garage only makes bucket-only files 404 (everything on the
-  # volume is still served), never nginx's boot; and the backend falls back
+  # Nothing depends on this container being up. Caddy is deliberately NOT
+  # given it in depends_on: it resolves garage when it dials it, so a missing
+  # or crash-looping garage only makes bucket-only files 404 (everything on
+  # the volume is still served), never Caddy's start; and the backend falls back
   # to the volume when a write fails.
   #
   # FIRST RUN: garage/bootstrap.sh (layout, bucket, key, website access).
@@ -879,9 +795,9 @@ services:
       retries: 3
       start_period: 10s
 
-  # Admin web UI for Garage, served at /garage/ behind the nginx admin gate.
+  # Admin web UI for Garage, served at /garage/ behind Caddy's admin gate.
   # Manages buckets and keys, and browses/uploads/deletes objects. Its own
-  # login (AUTH_USER_PASS) is left unset because nginx's auth_request already
+  # login (AUTH_USER_PASS) is left unset because Caddy's admin gate already
   # requires the site admin — and it holds the admin token, so never publish
   # its port. It reads the s3/web settings from garage.toml; the token comes
   # from .env instead, since the file has none.

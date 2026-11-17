@@ -32,7 +32,7 @@ func TestReadRowingDisplayRequestAndReply(t *testing.T) {
 	var forwarded bool
 	store := rowingReader(t, func(w http.ResponseWriter, r *http.Request) {
 		path = r.URL.Path
-		// The Python route treats either header as "came through nginx" and
+		// The Python route treats either header as "came through Caddy" and
 		// answers 404, so this call must never carry them.
 		forwarded = r.Header.Get("X-Real-IP") != "" || r.Header.Get("X-Forwarded-For") != ""
 		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {

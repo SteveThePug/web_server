@@ -34,26 +34,26 @@ import (
 //
 // WHERE FILES GO
 //   Public files go to the Garage bucket `uploads` (garage/garage.toml), with
-//   the `uploads` volume as a fallback for when Garage refuses a write. nginx
+//   the `uploads` volume as a fallback for when Garage refuses a write. Caddy
 //   mirrors that: /uploads/<name> is fetched from the bucket first and the
-//   volume second (nginx.conf.template), so the URL is the same wherever the
+//   volume second (caddy/routes.caddy), so the URL is the same wherever the
 //   file landed. With S3_ENDPOINT unset there is no bucket and the volume is
 //   the only store.
 //   Private files (admin-only chat attachments) always go to the volume, under
-//   /uploads/private/, which nginx gates behind an admin check. nginx can't
+//   /uploads/private/, which Caddy gates behind an admin check. Caddy can't
 //   sign S3 requests, so it has no way to gate a bucket.
 //
 // Everything public is reachable by anyone who has the URL, with no login.
 // That is why the type checks below are strict, and why names are random.
 
 // MaxUploadSize caps one upload. It bounds how fast one account can fill the
-// disk or the bucket; nginx rate-limits the route as well.
+// disk or the bucket; Caddy rate-limits the route as well.
 const MaxUploadSize = 10 << 20 // 10MB
 
 // UploadType describes one allowed file extension.
 type UploadType struct {
 	// ContentType is stored with the file and served back with it. Garage
-	// returns exactly this, and the browser renders by it: nginx adds
+	// returns exactly this, and the browser renders by it: Caddy adds
 	// `nosniff`, so a wrong type means the file doesn't display.
 	ContentType string
 	// SniffPrefix is what http.DetectContentType must report for the file's
@@ -100,7 +100,7 @@ type Uploads struct {
 	private FileStore
 }
 
-// URL prefixes the files are served under; nginx owns both paths.
+// URL prefixes the files are served under; Caddy owns both paths.
 const (
 	publicURLPrefix  = "/uploads/"
 	privateURLPrefix = "/uploads/private/"
@@ -238,7 +238,7 @@ type FileStore interface {
 type DiskFileStore struct{ Dir string }
 
 func (d DiskFileStore) Put(_ context.Context, key, _ string, r io.ReadSeeker, _ int64) error {
-	// 0755 and 0644 so nginx, a different user, can reach and read the files.
+	// 0755 and 0644 so the edge, in another container, can reach and read the files.
 	if err := os.MkdirAll(d.Dir, 0755); err != nil {
 		return err
 	}
@@ -334,7 +334,7 @@ func (s *S3FileStore) Put(ctx context.Context, key, contentType string, r io.Rea
 
 // List pages through the whole bucket. Keys containing "/" are skipped: they
 // are not uploads (Save never makes one) but something put under a prefix by
-// hand, and nginx's /uploads/<name> only ever serves a top-level name anyway.
+// hand, and Caddy's /uploads/<name> only ever serves a top-level name anyway.
 func (s *S3FileStore) List(ctx context.Context) ([]StoredFile, error) {
 	ctx, cancel := context.WithTimeout(ctx, s3Timeout)
 	defer cancel()
@@ -358,7 +358,7 @@ func (s *S3FileStore) List(ctx context.Context) ([]StoredFile, error) {
 }
 
 // FallbackFileStore tries Primary and, if that fails, logs it and writes to
-// Fallback instead. The upload still succeeds and its URL still works (nginx
+// Fallback instead. The upload still succeeds and its URL still works (Caddy
 // looks in both places), so a Garage outage costs a log line rather than
 // broken uploads.
 type FallbackFileStore struct {
@@ -378,7 +378,7 @@ func (f FallbackFileStore) Put(ctx context.Context, key, contentType string, r i
 	return f.Fallback.Put(ctx, key, contentType, r, size)
 }
 
-// List is the union of both stores, since nginx serves from both: the
+// List is the union of both stores, since Caddy serves from both: the
 // fallback holds whatever was written while the primary was down (and, on
 // the live volume, the pre-Garage copies). A name in both is listed once,
 // with the primary's details. A primary that can't list is logged and the

@@ -19,7 +19,7 @@ func TestValidPermission(t *testing.T) {
 	}
 }
 
-// Keys must be URL-path safe: nginx splices them into /auth/validate/<key>.
+// Keys must be URL-path safe: Caddy splices them into /auth/validate/<key>.
 func TestPermissionKeysArePathSafe(t *testing.T) {
 	seen := map[string]bool{}
 	for _, p := range PermissionTypes {

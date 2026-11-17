@@ -98,7 +98,7 @@ async function handleLogout() {
             {{ section.label }}
           </button>
           <!-- Logs and incoming request bodies live in Dozzle, outside the
-               SPA (nginx serves it at /dozzle/ behind the admin check). -->
+               SPA (Caddy serves it at /dozzle/ behind the admin check). -->
           <a
             class="admin-nav-link no-underline"
             href="/dozzle/"
@@ -108,7 +108,7 @@ async function handleLogout() {
             Logs ↗
           </a>
           <!-- The receipt printer's page is served from stppi, which reaches
-               the printer on the home LAN; nginx proxies /receipt/ there over
+               the printer on the home LAN; Caddy proxies /receipt/ there over
                Tailscale behind the `receipt` permission gate. -->
           <a
             class="admin-nav-link no-underline"

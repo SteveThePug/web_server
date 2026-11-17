@@ -32,11 +32,13 @@
 #   Dev stack:
 #     caddy/edge_test.sh https://localhost -k
 #
-# COMPARING TWO EDGES (the nginx -> Caddy cutover)
-#   Run it against each and diff the output:
-#     caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1 >nginx.txt
-#     caddy/edge_test.sh https://www.$DOMAIN:8443 --resolve www.$DOMAIN:8443:127.0.0.1 >caddy.txt
-#     diff nginx.txt caddy.txt
+# COMPARING TWO EDGES
+#   Run it against each and diff the output. This is how Caddy was checked
+#   against nginx before the 2026-11-17 cutover (Caddy on 8443 beside nginx),
+#   and how a big change to caddy/ can be checked against the running edge:
+#     caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1 >before.txt
+#     caddy/edge_test.sh https://www.$DOMAIN:8443 --resolve www.$DOMAIN:8443:127.0.0.1 >after.txt
+#     diff before.txt after.txt
 #   Every remaining difference should be one that was intended.
 #
 # NOTHING HERE WRITES. Every request is a GET, apart from one POST to

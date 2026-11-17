@@ -15,11 +15,11 @@ After hearing all the hype on LinkedIn and feeling the pressure to keep up a hig
 
 ## Architecture
 
-All services run in Docker containers orchestrated by Docker Compose behind Nginx as a reverse proxy on a single bridge network.
+All services run in Docker containers orchestrated by Docker Compose behind Caddy as a reverse proxy on a single bridge network. (nginx and certbot did that job until 2026-11-17.)
 
 ```
 vue              ── Frontend build (outputs dist to shared volume)
-nginx (80, 443)  ── Frontend SPA + Reverse Proxy
+caddy (80, 443)  ── Frontend SPA + Reverse Proxy + TLS certificates
 backend (8080)   ── Go API (GraphQL + REST)
 db (5432)        ── PostgreSQL 16
 icecast2 (8000)  ── Audio Streaming (Icecast2 + Liquidsoap)
@@ -28,7 +28,6 @@ silverbullet (3000) ── Obsidian Notes Editor (SilverBullet 2.11.0)
 silverbullet-public (3000) ── Public read-only notes site (same image, SB_READ_ONLY)
 silverbullet-git ── Commits/pushes notes edits to the notes repo
 python (8000)    ── Python API (FastAPI)
-certbot          ── SSL Certificate Management (disabled in dev)
 ```
 
 ## Tech Stack
@@ -39,7 +38,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 
 **Integrations** - Spotify API, Steam API, Anthropic Claude API, Icecast2
 
-**Infrastructure** - Docker Compose, Nginx, Let's Encrypt (Certbot), Gitea + Act Runner
+**Infrastructure** - Docker Compose, Caddy, Let's Encrypt (DNS-01 via Cloudflare), Cloudflare Tunnel, Gitea + Act Runner
 
 ## Features
 
@@ -56,7 +55,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 - Printable CV with role-specific sections
 - Job application tracker with status workflow and CSV export (admin-only, `/cv/jobs`)
 - Database-backed bookmarks grouped by category, managed via GraphQL (admin-only)
-- Admin-gated routes: `/notes`, `/sb` require admin JWT via Nginx `auth_request`
+- Admin-gated routes: `/sb`, `/jobs`, `/tracker`, `/dozzle`, `/garage` and more require the admin session, checked by Caddy's `forward_auth` against the backend
 - Landing page with animated stamps section
 - Route transitions (slide/fade) and performance optimizations (gzip, WOFF2 fonts, lazy loading)
 - Backend healthcheck (reported in `docker ps`; nothing restarts on it)
@@ -123,7 +122,7 @@ certbot          ── SSL Certificate Management (disabled in dev)
 | POST | `/api/auth/refresh` | Refresh token |
 | GET | `/api/auth/check` | Check token validity |
 | POST | `/api/auth/logout` | Logout |
-| GET | `/api/auth/validate-admin` | Validate admin JWT (used by Nginx auth_request) |
+| GET | `/api/auth/validate-admin` | Validate admin JWT (used by Caddy's `forward_auth` admin gate) |
 
 Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin` also refreshes the access token if it is within 24 hours of expiry.
 
@@ -174,7 +173,7 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | --- | --- | --- |
 | GET | `/api/ws` | WebSocket chat (10s ping keepalive) |
 
-### Nginx Proxy Routes
+### Proxy Routes (Caddy)
 
 | Route      | Target       | Notes                                      |
 | ---------- | ------------ | ------------------------------------------ |
@@ -186,7 +185,7 @@ Access tokens are valid for 7 days; refresh tokens for 365 days. `ValidateAdmin`
 | `/py`      | python:8000  | Python API (FastAPI; docs at `/py/docs`)   |
 | `/uploads` | local alias  | User-uploaded files                        |
 
-`/sb` is protected by `auth_request` to `GET /api/auth/validate-admin`. Requests without a valid admin JWT are rejected with 401.
+`/sb` is protected by `forward_auth` to the backend's `/auth/validate-admin`. Requests without a valid admin session are redirected to `/admin/login`. The full table is `caddy/routes.caddy`; `DEPLOYMENT.md` §1 explains it.
 
 ### Deprecated Endpoints
 
@@ -272,21 +271,19 @@ Populate `LFS_JWT_SECRET`, `SECRET_KEY`, `INTERNAL_TOKEN`, `JWT_SECRET`, and the
    editor at `/sb/`, and read-only into `silverbullet-public`, which serves it publicly at
    `/notes/` with `SB_READ_ONLY`
 3. `private/` and `templates/` (at any depth), and dot-folders such as `.git`, are kept off
-   `/notes/` by `SB_SPACE_IGNORE` **and** nginx deny blocks — the nginx blocks are the ones that
+   `/notes/` by `SB_SPACE_IGNORE` **and** Caddy deny rules — the Caddy rules are the ones that
    actually enforce it. See `DEPLOYMENT.md` ("Public notes privacy boundary")
 4. The backend also mounts the vault at `/backend/notes` (legacy, see deprecated endpoints above)
 
-### SSL Certificates (Certbot)
+### TLS certificates
 
-**Initial setup (production):**
+Caddy obtains and renews them itself, over DNS-01 through the Cloudflare API, so no port has to be reachable from the internet:
 
-1. Set `DOMAIN` and `EMAIL` in `.env`
-2. On first run, Nginx starts with `nginx_setup.conf.template` which only serves the ACME challenge route at `/.well-known/acme-challenge/`
-3. Certbot requests a certificate via `certbot certonly --webroot`
-4. Once the certificate is issued to `certbot/conf/live/<DOMAIN>/`, restart Nginx — it will detect the certs and switch to the full `nginx.conf.template`
-5. Certbot checks for renewal every 12 hours automatically
+1. Set `DOMAIN` and `CLOUDFLARE_DNS_API_TOKEN` in `.env` (the token needs Zone → Zone → Read and Zone → DNS → Edit on the zone)
+2. `docker compose up -d`. Caddy serves immediately and fetches both certificates (apex and www) into `./caddy/data` within seconds
+3. Renewal is automatic and needs no restart
 
-**Dev mode:** Nginx generates a self-signed certificate for localhost automatically.
+**Dev mode:** Caddy issues a certificate for localhost from its own local CA.
 
 ### Icecast Radio
 
@@ -309,9 +306,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 This:
 
-- Uses an HTTP-only Nginx config with all routing (SPA, backend proxy, radio, gitea, etc.)
-- Generates a self-signed certificate for localhost
-- Disables certbot
+- Loads Caddy's dev sites (`caddy/sites/dev.caddy`): all the same routing (SPA via Vite, backend proxy, radio, gitea, etc.) on both http and https, with no redirects or security headers
+- Uses a localhost certificate from Caddy's local CA
+- Disables the Cloudflare tunnel
 - Seeds the database with test data (`SEED_DB=true`)
 - Enables GraphQL playground and introspection
 
@@ -331,7 +328,7 @@ Vite dev server proxies `/api`, `/gitea`, `/py` and `/radio`. The targets defaul
 make check
 ```
 
-Runs the backend's `go vet` and tests, the Python tests (in a virtualenv created from `python/requirements-dev.txt`), a Vite build and `docker compose config` validation. `make help` lists the individual targets, plus `make generate` (regenerate the GraphQL code after a schema edit) and `make dev`.
+Runs the backend's `go vet` and tests, the Python tests (in a virtualenv created from `python/requirements-dev.txt`), a Vite build, `docker compose config` validation and the Caddy image build, which validates the edge config. `make help` lists the individual targets, plus `make generate` (regenerate the GraphQL code after a schema edit) and `make dev`.
 
 The same backend and Python checks run in containers on the Pi on every push; a push to `main` is only deployed if they pass.
 
@@ -343,7 +340,7 @@ These files are git-ignored and must be created manually:
 | ------------------------------- | --------------------------------------------------------------- |
 | `.env`                          | See setup section above                                         |
 | `gitea/config/app.ini`          | Copy from `app.ini.template` or let entrypoint generate it      |
-| `certbot/conf/`, `certbot/www/` | Created automatically by certbot; use dev mode to skip          |
+| `caddy/data/`                   | Created automatically by Caddy (certificates and their keys)    |
 | `backend/token/`                | Created automatically by Docker volume mount                    |
 | `icecast2/fallback_music/*.mp3` | Place at least one MP3 file                                     |
 | `gitea-runner/act_runner`       | Download from Gitea releases                                    |

@@ -14,7 +14,7 @@
 ;   Gitea generates one itself on first run and writes it into the live app.ini.
 ;
 ; SETTINGS WORTH KNOWING
-;   ROOT_URL must match the public path nginx serves Gitea at (/gitea/), or
+;   ROOT_URL must match the public path Caddy serves Gitea at (/gitea/), or
 ;     every link, clone URL and OAuth redirect Gitea emits will be wrong.
 ;   START_SSH_SERVER = true with SSH_PORT 2222: the rootless image cannot bind
 ;     22 and cannot use the host's sshd, so Gitea runs its own Go SSH server.
@@ -25,10 +25,11 @@
 ;     MagicDNS name, not the public domain: SSH
 ;     (22 and 2222) is not forwarded by the router, so the SSH clone URL Gitea
 ;     shows only works from a device on the tailnet. HTTPS clones go through
-;     nginx at ROOT_URL and stay public.
+;     Caddy at ROOT_URL and stay public.
 ;   REVERSE_PROXY_LIMIT = 1 / TRUSTED_PROXIES = * : trust exactly one hop of
-;     X-Forwarded-For, i.e. our nginx, so Gitea logs real client IPs. This is
-;     only safe because nginx is the sole edge.
+;     X-Forwarded-For, i.e. our Caddy, so Gitea logs real client IPs. Caddy
+;     sends a single entry, the visitor (its `proxy` snippet). This is only
+;     safe because Caddy is the sole edge.
 ;   INSTALL_LOCK = true skips the first-run web installer.
 ;   DISABLE_REGISTRATION = true — single-user instance; nobody can sign up.
 ;   OFFLINE_MODE = true — no calls out to gravatar/CDNs.

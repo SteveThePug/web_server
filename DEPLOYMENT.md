@@ -2,18 +2,18 @@
 
 How this site is put together and how to operate it. Application code is
 documented in `CLAUDE.md` and `README.md`; this file covers infrastructure only
-— compose, nginx, TLS, the runner, and the runbook.
+— compose, the Caddy edge, TLS, the runner, and the runbook.
 
 Everything runs on a single host, `stpvm` (an x86-64 Ubuntu VM on Proxmox,
 reached over Tailscale as `stpvm.tailf20278.ts.net`; until 2026-10-15 it was
 the Raspberry Pi `stppi`), as Docker containers on one bridge
-network, behind one nginx.
+network, behind one Caddy (nginx and certbot until 2026-11-17).
 
 ---
 
 ## 1. Service topology
 
-Only three things are reachable from outside the host: nginx on 80/443, Gitea on
+Only three things are reachable from outside the host: Caddy on 80/443, Gitea on
 3000/2222, and the liquidsoap harbor port. Everything else is internal. Web
 traffic can also come in through the Cloudflare tunnel (`cloudflared`), which
 dials out and publishes no port; see "Cloudflare Tunnel" in §3.
@@ -24,7 +24,7 @@ dials out and publishes no port; see "Cloudflare Tunnel" in §3.
             :80  :443|                        :3000 / :2222      :8001
                      v                              v               v
               +--------------+                 +--------+    +-------------+
-              |    nginx     |                 | gitea  |    |  liquidsoap |
+              |    caddy     |                 | gitea  |    |  liquidsoap |
               | (TLS, SPA,   |                 | (git + |    |   harbor    |
               |  reverse     |                 |  CI)   |    |  (live DJ)  |
               |  proxy)      |                 +--------+    +------+------+
@@ -45,74 +45,86 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
           |  db  |  postgres:16
           +------+  (app database + gitea database)
 
-  vue      one-shot build container -> writes vue_dist volume -> nginx serves it
-  certbot  no ports; shares ./certbot/conf and ./certbot/www with nginx
+  vue      one-shot build container -> writes vue_dist volume -> caddy serves it
 ```
 
 ### Who listens where
 
 | Service                                       | Container name                | Internal port                 | Public route                                                                                            | Published to host    |
 | --------------------------------------------- | ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------- |
-| nginx                                         | `nginx`                       | 80, 443                       | —                                                                                                       | **80, 443**          |
+| caddy (the edge)                              | `caddy`                       | 80, 443 (fixed IP `172.28.255.251`) | everything below                                                                                  | **80, 443**          |
 | backend (Go)                                  | `${BACKEND_HOST}`             | `${BACKEND_PORT}` (8080)      | `${BACKEND_ENDPOINT}` = `/api/`                                                                         | no                   |
 | db (Postgres 16)                              | `${POSTGRES_HOST}`            | 5432                          | none                                                                                                    | no                   |
 | silverbullet (editor)                         | `${SILVERBULLET_HOST}`        | `${SILVERBULLET_PORT}`        | `/sb/` (admin-gated)                                                                                    | no                   |
 | silverbullet-public (notes site)              | `${SILVERBULLET_PUBLIC_HOST}` | `${SILVERBULLET_PUBLIC_PORT}` | `/notes/` (**public**, read-only)                                                                       | no                   |
 | silverbullet-git                              | n/a                           | n/a                           | none (timer loop)                                                                                       | no                   |
 | python (FastAPI)                              | `${PYTHON_HOST}`              | `${PYTHON_PORT}`              | `/py/`, docs at `/py/docs`                                                                              | no                   |
-| jobs (job tracker, published image)           | `jobs`                        | 8080                          | `/jobs/` (admin-gated by nginx `auth_request`; capture API and userscript public, bearer-token)       | no                   |
-| activity-tracker (published image, adamf/ccp) | `activity-tracker`            | 8080                          | `/tracker/`, prefix stripped (pages admin-gated by nginx `auth_request`; `/api/v1/` bearer/app-checked) | no                   |
+| jobs (job tracker, published image)           | `jobs`                        | 8080                          | `/jobs/` (admin-gated by Caddy `forward_auth`; capture API and userscript public, bearer-token)       | no                   |
+| activity-tracker (published image, adamf/ccp) | `activity-tracker`            | 8080                          | `/tracker/`, prefix stripped (pages admin-gated by Caddy `forward_auth`; `/api/v1/` bearer/app-checked) | no                   |
 | icecast2 + liquidsoap                         | `${ICECAST_HOST}`             | `${ICECAST_PORT}`             | `/radio/`                                                                                               | **harbor port only** |
 | gitea                                         | `${GITEA_HOST}`               | 3000, 2222                    | `/gitea/`                                                                                               | **3000, 2222**       |
 | vue                                           | `vue`                         | 5173 (dev only)               | `/` (dev only)                                                                                          | no                   |
-| certbot                                       | `certbot`                     | —                             | —                                                                                                       | no                   |
-| cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of nginx, via Cloudflare                                                                            | no (outbound only)   |
-| dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by nginx `auth_request`; reads the Docker socket)                               | no                   |
-| receipt printer (`receipt serve`, adamf/receipt_maker) | — (runs on **stppi**, not in this stack) | 8765 on stppi's Tailscale IP (`RECEIPT_WEB_UPSTREAM`) | `/receipt/`, prefix stripped (permission-gated on `receipt` by nginx `auth_request`; nginx adds `X-Receipt-Token` and `X-Remote-User`). The only upstream off this host; 503 "offline" when stppi is down | no |
+| cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of Caddy, via Cloudflare                                                                            | no (outbound only)   |
+| dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by Caddy `forward_auth`; reads the Docker socket)                               | no                   |
+| receipt printer (`receipt serve`, adamf/receipt_maker) | — (runs on **stppi**, not in this stack) | 8765 on stppi's Tailscale IP (`RECEIPT_WEB_UPSTREAM`) | `/receipt/`, prefix stripped (permission-gated on `receipt` by Caddy `forward_auth`; Caddy adds `X-Receipt-Token` and `X-Remote-User`). The only upstream off this host; 503 "offline" when stppi is down | no |
 | traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
-| autoheal (restarts unhealthy nginx)           | `autoheal`                    | — (no network)                | none; reads the Docker socket                                                                           | no                   |
+| autoheal (restarts unhealthy caddy)           | `autoheal`                    | — (no network)                | none; reads the Docker socket                                                                           | no                   |
 | garage (S3 object store)                      | `garage`                      | 3900 S3, 3902 web, 3903 admin | none directly; `/uploads/` falls back to its web endpoint for files not on the volume                   | no                   |
-| garage-webui (Garage admin UI)                | `garage-webui`                | 3909                          | `/garage/` (admin-gated by nginx `auth_request`)                                                        | no                   |
+| garage-webui (Garage admin UI)                | `garage-webui`                | 3909                          | `/garage/` (admin-gated by Caddy `forward_auth`)                                                        | no                   |
 
-Container names come from `.env`, and nginx builds its upstreams from the same
-variables. **Renaming a `*_HOST` value renames the container and repoints nginx
-in one step — never change one without the other.**
+Container names come from `.env`, and Caddy builds its upstreams from the same
+variables (passed through the caddy service's `environment:` list). **Renaming
+a `*_HOST` value renames the container and repoints Caddy in one step — never
+change one without the other.**
 
-### Things nginx does that are easy to miss
+### Things Caddy does that are easy to miss
 
-- **Canonical host.** `http://` → `https://`, and apex → `www`. The SPA, the
-  cookies and the CORS rules all assume `www.<DOMAIN>`.
-- **Prefix stripping.** `/api`, `/radio`, `/gitea`, `/py` are stripped
-  — but `/sb/` and `/notes/` deliberately are NOT: SilverBullet is told its own base path via
-  `SB_URL_PREFIX` and builds its service-worker scope from it, so stripping the
-  prefix serves a blank page with nothing in the log.
-  by a `rewrite ... break` before proxying; each upstream serves from `/`.
-- **Per-request DNS.** Upstreams go through `set $upstream_* ...` variables with
-  `resolver 127.0.0.11`, so names resolve per request. nginx boots fine with a
-  backend down (502s until it appears) instead of refusing to start.
+The config is `caddy/Caddyfile` (global options and snippets), `caddy/routes.caddy`
+(every proxied route, shared by dev and production) and `caddy/sites/`
+(`prod.caddy`, `dev.caddy`). Each file's header explains it.
+
+- **Canonical host.** `http://` → `https://www.<DOMAIN>`, and apex → `www`. The
+  SPA, the cookies and the CORS rules all assume `www.<DOMAIN>`.
+- **Route order is literal.** `routes.caddy` is one ordered list inside a
+  `route` block, and the first matching `handle` wins: denials first, then each
+  carve-out ahead of the gated prefix it is carved out of. A new route goes in
+  the right place in that list, not just anywhere.
+- **Prefix stripping.** `/api`, `/radio`, `/gitea`, `/py`, `/tracker` and
+  `/receipt` are stripped with `uri strip_prefix` before proxying; each of
+  those upstreams serves from `/`. `/sb/`, `/notes/`, `/jobs/`, `/usaco/`,
+  `/dozzle/` and `/garage/` deliberately are NOT: those apps are told their own
+  base path (SilverBullet's `SB_URL_PREFIX` builds its service-worker scope from
+  it, so stripping the prefix serves a blank page with nothing in the log).
+- **Upstreams resolve when dialled.** Caddy starts with any upstream container
+  missing and answers 502 until it appears; it never refuses to start over one.
 - **Admin gate.** `/sb/`, `/jobs/`, `/tracker/`, `/dozzle/`, `/garage/`, `/radio/admin/`, `/uploads/private/` and
   Gitea's history views and archives (`…/commit/`, `…/src/commit/`, `…/blame/commit/`, `…/archive/`, `…/compare/`; the
   branch views stay public) are
-  protected by an `auth_request` subrequest to the backend's `/auth/validate-admin`; a failure
-  redirects to the SPA login. Most of these services have no auth of their own at that path; the
+  protected by `forward_auth` to the backend's `/auth/validate-admin` (the
+  `admin_gate` snippet); a 401/403 redirects to the SPA login. Most of these services have no auth of their own at that path; the
   job and activity trackers also check the session themselves. Their carve-outs, which a session
-  cookie never reaches, stay public at nginx and are guarded by bearer tokens in the apps:
+  cookie never reaches, stay public at the edge and are guarded by bearer tokens in the apps:
   `/jobs/api/capture` and `/jobs/job-capture.user.js`, `/tracker/api/v1/` and `/tracker/tracker.user.js`.
-- **Permission gate.** `/receipt/` asks `/auth/validate/receipt` instead, which also lets in a
+  Paths are matched cleaned and case-insensitively, so `/SB/` or `/uploads/x/../private/y`
+  land on the gate too. With the backend down every gated path answers 502: it fails closed.
+- **Permission gate.** `/receipt/` asks `/auth/validate/receipt` instead (the
+  `permission_gate` snippet), which also lets in a
   non-admin account granted `receipt` in the admin panel's Manage Users tab. Not signed in
   redirects to the login; signed in without the grant redirects to `/no-access`. To let a
   friend print: create their user (admin panel → User), then tick "Receipt printer" for them
   under Manage Users. Revoking is the same tick, and applies on their next request.
 - **Public notes privacy boundary.** `/notes/` is public, and the only thing
   keeping `private/` (and `templates/`, `.git`, `.obsidian`) off it is a pair of
-  nginx deny blocks. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
+  `path_regexp` deny rules at the top of `caddy/routes.caddy`. SilverBullet's `SB_SPACE_IGNORE` only hides paths from its
   file _list_; direct `/.fs/` fetches and server-rendered page URLs still serve
   them. Adding a folder to `SB_SPACE_IGNORE` on `silverbullet-public` without
-  adding it to the deny regex in `nginx_routes.conf.template` publishes it. See the
-  comment above `location /notes/` in `nginx_routes.conf.template`.
+  adding it to the deny regex publishes it. `caddy/edge_test.sh` checks these
+  denials against a running edge.
 - **Uploads: the bucket first, then disk.** `/uploads/<f>` is fetched from
   Garage's website endpoint and, if Garage has no such file or is down, from
-  the shared `uploads` volume (`@uploads_disk`). Both paths add `nosniff`,
+  the shared `uploads` volume (the `uploads_disk` snippet, which hands the
+  request to a loopback-only site inside the container so that 206 and 304
+  answers keep their status). Both paths add `nosniff`,
   `Content-Disposition: inline` and a deny-all CSP, so user-supplied files
   cannot execute anything on our origin. The bucket is the source of truth;
   a Garage outage only affects files that exist nowhere else. See "Garage"
@@ -130,14 +142,12 @@ docker compose up --build
 ```
 
 1. `vue` builds the SPA into the `vue_dist` volume and **exits 0** (expected).
-2. `nginx` starts, runs `nginx/entrypoint.sh`, which:
-    - is not in `DEV_MODE`, so it looks for `/etc/letsencrypt/live/$DOMAIN/`;
-    - renders `nginx.conf.template` if the cert is there, else
-      `nginx_setup.conf.template`;
-    - polls up to 120s for `index.html` to appear in `vue_dist`, then starts
-      nginx either way.
-3. `certbot` obtains or confirms the certificate, then loops renewing.
-4. Everything else comes up in parallel; `depends_on` here is the plain list
+2. `caddy` starts with the image's own command (`caddy run` on
+   `/etc/caddy/Caddyfile`). `CADDY_SITE` is unset, so it loads
+   `sites/prod.caddy`. It serves at once: the SPA is whatever is in `vue_dist`,
+   and upstreams that are not up yet are 502s. If `./caddy/data` holds no
+   certificate it obtains one first (§3), and TLS fails for those seconds.
+3. Everything else comes up in parallel; `depends_on` here is the plain list
    form, which waits only for _start_, not readiness.
 
 On the host this is triggered automatically by `.gitea/workflows/deploy.yaml`,
@@ -145,9 +155,10 @@ which has two jobs:
 
 - **`test`** runs on every push to any branch. It exports the pushed commit
   (never the deploy checkout) and runs the backend's `go vet` + `go test` in
-  `golang:1.26` and the Python tests in `python:3.12-slim`. The Vue build is
-  not repeated here: the image build in the deploy step does it, and a failed
-  build leaves the old containers running.
+  `golang:1.26` and the Python tests in `python:3.12-slim`. The Vue build and
+  the Caddy config check are not repeated here: the image builds in the deploy
+  step do them (`caddy/Dockerfile` runs `caddy validate`), and a failed build
+  leaves the old containers running.
 - **`deploy`** runs only on `main`, only after `test` passes, and only if the
   tested commit is still the tip of `main` (so an older run cannot deploy a
   newer, untested commit). It fetches over `ssh://git@localhost:2222`,
@@ -180,21 +191,24 @@ rather than be passed with `--env-file`, because several services read
 volume created with them, and as in production only `POSTGRES_DB` is created
 automatically.
 
-The override layer changes five services and disables one:
+The override layer changes these services and disables `cloudflared`:
 
 - **vue** — `npm run dev` instead of a one-shot build; `./vue` is bind-mounted
   for hot reload, with an anonymous-volume mask on `/app/node_modules` so the
   image's installed deps are not hidden by the bind mount. You don't need
   `node_modules` on the host.
-- **nginx** — `DEV_MODE=true`, which makes the entrypoint self-sign a
-  `CN=localhost` certificate (once, kept in `certbot/conf`) and render
-  `nginx_dev.conf.template`: `/` proxies to the Vite dev server, both `:80` and
-  `:443` serve the whole site, no HSTS, no HTTP→HTTPS redirect.
+- **caddy** — `CADDY_SITE=dev`, which loads `caddy/sites/dev.caddy`: `/`
+  proxies to the Vite dev server, both `:80` and `:443` serve the whole site,
+  no HSTS or other security headers, no HTTP→HTTPS redirect. HTTPS uses a
+  certificate from Caddy's own local CA (kept in `./caddy/data`), which the
+  browser warns about. Every proxied route, gate and limit is the same
+  `routes.caddy` as production.
 - **backend** — `DEV_MODE`, GraphQL playground and introspection on, a localhost
   Spotify redirect URI, and **`SEED_DB=true`**.
 - **python** — `uvicorn --reload` with `python/app` bind-mounted.
-- **certbot** — put in the `disabled` profile, so it never starts. Let's Encrypt
-  cannot validate localhost anyway.
+- **jobs** — seeded, with the GraphQL playground on.
+- **cloudflared** — put in the `disabled` profile, so it never starts: a dev
+  stack must never join the production tunnel.
 
 Visit `http://localhost`.
 
@@ -207,82 +221,78 @@ Frontend-only work can skip Docker: `cd vue && npm run dev`, which proxies
 
 ---
 
-## 3. TLS: first issuance and renewal
+## 3. TLS: certificates
 
-### The chicken-and-egg
+Caddy obtains and renews its own certificates (`prod_tls` in
+`caddy/sites/prod.caddy`): one per name, `<DOMAIN>` and `www.<DOMAIN>`, from
+Let's Encrypt over **DNS-01**. It creates the `_acme-challenge` TXT record
+through the Cloudflare API with `CLOUDFLARE_DNS_API_TOKEN`, so nothing has to
+reach the host: the router forwards no ports. The certificates, their keys and
+the ACME account live in `./caddy/data` (gitignored, private key material).
 
-The production nginx config references
-`/etc/letsencrypt/live/$DOMAIN/fullchain.pem`, and nginx refuses to start if that
-file is missing. Certbot's HTTP-01 challenge needs a working HTTP server on port 80. On a brand-new host neither can go first.
+**First run on a new host or domain.** Set `CLOUDFLARE_DNS_API_TOKEN` (the
+token needs **Zone → Zone → Read** and **Zone → DNS → Edit** on this zone; see
+`.env.example`), then `docker compose up -d`. Caddy serves straight away and
+obtains both certificates in the background, usually within seconds; until
+they land the TLS handshake fails, so the tunnel answers 502. There is no
+bootstrap config and nothing to restart.
 
-`nginx_setup.conf.template` breaks the loop: port 80 only, no TLS directives, no
-upstreams, nothing that can fail to load. It serves
-`/.well-known/acme-challenge/` from `/var/www/certbot` and 404s everything else,
-so a half-configured site is never partially exposed.
+```
+docker compose logs caddy | grep -E 'obtaining certificate|certificate obtained|error'
+```
 
-**First run on a new domain:**
+**Renewal** happens in-process when a third of a certificate's lifetime is
+left, and the new one is served immediately, with no reload. A failed attempt
+is retried with backoff and logged. To see what is being served:
 
-1. `docker compose up -d`. nginx logs `Certificates NOT found. Using setup nginx
-config.`
-2. certbot runs `certbot certonly --webroot` and writes the certificate into
-   `./certbot/conf` (bind-mounted into both containers — that sharing is what
-   makes the whole thing work).
-3. **`docker compose restart nginx`.** This step is manual. Nothing watches the
-   cert directory. On restart the entrypoint re-checks, finds the cert, and
-   renders the production config.
+```
+for n in www.$DOMAIN $DOMAIN; do echo | openssl s_client -connect 127.0.0.1:443 -servername $n 2>/dev/null | openssl x509 -noout -subject -enddate; done
+```
 
-### Renewal
+**`resolvers 1.1.1.1 1.0.0.1`** in `prod_tls` matters: on `app-network`
+`<DOMAIN>` is an alias for the caddy container itself, so Docker's DNS would
+answer the plugin's zone lookup and the order would fail with "expected 1
+zone, got 0".
 
-`certbot/entrypoint.sh` loops `certbot renew` every 12 hours. Renewal is a no-op
-until the cert is inside its 30-day window, so this is well within Let's Encrypt
-rate limits — it just means the window is checked twice a day. Certs are valid 90
-days, so renewal lands around day 60.
+**Losing `./caddy/data`** costs only a re-issue on the next start. Let's
+Encrypt allows five certificates for the same name a week, so do not make a
+habit of it.
 
-**Validation method.** With `CLOUDFLARE_DNS_API_TOKEN` set, certbot proves
-control of the domain by creating a `_acme-challenge` TXT record through the
-Cloudflare API (DNS-01), so renewal needs no inbound port at all. That is
-what lets the router's 80/443 forwards close behind the tunnel. Without the
-token it uses the webroot (HTTP-01) on port 80, as it always did. Switching
-either way takes effect at the next renewal; see `certbot/entrypoint.sh`.
-
-**Caveat worth knowing:** there is no `--deploy-hook`, and the certbot container
-cannot signal nginx (no docker socket, no shared PID namespace). nginx reads the
-certificate at startup and holds it in memory, so **a renewed certificate is not
-served until nginx is reloaded or restarted.** In practice pushes to `main`
-recreate nginx often enough to hide this. If the site ever serves an expired
-cert, `docker compose restart nginx` is the fix. See proposal 1 in §8.
+Until 2026-11-17 this was certbot plus a bootstrap nginx config, a reload
+sentinel and a watcher loop. `certbot/` and its `./certbot/conf` stay on the
+host as the rollback (§7); that certificate expires on 2027-01-20.
 
 ### Cloudflare Tunnel
 
 The `cloudflared` container holds an outbound connection to Cloudflare and
-forwards requests for the site's hostnames down it to nginx. It is a
+forwards requests for the site's hostnames down it to Caddy. It is a
 _remotely managed_ tunnel: the only thing in this repo is the token
 (`CLOUDFLARE_TUNNEL_TOKEN` in `.env`); hostnames and
 origin settings live in the dashboard.
 
 **Origin: `https://www.<DOMAIN>`, the site's own name.** Cloudflare
 terminates the visitor's TLS at its edge, and cloudflared opens a second TLS
-connection to nginx. That is deliberate. Pointed at `http://nginx:80`, the
+connection to Caddy. That is deliberate. Pointed at `http://caddy:80`, the
 tunnel would hit the HTTP→HTTPS redirect and loop. Going to :443 keeps every
 redirect, security header and the `X-Forwarded-Proto: https` the backend's
-Secure cookies depend on, and needs no nginx change.
+Secure cookies depend on, and needs no change to the edge.
 
-The origin is the public name, not `nginx`, because nginx carries `<DOMAIN>`
+The origin is the public name, not `caddy`, because Caddy carries `<DOMAIN>`
 and `www.<DOMAIN>` as network aliases on `app-network` (`docker-compose.yml`).
-Inside the network those names resolve to the nginx container, so the hop
+Inside the network those names resolve to the caddy container, so the hop
 never leaves the host, and cloudflared verifies the Let's Encrypt certificate
-against a name it covers. `https://nginx` would fail that check and need No
-TLS Verify. The flip side: **an expired certificate now takes the tunnel down
+against a name it covers. `https://caddy` would fail that check and need No
+TLS Verify. The flip side: **an expired certificate takes the tunnel down
 with a 502**, which is why renewal over DNS-01 (step 5) matters.
 
-An alias only exists while nginx is running, so cloudflared also pins both
-names to nginx's fixed address (`172.28.255.251`) with `extra_hosts`. Without
-that, while nginx is stopped for a deploy or the weekly maintenance, the name
+An alias only exists while Caddy is running, so cloudflared also pins both
+names to Caddy's fixed address (`172.28.255.251`) with `extra_hosts`. Without
+that, while Caddy is stopped for a deploy or the weekly maintenance, the name
 falls through to public DNS, resolves to Cloudflare itself, and visitors see
 Cloudflare error 1000 instead of a 502.
 
 The aliases have a side effect for anything else on `app-network` that uses
-the public name for a port nginx does not serve. `silverbullet-git` pushes to
+the public name for a port Caddy does not serve. `silverbullet-git` pushes to
 Gitea's SSH on `<DOMAIN>:2222`, so it maps `<DOMAIN>` to the host gateway
 instead, where Gitea publishes that port.
 
@@ -297,27 +307,28 @@ Setup, once:
 4. Add a public hostname per name, each with service `HTTPS` and its own
    name as the URL, and no other settings:
     - `www.<DOMAIN>` → `https://www.<DOMAIN>`: the site.
-    - `<DOMAIN>` → `https://<DOMAIN>`: nginx redirects it to www, and it serves Gitea's registry
+    - `<DOMAIN>` → `https://<DOMAIN>`: Caddy redirects it to www, and it serves Gitea's registry
       at `/v2/`.
       Creating each hostname replaces the existing A record for that name with
       a CNAME to the tunnel. **That is the cutover**: until then the tunnel
       carries nothing.
 
 5. Create a Cloudflare API token (My Profile → API Tokens → "Edit zone
-   DNS", this zone only) and set it as `CLOUDFLARE_DNS_API_TOKEN`. certbot
-   then renews over DNS-01 (see Renewal above) and needs no inbound port.
-6. On the host, point the apex at nginx locally (next section).
+   DNS", this zone only), add **Zone → Zone → Read** to it, and set it as
+   `CLOUDFLARE_DNS_API_TOKEN`. Caddy then obtains and renews over DNS-01
+   (§3) and needs no inbound port.
+6. On the host, point the apex at Caddy locally (next section).
 7. Close the router's 80 and 443 forwards. Once 5 and 6 are done nothing
    depends on them.
 
 #### What the tunnel does not carry, and where it goes instead
 
-- **Certificate renewal.** Over DNS-01 with `CLOUDFLARE_DNS_API_TOKEN` set;
-  without it certbot falls back to HTTP-01, which needs port 80 forwarded.
-  The certificate matters behind the tunnel: cloudflared verifies it, as
-  do the registry path below and any direct LAN access. A fresh machine with no
-  certificate at all boots the setup config (§3), which serves nothing over
-  443, so the tunnel carries nothing until the first issuance.
+- **Certificate renewal.** Over DNS-01 only: Caddy is given no HTTP
+  challenge to fall back to, so without a working `CLOUDFLARE_DNS_API_TOKEN`
+  nothing is issued or renewed. The certificate matters behind the tunnel:
+  cloudflared verifies it, as do the registry path below and any direct LAN
+  access. A fresh machine with no certificate serves nothing over 443 until
+  the first issuance (§3), so the tunnel carries nothing for those seconds.
 - **Registry pushes and pulls on the host.** Cloudflare caps request bodies at
   100 MB on the free plan, so a push of a larger image layer through the
   tunnel fails. The runner on the host pushes to `<DOMAIN>/adamf/...` and the
@@ -328,7 +339,7 @@ Setup, once:
   127.0.0.1   <DOMAIN>
   ```
 
-  so registry traffic goes straight to nginx on :443, with the real
+  so registry traffic goes straight to Caddy on :443, with the real
   certificate, and never leaves the host. (Without it the name resolves to
   Cloudflare once DNS moves there.) Only the apex: www stays on Cloudflare for anything on the host
   that wants the public site. Pushing from another machine still goes
@@ -364,24 +375,25 @@ Setup, once:
 | `garage_meta` | Garage's metadata: buckets, keys, object index, layout | Everything in the bucket (the bytes in `garage_data` are unreadable without it) |
 | `garage_data` | The bucket's object bytes                          | Every upload stored in Garage                      |
 | `vue_dist` | The built SPA                                         | Nothing — rebuilt on next deploy                   |
+| `caddy_config` | Caddy's autosaved JSON config                     | Nothing — rewritten on every start                 |
 
 **Bind mounts** — live in the repo checkout on the host, survive everything short
 of deleting the directory:
 
 | Path                        | Holds                                                                                               | Notes                                                                                  |
 | --------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `./certbot/conf`            | TLS certificates and **private keys**                                                               | Gitignored. Never commit.                                                              |
-| `./certbot/www`             | ACME challenge webroot                                                                              | Transient by nature                                                                    |
+| `./caddy/data`              | Caddy's TLS certificates, **private keys** and ACME account                                         | Gitignored. Never commit. Losing it means a re-issue on the next start (§3).           |
+| `./certbot/conf`            | The old certbot certificate and keys                                                                | Unused since 2026-11-17; kept as the rollback until it is cleaned up (§7).             |
 | `./backend/token/`          | **Spotify OAuth refresh token** (`spotify_token.json`)                                              | Gitignored. Without this mount, Spotify would need re-authorising after every rebuild. |
 | `./jobs-data`               | The job tracker's **capture token hash** and Graph OAuth session                                    | Gitignored. Must be owned by uid 1000, the user the `jobs` image runs as.              |
 | `./gitea/data`              | Git repositories, LFS objects, avatars, sessions                                                    | The actual git data                                                                    |
 | `./gitea/config`            | Gitea's live `app.ini`                                                                              | Gitignored; generated from the template on first boot and then owned by Gitea          |
-| `./logs`                    | Backend logs (`go.log`); nginx's JSON request-body log in `logs/nginx/payloads.log`                  | The payload log grows without bound; rotate it on the host (§7, "Incoming request bodies") |
+| `./logs`                    | Backend logs (`go.log`); Caddy's JSON request-body log in `logs/caddy/payloads.log`                  | Caddy rotates the payload log itself (50 MiB, five kept). `logs/nginx/` is nginx's, finished. |
 | `./icecast2/fallback_music` | Radio fallback MP3s                                                                                 | Copied to the host by hand, not git                                                    |
 | `${OBSIDIAN_DIR}`           | The Obsidian vault (a git clone of the notes repo)                                                  | Read-write to backend and silverbullet, **read-only** to silverbullet-public           |
 
 **Ephemeral:** anything else inside a container. Notably the Vue build, the
-rendered nginx/icecast configs, and the Gitea runner's downloaded binary
+rendered icecast config, and the Gitea runner's downloaded binary
 are all regenerated.
 
 ---
@@ -396,11 +408,11 @@ Two distinct mechanisms read it, and services use both:
 - **`${VAR}` in `docker-compose.yml`** — substituted by the compose CLI at parse
   time. Builds container names and published ports.
 - **`env_file: ./.env`** — injects the whole file into the container. Used by
-  nginx, backend, db, icecast2, certbot.
+  backend, db and icecast2.
 
 `gitea` instead receives explicit `GITEA__section__KEY` variables (Gitea's own
 convention for overriding `app.ini` keys), and `python` receives an explicit
-allow-list, so it never sees the database password or any API key other than
+allow-list (as do `jobs`, `caddy` and the rest), so it never sees the database password or any API key other than
 the two it uses (`TFL_APP_KEY`, and `CLAUDE_API_KEY`, plus `CLAUDE_MODEL`,
 which picks the model). The Python service
 makes the site's one Claude call (the rowing photo reader); the `jobs` container
@@ -414,7 +426,7 @@ to be added to its allow-list as well as
 `~/deploy/web_server`. Nothing syncs it from a laptop checkout, so a laptop's
 `.env` (often with dev values) never reaches production by accident.
 
-An unset variable is not an error: `envsubst` renders it as an empty string,
+An unset variable is not an error: compose substitutes an empty string,
 which for a password field means _no password_. After editing `.env`, confirm
 with `docker compose config`.
 
@@ -422,40 +434,48 @@ with `docker compose config`.
 
 Edit `.env` on the host, and recreate only the services that read the variable:
 `docker compose up -d <service>`. A plain `up -d` would also restart Postgres,
-since nginx, db, icecast2 and certbot load the whole file.
+since backend, db and icecast2 load the whole file.
 
 ---
 
 ## 6. Rate limits
 
-Defined once per config in the `http` block, applied per location. Keyed on
-`$binary_remote_addr` — the client IP in packed form, so each entry is ~64 bytes
-and a `10m` zone holds roughly 160k IPs. `10m` is a safe round number, not a
-tuned value.
+The `rate_limit` directive comes from the `mholt/caddy-ratelimit` plugin
+(compiled in by `caddy/Dockerfile`) and is applied per route through the
+`limit` snippet: `import limit <zone> <events> <window>`. Each zone is a
+**sliding window** keyed on `{client_ip}`: at most `<events>` requests per
+`<window>` per IP, then the request is refused. There is no separate burst, so
+the numbers are nginx's old rates, which keeps the sustained rates the same;
+the instant allowance comes out close to nginx's burst + 1.
 
-`rate` is a **smoothed leaky bucket**, not a per-window counter: `5r/m` means one
-request every 12 seconds, not five at once. `burst=N` lets N requests queue ahead
-of that drip, and `nodelay` (used everywhere here) serves those N immediately.
-So the effective behaviour is _"N instant requests, then throttled to the drip
-rate"_. Anything beyond the burst gets an immediate **503**.
+A refused request gets **503**, not the plugin's 429: `handle_errors 429` in
+the Caddyfile rewrites it, because `vue/src/views/hotels/hotelsStream.js`
+tells a rate-limit 503 ("too many searches from your address") apart from the
+Python service's own 429 ("someone else is searching").
 
-| Zone           | Rate   | Burst | Applied to                  | Why                                                                                                                                                                                                    |
-| -------------- | ------ | ----- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `login`        | 5/min  | 3     | `/api/auth/login`           | Brute-force defence. A human mistyping gets 3 tries then one per 12s; a credential-stuffing script gets nothing useful.                                                                                |
-| `api`          | 30/sec | 20    | `/api/`, `/py/`             | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota.                                                                                                      |
-| `graphql`      | 10/sec | 10    | `/api/graphql`              | Tighter than REST because one query can be arbitrarily expensive. **Production config only**; dev folds GraphQL into `api`.                                                                            |
-| `upload`       | 30/min | 20    | `/api/uploads`              | Bounds how fast one IP fills the bucket or the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
-| `hotel_search` | 3/min  | 2     | `/py/hotels/(search\|scan)` | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection.                                                           |
+A zone's state is shared by every route that names it (`/api/`, `/py/`,
+`/jobs/`, `/usaco/` and `/tracker/` share one `api` bucket per IP), so a zone
+name must always be given the same numbers. A route that wants different ones
+gets its own zone, as `/receipt/` does.
+
+| Zone           | Limit     | Applied to                                   | Why                                                                                                                                                                                                    |
+| -------------- | --------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `login`        | 5 / 1m    | `/api/auth/login`                            | Brute-force defence, on top of the backend's own 5/min. A human mistyping gets five tries a minute; a credential-stuffing script gets nothing useful.                                                  |
+| `api`          | 30 / 1s   | `/api/`, `/py/`, `/jobs/`, `/usaco/`, `/tracker/` | Generous on purpose — one SPA page load fans out to several calls. An abuse ceiling, not a quota.                                                                                                 |
+| `graphql`      | 10 / 1s   | `/api/graphql`                               | Tighter than REST because one query can be arbitrarily expensive. Dev has it too now.                                                                                                                  |
+| `upload`       | 30 / 1m   | `/api/uploads`                               | Bounds how fast one IP fills the bucket or the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
+| `hotel_search` | 3 / 1m    | `/py/hotels/(search\|scan)`                  | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection.                                                           |
+| `receipt`      | 10 / 1s   | `/receipt/`                                  | Prints are slow and physical; ten a second is far above any real use.                                                                                                                                  |
 
 The WebSocket endpoint is deliberately unlimited: a socket is one long-lived
 request, and a limit there would drop reconnect storms rather than abuse.
 
-These zones key on `$remote_addr`. For tunnel traffic nginx rewrites that
-from Cloudflare's `CF-Connecting-IP` header (`set_real_ip_from` /
-`real_ip_header` in `nginx.conf.template`), trusting the header only from
-cloudflared's fixed address. **If that address changes in
-`docker-compose.yml` without the nginx line, every tunnel visitor shares
-cloudflared's one bucket**, and the login limit locks everyone out together.
+`{client_ip}` is the visitor's address only because of `trusted_proxies` and
+`client_ip_headers CF-Connecting-IP` in the Caddyfile's global options, which
+trust that header from cloudflared's fixed address alone. **If that address
+changes in `docker-compose.yml` without the Caddyfile, every tunnel visitor
+shares cloudflared's one bucket**, and the login limit locks everyone out
+together.
 
 ---
 
@@ -477,99 +497,76 @@ git pull && docker compose up -d --build --remove-orphans
 docker compose up -d --build backend
 ```
 
-Note: editing `certbot/entrypoint.sh` needs no rebuild (it is bind-mounted over
-the stock image's entrypoint) — just `docker compose restart certbot`. Editing
-an nginx **template** does need a rebuild, since templates are `COPY`'d into the
-image.
-
-**Apply a new nginx config / pick up a renewed certificate:**
-
-```
-docker compose up -d --build nginx     # template changed
-docker compose restart nginx           # certificate changed
-```
-
-**Renew certificates manually** (then restart nginx so it is actually served):
+**Apply a Caddy config change.** Everything in `caddy/` is copied into the
+image, so a change needs a rebuild, which also validates it (the Dockerfile's
+last step runs `caddy validate` for the production and dev sites, and a
+config that would not load fails the build before any container is
+replaced). Only the first build on a host, or a Caddy or plugin version bump,
+compiles Caddy itself (about 25 minutes on stpvm's two CPUs); a config-only
+change rebuilds in seconds. The recreate drops connections for a second or
+two. Certificates need nothing.
 
 ```
-docker compose exec certbot certbot renew --webroot -w /var/www/certbot
-docker compose restart nginx
+make check-caddy                         # on a laptop, before pushing
+docker compose up -d --build caddy       # on the host
 ```
 
-Add `--dry-run` to test without burning rate limit.
-
-**Caddy beside nginx (the edge migration, in progress).** `caddy/` is the
-replacement for `nginx/` and certbot. Until the cutover the `caddy` container
-runs next to nginx and serves nothing public: it listens on the host's
-loopback only (`127.0.0.1:8880` http, `127.0.0.1:8443` https), has no network
-aliases, and gets its own certificates over DNS-01 into `./caddy/data`. That
-needs `CLOUDFLARE_DNS_API_TOKEN` to carry **Zone → Zone → Read** as well as
-DNS → Edit (certbot only needed the second); without it Caddy logs failed
-orders and the public site is unaffected. Watch the first issuance with:
-
-```
-docker compose logs -f caddy | grep -i -E 'certificate|error'
-```
-
-Then compare the two edges request by request (the script's header explains
-the output; pass an admin session's cookie as `EDGE_COOKIE` to cover the
-signed-in cases too):
+**Check the edge.** `caddy/edge_test.sh` sends a fixed set of requests and
+checks the privacy denials and every gate (non-zero exit on a FAIL), then
+prints redirects, headers and uploads for comparison. Pass an admin session's
+`Cookie` header value as `EDGE_COOKIE` to cover the signed-in cases. On the
+host, pin the name to the machine or curl goes out over the internet:
 
 ```
 export "$(grep '^DOMAIN=' .env)"
-caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1 >nginx.txt
-caddy/edge_test.sh https://www.$DOMAIN:8443 --resolve www.$DOMAIN:8443:127.0.0.1 >caddy.txt
-diff nginx.txt caddy.txt
+caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1
 ```
 
-The expected differences: `Server: nginx` is gone, the gates match paths
-case-insensitively (so `/SB/` is gated instead of falling to the SPA), and
-`X-Frame-Options`/`Cache-Control` come out in a different order or combined.
-A Caddyfile change is checked by `make check-caddy`, the same image build the
-deploy runs, which validates the production and dev configs.
+**Roll back to nginx** (until `nginx/` and `certbot/` are removed; the certbot
+certificate in `./certbot/conf` is valid until 2027-01-20). `git revert` the
+cutover commit and push, or by hand on the host, under the lock so a deploy
+cannot interleave:
+
+```
+git revert --no-edit <cutover commit>
+flock .compose.lock sh -c 'docker compose stop caddy && docker compose rm -f caddy && docker compose up -d --build nginx certbot cloudflared traffic'
+```
 
 **Check logs:**
 
 ```
-docker compose logs -f nginx           # follow one service
+docker compose logs -f caddy           # follow one service (one line per request)
 docker compose logs --tail=200 backend
 docker compose ps                      # note: `vue` Exited(0) is correct
-docker compose logs certbot            # issuance / renewal outcomes
+docker compose logs caddy | grep -E 'tls|certificate'   # issuance / renewal
 ```
 
 Or browse every container's logs at `https://www.<DOMAIN>/dozzle/` (admin
 login required).
 
-**Incoming request bodies.** nginx writes one JSON line per request, body
-included, to `logs/nginx/payloads.log` (`nginx/payload_log.conf`). The
-`traffic` container tails it, so in Dozzle pick **traffic** and each request
-renders as fields you can search. From a shell:
+**Incoming request bodies.** Caddy writes one JSON line per request, body
+included, to `logs/caddy/payloads.log` (the `payloads_file` logger and the
+`logging` snippet in `caddy/Caddyfile`). The `traffic` container tails it, so
+in Dozzle pick **traffic** and each request renders as fields you can search.
+From a shell:
 
 ```
-tail -f logs/nginx/payloads.log | jq 'select(.method=="POST")'
-jq -r 'select(.uri=="/api/graphql") | .body | fromjson? | .operationName' logs/nginx/payloads.log
+tail -f logs/caddy/payloads.log | jq 'select(.request.method=="POST")'
+jq -r 'select(.request.uri=="/api/graphql") | .req_body | fromjson? | .operationName' logs/caddy/payloads.log
+jq -r '[.ts, .request.client_ip, .request.method, .request.uri, .status] | @tsv' logs/caddy/payloads.log
 ```
 
 Bodies mentioning `password`, `token` or `secret` are logged as `[redacted]`
-(that covers every login and the refresh call). Bodies over 64 KB, i.e.
-uploads, are logged with an empty `body`, and responses are never logged.
+(that covers every login and the refresh call), and `Cookie`/`Authorization`
+headers as `REDACTED`. A body is only logged when the client declared a
+length under 100 KB on a route that is not an upload (`/api/uploads`,
+`/garage/`, `/receipt/`, `/v2/`); everything else has no `req_body`, and
+responses are never logged.
 
-The file is never rotated by the stack. On the host, add
-`/etc/logrotate.d/web_server`:
-
-```
-/home/adamf/deploy/web_server/logs/nginx/*.log {
-    weekly
-    rotate 4
-    compress
-    missingok
-    notifempty
-    copytruncate
-}
-```
-
-`copytruncate` because nginx keeps the file open; `tail -F` in `traffic`
-follows the truncation.
+Caddy rotates the file itself (50 MiB, five old files kept), and `tail -F`
+in `traffic` follows the rotation, so it needs no logrotate entry. The
+`logs/nginx/*.log` stanza in `/etc/logrotate.d/web_server` is nginx's and
+can go when `logs/nginx/` does.
 
 **Reset the database** — destructive; wipes the app database **and Gitea's**:
 
@@ -594,8 +591,8 @@ or not set up:
 
 - the backend writes to disk until `S3_ENDPOINT` is set, and falls back to
   disk (with a log line) whenever Garage refuses a write;
-- nginx serves `/uploads/` from Garage and falls back to the volume when
-  Garage has no such file or is unreachable, and it boots without the
+- Caddy serves `/uploads/` from Garage and falls back to the volume when
+  Garage has no such file or is unreachable, and it starts without the
   `garage` container.
 
 Turning it on:
@@ -640,7 +637,7 @@ to drop Garage entirely, first copy them back
 **Managing files:** garage-webui at `/garage/` (site admin login). Files
 uploaded there are public at `/uploads/<path>` and skip the backend's type
 checks; keep them under a prefix such as `media/`. Uploads through it are
-capped at 2G by nginx.
+capped at 2 GB by Caddy.
 
 **Backups:** Garage here is one node on the same disk — it is not a backup.
 Back up `garage_meta` and `garage_data` together (meta without data, or the
@@ -681,26 +678,27 @@ icecast source password. liquidsoap pre-empts the fallback playlist immediately
 silence. Adding MP3s to `icecast2/fallback_music/` is picked up live
 (`reload_mode="watch"`) with no restart.
 
-**Only nginx is restarted when unhealthy.** Docker marks a container
+**Only caddy is restarted when unhealthy.** Docker marks a container
 `unhealthy` but never acts on it; `restart: always` only brings back a process
 that exits. The `autoheal` container restarts anything labelled
-`autoheal=true`, which today is just nginx (its healthcheck fetches
-`/nginx-health` on :80 every 30s; three misses, about 90s, and it is
+`autoheal=true`, which today is just caddy (its healthcheck fetches
+`http://127.0.0.1/caddy-health` every 30s; three misses, about 90s, and it is
 restarted). `backend` and `python` also define healthchecks, but carry no
 label, so for them `unhealthy` is only visible in `docker ps`. Add the label to
 cover another service.
 
-**Site down but every container `Up`.** That is what a stalled nginx worker
-looks like (2026-10-19: 4.6 hours, every tunnel request a `TLS handshake
-timeout` in `docker logs cloudflared`, and the Cloudflare dashboard still
-showing the tunnel healthy, since that only covers the tunnel's own link). The
-healthcheck should now catch it. If it recurs, capture the stuck worker before
-restarting, since a restart destroys the only evidence of why:
+**Site down but every container `Up`.** That is what a stalled edge looks
+like (2026-10-19, under nginx: 4.6 hours, every tunnel request a `TLS
+handshake timeout` in `docker logs cloudflared`, and the Cloudflare dashboard
+still showing the tunnel healthy, since that only covers the tunnel's own
+link). The healthcheck should catch it. If it happens, capture what Caddy is
+doing before restarting, since a restart destroys the only evidence of why.
+Its admin API (inside the container only) serves Go's profiler:
 
 ```
-docker inspect nginx --format '{{.State.Health.Status}}'
-docker top nginx -o pid,stat,wchan:30,etime,cmd    # what each worker is waiting in
-docker compose restart nginx
+docker inspect caddy --format '{{.State.Health.Status}}'
+docker compose exec caddy wget -q -O - 'http://localhost:2019/debug/pprof/goroutine?debug=2' > caddy-goroutines.txt
+docker compose restart caddy
 ```
 
 ---
@@ -709,25 +707,12 @@ docker compose restart nginx
 
 Documented, not fixed — each would change deploy behaviour.
 
-1. **Renewed certificates are not served until nginx restarts.** No
-   `--deploy-hook` in `certbot/entrypoint.sh`. Fix: add
-   `--deploy-hook "touch /var/www/certbot/.reloadme"` plus a watcher, or give
-   certbot the docker socket to send nginx a `HUP`.
-2. **First TLS issuance needs a manual `docker compose restart nginx`.** The
-   entrypoint only re-evaluates cert presence at container start.
-3. **`gitea/config/entrypoint.sh` is an empty, unused file** that would be
+1. **`nginx/`, `certbot/` and their host directories are still here** as the
+   rollback from the 2026-11-17 cutover. Once Caddy has run for a couple of
+   weeks: move `nginx/` and `certbot/` to `.deprecated/`, then delete
+   `./certbot/` and `./logs/nginx/` on the host and the `logs/nginx` logrotate
+   stanza.
+2. **`gitea/config/entrypoint.sh` is an empty, unused file** that would be
    mounted to the same in-container path as the real wrapper. It is currently
    shadowed by an explicit file mount — fragile. Deleting it would be safe but
    is a file removal.
-4. **The `/uploads/` location blocks (with `@uploads_disk`) are still written twice** — once in
-   `nginx.conf.template` and once in `nginx_dev_common.conf.template` —
-   because production adds security headers inside an auth-gated block. Every
-   other proxied route lives once in `nginx_routes.conf.template`, which both
-   configs include; the `auth_request` lines on `/uploads/private/` are the
-   one thing that must be kept in step by hand.
-5. **`nginx.conf.template` has a `/img/stamps/mine.gif` CORS header allowing
-   only our own origin**, which defeats the point of having the header at all.
-6. **`certbot/entrypoint.sh` uses unquoted `${EMAIL}` and `${DOMAIN}`.** Inert
-   today (neither contains whitespace) but a latent quoting bug.
-7. **`UPTIMEKUMA_*` and `WALLABAG_*` are substituted by nginx but no compose
-   service provides them** — leftovers from removed services.

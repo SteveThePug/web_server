@@ -4,7 +4,7 @@
  *
  * Auth rides along in HTTP-only cookies set by the backend, so no token handling
  * is needed here — axios sends them automatically because the request is
- * same-origin (nginx in production, the Vite proxy in dev).
+ * same-origin (Caddy in production, the Vite proxy in dev).
  */
 
 import axios from "axios";

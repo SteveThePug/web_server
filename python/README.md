@@ -26,7 +26,7 @@ driven from a plain script.
 ## Endpoints
 
 Paths below are as the service sees them; from a browser prefix everything with
-`/py` (see *Behind nginx*).
+`/py` (see *Behind Caddy*).
 
 | Method | Path | What it does |
 | --- | --- | --- |
@@ -72,9 +72,9 @@ can't be shared), and identical requests are cached for 10 minutes.
 Routes under `/internal/` (today only the rowing reader) are the only ones in
 this service that are **not public**. Each spends a paid Claude call and has no
 auth of its own — the admin check happens in the Go backend, which calls the container
-directly (`http://python:8000/...`). Two things keep them internal: nginx
+directly (`http://python:8000/...`). Two things keep them internal: Caddy
 answers `/py/internal/` with a 404, and the route itself 404s any request
-carrying the `X-Real-IP` / `X-Forwarded-For` headers nginx adds to everything
+carrying the `X-Real-IP` / `X-Forwarded-For` headers Caddy adds to everything
 it proxies (the Go backend sends neither).
 
 Their plumbing is in two places, shared by any route added later:
@@ -127,7 +127,7 @@ they see this service's error rather than their own.
    in `main.py`'s docstring and bump the FastAPI `version`.
 3. **Tests** `tests/test_<thing>.py`, copied from `test_rowing.py`: fake the
    client with `monkeypatch.setattr(thing, "_client", ...)`.
-4. **Docs**: the endpoint table and a section here. Nothing to do in nginx —
+4. **Docs**: the endpoint table and a section here. Nothing to do in Caddy —
    it already 404s everything under `/py/internal/`.
 
 If third-party text goes into the prompt (a web page, an email), say in the
@@ -149,19 +149,22 @@ Errors: 502 with a fixed `detail` (`failed to process image`, `empty response
 from image processor`, `failed to parse image data`) that the Go handler
 relays to the admin; 503 if `CLAUDE_API_KEY` is unset.
 
-## Behind nginx
+## Behind Caddy
 
-`nginx/nginx.conf.template` proxies `/py/` to this container and **strips the
+`caddy/routes.caddy` proxies `/py/` to this container and **strips the
 prefix**, so routes here are written relative to `/`. `--root-path /py` (set on
 the uvicorn command line via `ROOT_PATH`) is what keeps the generated docs and
 OpenAPI URLs correct behind that rewrite.
 
-The hotel routes get their own nginx location with `proxy_buffering off` and a
-300s read timeout, because otherwise nginx would hold the whole NDJSON stream
-until it finished. The app also sends `X-Accel-Buffering: no` as a belt-and-
-braces version of the same thing. The internal deadlines in `travelodge.py`
-(200s for a search, 240s for a scan) exist to finish *before* that 300s cut, and
-return partial results with `summary.truncated = true` instead of dying.
+The hotel routes get their own Caddy route with `flush_interval -1` and their
+own rate limit, so each NDJSON line reaches the browser as it is written. The
+app also sends `X-Accel-Buffering: no`, which Caddy ignores but an nginx-style
+proxy would need. The internal deadlines in `travelodge.py` (200s for a search,
+240s for a scan) were set to finish before nginx's old 300s cut; Caddy sets no
+upstream timeout, but they still bound a run and return partial results with
+`summary.truncated = true` instead of dying. Through the tunnel, Cloudflare
+gives up on an origin that sends nothing for 100s, which the streaming routes
+avoid by writing progress lines.
 
 Env vars (from `docker-compose.yml`): `PYTHON_PORT`, `ROOT_PATH`, the optional
 `TFL_APP_KEY` (see below), and `CLAUDE_API_KEY` and `CLAUDE_MODEL` for the internal Claude route. Dev mode mounts `python/app` and runs

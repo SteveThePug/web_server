@@ -46,7 +46,7 @@ const router = createRouter({
                 },
                 // A signed-in user's own page: the gated services they have
                 // been granted. /no-access is the same page with a notice,
-                // where nginx's permission gate sends a refused visitor.
+                // where Caddy's permission gate sends a refused visitor.
                 {
                     path: "account",
                     name: "account",
@@ -105,7 +105,7 @@ const router = createRouter({
                     component: () => import("@/views/CV/CV.vue"),
                 },
                 // /cv/jobs and /cv/leads moved to the job tracker app at
-                // /jobs/; nginx redirects the old paths.
+                // /jobs/; Caddy redirects the old paths.
             ],
         },
     ],

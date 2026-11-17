@@ -6,7 +6,7 @@
  * site's 404 — with, for an admin, a form to create a page right here.
  *
  * Static routes always win, which is why the server refuses slugs under the
- * SPA's and nginx's own paths (validateSlug in backend/graph/page_helpers.go).
+ * SPA's and Caddy's own paths (validateSlug in backend/graph/page_helpers.go).
  *
  * An adminOnly page answers null to anyone else, so to them it is simply a
  * 404.

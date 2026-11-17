@@ -4,7 +4,7 @@
 #
 # WHAT IT DOES
 #   This one container holds two cooperating daemons:
-#     icecast2   - the HTTP streaming server listeners connect to. nginx
+#     icecast2   - the HTTP streaming server listeners connect to. Caddy
 #                  proxies /radio/ to it.
 #     liquidsoap - the *source*: it decides what audio to play and pushes a
 #                  single MP3 stream into icecast's mount point.
@@ -17,7 +17,7 @@
 #
 # THE TEMPLATING STEP
 #   Both configs are rendered by bare `envsubst` (no allow-list) because unlike
-#   the nginx templates, neither icecast.xml nor stream.liq has any legitimate
+#   the old nginx templates, neither icecast.xml nor stream.liq has any legitimate
 #   dollar-token of its own — every ${VAR} in them is meant to be substituted,
 #   so an unrestricted envsubst is safe here. NOTE the consequence: any
 #   referenced variable that is unset silently becomes an empty string, which

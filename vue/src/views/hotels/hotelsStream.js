@@ -58,7 +58,7 @@ export async function runStream(url, body, { signal, onEvent }) {
         try {
             payload = await res.json();
         } catch {
-            /* non-JSON body (e.g. nginx error page) */
+            /* non-JSON body (e.g. an error page from the edge) */
         }
         throw new Error(describeError(res.status, payload));
     }

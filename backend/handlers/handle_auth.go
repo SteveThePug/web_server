@@ -93,7 +93,7 @@ func (store *Store) AdminMiddleware(ctx *gin.Context) {
 }
 
 // ValidateAdmin backs GET /auth/validate-admin, which the front end calls to
-// decide whether to show admin UI, nginx's admin gate calls as an
+// decide whether to show admin UI, Caddy's admin gate calls as an
 // auth_request, and the jobs container calls with the visitor's cookies. It
 // answers with a bare status code and no body: 200 admin, 403 authenticated
 // but not admin, 401 not authenticated.
@@ -114,11 +114,11 @@ func (store *Store) ValidateAdmin(ctx *gin.Context) {
 	})
 }
 
-// ValidatePermission backs GET /auth/validate/:permission, nginx's permission
+// ValidatePermission backs GET /auth/validate/:permission, Caddy's permission
 // gate (see services/permissions.go). Same bare-status contract and refresh
 // fallback as ValidateAdmin — 200 allowed, 403 signed in without the
 // permission, 401 not signed in — plus 404 for a key that is not in
-// services.PermissionTypes, so a typo in an nginx location fails closed and
+// services.PermissionTypes, so a typo in a Caddy route fails closed and
 // visibly rather than as a 403 that looks like a missing grant.
 //
 // The decision reads the user row, not the token, for admins as well: a
@@ -141,9 +141,10 @@ func (store *Store) ValidatePermission(ctx *gin.Context) {
 // allow receives the access token's claims, or nil when the caller was
 // identified from the refresh token (which carries no authorisation claims).
 //
-// On 200 the username goes back in X-Auth-User, which nginx can lift with
-// auth_request_set and hand to the service behind the gate, so that service
-// knows who is using it without having accounts of its own.
+// On 200 the username goes back in X-Auth-User, which Caddy's forward_auth
+// copies onto the proxied request (as X-Remote-User for /receipt/), so the
+// service behind the gate knows who is using it without having accounts of
+// its own.
 func (store *Store) validateSession(ctx *gin.Context, allow func(*models.User, *jwt.MapClaims) bool) {
 	accessToken, err := ctx.Cookie("access_token")
 	if err == nil {
@@ -287,10 +288,10 @@ func (store *Store) RefreshToken(ctx *gin.Context) {
 // Login backs POST /auth/login. The user object it returns omits the password
 // because models.User tags that field `json:"-"`.
 func (store *Store) Login(ctx *gin.Context) {
-	// Per-IP limit (5/min) on top of nginx's own login rate limit.
+	// Per-IP limit (5/min) on top of Caddy's own login rate limit.
 	// ctx.ClientIP is only trustworthy because main.go pins the trusted
 	// proxy range, so the X-Forwarded-For header cannot be spoofed by a
-	// client talking through nginx.
+	// client talking through Caddy.
 	if !store.LoginLimiter.Allow(ctx.ClientIP()) {
 		ctx.JSON(http.StatusTooManyRequests, gin.H{"error": "too many login attempts, please try again later"})
 		return

@@ -11,7 +11,7 @@ import (
 // site owner scanning the log for "who is using my site". Two goals:
 //
 //  1. Quietness. The log is flooded by traffic that is not a human visit:
-//     nginx auth_request subrequests (/auth/validate-admin, re-run for every
+//     Caddy forward_auth subrequests (/auth/validate-admin, re-run for every
 //     admin page hit), the front end's own polling (`/auth/refresh_token`,
 //     home-data refreshes), and Vite dev asset fetches. Each is collapsed to
 //     a single terse line, or dropped entirely when repeated in a short
@@ -24,7 +24,7 @@ import (
 // logQuietDrop lists paths whose 2xx responses are dropped outright. These
 // are all heartbeat-style endpoints: identical every few seconds, no signal.
 var logQuietDrop = map[string]bool{
-	"/auth/validate-admin": true, // nginx auth_request subrequest
+	"/auth/validate-admin": true, // Caddy forward_auth subrequest
 	"/auth/refresh":        true, // front-end token refresh
 	"/auth/check":          true, // front-end session check
 }
@@ -76,7 +76,7 @@ func TrafficLogFormatter(params gin.LogFormatterParams) string {
 		fmt.Sprintf("%.0f%s", float64(latency), unit), marker)
 
 	// Visitor traffic gets the IP appended — the "who". Infrastructure
-	// traffic (nginx's own feet on the internal subnet) already has its IP
+	// traffic (the edge's own feet on the internal subnet) already has its IP
 	// implied and is left lean.
 	if params.StatusCode >= 400 || logIsInterestingClient(params.ClientIP) {
 		line += " " + params.ClientIP
@@ -86,10 +86,10 @@ func TrafficLogFormatter(params gin.LogFormatterParams) string {
 }
 
 // logIsInterestingClient reports whether a client IP is likely an actual
-// visitor rather than infrastructure. nginx proxies everything, so the IPs
+// visitor rather than infrastructure. Caddy proxies everything, so the IPs
 // that appear are either forwarded-from-humans or the ingress itself.
 func logIsInterestingClient(ip string) bool {
-	// Docker's bridge network: nginx's own feet. Not a visitor.
+	// Docker's bridge network: the edge's own feet. Not a visitor.
 	return !startsWith(ip, "172.28.")
 }
 

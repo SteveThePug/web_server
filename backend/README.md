@@ -1,11 +1,11 @@
 # Backend
 
-The Go API for adam-french.co.uk. It is one process behind nginx, serving a
+The Go API for adam-french.co.uk. It is one process behind Caddy, serving a
 GraphQL endpoint, a handful of REST endpoints, and the chat WebSocket, backed
 by PostgreSQL and a few third-party APIs (Spotify, Steam, Gitea). Anything
 that needs Claude is asked of the Python service, not called from here.
 
-Nginx strips the `/api` prefix before proxying, so a browser request to
+Caddy strips the `/api` prefix before proxying, so a browser request to
 `/api/graphql` arrives here as `/graphql`. Every path below is as this service
 sees it.
 
@@ -33,7 +33,7 @@ graph/               GraphQL layer
 
 ## Request lifecycle
 
-1. Nginx terminates TLS, applies its own rate limits, strips `/api`, and
+1. Caddy terminates TLS, applies its own rate limits, strips `/api`, and
    proxies to this service.
 2. Gin routes the request. `SetTrustedProxies` pins the Docker network CIDR so
    that `ClientIP()` — which the login rate limiter keys on — cannot be
@@ -65,7 +65,7 @@ graph/               GraphQL layer
   and will transparently refresh, so returning admins are recognised without a
   visible re-login.
 - `GET /auth/validate/:permission` is the same for one named permission
-  (200 / 403 / 401, and 404 for a key that does not exist). It backs nginx's
+  (200 / 403 / 401, and 404 for a key that does not exist). It backs Caddy's
   *permission gate*, which lets a non-admin account into one service — the
   receipt printer at `/receipt/` — without making it an admin. Grantable keys
   are the registry `services.PermissionTypes` (`services/permissions.go`);
@@ -73,7 +73,7 @@ graph/               GraphQL layer
   Users tab (`setUserPermissions`). Admins pass every permission check. The
   check reads the user row, not the token, so a grant or revoke applies on
   the next request. On 200 it returns the username in `X-Auth-User`, which
-  nginx forwards to the gated service as `X-Remote-User`.
+  Caddy forwards to the gated service as `X-Remote-User`.
 - Tokens are stateless. **Logout only clears the browser's cookies**; nothing
   is revoked server-side, and a token that has already been issued stays valid
   until it expires. The same is true of demoting an admin: it takes effect on
@@ -195,7 +195,7 @@ no Anthropic client and does not read `CLAUDE_API_KEY`. (The job tracker at
 `/jobs/` is a separate app with its own Claude calls.) It reaches the
 internal routes directly over the Docker network
 (`http://$PYTHON_HOST:$PYTHON_PORT`, default `python:8000`), never through
-nginx, which answers 404 for `/py/internal/`:
+Caddy, which answers 404 for `/py/internal/`:
 
 | route | caller | sends | gets back |
 | --- | --- | --- | --- |
@@ -244,7 +244,7 @@ dormant, which is why callers nil-check `Store.SpotifyClient` and friends.
   to show them. Public files go to the Garage bucket wrapped in
   `FallbackFileStore` (a failed S3 write is logged and retried on disk), or
   to disk alone when `S3_ENDPOINT` is unset; private ones always to disk
-  (nginx cannot gate a bucket). nginx serves `/uploads/` from the bucket
+  (the edge cannot gate a bucket). Caddy serves `/uploads/` from the bucket
   first and disk second, so either store's files work at the same URL. A new
   handler that takes a file calls `store.Uploads.Save`. `Uploads.List` (behind
   admin-only `GET /uploads`, for the canvas's upload picker) returns the union

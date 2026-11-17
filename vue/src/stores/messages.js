@@ -18,7 +18,7 @@ import { useAuthStore } from "@/stores/auth";
 
 /**
  * Same-origin ws:// or wss:// URL for the chat socket, derived from the page's
- * own protocol and host. Nothing is configurable: nginx (prod) and the Vite
+ * own protocol and host. Nothing is configurable: Caddy (prod) and the Vite
  * proxy (dev) both serve /api/ws from the same origin as the page, and the
  * auth cookies only travel if the origin matches.
  */
@@ -171,7 +171,7 @@ export const useMessagesStore = defineStore("messages", () => {
    * surface via `lastError`.
    *
    * `private` goes to both: the upload is stored under /uploads/private/,
-   * which nginx gates behind an admin check, and the message is marked
+   * which Caddy gates behind an admin check, and the message is marked
    * private. The two must agree.
    */
   async function uploadAndSendFile(file, isPrivate = false) {

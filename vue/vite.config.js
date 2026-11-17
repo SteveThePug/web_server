@@ -7,11 +7,11 @@ import vueDevTools from "vite-plugin-vue-devtools";
 
 // Dev-server proxy targets (frontend-only `npm run dev`).
 //
-// In production, and in the full compose stack, nginx does this routing. The
+// In production, and in the full compose stack, Caddy does this routing. The
 // Vite dev server has to stand in for it, which means reaching each service
 // FROM THE HOST — and the compose stack publishes almost none of them:
 //
-//   published by docker-compose.yml:  nginx (80/443), gitea (3000 + 2222 ssh),
+//   published by docker-compose.yml:  caddy (80/443), gitea (3000 + 2222 ssh),
 //                                     the liquidsoap harbor port
 //   NOT published:                    backend (8080), python (8000),
 //                                     icecast (8000), db, silverbullet
@@ -37,9 +37,9 @@ import vueDevTools from "vite-plugin-vue-devtools";
 //   VITE_PROXY_RADIO  Icecast               default http://localhost:8000
 //
 // To borrow a running compose stack instead of running services on the host,
-// point API / GITEA / RADIO at its nginx (e.g. VITE_PROXY_API=http://localhost):
-// those three are forwarded with their path intact, which is what nginx
-// expects. VITE_PROXY_PY cannot be pointed at nginx — see the rewrite below.
+// point API / GITEA / RADIO at its Caddy (e.g. VITE_PROXY_API=http://localhost):
+// those three are forwarded with their path intact, which is what Caddy
+// expects. VITE_PROXY_PY cannot be pointed at Caddy — see the rewrite below.
 const DEFAULT_PROXY = {
   VITE_PROXY_API: "http://localhost:8080",
   VITE_PROXY_GITEA: "http://localhost:3000",
@@ -76,9 +76,9 @@ export default defineConfig(({ mode }) => {
         "/api": env.VITE_PROXY_API,
         "/gitea": env.VITE_PROXY_GITEA,
         "/radio": env.VITE_PROXY_RADIO,
-        // Python API: nginx strips the /py prefix in production, so do the
-        // same here. That makes the target a bare uvicorn — pointed at nginx
-        // the request would arrive without the prefix nginx routes on.
+        // Python API: Caddy strips the /py prefix in production, so do the
+        // same here. That makes the target a bare uvicorn — pointed at Caddy
+        // the request would arrive without the prefix Caddy routes on.
         "/py": {
           target: env.VITE_PROXY_PY,
           rewrite: (path) => path.replace(/^\/py/, ""),

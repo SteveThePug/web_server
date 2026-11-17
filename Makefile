@@ -128,6 +128,6 @@ check-caddy:
 generate:
 	cd backend && go run github.com/99designs/gqlgen generate
 
-# Dev stack: HTTP only, seeded database, Vite hot reload behind nginx.
+# Dev stack: http and https, seeded database, Vite hot reload behind Caddy.
 dev:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build

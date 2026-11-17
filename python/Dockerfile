@@ -11,7 +11,7 @@
 # immediately instead of sitting in a buffer — both are standard for
 # containerised Python and the second one matters for debugging.
 #
-# ROOT_PATH=/py: nginx proxies /py/ and STRIPS the prefix, so the app's routes
+# ROOT_PATH=/py: Caddy proxies /py/ and STRIPS the prefix, so the app's routes
 # are written relative to /. --root-path tells FastAPI it is nonetheless
 # mounted under a prefix, so the OpenAPI schema and Swagger UI emit correct
 # /py/... URLs. Without it, /py/docs loads but cannot call anything.
@@ -21,7 +21,7 @@
 # Both have defaults here so the image runs standalone; docker compose normally
 # supplies them.
 #
-# EXPOSE 8000 is documentation only — the port is not published; nginx reaches
+# EXPOSE 8000 is documentation only — the port is not published; Caddy reaches
 # it over app-network.
 # =============================================================================
 FROM python:3.12-slim

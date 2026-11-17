@@ -7,7 +7,7 @@
  *     in as literal values, read from the live page so a re-themed layout
  *     (CVLayout re-points the tokens) would carry through.
  *   - Load our fonts. Without allow-same-origin its origin is opaque ("null"),
- *     which makes /fonts/*.woff2 a cross-origin font load that nginx and the
+ *     which makes /fonts/*.woff2 a cross-origin font load that Caddy and the
  *     Vite dev server would both refuse without CORS headers. Instead the page
  *     fetches the two files (28 KB) once, same-origin, and inlines them as
  *     data: URLs.

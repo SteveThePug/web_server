@@ -1,6 +1,6 @@
 """Small Python API service.
 
-Nginx proxies https://www.<DOMAIN>/py/... to this container and strips the
+Caddy proxies https://www.<DOMAIN>/py/... to this container and strips the
 /py prefix, so routes here are defined relative to "/". FastAPI's root_path
 (set via --root-path on the uvicorn command line) keeps the generated docs
 at /py/docs working behind the proxy.
@@ -14,7 +14,7 @@ Endpoints
   POST /hotels/search/stream  same search, streamed as NDJSON
   POST /hotels/scan/stream    cheapest-night-in-a-range scan, NDJSON
   POST /internal/rowing/read  read a rowing display photo with Claude
-                              (Go backend only - not reachable through nginx)
+                              (Go backend only - not reachable through Caddy)
 
 All the hotel work lives in `travelodge`; this module is the HTTP skin around
 it - request validation, a response cache, the one-search-at-a-time guard, and
@@ -62,7 +62,7 @@ class Greeting(BaseModel):
 
 @app.get("/", response_model=Greeting, summary="Service index")
 def index() -> Greeting:
-    """Point a curious caller at the docs (which live at /py/docs via nginx)."""
+    """Point a curious caller at the docs (which live at /py/docs via Caddy)."""
     return Greeting(message="Python API is running. See /py/docs for the schema.")
 
 
@@ -558,10 +558,13 @@ def _ndjson(events) -> StreamingResponse:
     line, with no event-type framing to strip. `exclude_none=True` keeps the
     lines small, so absent keys must be treated as null by the reader.
 
-    X-Accel-Buffering: no is essential - without it nginx buffers the whole
-    response and the user sees nothing until the search finishes, defeating the
-    point of streaming. Cache-Control: no-cache stops any intermediary storing
-    a partial stream.
+    X-Accel-Buffering: no tells an nginx-style proxy not to buffer the
+    response; without it the user would see nothing until the search finished,
+    defeating the point of streaming. Caddy, the edge now, ignores the header
+    and passes a chunked response on as it is written (its /py/hotels route
+    also sets flush_interval -1), so the header is insurance for whatever
+    proxy might sit here next. Cache-Control: no-cache stops any intermediary
+    storing a partial stream.
     """
     return StreamingResponse(
         (ev.model_dump_json(exclude_none=True) + "\n" for ev in events),
@@ -651,7 +654,7 @@ def hotel_scan_stream(req: HotelScanRequest) -> StreamingResponse:
 # Internal: the routes the Go backend calls
 # --------------------------------------------------------------------------- #
 def _internal_only(request: Request) -> None:
-    """Refuse a request that arrived through nginx.
+    """Refuse a request that arrived through the edge proxy (Caddy).
 
     Every other route in this service is public, but the internal ones spend
     a paid Claude call per request and have no auth of their own - the admin
@@ -659,10 +662,12 @@ def _internal_only(request: Request) -> None:
     directly over app-network. Two layers keep the outside world off it,
     because either alone is one config edit away from being lost:
 
-      1. nginx answers /py/internal/ with a 404 (both templates).
-      2. nginx stamps X-Real-IP and X-Forwarded-For on everything it proxies
-         here, and a client cannot make it omit them; the Go backend sends
-         neither. So their presence means the request came from outside.
+      1. Caddy answers /py/internal/ with a 404 (caddy/routes.caddy, dev and
+         production alike).
+      2. Caddy stamps X-Real-IP and X-Forwarded-For on everything it proxies
+         here (the `proxy` snippet), and a client cannot make it omit them;
+         the Go backend sends neither. So their presence means the request
+         came from outside.
 
     404 rather than 403, so the route is indistinguishable from one that does
     not exist.
@@ -732,7 +737,7 @@ class RowingReadRequest(BaseModel):
     response_model=rowing.RowingReading,
     summary="Read time and distance off a rowing machine display",
     description=(
-        "Internal to the Go backend's admin-only `POST /api/rowing`; not reachable through nginx. "
+        "Internal to the Go backend's admin-only `POST /api/rowing`; not reachable through Caddy. "
         "Sends the image to Claude and returns the three numbers it read. No plausibility checking "
         "happens here - the caller owns the sanity bounds."
     ),
@@ -743,7 +748,7 @@ def rowing_read(req: RowingReadRequest) -> rowing.RowingReading:
     A plain `def`, so FastAPI runs it in the threadpool and the blocking Claude
     call does not stall the event loop the hotel streams are served from.
 
-    Responds 404 (came through nginx), 503 (no API key) or 502 (Claude failed
+    Responds 404 (came through Caddy), 503 (no API key) or 502 (Claude failed
     or returned something unparseable) by way of `_internal_claude_route`. The
     502 detail is one of rowing.read_display's fixed messages, which the Go
     handler passes on to the admin verbatim.

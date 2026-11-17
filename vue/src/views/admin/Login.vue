@@ -6,7 +6,7 @@
  * (a non-admin would only bounce off /admin's guard back to here).
  *
  * The `?redirect=` is set by two different gates: the SPA router guard
- * (`meta.requiresAdmin`) and nginx's `auth_request` gate in front of the
+ * (`meta.requiresAdmin`) and Caddy's `forward_auth` gate in front of the
  * proxied containers (/notes/, /sb/, /receipt/). The latter means the
  * destination is frequently NOT a Vue route, so see goTo() below.
  *
@@ -34,12 +34,12 @@ const errorMsg = ref("");
 
 // Send the browser to `dest`, choosing SPA navigation vs. a real page load.
 //
-// nginx bounces /notes/, /sb/, /receipt/ and the like here when the session
+// Caddy bounces /notes/, /sb/, /receipt/ and the like here when the session
 // is missing; those paths belong to other containers, so router.push() would just
 // match the catch-all 404 route and never leave the SPA. Resolving the path
 // first tells us which it is: the catch-all matches everything, so landing on
 // the route named "404" means no real Vue route exists and the browser needs a
-// full document request for nginx to proxy it.
+// full document request for Caddy to proxy it.
 //
 // `dest` comes from the query string, so it is only followed when it is a
 // site-relative path — a leading "//" or a scheme would be an open redirect.

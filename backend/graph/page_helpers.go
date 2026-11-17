@@ -22,8 +22,8 @@ var pageKeyPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-
 const maxSlugLen = 100
 
 // reservedFirstSegments are paths a page could never be reached at, because
-// nginx or one of the SPA's own routes answers them first (see
-// nginx/nginx_routes.conf.template and vue/src/router/index.js), plus the
+// Caddy or one of the SPA's own routes answers them first (see
+// caddy/routes.caddy and vue/src/router/index.js), plus the
 // landing page's key "index", whose boxes a page of the same slug would
 // share. "shrines" and "stp" are deliberately absent: /shrines, the shrine
 // pages under it and the home page /stp are all canvas pages.

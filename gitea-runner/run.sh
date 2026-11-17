@@ -20,8 +20,8 @@
 #   rather than retrying, so the loop polls (forever, by design — there is no
 #   sensible timeout when the answer is "wait longer") until Gitea responds.
 #   It targets localhost:3000, the port docker-compose.yml publishes directly,
-#   NOT the public /gitea/ path through nginx — so the runner keeps working
-#   even while TLS or nginx is broken.
+#   NOT the public /gitea/ path through Caddy — so the runner keeps working
+#   even while TLS or Caddy is broken.
 #
 # THE REGISTRATION TOKEN (one-shot, and easy to get wrong)
 #   GITEA_RUNNER_REGISTRATION_TOKEN comes from ./.env and is generated in the

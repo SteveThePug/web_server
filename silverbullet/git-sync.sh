@@ -4,7 +4,7 @@
 # SilverBullet writes plain markdown straight into the space folder and has no
 # concept of git, so this sidecar is what keeps the notes repo moving. It is
 # deliberately a separate container rather than SilverBullet's own shell backend:
-# the editor is protected only by the nginx admin gate, and enabling a shell
+# the editor is protected only by Caddy's admin gate, and enabling a shell
 # backend would hand anyone past that gate command execution inside the container.
 #
 # ON-DEMAND SYNC

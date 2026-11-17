@@ -8,7 +8,7 @@
 #   The same host-mode act_runner as deploy.yaml, so (as there) nothing but
 #   git and docker is assumed on the host: Renovate runs from its own image.
 #   --network host lets the container reach Gitea on localhost:3000, the port
-#   the runner itself registers against, so this keeps working while nginx or
+#   the runner itself registers against, so this keeps working while Caddy or
 #   the tunnel is down. RENOVATE_GIT_URL=endpoint matters for the same reason:
 #   without it Renovate clones from the URL Gitea advertises, which is
 #   ROOT_URL — the public https://…/gitea/ path.

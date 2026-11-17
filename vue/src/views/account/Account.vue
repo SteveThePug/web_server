@@ -4,13 +4,13 @@
  * page for a signed-in account that is not an admin, listing the gated
  * services it has been granted (backend/services/permissions.go) as links.
  *
- * `/no-access` is where nginx's permission gate sends a signed-in visitor who
+ * `/no-access` is where Caddy's permission gate sends a signed-in visitor who
  * lacks the permission (`@auth_forbidden`, with the refused address in
  * `?path=`). It is this same page with a notice on top, since "what can I
  * open instead" is the useful answer to "you can't open that".
  *
  * The links are plain <a href>, not RouterLinks: every service lives in
- * another container behind nginx, so it needs a real page load.
+ * another container behind Caddy, so it needs a real page load.
  */
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";

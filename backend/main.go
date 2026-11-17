@@ -50,7 +50,7 @@ func main() {
 	r.Use(gin.LoggerWithFormatter(services.TrafficLogFormatter))
 	r.Use(gin.Recovery())
 
-	// Only the Docker network nginx sits on may set X-Forwarded-For. Without
+	// Only the Docker network Caddy sits on may set X-Forwarded-For. Without
 	// this pin any client could spoof its IP and defeat the per-IP login rate
 	// limiter, which keys on ctx.ClientIP(). The CIDR must match the network
 	// defined in docker-compose.yml.
@@ -115,7 +115,7 @@ func main() {
 	steamID := os.Getenv("STEAM_ID")
 
 	// PYTHON SERVICE
-	// Called directly over the Docker network, not through nginx, for its
+	// Called directly over the Docker network, not through Caddy, for its
 	// /internal/ Claude route (services/python_call.go). The defaults
 	// mirror docker-compose.yml, where both variables are optional.
 	pythonHost := os.Getenv("PYTHON_HOST")
@@ -145,7 +145,7 @@ func main() {
 	uploads := services.NewUploads(s3Config, "/backend/uploads/", "/backend/uploads/private/")
 
 	// 5 login attempts per IP per minute, applied by both the REST handler
-	// and the GraphQL login mutation. Nginx rate-limits the login route too.
+	// and the GraphQL login mutation. Caddy rate-limits the login route too.
 	loginLimiter := services.NewRateLimiter(5, time.Minute)
 
 	store := handlers.Store{DB: db, SpotifyAuth: spotifyAuth, SpotifyClient: spotifyClient, Auth: auth, Notes: notes, LoginLimiter: loginLimiter, GiteaHost: giteaHost, GiteaPort: giteaPort, SteamAPIKey: steamAPIKey, SteamID: steamID, PythonURL: pythonURL, Uploads: uploads}
@@ -153,7 +153,7 @@ func main() {
 	// Route groups. AdminMiddleware reads the claims AuthMiddlewear stored in
 	// the Gin context, so the order in the admin group matters.
 	//
-	// Paths below have no /api prefix: nginx strips it before proxying.
+	// Paths below have no /api prefix: Caddy strips it before proxying.
 	protected := r.Group("/", store.AuthMiddlewear)
 	admin := r.Group("/", store.AuthMiddlewear, store.AdminMiddleware)
 

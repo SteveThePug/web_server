@@ -36,7 +36,7 @@ func TestCallPythonRequestAndReply(t *testing.T) {
 	)
 	url := pythonStub(t, func(w http.ResponseWriter, r *http.Request) {
 		method, path, contentType = r.Method, r.URL.Path, r.Header.Get("Content-Type")
-		// The Python routes treat either header as "came through nginx" and
+		// The Python routes treat either header as "came through Caddy" and
 		// answer 404, so the helper must never send them.
 		forwarded = r.Header.Get("X-Real-IP") != "" || r.Header.Get("X-Forwarded-For") != ""
 		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {

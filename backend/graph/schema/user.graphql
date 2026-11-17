@@ -10,7 +10,7 @@ type User {
 }
 
 # One grantable service, from services.PermissionTypes: `key` is what is
-# stored and what nginx gates on, `label` and `path` are for display.
+# stored and what Caddy gates on, `label` and `path` are for display.
 type PermissionType {
   key: String!
   label: String!

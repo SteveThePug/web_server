@@ -29,7 +29,7 @@
 #
 # OUTPUT
 #   Pushes to icecast on localhost (same container) at ICECAST_MOUNT, which is
-#   what nginx exposes at /radio/. fallible=true tells liquidsoap this output
+#   what Caddy exposes at /radio/. fallible=true tells liquidsoap this output
 #   is allowed to fail and be retried, instead of aborting the script — that is
 #   what makes the `sleep 2` startup race in the entrypoint survivable.
 #

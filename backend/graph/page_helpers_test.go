@@ -20,7 +20,7 @@ func TestValidateSlug(t *testing.T) {
 		{"shrines", true},           // the index is a canvas page too
 		{"shrines/demoman", true},   // no longer an SPA route
 		{"admin/pages", false},      // under an SPA route
-		{"jobs/x", false},           // under an nginx route
+		{"jobs/x", false},           // under a Caddy route
 		{"stp", true},               // the home page is a canvas page too
 		{"stp2", false},             // an SPA route
 		{"index", false},            // the landing canvas's key
