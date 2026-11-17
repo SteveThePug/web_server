@@ -14,7 +14,8 @@
 //   pip_requirements python/requirements.txt, requirements-dev.txt
 //   dockerfile      every */Dockerfile FROM line
 //   docker-compose  every image: in docker-compose*.yml
-//   custom (below)  the images deploy.yaml and renovate.yaml `docker run`
+//   custom (below)  the images deploy.yaml and renovate.yaml `docker run`,
+//                   and the Caddy plugins caddy/Dockerfile compiles in
 //
 // NOTHING IS AUTOMERGED, on purpose: a merge to main IS a deploy. Each
 // Renovate branch is pushed to Gitea, so deploy.yaml's `test` job runs on it
@@ -49,6 +50,15 @@
       managerFilePatterns: ["/^\\.gitea/workflows/[^/]+\\.ya?ml$/"],
       matchStrings: ["(?<depName>golang|python|renovate/renovate):(?<currentValue>[0-9][\\w.-]*)"],
       datasourceTemplate: "docker",
+    },
+    {
+      // The Caddy plugins compiled in by caddy/Dockerfile's `xcaddy build
+      // --with <module>@<version>`. Only versions starting with v match, so
+      // caddy-ratelimit, pinned to a commit, is left for a hand bump.
+      customType: "regex",
+      managerFilePatterns: ["/^caddy/Dockerfile$/"],
+      matchStrings: ["--with (?<depName>[\\w./-]+)@(?<currentValue>v[0-9][\\w.-]*)"],
+      datasourceTemplate: "go",
     },
   ],
 
@@ -102,6 +112,13 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["python"],
       groupName: "Python image",
+    },
+    // caddy/Dockerfile's builder and runtime images must be the same release
+    // (the builder compiles the version its image sets), so one PR moves
+    // both, along with the plugins.
+    {
+      matchFileNames: ["caddy/Dockerfile"],
+      groupName: "Caddy",
     },
 
     // gqlgen's runtime and gqlparser are versioned together. If a bump breaks

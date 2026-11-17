@@ -1,0 +1,452 @@
+# =============================================================================
+# routes.caddy — the PROXY ROUTE TABLE shared by production and dev. Add a new
+# proxied route HERE, once.
+#
+# WHO IMPORTS IT
+#   sites/prod.caddy (the www site) and sites/dev.caddy, each inside a
+#   `route { ... }` block, followed by that site's own `/` handler (the built
+#   SPA in production, the Vite dev server in dev). Everything else that
+#   differs between the two (TLS, security headers, static-asset caching, the
+#   apex) is in the site files.
+#
+# ORDER IS LITERAL: THE FIRST MATCHING handle WINS
+#   Inside `route`, Caddy keeps directives in the order written, and `handle`
+#   blocks are mutually exclusive. So this file is read top to bottom like a
+#   firewall list: denials first, then the specific routes, each carve-out
+#   ahead of the gated prefix it is carved out of, then the catch-alls.
+#   (nginx's longest-prefix / regex-in-file-order / ^~ rules are gone.)
+#
+# HOW PATHS ARE MATCHED
+#   `path` matchers are case-insensitive and see the decoded, cleaned path
+#   (`..` resolved, `//` merged), so /SB/, /notes/a/../private/x or
+#   /uploads/%70rivate/x cannot slip past a rule. `path_regexp` sees the
+#   decoded, cleaned path too but is case-sensitive, hence `(?i)` where case
+#   matters. caddy/edge_test.sh checks these against the live edge.
+#
+# PATTERNS THAT REPEAT BELOW
+#   - `uri strip_prefix /x`: the public URL carries a prefix (/api, /radio,
+#     /gitea, /py, /tracker, /receipt) but the upstream serves from /. Apps
+#     told their own base path (SilverBullet, the job tracker, usaco, Dozzle,
+#     garage-webui) keep it.
+#   - `import proxy` in every reverse_proxy: the forwarding headers (see the
+#     snippet in Caddyfile).
+#   - `import limit <zone> ...`: see the snippet; DEPLOYMENT.md §6 for the
+#     numbers.
+#   - `import admin_gate` / `import permission_gate <key>`: the session check
+#     against the backend. Some of these services have no auth of their own,
+#     so a gated route that loses its import is open to the internet.
+#   - Upstream read timeouts are not set anywhere: Caddy has none by default,
+#     so a long hotel search, an email sync or a log tail is never cut off by
+#     the proxy. (Cloudflare still gives up on an origin that sends nothing
+#     for 100 s; see DEPLOYMENT.md.)
+#
+# Upstream names come from the environment ({$BACKEND_HOST} etc.; see the
+# caddy service in docker-compose.yml). The job tracker, activity tracker,
+# usaco, Dozzle and Garage containers have fixed names there, so they are
+# written literally.
+# =============================================================================
+
+# Request bodies: 50 MB everywhere except garage-webui, which takes video
+# uploads and sets its own 2 GB below. (An outer limit cannot be raised by an
+# inner one, so the exception has to be carved out here.) The backend caps
+# uploads at 10 MB itself; this is the ceiling for everything else.
+@body_default not path /garage/*
+request_body @body_default {
+	max_size 50MB
+}
+
+# ---- Denials -----------------------------------------------------------------
+
+# /py/internal/: routes the Go backend calls directly over app-network (the
+# rowing photo reader, which spends a paid Claude call and has no auth of its
+# own). Never proxied. The Python side also refuses anything carrying the
+# X-Real-IP / X-Forwarded-For headers `proxy` sets, as a second layer.
+handle /py/internal/* {
+	respond 404
+}
+
+# PUBLIC notes viewer privacy boundary. /notes/ is a second, read-only
+# SilverBullet over the vault /sb/ edits, and SB_SPACE_IGNORE only hides
+# paths from its file LIST. Everything else serves them (all verified against
+# 2.11.0 with curl):
+#   /notes/.fs/private/x.md    raw file, straight off disk
+#   /notes/private/x           the page URL: the server pre-renders the
+#                              note's content into the HTML shell
+#   /notes/.fs/.git/...        the vault's whole git repo, i.e. every
+#                              version of every private note ever
+# and gitignore semantics mean `private/` in SB_SPACE_IGNORE hides a private/
+# folder at ANY depth, so the block must too.
+#
+# 1. private/ or templates/ as any path segment, page URL or /.fs/. (?i) so
+#    Private/ is caught; (/|$) so the folder itself matches.
+# 2. Any dot-segment below the first: .git, .obsidian, .env, ... The first
+#    segment is exempt because that is where SilverBullet's own endpoints
+#    live (/.fs, /.config, /.client, /.events ...). Nothing the client
+#    legitimately loads has a dot-segment deeper than that.
+# 3. Revisions are read from the vault's own .git, i.e. the full history of
+#    every file INCLUDING private/ and anything ever deleted.
+#    SB_REVISIONS=disabled already turns this off upstream; this is the
+#    second lock in case that env var is ever dropped.
+# Keep the folder list in step with SB_SPACE_IGNORE on silverbullet-public.
+# 404 rather than 403 so the response does not confirm a private path exists.
+@notes_private path_regexp (?i)^/notes/(.*/)?(private|templates)(/|$)
+handle @notes_private {
+	respond 404
+}
+
+@notes_dot path_regexp ^/notes/.+/\.
+handle @notes_dot {
+	respond 404
+}
+
+handle /notes/.revisions* {
+	respond 404
+}
+
+# ---- Bare prefixes and moved URLs ----------------------------------------------
+# So a user typing /gitea without the slash lands correctly. Exact paths: unlike
+# nginx's prefix locations, /gitea-something is not caught and is left to the
+# SPA (where an admin-created canvas page with that slug now works).
+redir {$BACKEND_ENDPOINT} {$BACKEND_ENDPOINT}/ 301
+redir /radio /radio/ 301
+redir /dozzle /dozzle/ 301
+redir /garage /garage/ 301
+redir /gitea /gitea/ 301
+redir /notes /notes/ 301
+redir /sb /sb/ 301
+redir /py /py/ 301
+redir /jobs /jobs/ 301
+redir /usaco /usaco/ 301
+redir /tracker /tracker/ 301
+redir /receipt /receipt/ 301
+
+# Where the job tracker used to be. The SPA routes were client-side, so these
+# only catch bookmarks and typed URLs. The userscript's old @updateURL lands
+# on the third, which is how installed copies find version 2.0.0 and its new
+# API base.
+redir /cv/jobs /jobs/ 301
+redir /cv/leads /jobs/leads 301
+redir /job-capture.user.js /jobs/job-capture.user.js 301
+
+# ---- Backend API ---------------------------------------------------------------
+
+# Live chat / activity feed websocket. Deliberately NOT rate limited: a
+# websocket is one long-lived request, and a limit here would drop reconnect
+# storms, not abuse.
+handle {$BACKEND_ENDPOINT}/ws* {
+	uri strip_prefix {$BACKEND_ENDPOINT}
+	reverse_proxy {$BACKEND_HOST}:{$BACKEND_PORT} {
+		import proxy
+	}
+}
+
+# Brute-force defence on password auth, on top of the backend's own 5/min.
+handle {$BACKEND_ENDPOINT}/auth/login* {
+	import limit login 5 1m
+	uri strip_prefix {$BACKEND_ENDPOINT}
+	reverse_proxy {$BACKEND_HOST}:{$BACKEND_PORT} {
+		import proxy
+	}
+}
+
+handle {$BACKEND_ENDPOINT}/uploads* {
+	import limit upload 30 1m
+	uri strip_prefix {$BACKEND_ENDPOINT}
+	reverse_proxy {$BACKEND_HOST}:{$BACKEND_PORT} {
+		import proxy
+	}
+}
+
+# Tighter than the REST catch-all, because one GraphQL query can be
+# arbitrarily expensive to resolve.
+handle {$BACKEND_ENDPOINT}/graphql* {
+	import limit graphql 10 1s
+	uri strip_prefix {$BACKEND_ENDPOINT}
+	reverse_proxy {$BACKEND_HOST}:{$BACKEND_PORT} {
+		import proxy
+	}
+}
+
+handle {$BACKEND_ENDPOINT}/* {
+	import limit api 30 1s
+	uri strip_prefix {$BACKEND_ENDPOINT}
+	reverse_proxy {$BACKEND_HOST}:{$BACKEND_PORT} {
+		import proxy
+	}
+}
+
+# ---- Admin-gated services ------------------------------------------------------
+
+# Dozzle: live view of every container's logs, including the `traffic`
+# container's request-body log. It reads the Docker socket, so it is
+# effectively root on the host: admin only. DOZZLE_BASE=/dozzle makes it serve
+# under the prefix itself. Its log tails are server-sent events, which Caddy
+# streams without buffering.
+handle /dozzle/* {
+	import admin_gate
+	reverse_proxy dozzle:8080 {
+		import proxy
+	}
+}
+
+# garage-webui: buckets, keys and a file browser for the Garage object store.
+# It holds Garage's admin token, so admin only, and its own login is left
+# unset (one login, not two). BASE_PATH=/garage makes it serve under the
+# prefix. 2 GB so videos can be uploaded through it; the body streams through
+# rather than landing on disk first.
+handle /garage/* {
+	import admin_gate
+	request_body {
+		max_size 2GB
+	}
+	reverse_proxy garage-webui:3909 {
+		import proxy
+	}
+}
+
+# The icecast ADMIN UI is a full station-control surface (kick sources, change
+# metadata) protected only by the icecast admin password. Ahead of /radio/*,
+# so listener traffic (the mount, status.xsl) is untouched.
+handle /radio/admin/* {
+	import admin_gate
+	uri strip_prefix /radio
+	reverse_proxy {$ICECAST_HOST}:{$ICECAST_PORT} {
+		import proxy
+	}
+}
+
+# Gitea's history views and archives. A crawler swarm (129k requests from
+# 103k IPs over 2026-10-18/19, so per-IP rate limits are useless) walks every
+# file at every commit, and those pages are the expensive ones: diffs, blame,
+# tarballs. 89% of its requests were these shapes. People browsing the code
+# use the branch views (src/branch/..., commits/branch/...), which stay
+# public, so the CV's repo links still work. Gitea's own
+# REQUIRE_SIGNIN_VIEW=expensive would also block src/branch, hence doing it
+# here. Ahead of /gitea/*.
+@gitea_history path_regexp ^/gitea/[^/]+/[^/]+/((src|raw|blame|commits|media)/commit/|commit/|archive/|compare/)
+handle @gitea_history {
+	import admin_gate
+	uri strip_prefix /gitea
+	reverse_proxy {$GITEA_HOST}:{$GITEA_PORT} {
+		import proxy
+	}
+}
+
+# SilverBullet: the admin-only EDITOR for the vault /notes/ publishes. NO
+# prefix strip: it is a PWA told its own base path via SB_URL_PREFIX=/sb, and
+# builds its service-worker scope and asset URLs from it. Strip the prefix and
+# the app loads a blank page with no error in the log.
+handle /sb/* {
+	import admin_gate
+	reverse_proxy {$SILVERBULLET_HOST}:{$SILVERBULLET_PORT} {
+		import proxy
+	}
+}
+
+# ---- Public services -----------------------------------------------------------
+
+handle /radio/* {
+	uri strip_prefix /radio
+	reverse_proxy {$ICECAST_HOST}:{$ICECAST_PORT} {
+		import proxy
+	}
+}
+
+handle /gitea/* {
+	uri strip_prefix /gitea
+	reverse_proxy {$GITEA_HOST}:{$GITEA_PORT} {
+		import proxy
+	}
+}
+
+# The public notes viewer, behind the denials at the top of this file. No
+# prefix strip, for the same reason as /sb/ (SB_URL_PREFIX=/notes).
+handle /notes/* {
+	reverse_proxy {$SILVERBULLET_PUBLIC_HOST}:{$SILVERBULLET_PUBLIC_PORT} {
+		import proxy
+	}
+}
+
+# /py/hotels/search[/stream] and /py/hotels/scan/stream: public, minutes-long
+# upstream calls to Travelodge/TfL with a single search slot on the Python
+# side, so this zone is really concurrency protection. flush_interval -1
+# passes each NDJSON progress line on as it arrives (chunked responses are
+# flushed anyway; this makes it explicit). `encode` never touches
+# application/x-ndjson.
+@hotels path_regexp ^/py/hotels/(search|scan)
+handle @hotels {
+	import limit hotel_search 3 1m
+	uri strip_prefix /py
+	reverse_proxy {$PYTHON_HOST}:{$PYTHON_PORT} {
+		import proxy
+		flush_interval -1
+	}
+}
+
+handle /py/* {
+	import limit api 30 1s
+	uri strip_prefix /py
+	reverse_proxy {$PYTHON_HOST}:{$PYTHON_PORT} {
+		import proxy
+	}
+}
+
+# ---- Job tracker (/jobs/) ----
+# Its own container (the adamf/job-tracker repo), which serves its SPA and its
+# API from the same prefix, NOT stripped: the app is built to live at /jobs/.
+# Gated like /sb/ (the app checks the session itself too), with two
+# exceptions ahead of it that a session cookie can never reach:
+#   - the capture API, called by the userscript from job sites' origins with
+#     the capture bearer token rather than cookies; the app's
+#     CaptureTokenMiddleware guards it;
+#   - the userscript itself: userscript managers fetch its @updateURL without
+#     the session, and it holds no secrets (the token is entered after
+#     install).
+handle /jobs/api/capture* {
+	import limit api 30 1s
+	reverse_proxy jobs:8080 {
+		import proxy
+	}
+}
+
+handle /jobs/job-capture.user.js {
+	reverse_proxy jobs:8080 {
+		import proxy
+	}
+}
+
+handle /jobs/* {
+	import admin_gate
+	import limit api 30 1s
+	reverse_proxy jobs:8080 {
+		import proxy
+	}
+}
+
+# ---- USACO practice log (/usaco/) ----
+# Its own container (the usaco repo's site/), shaped like /jobs/: SPA and API
+# under one prefix that is NOT stripped, and no gate, because most of it is
+# public and the app checks the session itself for the admin's edits. Gitea's
+# push webhook does not come through here: it calls the container directly
+# on the Docker network.
+handle /usaco/* {
+	import limit api 30 1s
+	reverse_proxy usaco:8080 {
+		import proxy
+	}
+}
+
+# ---- Activity tracker (/tracker/) ----
+# Its own container (the adamf/ccp repo): an ingest API for device collectors,
+# which send batches of events with a per-device bearer key, plus a dashboard
+# and setup page. Gated like /sb/ (the app also checks the session itself),
+# with two exceptions ahead of it: the API, which collectors call with bearer
+# keys and no cookies (the app guards each route, by device key, admin
+# session or either), and the public userscript. Unlike /jobs/ the prefix IS
+# stripped: the server serves /api/v1/... and /readyz from /. Collectors must
+# use the www host: the apex 301 would turn their POSTs into GETs. Health Auto
+# Export bodies can be several MB; the 50 MB default above covers them.
+handle /tracker/api/v1/* {
+	import limit api 30 1s
+	uri strip_prefix /tracker
+	reverse_proxy activity-tracker:8080 {
+		import proxy
+	}
+}
+
+handle /tracker/tracker.user.js {
+	uri strip_prefix /tracker
+	reverse_proxy activity-tracker:8080 {
+		import proxy
+	}
+}
+
+handle /tracker/* {
+	import admin_gate
+	import limit api 30 1s
+	uri strip_prefix /tracker
+	reverse_proxy activity-tracker:8080 {
+		import proxy
+	}
+}
+
+# ---- Receipt printer (/receipt/) ----
+# The adamf/receipt_maker repo's `receipt serve`, running on stppi (not in
+# this stack: that machine reaches the printer on the home LAN), reached over
+# Tailscale by IP. A page for printing a note or an uploaded image, plus its
+# API. Behind the permission gate on `receipt`, so an account granted it in
+# the admin panel can print without being an admin; the prefix IS stripped.
+# The server trusts nothing without X-Receipt-Token, which only this proxy
+# adds (header_up replaces any copy the client sent), and is told who is
+# printing in X-Remote-User, which the gate sets.
+#
+# A `route`, so the steps run in the order written: receipt_upstream is set
+# only after the gate has passed, so `errors` reports "printer offline" for a
+# failed dial to stppi and not for a backend outage during the auth check.
+# Its own zone, not `api`: a zone name must always carry the same numbers.
+# 17 MB: the server caps uploads at 16 MB, plus room for the multipart
+# framing around one.
+handle /receipt/* {
+	route {
+		import limit receipt 10 1s
+		request_body {
+			max_size 17MB
+		}
+		import permission_gate receipt
+		vars receipt_upstream yes
+		uri strip_prefix /receipt
+		reverse_proxy {$RECEIPT_WEB_UPSTREAM} {
+			import proxy
+			header_up X-Receipt-Token {env.RECEIPT_WEB_TOKEN}
+			# Caddy's default, spelt out: when stppi is off, fail fast and
+			# let `errors` answer.
+			transport http {
+				dial_timeout 3s
+			}
+		}
+	}
+}
+
+# ---- Uploads (/uploads/) ----
+
+# PRIVATE attachments (admin-only): files on *private* chat messages, which
+# the backend always writes to disk, at uploads/private/. Ahead of the public
+# route below, and matched on the cleaned, lower-cased path, so no spelling of
+# a path into private/ reaches the ungated one.
+handle /uploads/private/* {
+	import admin_gate
+	import upload_headers
+	root * /srv
+	file_server
+}
+
+# GARAGE FIRST, DISK SECOND. /uploads/<name> is fetched from the Garage
+# bucket's website endpoint, which serves the bucket anonymously and picks it
+# by the Host header (garage/garage.toml: s3_web). The bucket is reachable
+# only over app-network, so this is the only public way in. If Garage has no
+# such file (404), errors (5xx), or cannot be reached at all (a dial error,
+# caught by `errors` through the uploads_fallback variable), the file is
+# served from the shared `uploads` volume instead (`uploads_disk`). That
+# volume holds uploads from before Garage and anything the backend wrote
+# there because Garage refused it (backend/services/uploads.go). So the bucket
+# is the source of truth (deleting a file in garage-webui unpublishes it
+# unless a disk copy exists), while a Garage outage only costs files that are
+# nowhere else. dial_timeout 2s: Garage is on the same bridge, so a slow
+# connect means it is down; fall back quickly. Range requests pass through
+# either way, so video seeks.
+handle /uploads/* {
+	import upload_headers
+	vars uploads_fallback yes
+	uri strip_prefix /uploads
+	reverse_proxy garage:3902 {
+		import proxy
+		header_up Host uploads.web.garage
+		transport http {
+			dial_timeout 2s
+		}
+		@not_in_bucket status 404 5xx
+		handle_response @not_in_bucket {
+			import uploads_disk
+		}
+	}
+}

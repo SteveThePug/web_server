@@ -14,6 +14,8 @@
 #   - backend  : dev flags on, including database seeding.
 #   - nginx    : DEV_MODE=true, which makes its entrypoint render
 #                nginx_dev.conf.template and self-sign a localhost certificate.
+#   - caddy    : CADDY_SITE=dev, which loads caddy/sites/dev.caddy. Until the
+#                cutover it runs beside nginx, on 127.0.0.1:8880 / :8443.
 #   - python   : uvicorn --reload with the app source bind-mounted.
 #   - certbot  : disabled entirely.
 #   - cloudflared : disabled entirely.
@@ -66,6 +68,11 @@ services:
         ports:
             - 80:80
             - 443:443
+    caddy:
+        environment:
+            # Loads caddy/sites/dev.caddy instead of the production sites:
+            # localhost on http and https, `tls internal`, `/` -> Vite.
+            - CADDY_SITE=dev
     python:
         # Same command as the Dockerfile's CMD plus --reload, paired with the
         # source bind mount below so editing python/app/ restarts uvicorn.

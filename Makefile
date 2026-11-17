@@ -13,6 +13,7 @@
 #   check-python               python3 with the venv module
 #   check-vue                  Node + `npm install` done in vue/
 #   check-compose / dev        Docker with the compose plugin
+#   check-caddy                Docker
 #   Nothing here installs a toolchain; a missing one fails that target only.
 #
 # Recipes are plain `cd dir && cmd` one-liners on purpose: each line runs in
@@ -35,7 +36,7 @@ VENV := .venv
 # changes and skip the install otherwise.
 VENV_STAMP := $(VENV)/.installed
 
-.PHONY: help check check-backend check-python check-vue check-compose generate dev
+.PHONY: help check check-backend check-python check-vue check-compose check-caddy generate dev
 
 help:
 	@echo "Targets:"
@@ -44,11 +45,12 @@ help:
 	@echo "  make check-python   pytest in python/ (venv created on demand in $(VENV)/)"
 	@echo "  make check-vue      vite build of vue/ into a throwaway directory"
 	@echo "  make check-compose  validate docker-compose.yml, alone and with the dev override"
+	@echo "  make check-caddy    build the Caddy image, which validates caddy/ for prod and dev"
 	@echo "  make generate       regenerate the gqlgen GraphQL code after a schema edit"
 	@echo "  make dev            build and run the dev stack (http://localhost)"
 
 # Run with `make -k check` to keep going past the first failing area.
-check: check-backend check-python check-vue check-compose
+check: check-backend check-python check-vue check-compose check-caddy
 
 check-backend:
 	cd backend && go vet ./... && go test ./...
@@ -110,6 +112,16 @@ check-compose:
 	docker compose --project-directory "$$pd" -f docker-compose.yml config -q; \
 	echo "docker compose -f docker-compose.yml -f docker-compose.dev.yml config -q"; \
 	docker compose --project-directory "$$pd" -f docker-compose.yml -f docker-compose.dev.yml config -q
+
+# The edge config is validated by the image build itself (the last RUN in
+# caddy/Dockerfile runs `caddy validate` for the production and dev sites), so
+# this is that build and nothing more. The deploy's `docker compose up
+# --build` runs the same build, and a failure there stops before any
+# container is replaced. The first build compiles Caddy with its plugins and
+# takes a few minutes; later ones reuse that layer unless the Dockerfile
+# changes.
+check-caddy:
+	docker build -q -t web_server-caddy:check caddy/
 
 # Rewrites backend/graph/generated.go and graph/model/models_gen.go from
 # graph/schema/*.graphql. Resolver bodies in *.resolvers.go are preserved.

@@ -87,6 +87,11 @@ volumes:
   # one-shot `vue` container writes the built SPA here and exits; nginx mounts
   # it at /etc/nginx/html and serves it. Repopulated on every rebuild.
   vue_dist:
+  # Caddy's /config: the JSON it autosaves on each config load. Nothing in it
+  # is needed across restarts (the Caddyfile is the source); named only so
+  # the image's VOLUME does not leave an anonymous volume behind on every
+  # recreate. The certificates are in ./caddy/data, not here.
+  caddy_config:
 
 services:
   # One-shot build container, NOT a long-running service. `vite build` writes
@@ -183,6 +188,83 @@ services:
       start_period: 30s
     labels:
       - autoheal=true
+
+  # The replacement edge (caddy/Caddyfile), RUNNING BESIDE nginx until the
+  # cutover. While it does:
+  #   - it is reachable only from this host, on 127.0.0.1:8880 (http) and
+  #     127.0.0.1:8443 (https), so the public site is still nginx;
+  #   - it holds no network aliases and a fixed address of its own, so nothing
+  #     on app-network (cloudflared included) is sent to it;
+  #   - it obtains its certificates over DNS-01 into ./caddy/data, which needs
+  #     no inbound port, so they are ready before it takes over;
+  #   - autoheal ignores it.
+  # Compare the two with caddy/edge_test.sh (its header has the commands).
+  # The cutover gives it nginx's ports, aliases, address and autoheal label,
+  # and removes nginx and certbot.
+  #
+  # ENVIRONMENT: an explicit list, not the whole .env, so the edge never sees
+  # the database password or the JWT secret. A variable the Caddyfile reads
+  # must be added here, or it reaches Caddy empty. The ${X:-default} forms
+  # are the defaults nginx/entrypoint.sh gave the optional services; they live
+  # here because Caddy's own {$X:default} keeps a variable that is set but
+  # empty, which is how a blank line in .env arrives.
+  #
+  # NO depends_on: Caddy resolves an upstream when it dials it, so it starts
+  # with any of them missing (502 until it appears), and there is no Vue
+  # build to wait for: the SPA is files in vue_dist, served as they appear.
+  caddy:
+    build:
+      context: ./caddy
+      dockerfile: Dockerfile
+    container_name: caddy
+    restart: always
+    environment:
+      - DOMAIN=${DOMAIN}
+      - BACKEND_HOST=${BACKEND_HOST}
+      - BACKEND_PORT=${BACKEND_PORT}
+      - BACKEND_ENDPOINT=${BACKEND_ENDPOINT}
+      - ICECAST_HOST=${ICECAST_HOST}
+      - ICECAST_PORT=${ICECAST_PORT}
+      - GITEA_HOST=${GITEA_HOST}
+      - GITEA_PORT=${GITEA_PORT}
+      - SILVERBULLET_HOST=${SILVERBULLET_HOST:-silverbullet}
+      - SILVERBULLET_PORT=${SILVERBULLET_PORT:-3000}
+      - SILVERBULLET_PUBLIC_HOST=${SILVERBULLET_PUBLIC_HOST:-silverbullet-public}
+      - SILVERBULLET_PUBLIC_PORT=${SILVERBULLET_PUBLIC_PORT:-3000}
+      - PYTHON_HOST=${PYTHON_HOST:-python}
+      - PYTHON_PORT=${PYTHON_PORT:-8000}
+      # A dead port by default, so /receipt/ reads "offline".
+      - RECEIPT_WEB_UPSTREAM=${RECEIPT_WEB_UPSTREAM:-127.0.0.1:9}
+      - RECEIPT_WEB_TOKEN=${RECEIPT_WEB_TOKEN:-}
+      # Zone -> Zone -> Read and Zone -> DNS -> Edit; see .env.example.
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN:-}
+    networks:
+      app-network:
+        # Beside nginx's .251 and cloudflared's .250. Becomes .251 at the
+        # cutover.
+        ipv4_address: 172.28.255.252
+    ports:
+      - 127.0.0.1:8880:80
+      - 127.0.0.1:8443:443
+    volumes:
+      # The certificates, their keys and the ACME account. PERSISTENT and
+      # private key material: gitignored, never commit. Losing it only costs
+      # a re-issue on the next start (about a minute over DNS-01).
+      - ./caddy/data:/data
+      - caddy_config:/config
+      - uploads:/srv/uploads:ro
+      # The SPA written by the one-shot `vue` container.
+      - vue_dist:/srv/www:ro
+      # The JSON request-body log, tailed by `traffic` after the cutover.
+      - ./logs/caddy:/var/log/caddy
+    # Answered by Caddy itself (http://127.0.0.1 in the Caddyfile). The image
+    # has busybox wget, not curl.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/caddy-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Obtains the cert once, then renews every 12h forever. Disabled in dev via
   # the `disabled` profile in docker-compose.dev.yml. Note this is the stock

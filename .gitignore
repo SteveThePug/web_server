@@ -3,6 +3,8 @@ icecast2/fallback_music/*
 !icecast2/fallback_music/.gitkeep
 certbot/conf
 certbot/www
+# Caddy's certificates, keys and ACME account (docker-compose.yml)
+caddy/data/
 backend/token/
 jobs-data/
 usaco-data/

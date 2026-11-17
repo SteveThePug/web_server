@@ -1,0 +1,32 @@
+# =============================================================================
+# sites/dev.caddy — LOCAL DEVELOPMENT sites. Imported by the Caddyfile when
+# CADDY_SITE=dev, which only docker-compose.dev.yml sets.
+#
+# HOW IT DIFFERS FROM sites/prod.caddy
+#   - `/` is proxied to the Vite dev server at vue:5173 instead of serving the
+#     built SPA. Its HMR websocket needs nothing extra.
+#   - http AND https both serve the full site, with no redirects, so
+#     http://localhost just works. Listing the http:// addresses is what
+#     stops Caddy adding its automatic http -> https redirect.
+#   - TLS is `tls internal`: a certificate from Caddy's own local CA, kept in
+#     ./caddy/data. Browsers warn until that CA is trusted, which is expected.
+#   - No security headers: HSTS on localhost would poison the browser for
+#     every other localhost project on the machine.
+#   - No static-asset caching: Vite serves those, and long cache lifetimes
+#     would defeat hot reload.
+#   Everything else, every proxied route, gate, denial and rate limit, is the
+#   same routes.caddy as production.
+# =============================================================================
+
+http://{$DOMAIN}, https://{$DOMAIN}, http://www.{$DOMAIN}, https://www.{$DOMAIN} {
+	tls internal
+	import common
+
+	route {
+		import ../routes.caddy
+
+		handle {
+			reverse_proxy vue:5173
+		}
+	}
+}

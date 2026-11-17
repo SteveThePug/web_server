@@ -1,0 +1,398 @@
+# =============================================================================
+# Caddyfile — the public edge: TLS, the SPA, and the reverse proxy in front of
+# every other service. Replaces nginx/ and the certbot container.
+#
+# FILES (all baked into the image by caddy/Dockerfile)
+#   Caddyfile           this file: global options, the snippets every site
+#                       uses, the healthcheck site, and the import that picks
+#                       the dev or production sites.
+#   routes.caddy        the proxy route table, shared by dev and production.
+#                       ADD A NEW PROXIED ROUTE THERE.
+#   sites/prod.caddy    production: http -> https://www, the apex (registry
+#                       and redirect), the www site.
+#   sites/dev.caddy     dev: localhost on http and https, `/` -> Vite.
+#
+# WHICH SITES ARE LOADED
+#   CADDY_SITE picks the file (`prod` unless set; docker-compose.dev.yml sets
+#   `dev`). It is a parse-time {$VAR}, substituted before the Caddyfile is
+#   read, so it can name the import itself.
+#
+# TWO KINDS OF VARIABLE
+#   {$NAME} / {$NAME:default}  read from the environment ONCE, when the config
+#                              is parsed. Used for upstream names and the
+#                              domain. They end up in the JSON config Caddy
+#                              autosaves to /config, so never a secret.
+#   {env.NAME}                 read per use at runtime, never written into the
+#                              config. Used for the two secrets: the
+#                              Cloudflare DNS token and the receipt token.
+#   Every variable must be in the caddy service's explicit `environment:`
+#   list in docker-compose.yml, or it reaches Caddy empty. Note an EMPTY
+#   variable is not "unset": {$X:default} keeps the empty value. So defaults
+#   live in that compose list (${X:-default}), which treats both alike, as
+#   nginx/entrypoint.sh's ${X:-default} did.
+#
+# WHAT NO LONGER NEEDS DOING (vs nginx)
+#   - Upstreams are resolved when Caddy dials them, not at startup, so it
+#     boots with any container missing and 502s until it appears. No
+#     `resolver` / `set $upstream_*` trick.
+#   - Certificates are obtained and renewed in-process (sites/prod.caddy), and
+#     Caddy serves while it does, so there is no bootstrap config, no certbot,
+#     no reload sentinel.
+#   - `header` is additive: a route that sets its own headers keeps the site's
+#     too. No security_headers.conf re-included everywhere.
+#   - Websocket upgrades, streaming responses and request-body streaming are
+#     the reverse proxy's defaults.
+# =============================================================================
+{
+	# No `email`: the ACME account works without one, Let's Encrypt stopped
+	# sending expiry notices in 2025, and an `email {$EMAIL}` line with EMAIL
+	# unset is a parse error that keeps the whole edge from starting.
+
+	# rate_limit is a plugin, so it has no place in Caddy's built-in directive
+	# order. Before basic_auth means before forward_auth too: a gated route
+	# counts the request before asking the backend about the session, as
+	# nginx's limit_req (preaccess phase) ran before auth_request (access).
+	order rate_limit before basic_auth
+
+	# Dev's `tls internal` would otherwise try to add Caddy's local CA to the
+	# container's trust store, which is pointless and logs an error.
+	skip_install_trust
+
+	servers {
+		# Real client IP behind the Cloudflare tunnel. For connections from
+		# the cloudflared container, and only those, the client IP is taken
+		# from Cloudflare's CF-Connecting-IP header. {client_ip} is then the
+		# visitor everywhere it is used: the rate-limit keys, the access log,
+		# and the X-Real-IP / X-Forwarded-For sent upstream (see `proxy`).
+		#
+		# Pinned to cloudflared's fixed address (ipv4_address in
+		# docker-compose.yml; change both together), NOT the subnet. Direct
+		# visitors on the published 80/443 can arrive from the bridge gateway,
+		# 172.28.0.1, so trusting the subnet would let anyone choose their own
+		# IP, and so their own rate-limit bucket, by sending the header.
+		trusted_proxies static 172.28.255.250
+		client_ip_headers CF-Connecting-IP
+
+		# No HTTP/3: 443/udp is not published and cloudflared does not use it,
+		# so advertising it (Alt-Svc) would only send browsers on a detour.
+		protocols h1 h2
+	}
+
+	# ---- Access logs ---------------------------------------------------------
+	# Every site imports `logging`, which names its access logger `payloads`.
+	# The two loggers below take that stream; the default logger is told to
+	# leave it alone, or each request would also be printed unfiltered,
+	# request body included.
+	log default {
+		exclude http.log.access.payloads
+	}
+
+	# The payload log: one JSON line per request, body included (log_append
+	# in `logging`), for seeing what actually arrives at the edge.
+	# logs/caddy/ on the host; from the cutover the `traffic` container tails
+	# it so Dozzle shows it as its own stream. Caddy rotates it itself, and
+	# `tail -F` follows the rotation. 0644 so `jq` on the host can read it
+	# unprivileged (Caddy's default is 0600).
+	#
+	# Redaction: any body mentioning a password, token or secret is replaced
+	# whole, not field by field, because there is no JSON parser here. That
+	# catches /auth/login, the GraphQL login and change-password mutations and
+	# the refresh-token call in one rule. Over-matching (a query that merely
+	# selects a field named *token*) costs a hidden body, never a leak.
+	# Cookie and Authorization headers are logged as REDACTED by Caddy itself
+	# (the `log_credentials` server option is off).
+	log payloads_file {
+		include http.log.access.payloads
+		output file /var/log/caddy/payloads.log {
+			roll_size 50MiB
+			roll_keep 5
+			mode 0644
+		}
+		format filter {
+			wrap json
+			fields {
+				req_body regexp "(?is)^.*(password|token|secret).*$" "[redacted]"
+			}
+		}
+	}
+
+	# The container's stdout, which `docker compose logs caddy` and Dozzle
+	# show: the same requests cut down to one short line each, without the
+	# body or headers, like nginx's `compact` format.
+	log payloads_stdout {
+		include http.log.access.payloads
+		output stdout
+		format filter {
+			wrap console
+			fields {
+				req_body delete
+				request>headers delete
+				request>tls delete
+				resp_headers delete
+			}
+		}
+	}
+}
+
+# ---- Snippets ----------------------------------------------------------------
+# Defined here, before the site files are imported, so every file can use
+# them. `import <snippet> <args...>` fills {args[N]}.
+
+# Inside every reverse_proxy. Caddy already passes Host through and sets
+# X-Forwarded-Proto/Host. X-Forwarded-For is overwritten rather than left to
+# Caddy's default, which APPENDS the trusted peer: behind the tunnel that is
+# "<visitor>, 172.28.255.250", and Gitea (REVERSE_PROXY_LIMIT = 1, so the
+# rightmost entry) would log cloudflared for every visitor. With exactly one
+# entry, the visitor, every upstream sees what nginx gave it: gin's ClientIP()
+# (backend/main.go, trusts 172.28/16), Gitea, and python/app/main.py's
+# _internal_only guard, which refuses any request carrying either header.
+(proxy) {
+	header_up X-Real-IP {client_ip}
+	header_up X-Forwarded-For {client_ip}
+}
+
+# import limit <zone> <events> <window>
+#
+# A sliding window: at most <events> per <window> per client IP, then 429
+# (turned into 503 by `errors`). Unlike nginx's leaky bucket there is no
+# separate burst, so each zone's <events> is nginx's rate and <window> its
+# unit, which keeps the sustained rates exact; the instant allowance comes out
+# close to nginx's burst + 1. DEPLOYMENT.md §6 has the table and the reasoning
+# behind each zone.
+#
+# State is shared per ZONE NAME across every route that names it (the plugin
+# keeps one pool keyed by name), which is how /api, /py, /jobs, /usaco and
+# /tracker share one `api` bucket, as in nginx. So a zone name must always be
+# given the same <events> and <window>; a route that wants different numbers
+# needs its own zone name (see `receipt`).
+(limit) {
+	rate_limit {
+		zone {args[0]} {
+			key {client_ip}
+			events {args[1]}
+			window {args[2]}
+		}
+	}
+}
+
+# ---- Admin gate (/sb/, /jobs/, /tracker/, /dozzle/, /garage/, /radio/admin/,
+# Gitea's history views, /uploads/private/) ----
+# forward_auth sends a GET carrying the original request's headers, cookie
+# included, to the backend's /auth/validate-admin before the request goes
+# anywhere. 2xx lets it through; 401/403 become a redirect to the SPA login.
+# This puts the Go backend's session in front of services that have no idea
+# it exists. The body is never sent (the method is rewritten to GET), so a
+# 2 GB garage-webui upload does not go to the backend twice.
+#
+# {http.request.orig_uri}, not {uri}: a route's `uri strip_prefix` runs
+# BEFORE forward_auth in Caddy's directive order, so {uri} would have lost its
+# prefix by the time this redirect is built. The `*` matters too: given only a
+# target and a status, `redir` takes a target starting with / as a path
+# MATCHER, and the redirect would never fire.
+(admin_gate) {
+	forward_auth {$BACKEND_HOST}:{$BACKEND_PORT} {
+		uri /auth/validate-admin
+		@denied status 401 403
+		handle_response @denied {
+			redir * /admin/login?redirect={http.request.orig_uri} 302
+		}
+	}
+}
+
+# ---- Permission gate (/receipt/) ----
+# import permission_gate <key>
+#
+# The same mechanism, but asking GET /auth/validate/<key> whether the session
+# holds one named permission (backend/services/permissions.go; admins hold
+# them all), so a non-admin account granted it in the admin panel gets in.
+# 401 (not signed in) goes to the login page; 403 (signed in, not granted)
+# goes to a page that says so, since sending a signed-in user to log in again
+# only shows them "Already signed in".
+#
+# On success the backend returns the username in X-Auth-User, copied onto the
+# proxied request as X-Remote-User. copy_headers deletes any X-Remote-User the
+# client sent before it sets the real one, so the upstream can trust it.
+(permission_gate) {
+	forward_auth {$BACKEND_HOST}:{$BACKEND_PORT} {
+		uri /auth/validate/{args[0]}
+		copy_headers X-Auth-User>X-Remote-User
+		@unauthenticated status 401
+		handle_response @unauthenticated {
+			redir * /admin/login?redirect={http.request.orig_uri} 302
+		}
+		@forbidden status 403
+		handle_response @forbidden {
+			redir * /no-access?path={http.request.orig_uri} 302
+		}
+	}
+}
+
+# Production only (sites/prod.caddy); HSTS on localhost would poison the
+# browser for every other localhost project on the machine.
+#
+# No site-wide CSP here. Gitea (proxied at /gitea/) relies on inline <script>
+# blocks its own templates generate, so a shared script-src would need
+# 'unsafe-inline', which voids almost all of CSP's value. If a real CSP
+# matters again, give the SPA document its own, separate from Gitea.
+(security_headers) {
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains"
+	}
+}
+
+# User-uploaded files are attacker-supplied bytes on our own origin. nosniff
+# stops content-type guessing (so backend/services/uploads.go's stored type is
+# what the browser goes by), Content-Disposition inline keeps them from being
+# treated as downloads, and the locked-down CSP means even an uploaded .html
+# can run no script and load no resource. `>` defers each one until the
+# response is written, so it also wins over anything Garage sends. (-Server
+# and -Via repeat `common`'s, for the error route, which does not run it.)
+(upload_headers) {
+	header {
+		>X-Content-Type-Options "nosniff"
+		>Content-Disposition "inline"
+		>Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'"
+		-Server
+		-Via
+	}
+}
+
+# The disk half of /uploads/ (see routes.caddy): hand the request to the
+# uploads disk site at the bottom of this file. Used both when Garage answers
+# 404/5xx (handle_response) and when it cannot be reached at all (`errors`),
+# so it works from the ORIGINAL path, whatever the route had stripped by then.
+#
+# Why proxy to a second site rather than call file_server here: in an error
+# route file_server answers with the ERROR's status, so a file served while
+# Garage is down would arrive as a 502 (with the file as its body), and
+# forcing 200 instead would also turn its 206 and 304 answers into 200s. A
+# proxied response keeps whatever status the disk site gave it.
+#
+# The headers are imported again because error routes do not inherit the
+# deferred ones of the route that failed.
+(uploads_disk) {
+	import upload_headers
+	rewrite * {http.request.orig_uri.path}
+	reverse_proxy 127.0.0.1:2080
+}
+
+# Error routes, for errors Caddy raises itself (never for an upstream's own
+# error response, which is passed through untouched). Any error none of these
+# handles is answered with its own status and an empty body.
+(errors) {
+	# rate_limit's 429. Answered as 503, the status nginx's limit_req used,
+	# because vue/src/views/hotels/hotelsStream.js tells the two apart: 503 is
+	# "too many searches from your address", while a 429 is the Python
+	# service's own "someone else is searching right now".
+	handle_errors 429 {
+		respond "Too many requests from your address. Wait a moment and retry." 503
+	}
+
+	# An upstream that could not be reached or timed out. Two routes turn that
+	# into something better than a bare 502, each keyed on a variable its
+	# route sets (error routes keep the request's vars, and a variable cannot
+	# be spoofed the way a path can be dressed up):
+	#   uploads_fallback  Garage is down: serve the file from disk instead.
+	#   receipt_upstream  set only once the permission gate has passed, so a
+	#                     backend outage is not reported as the printer's.
+	handle_errors 502 504 {
+		@uploads_fallback vars uploads_fallback yes
+		handle @uploads_fallback {
+			import uploads_disk
+		}
+		@receipt_offline vars receipt_upstream yes
+		handle @receipt_offline {
+			respond "The receipt printer machine is offline." 503
+		}
+	}
+}
+
+# The access log, and the request body on it. {http.request.body} buffers the
+# body in memory to log it, so it is only taken when the client declared a
+# length under 100 KB and the route is not an upload path: big and chunked
+# bodies are logged without one. nginx did the equivalent: bodies over its
+# 64k buffer went to a temp file and logged empty.
+(logging) {
+	log payloads
+	@small_body {
+		# Up to five digits, spelt out because a {1,5} would read as a
+		# placeholder.
+		header_regexp Content-Length ^[0-9][0-9]?[0-9]?[0-9]?[0-9]?$
+		not path {$BACKEND_ENDPOINT}/uploads* /garage/* /receipt/* /v2/*
+	}
+	# `<` (early: taken before the request is proxied) must be explicit.
+	# Without it 2.11 takes the body early as documented, but then takes it a
+	# second time after the proxy has read it, logging an empty string.
+	log_append @small_body <req_body {http.request.body}
+}
+
+# Compression, for the types nginx's gzip_types listed. An explicit list so
+# that streamed responses (application/x-ndjson from /py/hotels/*, Dozzle's
+# text/event-stream, icecast's audio) are never held back to fill a
+# compression buffer.
+(encode) {
+	encode zstd gzip {
+		minimum_length 256
+		match {
+			header Content-Type text/html*
+			header Content-Type text/plain*
+			header Content-Type text/css*
+			header Content-Type text/javascript*
+			header Content-Type application/javascript*
+			header Content-Type application/json*
+			header Content-Type application/xml*
+			header Content-Type image/svg+xml*
+		}
+	}
+}
+
+(common) {
+	import logging
+	import errors
+	import encode
+	# Caddy's own `Server: Caddy` and an upstream's (icecast sends one), and
+	# the `Via: 1.1 Caddy` its reverse proxy adds: nginx sent neither.
+	header {
+		-Server
+		-Via
+	}
+}
+
+# ---- Container healthcheck ---------------------------------------------------
+# The target of the healthcheck in docker-compose.yml, which the `autoheal`
+# container acts on. Answered by Caddy itself, so it measures whether the
+# server is serving and nothing upstream. Plain HTTP on :80, addressed by IP
+# so it matches no real site; not logged, or it would put a line in the
+# payload log every 30 s.
+http://127.0.0.1 {
+	respond /caddy-health 204
+	respond 404
+}
+
+# ---- Uploads disk site -------------------------------------------------------
+# The shared `uploads` volume (mounted at /srv/uploads), served to this
+# container only (bound to the loopback; nothing publishes 2080). Reached by
+# `uploads_disk` when Garage has no copy of a file; see that snippet for why
+# it is a site of its own. Unlogged: the request was logged as it arrived.
+#
+# private/ is refused here as well as gated upstream. A request is routed by
+# its cleaned, lower-cased path, so anything that could reach private/ goes to
+# the gated /uploads/private/ route long before this; the refusal is the
+# second lock, should that route ever be reordered.
+http://:2080 {
+	bind 127.0.0.1
+	@private path /uploads/private /uploads/private/*
+	handle @private {
+		respond 404
+	}
+	handle /uploads/* {
+		root * /srv
+		file_server
+	}
+	respond 404
+}
+
+import sites/{$CADDY_SITE:prod}.caddy

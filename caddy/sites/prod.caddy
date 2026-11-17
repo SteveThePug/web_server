@@ -1,0 +1,133 @@
+# =============================================================================
+# sites/prod.caddy — PRODUCTION sites. Imported by the Caddyfile unless
+# CADDY_SITE says otherwise.
+#
+# FOUR SITES
+#   1. http://  apex + www  -> 301 to https://www.DOMAIN.
+#   2. https:// apex        -> Gitea's registry at /v2/, else 301 to www, so
+#                              there is exactly one canonical origin (cookies,
+#                              CORS and the SPA all assume www).
+#   3. https:// www         -> the real site.
+#   (4. the healthcheck site, http://127.0.0.1, is in the Caddyfile.)
+#
+# CERTIFICATES
+#   Caddy obtains one for each name over DNS-01 through the Cloudflare API
+#   (`prod_tls`), keeps them in /data (./caddy/data on the host), and renews
+#   each when a third of its lifetime is left, in-process, with no reload.
+#   DNS-01 because the router forwards nothing: behind the tunnel no ACME
+#   server can reach :80 or :443. The token needs Zone -> Zone -> Read and
+#   Zone -> DNS -> Edit on this zone; see .env.example. Until the first
+#   certificate arrives (about a minute on a fresh ./caddy/data) the TLS
+#   handshake fails, so the tunnel, which verifies it, serves 502s.
+#
+#   resolvers: on app-network, DOMAIN is a network alias for this very
+#   container, so Docker's DNS would answer the plugin's zone lookup itself
+#   and the order fails with "expected 1 zone, got 0". Asking Cloudflare's
+#   public resolvers sees the real zone.
+# =============================================================================
+
+(prod_tls) {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_DNS_API_TOKEN}
+		resolvers 1.1.1.1 1.0.0.1
+	}
+}
+
+# Spelt out rather than left to Caddy's automatic redirect, which goes to the
+# same host: http://apex would then take two hops (https://apex, then www).
+http://{$DOMAIN}, http://www.{$DOMAIN} {
+	import logging
+	header -Server
+	redir https://www.{$DOMAIN}{uri} 301
+}
+
+{$DOMAIN} {
+	import prod_tls
+	import common
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains"
+
+	route {
+		# Gitea's container registry, which publishes images such as
+		# DOMAIN/adamf/job-tracker. Docker always talks to /v2/ at the root of
+		# the host, whatever Gitea's ROOT_URL says, and Gitea advertises its
+		# token endpoint at https://DOMAIN/v2/token: on the apex, not under
+		# /gitea/ and not on www. So the apex serves /v2/ itself rather than
+		# redirecting it; a redirect on a blob upload is not something every
+		# Docker client follows. No request_body limit (routes.caddy's 50 MB
+		# is not imported here): image layers are far larger, and Caddy
+		# streams them to Gitea as they arrive.
+		handle /v2/* {
+			reverse_proxy {$GITEA_HOST}:{$GITEA_PORT} {
+				import proxy
+			}
+		}
+
+		redir https://www.{$DOMAIN}{uri} 301
+	}
+}
+
+www.{$DOMAIN} {
+	import prod_tls
+	import common
+	import security_headers
+
+	# ---- Static asset caching ----
+	# Each matcher also requires the file to exist (`file`), so only a real
+	# file is marked cacheable: a 404 for a hash the browser asks for before
+	# the new build lands must never be cached for a year as `immutable`.
+	# (nginx's add_header without `always` skipped error responses the same
+	# way.)
+
+	# Vite hashed assets: a new build has new names, so these never change.
+	@hashed {
+		path /assets/*
+		file {
+			root /srv/www
+		}
+	}
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	@fonts {
+		path /fonts/*
+		file {
+			root /srv/www
+		}
+	}
+	header @fonts Cache-Control "public, max-age=2592000"
+
+	@week {
+		path /img/* /sound/*
+		file {
+			root /srv/www
+		}
+	}
+	header @week Cache-Control "public, max-age=604800"
+
+	# This GIF is a "web stamp" other people's sites hot-link, so it needs a
+	# CORS header. It is a public, deliberately hot-linkable image and nothing
+	# here is credentialed, so `*` is safe.
+	header /img/stamps/mine.gif Access-Control-Allow-Origin "*"
+
+	route {
+		import ../routes.caddy
+
+		# Static directories: a missing file is a 404, never the SPA's
+		# index.html. A stale page asking for an old asset hash then gets an
+		# honest error rather than HTML served as JavaScript.
+		@static path /assets/* /fonts/* /img/* /sound/*
+		handle @static {
+			root * /srv/www
+			file_server
+		}
+
+		# The built SPA (the vue_dist volume). Serve the file if it exists,
+		# otherwise hand index.html to the browser so Vue Router can resolve
+		# the path client-side: that is what makes deep links like /admin or
+		# a canvas page's /<slug> work on refresh.
+		handle {
+			root * /srv/www
+			try_files {path} {path}/ /index.html
+			file_server
+		}
+	}
+}

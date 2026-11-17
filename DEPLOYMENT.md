@@ -498,6 +498,36 @@ docker compose restart nginx
 
 Add `--dry-run` to test without burning rate limit.
 
+**Caddy beside nginx (the edge migration, in progress).** `caddy/` is the
+replacement for `nginx/` and certbot. Until the cutover the `caddy` container
+runs next to nginx and serves nothing public: it listens on the host's
+loopback only (`127.0.0.1:8880` http, `127.0.0.1:8443` https), has no network
+aliases, and gets its own certificates over DNS-01 into `./caddy/data`. That
+needs `CLOUDFLARE_DNS_API_TOKEN` to carry **Zone → Zone → Read** as well as
+DNS → Edit (certbot only needed the second); without it Caddy logs failed
+orders and the public site is unaffected. Watch the first issuance with:
+
+```
+docker compose logs -f caddy | grep -i -E 'certificate|error'
+```
+
+Then compare the two edges request by request (the script's header explains
+the output; pass an admin session's cookie as `EDGE_COOKIE` to cover the
+signed-in cases too):
+
+```
+export "$(grep '^DOMAIN=' .env)"
+caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1 >nginx.txt
+caddy/edge_test.sh https://www.$DOMAIN:8443 --resolve www.$DOMAIN:8443:127.0.0.1 >caddy.txt
+diff nginx.txt caddy.txt
+```
+
+The expected differences: `Server: nginx` is gone, the gates match paths
+case-insensitively (so `/SB/` is gated instead of falling to the SPA), and
+`X-Frame-Options`/`Cache-Control` come out in a different order or combined.
+A Caddyfile change is checked by `make check-caddy`, the same image build the
+deploy runs, which validates the production and dev configs.
+
 **Check logs:**
 
 ```
