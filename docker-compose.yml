@@ -114,8 +114,7 @@ services:
   # serves the SPA, reverse-proxies everything else, and obtains and renews
   # its own certificates over DNS-01 into ./caddy/data, with no reload and no
   # inbound port. It replaced nginx and the certbot container on 2026-11-17;
-  # nginx/ and certbot/ stay in the repo until that has settled, as the
-  # rollback.
+  # both are in .deprecated/ (DEPLOYMENT.md §7 has the rollback).
   #
   # ENVIRONMENT: an explicit list, not the whole .env, so the edge never sees
   # the database password or the JWT secret. A variable the Caddyfile reads

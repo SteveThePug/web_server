@@ -1,6 +1,8 @@
 icecast2/fallback_music/*
 .claude/
 !icecast2/fallback_music/.gitkeep
+# The retired certbot's data (code in .deprecated/certbot/), still on the
+# host as the rollback certificate
 certbot/conf
 certbot/www
 # Caddy's certificates, keys and ACME account (docker-compose.yml)

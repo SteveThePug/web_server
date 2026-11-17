@@ -1,6 +1,7 @@
 # =============================================================================
 # Caddyfile — the public edge: TLS, the SPA, and the reverse proxy in front of
-# every other service. Replaces nginx/ and the certbot container.
+# every other service. Replaced nginx and certbot (now .deprecated/) on
+# 2026-11-17.
 #
 # FILES (all baked into the image by caddy/Dockerfile)
 #   Caddyfile           this file: global options, the snippets every site
@@ -29,7 +30,7 @@
 #   list in docker-compose.yml, or it reaches Caddy empty. Note an EMPTY
 #   variable is not "unset": {$X:default} keeps the empty value. So defaults
 #   live in that compose list (${X:-default}), which treats both alike, as
-#   nginx/entrypoint.sh's ${X:-default} did.
+#   nginx's entrypoint's ${X:-default} did.
 #
 # WHAT NO LONGER NEEDS DOING (vs nginx)
 #   - Upstreams are resolved when Caddy dials them, not at startup, so it

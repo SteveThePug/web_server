@@ -259,8 +259,9 @@ Encrypt allows five certificates for the same name a week, so do not make a
 habit of it.
 
 Until 2026-11-17 this was certbot plus a bootstrap nginx config, a reload
-sentinel and a watcher loop. `certbot/` and its `./certbot/conf` stay on the
-host as the rollback (§7); that certificate expires on 2027-01-20.
+sentinel and a watcher loop, now in `.deprecated/`. The last certbot
+certificate is still in `./certbot/conf` on the host as the rollback (§7); it
+expires on 2027-01-20.
 
 ### Cloudflare Tunnel
 
@@ -522,13 +523,15 @@ export "$(grep '^DOMAIN=' .env)"
 caddy/edge_test.sh https://www.$DOMAIN --resolve www.$DOMAIN:443:127.0.0.1
 ```
 
-**Roll back to nginx** (until `nginx/` and `certbot/` are removed; the certbot
-certificate in `./certbot/conf` is valid until 2027-01-20). `git revert` the
-cutover commit and push, or by hand on the host, under the lock so a deploy
-cannot interleave:
+**Roll back to nginx** (possible while the certbot certificate in
+`./certbot/conf` is valid, until 2027-01-20). The old edge is in
+`.deprecated/nginx/` and `.deprecated/certbot/`. Revert the commit that moved
+it there and then the cutover (`daa2a46`), which restores both directories
+and nginx's compose services. Push, or apply it by hand on the host under the
+lock so a deploy cannot interleave:
 
 ```
-git revert --no-edit <cutover commit>
+git revert --no-edit <the .deprecated move> daa2a46
 flock .compose.lock sh -c 'docker compose stop caddy && docker compose rm -f caddy && docker compose up -d --build nginx certbot cloudflared traffic'
 ```
 
@@ -707,11 +710,11 @@ docker compose restart caddy
 
 Documented, not fixed — each would change deploy behaviour.
 
-1. **`nginx/`, `certbot/` and their host directories are still here** as the
-   rollback from the 2026-11-17 cutover. Once Caddy has run for a couple of
-   weeks: move `nginx/` and `certbot/` to `.deprecated/`, then delete
-   `./certbot/` and `./logs/nginx/` on the host and the `logs/nginx` logrotate
-   stanza.
+1. **The old edge's host directories are still on stpvm** as the rollback
+   from the 2026-11-17 cutover: `./certbot/` (the last certbot certificate)
+   and `./logs/nginx/`, plus the `logs/nginx` stanza in
+   `/etc/logrotate.d/web_server`. The code is in `.deprecated/`. Once the
+   rollback is no longer wanted, delete the two directories and the stanza.
 2. **`gitea/config/entrypoint.sh` is an empty, unused file** that would be
    mounted to the same in-container path as the real wrapper. It is currently
    shadowed by an explicit file mount — fragile. Deleting it would be safe but
