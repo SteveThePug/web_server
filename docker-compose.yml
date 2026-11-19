@@ -150,6 +150,11 @@ services:
       # A dead port by default, so /receipt/ reads "offline".
       - RECEIPT_WEB_UPSTREAM=${RECEIPT_WEB_UPSTREAM:-127.0.0.1:9}
       - RECEIPT_WEB_TOKEN=${RECEIPT_WEB_TOKEN:-}
+      # Partner Radar (radar.DOMAIN): the adamf/cto stack's `web` container,
+      # which joins app-network under this alias (its docker-compose.stpvm.yml).
+      # While that stack is down the name does not resolve and radar.DOMAIN
+      # answers "offline".
+      - RADAR_UPSTREAM=${RADAR_UPSTREAM:-radar-web:80}
       # Zone -> Zone -> Read and Zone -> DNS -> Edit; see .env.example.
       - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN:-}
     networks:
@@ -164,6 +169,7 @@ services:
         aliases:
           - ${DOMAIN}
           - www.${DOMAIN}
+          - radar.${DOMAIN}
         # Fixed for cloudflared's extra_hosts (see there): an alias only
         # exists while Caddy is running, and this address is pinned to the
         # same names for when it is not. Top of the /16 beside cloudflared's,
@@ -238,6 +244,7 @@ services:
     extra_hosts:
       - "${DOMAIN}:172.28.255.251"
       - "www.${DOMAIN}:172.28.255.251"
+      - "radar.${DOMAIN}:172.28.255.251"
     networks:
       app-network:
         ipv4_address: 172.28.255.250

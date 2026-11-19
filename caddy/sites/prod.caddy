@@ -131,3 +131,49 @@ www.{$DOMAIN} {
 		}
 	}
 }
+
+# ---- Partner Radar (radar.DOMAIN) ----
+# The adamf/cto "Partner Radar" demo: its own docker compose project on this
+# host (`make stpvm` there), whose `web` container (its own Caddy, serving the
+# React app and proxying its API) joins app-network as `radar-web`. A
+# subdomain, not a /radar/ path, because the app assumes it owns `/` and its
+# session cookie then stays apart from www's.
+#
+# No admin gate: the app has its own login and accounts. No security_headers
+# either: the app's Caddy sends its own, and www's CSP would block the React
+# app. Two zones of its own (see DEPLOYMENT.md §6): `radar` on every request,
+# and `radar_login` on top of it for the login endpoint. radar_upstream lets
+# `errors` answer "offline" when the stack is down instead of a bare 502.
+(radar_proxy) {
+	reverse_proxy {$RADAR_UPSTREAM} {
+		import proxy
+		# Caddy's default, spelt out: when the stack is down, fail fast and
+		# let `errors` answer.
+		transport http {
+			dial_timeout 3s
+		}
+	}
+}
+
+radar.{$DOMAIN} {
+	import prod_tls
+	import common
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains"
+
+	route {
+		import limit radar 30 1s
+		request_body {
+			max_size 10MB
+		}
+		vars radar_upstream yes
+		handle /api/auth/login {
+			route {
+				import limit radar_login 5 1m
+				import radar_proxy
+			}
+		}
+		handle {
+			import radar_proxy
+		}
+	}
+}

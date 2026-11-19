@@ -67,6 +67,7 @@ backend  icecast2  gitea    sb       sb-pub  python |               |
 | cloudflared                                   | `cloudflared`                 | — (fixed IP `172.28.255.250`) | all of Caddy, via Cloudflare                                                                            | no (outbound only)   |
 | dozzle (log viewer)                           | `dozzle`                      | 8080                          | `/dozzle/` (admin-gated by Caddy `forward_auth`; reads the Docker socket)                               | no                   |
 | receipt printer (`receipt serve`, adamf/receipt_maker) | — (runs on **stppi**, not in this stack) | 8765 on stppi's Tailscale IP (`RECEIPT_WEB_UPSTREAM`) | `/receipt/`, prefix stripped (permission-gated on `receipt` by Caddy `forward_auth`; Caddy adds `X-Receipt-Token` and `X-Remote-User`). The only upstream off this host; 503 "offline" when stppi is down | no |
+| Partner Radar (adamf/cto, its own compose project) | `radar-web` (alias of that project's `web`, on app-network) | 80 | `radar.<DOMAIN>`, the whole host (its own login, no gate; zones `radar` and `radar_login`). Started from the cto checkout with `make stpvm`; 503 "offline" when that stack is down | no |
 | traffic (tails the payload log)               | `traffic`                     | — (no network)                | none; its stdout is what Dozzle shows                                                                   | no                   |
 | autoheal (restarts unhealthy caddy)           | `autoheal`                    | — (no network)                | none; reads the Docker socket                                                                           | no                   |
 | garage (S3 object store)                      | `garage`                      | 3900 S3, 3902 web, 3903 admin | none directly; `/uploads/` falls back to its web endpoint for files not on the volume                   | no                   |
@@ -310,6 +311,8 @@ Setup, once:
     - `www.<DOMAIN>` → `https://www.<DOMAIN>`: the site.
     - `<DOMAIN>` → `https://<DOMAIN>`: Caddy redirects it to www, and it serves Gitea's registry
       at `/v2/`.
+    - `radar.<DOMAIN>` → `https://radar.<DOMAIN>`: the Partner Radar demo
+      (Caddy's `radar.{$DOMAIN}` site, `sites/prod.caddy`).
       Creating each hostname replaces the existing A record for that name with
       a CNAME to the tunnel. **That is the cutover**: until then the tunnel
       carries nothing.
@@ -467,6 +470,8 @@ gets its own zone, as `/receipt/` does.
 | `upload`       | 30 / 1m   | `/api/uploads`                               | Bounds how fast one IP fills the bucket or the volume. Generous because uploaders must be signed in (accounts are admin-created) and a batch of pictures dropped on a canvas page uploads at once. |
 | `hotel_search` | 3 / 1m    | `/py/hotels/(search\|scan)`                  | Each request holds an upstream call for minutes and the Python side has one search slot — concurrency protection more than abuse protection.                                                           |
 | `receipt`      | 10 / 1s   | `/receipt/`                                  | Prints are slow and physical; ten a second is far above any real use.                                                                                                                                  |
+| `radar`        | 30 / 1s   | all of `radar.<DOMAIN>`                      | The Partner Radar demo: an abuse ceiling like `api`, in its own zone because it is a different app. |
+| `radar_login`  | 5 / 1m    | `radar.<DOMAIN>/api/auth/login`              | Brute-force defence on the demo's login, on top of `radar` and the app's own login throttling. |
 
 The WebSocket endpoint is deliberately unlimited: a socket is one long-lived
 request, and a limit there would drop reconnect storms rather than abuse.

@@ -292,13 +292,14 @@
 		respond "Too many requests from your address. Wait a moment and retry." 503
 	}
 
-	# An upstream that could not be reached or timed out. Two routes turn that
+	# An upstream that could not be reached or timed out. Three routes turn that
 	# into something better than a bare 502, each keyed on a variable its
 	# route sets (error routes keep the request's vars, and a variable cannot
 	# be spoofed the way a path can be dressed up):
 	#   uploads_fallback  Garage is down: serve the file from disk instead.
 	#   receipt_upstream  set only once the permission gate has passed, so a
 	#                     backend outage is not reported as the printer's.
+	#   radar_upstream    the Partner Radar stack (radar.DOMAIN) is down.
 	handle_errors 502 504 {
 		@uploads_fallback vars uploads_fallback yes
 		handle @uploads_fallback {
@@ -307,6 +308,10 @@
 		@receipt_offline vars receipt_upstream yes
 		handle @receipt_offline {
 			respond "The receipt printer machine is offline." 503
+		}
+		@radar_offline vars radar_upstream yes
+		handle @radar_offline {
+			respond "Partner Radar is offline." 503
 		}
 	}
 }
